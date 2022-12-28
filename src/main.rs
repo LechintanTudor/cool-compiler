@@ -1,5 +1,4 @@
-mod scanner;
-
+mod lexer;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
@@ -19,7 +18,7 @@ fn main() -> ExitCode {
         }
     };
 
-    let tokens = match scanner::tokenize(&source) {
+    let (tokens, identifiers, literals) = match lexer::tokenize(&source) {
         Ok(tokens) => tokens,
         Err(error) => {
             eprintln!("{}", error);
@@ -27,6 +26,20 @@ fn main() -> ExitCode {
         }
     };
 
-    println!("{:?}", tokens);
+    println!("[TOKEN]");
+    for token in tokens.iter() {
+        println!("{:?}", token);
+    }
+
+    println!("\n[IDENTIFIERS]");
+    for identifier in identifiers.iter() {
+        println!("{:?}", identifier);
+    }
+
+    println!("\n[LITERALS]");
+    for literal in literals.iter() {
+        println!("{:?}", literal);
+    }
+
     ExitCode::SUCCESS
 }
