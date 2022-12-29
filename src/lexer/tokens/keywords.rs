@@ -1,20 +1,7 @@
 use std::error::Error;
 use std::fmt;
 
-#[derive(Copy, Clone, Debug)]
-pub enum Keyword {
-    Mut,
-    True,
-    False,
-    If,
-    Else,
-    While,
-    Fn,
-    Struct,
-    Enum,
-}
-
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct InvalidKeyword;
 
 impl Error for InvalidKeyword {}
@@ -25,21 +12,49 @@ impl fmt::Display for InvalidKeyword {
     }
 }
 
-impl TryFrom<&[u8]> for Keyword {
-    type Error = InvalidKeyword;
+macro_rules! Keyword {
+    { $($variant:ident => $bytes:literal,)+ } => {
+        #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+        pub enum Keyword {
+            $($variant,)+
+        }
+        
+        impl fmt::Display for Keyword {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                let display_bytes: &'static [u8] = match self {
+                    $(Self::$variant => $bytes,)+
+                };
 
-    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        Ok(match bytes {
-            b"mut" => Self::Mut,
-            b"true" => Self::True,
-            b"false" => Self::False,
-            b"if" => Self::If,
-            b"else" => Self::Else,
-            b"while" => Self::While,
-            b"fn" => Self::Fn,
-            b"struct" => Self::Struct,
-            b"enum" => Self::Enum,
-            _ => return Err(InvalidKeyword),
-        })
-    }
+                let display_str = unsafe {
+                    std::str::from_utf8_unchecked(display_bytes)
+                };
+
+                f.write_str(display_str)
+            }
+        }
+        
+        impl TryFrom<&[u8]> for Keyword {
+            type Error = InvalidKeyword;
+
+            fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+                Ok(match bytes {
+                    $($bytes => Self::$variant,)+
+                    _ => return Err(InvalidKeyword),
+                })
+            }
+        }
+    };
+}
+
+Keyword! {
+    Bool => b"bool",
+    Else => b"else",
+    Enum => b"enum",
+    False => b"false",
+    Fn => b"fn",
+    If => b"if",
+    Mut => b"mut",
+    Struct => b"struct",
+    True => b"true",
+    While => b"while",
 }

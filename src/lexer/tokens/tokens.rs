@@ -1,6 +1,6 @@
 use crate::lexer::{Keyword, Operator, Separator};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Token {
     Keyword(Keyword),
     Operator(Operator),

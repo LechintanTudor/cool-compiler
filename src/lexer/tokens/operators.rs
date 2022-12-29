@@ -5,56 +5,7 @@ const OPERATOR_PARTS: &[u8] = &[
     b'=', b'!', b'<', b'>', b'+', b'-', b'*', b'/', b'%', b'|', b'&', b'~', b'^', b':',
 ];
 
-#[derive(Copy, Clone, Debug)]
-pub enum Operator {
-    // Relational
-    Equal,
-    NotEqual,
-    Less,
-    LessOrEqual,
-    Greater,
-    GreaterOrEqual,
-
-    // Arithmetic
-    Addition,
-    Subtraction,
-    Multiplication,
-    Division,
-    Remainder,
-
-    // Logical
-    Not,
-    Or,
-    And,
-    OrAssign,
-    AndAssign,
-
-    // Bitwise
-    BitwiseNot,
-    BitwiseOr,
-    BitwiseAnd,
-    BitwiseXor,
-
-    // Bitshift
-    BitshitLeft,
-    BitshiftRight,
-
-    // Assignment
-    Declaration,
-    Assignment,
-    AdditionAssignment,
-    SubtractionAssignment,
-    MultiplicationAssignment,
-    DivisionAssignment,
-    RemainderAssignment,
-    BitwiseOrAssign,
-    BitwiseAndAssign,
-    BitwiseXorAssign,
-    BitshiftLeftAssign,
-    BitshiftRightAssign,
-}
-
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct InvalidOperator;
 
 impl Error for InvalidOperator {}
@@ -65,61 +16,90 @@ impl fmt::Display for InvalidOperator {
     }
 }
 
-impl TryFrom<&[u8]> for Operator {
-    type Error = InvalidOperator;
+macro_rules! Operator {
+    { $($variant:ident => $bytes:literal,)+ } => {
+        #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+        pub enum Operator {
+            $($variant,)+
+        }
+        
+        impl fmt::Display for Operator {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                let display_bytes: &'static [u8] = match self {
+                    $(Self::$variant => $bytes,)+
+                };
 
-    fn try_from(buffer: &[u8]) -> Result<Self, Self::Error> {
-        Ok(match buffer {
-            // Relational
-            b"==" => Self::Equal,
-            b"!=" => Self::NotEqual,
-            b"<" => Self::Less,
-            b"<=" => Self::LessOrEqual,
-            b">" => Self::Greater,
-            b">=" => Self::GreaterOrEqual,
+                let display_str = unsafe {
+                    std::str::from_utf8_unchecked(display_bytes)
+                };
 
-            // Arithmetic
-            b"+" => Self::Addition,
-            b"-" => Self::Subtraction,
-            b"*" => Self::Multiplication,
-            b"/" => Self::Division,
-            b"%" => Self::Remainder,
+                f.write_str(display_str)
+            }
+        }
+        
+        impl TryFrom<&[u8]> for Operator {
+            type Error = InvalidOperator;
 
-            // Logical
-            b"!" => Self::Not,
-            b"||" => Self::Or,
-            b"&&" => Self::And,
-            b"||=" => Self::OrAssign,
-            b"&&=" => Self::AndAssign,
-
-            // Bitwise
-            b"~" => Self::BitwiseNot,
-            b"|" => Self::BitwiseOr,
-            b"&" => Self::BitwiseAnd,
-            b"^" => Self::BitwiseXor,
-
-            // Bitshift
-            b"<<" => Self::BitshitLeft,
-            b">>" => Self::BitshiftRight,
-
-            // Assignment
-            b":" => Self::Declaration,
-            b"=" => Self::Assignment,
-            b"+=" => Self::AdditionAssignment,
-            b"-=" => Self::SubtractionAssignment,
-            b"*=" => Self::MultiplicationAssignment,
-            b"/=" => Self::DivisionAssignment,
-            b"%=" => Self::RemainderAssignment,
-            b"|=" => Self::BitwiseOrAssign,
-            b"&=" => Self::BitwiseAndAssign,
-            b"^=" => Self::BitwiseXorAssign,
-            b"<<=" => Self::BitshiftLeftAssign,
-            b">>=" => Self::BitshiftRightAssign,
-
-            _ => return Err(InvalidOperator),
-        })
-    }
+            fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+                Ok(match bytes {
+                    $($bytes => Self::$variant,)+
+                    _ => return Err(InvalidOperator),
+                })
+            }
+        }
+    };
 }
+
+Operator! {
+    // Relational
+    Equal => b"==",
+    NotEqual => b"!=",
+    Less => b"<",
+    LessOrEqual => b"<=",
+    Greater => b">",
+    GreaterOrEqual => b">=",
+
+    // Arithmetic
+    Plus => b"+",
+    Minus => b"-",
+    Star => b"*",
+    Slash => b"/",
+    Modulo => b"%",
+
+    // Logical
+    LogicalOr => b"||",
+    LogicalAnd => b"&&",
+
+    // Bitwise
+    Not => b"!",
+    Or => b"|",
+    And => b"&",
+    Caret => b"^",
+
+    // Bitshift
+    ShiftLeft => b"<<",
+    ShiftRight => b">>",
+
+    // Assignment
+    Declaration => b":",
+    Assign => b"=",
+
+    PlusAssign => b"+=",
+    MinusAssign => b"-=",
+    StarAssign => b"*=",
+    SlashAssign => b"/=",
+    ModuloAssign => b"%=",
+
+    LogicalOrAssign => b"||=",
+    LogicalAndAssign => b"&&=",
+
+    OrAssign => b"|=",
+    AndAssign => b"&=",
+    XorAssign => b"^=",
+    ShiftLeftAssign => b"<<=",
+    ShiftRightAssign => b">>=",
+}
+
 
 pub fn is_operator_part(byte: u8) -> bool {
     OPERATOR_PARTS.contains(&byte)
