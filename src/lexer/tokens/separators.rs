@@ -18,7 +18,7 @@ macro_rules! Separator {
         pub enum Separator {
             $($variant,)+
         }
-        
+
         impl fmt::Display for Separator {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 let display_bytes = &[match self {
@@ -32,7 +32,7 @@ macro_rules! Separator {
                 f.write_str(display_str)
             }
         }
-        
+
         impl TryFrom<u8> for Separator {
             type Error = InvalidSeparator;
 
@@ -45,7 +45,6 @@ macro_rules! Separator {
         }
     };
 }
-
 
 Separator! {
     Semicolon => b';',

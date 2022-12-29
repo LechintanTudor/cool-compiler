@@ -22,7 +22,7 @@ macro_rules! Operator {
         pub enum Operator {
             $($variant,)+
         }
-        
+
         impl fmt::Display for Operator {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 let display_bytes: &'static [u8] = match self {
@@ -36,7 +36,7 @@ macro_rules! Operator {
                 f.write_str(display_str)
             }
         }
-        
+
         impl TryFrom<&[u8]> for Operator {
             type Error = InvalidOperator;
 
@@ -99,7 +99,6 @@ Operator! {
     ShiftLeftAssign => b"<<=",
     ShiftRightAssign => b">>=",
 }
-
 
 pub fn is_operator_part(byte: u8) -> bool {
     OPERATOR_PARTS.contains(&byte)

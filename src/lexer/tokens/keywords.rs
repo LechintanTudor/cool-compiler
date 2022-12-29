@@ -18,7 +18,7 @@ macro_rules! Keyword {
         pub enum Keyword {
             $($variant,)+
         }
-        
+
         impl fmt::Display for Keyword {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 let display_bytes: &'static [u8] = match self {
@@ -32,7 +32,7 @@ macro_rules! Keyword {
                 f.write_str(display_str)
             }
         }
-        
+
         impl TryFrom<&[u8]> for Keyword {
             type Error = InvalidKeyword;
 
