@@ -15,6 +15,5 @@ pub fn tokenize(source: &[u8]) -> anyhow::Result<(Vec<Token>, IdentifierTable, L
         scanner.consume(byte)?;
     }
 
-    scanner.consume(b'\n')?;
     Ok(scanner.into_program())
 }

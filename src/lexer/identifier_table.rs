@@ -1,22 +1,45 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-#[derive(Default)]
 pub struct IdentifierTable {
-    identifier_to_index: HashMap<Rc<str>, usize>,
+    identifier_to_index: HashMap<Rc<str>, u32>,
     identifiers: Vec<Rc<str>>,
 }
 
+impl Default for IdentifierTable {
+    fn default() -> Self {
+        let mut table = Self {
+            identifier_to_index: Default::default(),
+            identifiers: Default::default(),
+        };
+
+        table.insert("u8");
+        table.insert("i8");
+        table.insert("u16");
+        table.insert("i16");
+        table.insert("u32");
+        table.insert("i32");
+        table.insert("u64");
+        table.insert("i64");
+        table.insert("f32");
+        table.insert("f64");
+        table.insert("bool");
+        table.insert("char");
+
+        table
+    }
+}
+
 impl IdentifierTable {
-    pub fn insert(&mut self, identifier: &str) -> usize {
+    pub fn insert(&mut self, identifier: &str) -> u32 {
         if let Some(&index) = self.identifier_to_index.get(identifier) {
             return index;
         }
 
         let identifier = Rc::<str>::from(identifier);
-        let index = self.identifiers.len();
+        let index = self.identifiers.len() as u32;
 
-        self.identifiers.insert(index, Rc::clone(&identifier));
+        self.identifiers.push(Rc::clone(&identifier));
         self.identifier_to_index.insert(identifier, index);
 
         index

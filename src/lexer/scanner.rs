@@ -208,7 +208,7 @@ impl Scanner {
             Err(_) => {
                 let identifier = std::str::from_utf8(&self.buffer).unwrap();
                 let index = self.identifier_table.insert(identifier);
-                self.tokens.push(Token::Identifier { index })
+                self.tokens.push(Token::Ident { index })
             }
         }
 

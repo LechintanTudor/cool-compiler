@@ -47,7 +47,6 @@ macro_rules! Keyword {
 }
 
 Keyword! {
-    Bool => b"bool",
     Else => b"else",
     Enum => b"enum",
     False => b"false",

@@ -1,13 +1,13 @@
 mod identifier;
-mod keywords;
+mod keyword;
 mod literal;
-mod operators;
-mod separators;
-mod tokens;
+mod operator;
+mod separator;
+mod token;
 
 pub use self::identifier::*;
-pub use self::keywords::*;
+pub use self::keyword::*;
 pub use self::literal::*;
-pub use self::operators::*;
-pub use self::separators::*;
-pub use self::tokens::*;
+pub use self::operator::*;
+pub use self::separator::*;
+pub use self::token::*;

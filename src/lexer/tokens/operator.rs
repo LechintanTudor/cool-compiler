@@ -2,7 +2,7 @@ use std::error::Error;
 use std::fmt;
 
 const OPERATOR_PARTS: &[u8] = &[
-    b'=', b'!', b'<', b'>', b'+', b'-', b'*', b'/', b'%', b'|', b'&', b'~', b'^', b':',
+    b'=', b'!', b'<', b'>', b'+', b'-', b'*', b'/', b'%', b'|', b'&', b'~', b'^',
 ];
 
 #[derive(Clone, Debug)]
@@ -81,7 +81,6 @@ Operator! {
     ShiftRight => b">>",
 
     // Assignment
-    Declaration => b":",
     Assign => b"=",
 
     PlusAssign => b"+=",

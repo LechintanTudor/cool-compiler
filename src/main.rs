@@ -1,4 +1,6 @@
 mod lexer;
+mod parser;
+use crate::parser::Parser;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
@@ -18,11 +20,19 @@ fn main() -> ExitCode {
         }
     };
 
-    let (tokens, identifiers, literals) = match lexer::tokenize(&source) {
+    let (tokens, idents, literals) = match lexer::tokenize(&source) {
         Ok(tokens) => tokens,
         Err(error) => {
-            eprintln!("{}", error);
+            eprintln!("lexer error: {}", error);
             return ExitCode::from(3);
+        }
+    };
+
+    let root_ast = match Parser::new(&tokens, &idents, &literals).parse() {
+        Ok(root_ast) => root_ast,
+        Err(error) => {
+            eprintln!("parser error: {}", error);
+            return ExitCode::from(4);
         }
     };
 
@@ -32,14 +42,17 @@ fn main() -> ExitCode {
     }
 
     println!("\n[IDENTIFIERS]");
-    for identifier in identifiers.iter() {
-        println!("{:?}", identifier);
+    for ident in idents.iter() {
+        println!("{:?}", ident);
     }
 
     println!("\n[LITERALS]");
     for literal in literals.iter() {
         println!("{:?}", literal);
     }
+
+    println!("\n[ROOT AST]");
+    println!("{:#?}", root_ast);
 
     ExitCode::SUCCESS
 }

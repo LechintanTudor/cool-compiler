@@ -6,8 +6,25 @@ pub enum Token {
     Operator(Operator),
     Separator(Separator),
     Wildcard,
-    Identifier { index: usize },
-    Literal { index: usize },
+    Ident { index: u32 },
+    Literal { index: u32 },
+    Eof,
+}
+
+impl Token {
+    pub fn is<T>(&self, token: T) -> bool
+    where
+        T: Into<Token>,
+    {
+        self == &token.into()
+    }
+
+    pub fn as_ident_index(&self) -> Option<u32> {
+        match self {
+            Self::Ident { index } => Some(*index),
+            _ => None,
+        }
+    }
 }
 
 impl From<Keyword> for Token {
