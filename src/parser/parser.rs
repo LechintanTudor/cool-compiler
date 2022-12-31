@@ -1,5 +1,5 @@
 use crate::lexer::{IdentifierTable, LiteralTable, Token};
-use crate::parser::ast::RootAst;
+use crate::parser::RootAst;
 use std::iter::Peekable;
 use std::slice::Iter as SliceIter;
 

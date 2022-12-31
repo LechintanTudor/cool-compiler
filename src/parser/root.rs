@@ -1,5 +1,9 @@
-use crate::parser::ast::{FnAst, RootAst};
-use crate::parser::Parser;
+use crate::parser::{FnAst, Parser};
+
+#[derive(Clone, Debug)]
+pub struct RootAst {
+    pub fns: Vec<FnAst>,
+}
 
 impl Parser<'_> {
     pub fn parse_root(&mut self) -> anyhow::Result<RootAst> {

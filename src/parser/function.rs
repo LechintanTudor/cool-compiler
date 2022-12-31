@@ -1,49 +1,64 @@
-use crate::lexer::{Keyword, Separator};
-use crate::parser::ast::{FnArgAst, FnArgListAst, FnAst};
-use crate::parser::Parser;
-use anyhow::{bail, Ok};
+use crate::lexer::{Keyword, Separator, Token};
+use crate::parser::{Parser, TyAst};
+
+#[derive(Clone, Debug)]
+pub struct FnArgAst {
+    pub is_mutable: bool,
+    pub ident_index: u32,
+    pub ty: TyAst,
+}
+
+#[derive(Clone, Debug)]
+pub struct FnArgListAst {
+    pub args: Vec<FnArgAst>,
+}
+
+#[derive(Clone, Debug)]
+pub struct FnAst {
+    pub args: FnArgListAst,
+}
 
 impl Parser<'_> {
     pub fn parse_fn(&mut self) -> anyhow::Result<FnAst> {
         if !self.next().is(Keyword::Fn) {
-            bail!("missing 'fn' in function expression");
-        }
-
-        if !self.next().is(Separator::OpenParanthesis) {
-            bail!("missing '(' in function expression");
+            panic!("missing 'fn' in function expression");
         }
 
         let arg_list_ast = self.parse_fn_arg_list()?;
 
-        if !self.next().is(Separator::ClosedParanthesis) {
-            bail!("missing ')' in function expression");
-        }
-
         if !self.next().is(Separator::OpenBrace) {
-            bail!("missing '{{' in function expression");
+            panic!("missing '{{' in function expression");
         }
 
         if !self.next().is(Separator::ClosedBrace) {
-            bail!("missing '}}' in function expression");
+            panic!("missing '}}' in function expression");
         }
 
         Ok(FnAst { args: arg_list_ast })
     }
 
     pub fn parse_fn_arg_list(&mut self) -> anyhow::Result<FnArgListAst> {
+        if !self.consume_if_eq(Separator::OpenParanthesis) {
+            panic!("missing '(' in function argument list");
+        }
+
+        if self.consume_if_eq(Separator::ClosedParanthesis) {
+            return Ok(FnArgListAst { args: Vec::new() });
+        }
+
         let mut arg_list = Vec::<FnArgAst>::new();
 
         loop {
-            if self.peek().is(Separator::ClosedParanthesis) {
-                break;
-            }
-
             arg_list.push(self.parse_fn_arg()?);
 
-            if !self.consume_if_eq(Separator::Comma) {
-                if !self.peek().is(Separator::ClosedParanthesis) {
-                    bail!("mssing ')' at the end of function argument list");
+            match self.next() {
+                Token::Separator(Separator::Comma) => {
+                    if self.consume_if_eq(Separator::ClosedParanthesis) {
+                        break;
+                    }
                 }
+                Token::Separator(Separator::ClosedParanthesis) => break,
+                _ => panic!("unexpected token while parsing argument list"),
             }
         }
 
@@ -54,21 +69,21 @@ impl Parser<'_> {
         let is_mutable = self.consume_if_eq(Keyword::Mut);
 
         let Some(ident_index) = self.next().as_ident_index() else {
-            bail!("missing identifier in function argument");
+            panic!("missing identifier in function argument");
         };
 
         if !self.next().is(Separator::Colon) {
-            bail!("missing ':' in function argument");
+            panic!("missing ':' in function argument");
         }
 
-        let Some(type_ident_index) = self.next().as_ident_index() else {
-            bail!("missing type indentifier in function argument");
+        let Ok(ty) = self.parse_ty() else {
+            panic!("failed to parse type in function argument");
         };
 
         Ok(FnArgAst {
             is_mutable,
             ident_index,
-            type_ident_index,
+            ty,
         })
     }
 }
