@@ -13,7 +13,7 @@ impl fmt::Display for InvalidKeyword {
 }
 
 macro_rules! Keyword {
-    { $($variant:ident => $bytes:literal,)+ } => {
+    { $($variant:ident => $str:literal,)+ } => {
         #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
         pub enum Keyword {
             $($variant,)+
@@ -21,24 +21,20 @@ macro_rules! Keyword {
 
         impl fmt::Display for Keyword {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                let display_bytes: &'static [u8] = match self {
-                    $(Self::$variant => $bytes,)+
-                };
-
-                let display_str = unsafe {
-                    std::str::from_utf8_unchecked(display_bytes)
+                let display_str = match self {
+                    $(Self::$variant => $str,)+
                 };
 
                 f.write_str(display_str)
             }
         }
 
-        impl TryFrom<&[u8]> for Keyword {
+        impl TryFrom<&str> for Keyword {
             type Error = InvalidKeyword;
 
-            fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-                Ok(match bytes {
-                    $($bytes => Self::$variant,)+
+            fn try_from(str: &str) -> Result<Self, Self::Error> {
+                Ok(match str {
+                    $($str => Self::$variant,)+
                     _ => return Err(InvalidKeyword),
                 })
             }
@@ -47,13 +43,13 @@ macro_rules! Keyword {
 }
 
 Keyword! {
-    Else => b"else",
-    Enum => b"enum",
-    False => b"false",
-    Fn => b"fn",
-    If => b"if",
-    Mut => b"mut",
-    Struct => b"struct",
-    True => b"true",
-    While => b"while",
+    Else => "else",
+    Enum => "enum",
+    False => "false",
+    Fn => "fn",
+    If => "if",
+    Mut => "mut",
+    Struct => "struct",
+    True => "true",
+    While => "while",
 }

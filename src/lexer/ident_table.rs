@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-pub struct IdentifierTable {
+pub struct IdentTable {
     identifier_to_index: HashMap<Rc<str>, u32>,
     identifiers: Vec<Rc<str>>,
 }
 
-impl Default for IdentifierTable {
+impl Default for IdentTable {
     fn default() -> Self {
         let mut table = Self {
             identifier_to_index: Default::default(),
@@ -30,7 +30,7 @@ impl Default for IdentifierTable {
     }
 }
 
-impl IdentifierTable {
+impl IdentTable {
     pub fn insert(&mut self, identifier: &str) -> u32 {
         if let Some(&index) = self.identifier_to_index.get(identifier) {
             return index;

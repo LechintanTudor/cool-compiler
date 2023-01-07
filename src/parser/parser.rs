@@ -1,18 +1,18 @@
-use crate::lexer::{IdentifierTable, LiteralTable, Token};
+use crate::lexer::{IdentTable, LiteralTable, Token};
 use crate::parser::RootAst;
 use std::iter::Peekable;
 use std::slice::Iter as SliceIter;
 
 pub struct Parser<'a> {
     tokens: Peekable<SliceIter<'a, Token>>,
-    identifier_table: &'a IdentifierTable,
+    identifier_table: &'a IdentTable,
     literal_table: &'a LiteralTable,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(
         tokens: &'a [Token],
-        identifier_table: &'a IdentifierTable,
+        identifier_table: &'a IdentTable,
         literal_table: &'a LiteralTable,
     ) -> Self {
         Self {

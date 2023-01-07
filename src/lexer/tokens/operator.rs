@@ -1,8 +1,8 @@
 use std::error::Error;
 use std::fmt;
 
-const OPERATOR_PARTS: &[u8] = &[
-    b'=', b'!', b'<', b'>', b'+', b'-', b'*', b'/', b'%', b'|', b'&', b'~', b'^',
+const OPERATOR_PARTS: &[char] = &[
+    '=', '!', '<', '>', '+', '-', '*', '/', '%', '|', '&', '~', '^',
 ];
 
 #[derive(Clone, Debug)]
@@ -17,7 +17,7 @@ impl fmt::Display for InvalidOperator {
 }
 
 macro_rules! Operator {
-    { $($variant:ident => $bytes:literal,)+ } => {
+    { $($variant:ident => $str:literal,)+ } => {
         #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
         pub enum Operator {
             $($variant,)+
@@ -25,24 +25,20 @@ macro_rules! Operator {
 
         impl fmt::Display for Operator {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                let display_bytes: &'static [u8] = match self {
-                    $(Self::$variant => $bytes,)+
-                };
-
-                let display_str = unsafe {
-                    std::str::from_utf8_unchecked(display_bytes)
+                let display_str = match self {
+                    $(Self::$variant => $str,)+
                 };
 
                 f.write_str(display_str)
             }
         }
 
-        impl TryFrom<&[u8]> for Operator {
+        impl TryFrom<&str> for Operator {
             type Error = InvalidOperator;
 
-            fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-                Ok(match bytes {
-                    $($bytes => Self::$variant,)+
+            fn try_from(str: &str) -> Result<Self, Self::Error> {
+                Ok(match str {
+                    $($str => Self::$variant,)+
                     _ => return Err(InvalidOperator),
                 })
             }
@@ -52,53 +48,53 @@ macro_rules! Operator {
 
 Operator! {
     // Relational
-    Equal => b"==",
-    NotEqual => b"!=",
-    Less => b"<",
-    LessOrEqual => b"<=",
-    Greater => b">",
-    GreaterOrEqual => b">=",
+    Equal => "==",
+    NotEqual => "!=",
+    Less => "<",
+    LessOrEqual => "<=",
+    Greater => ">",
+    GreaterOrEqual => ">=",
 
     // Arithmetic
-    Plus => b"+",
-    Minus => b"-",
-    Star => b"*",
-    Slash => b"/",
-    Modulo => b"%",
+    Plus => "+",
+    Minus => "-",
+    Star => "*",
+    Slash => "/",
+    Modulo => "%",
 
     // Logical
-    LogicalOr => b"||",
-    LogicalAnd => b"&&",
+    LogicalOr => "||",
+    LogicalAnd => "&&",
 
     // Bitwise
-    Not => b"!",
-    Or => b"|",
-    And => b"&",
-    Caret => b"^",
+    Not => "!",
+    Or => "|",
+    And => "&",
+    Caret => "^",
 
     // Bitshift
-    ShiftLeft => b"<<",
-    ShiftRight => b">>",
+    ShiftLeft => "<<",
+    ShiftRight => ">>",
 
     // Assignment
-    Assign => b"=",
+    Assign => "=",
 
-    PlusAssign => b"+=",
-    MinusAssign => b"-=",
-    StarAssign => b"*=",
-    SlashAssign => b"/=",
-    ModuloAssign => b"%=",
+    PlusAssign => "+=",
+    MinusAssign => "-=",
+    StarAssign => "*=",
+    SlashAssign => "/=",
+    ModuloAssign => "%=",
 
-    LogicalOrAssign => b"||=",
-    LogicalAndAssign => b"&&=",
+    LogicalOrAssign => "||=",
+    LogicalAndAssign => "&&=",
 
-    OrAssign => b"|=",
-    AndAssign => b"&=",
-    XorAssign => b"^=",
-    ShiftLeftAssign => b"<<=",
-    ShiftRightAssign => b">>=",
+    OrAssign => "|=",
+    AndAssign => "&=",
+    XorAssign => "^=",
+    ShiftLeftAssign => "<<=",
+    ShiftRightAssign => ">>=",
 }
 
-pub fn is_operator_part(byte: u8) -> bool {
-    OPERATOR_PARTS.contains(&byte)
+pub fn is_operator_part(char: char) -> bool {
+    OPERATOR_PARTS.contains(&char)
 }

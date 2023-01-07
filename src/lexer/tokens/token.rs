@@ -5,7 +5,7 @@ pub enum Token {
     Keyword(Keyword),
     Operator(Operator),
     Separator(Separator),
-    Wildcard,
+    Underscore,
     Ident { index: u32 },
     Literal { index: u32 },
     Eof,

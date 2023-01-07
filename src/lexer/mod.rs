@@ -1,19 +1,13 @@
-mod identifier_table;
+mod ident_table;
 mod literal_table;
-mod scanner;
+mod source_char_iter;
+mod source_file;
+mod tokenizer;
 mod tokens;
 
-pub use self::identifier_table::*;
+pub use self::ident_table::*;
 pub use self::literal_table::*;
-pub use self::scanner::*;
+pub use self::source_char_iter::*;
+pub use self::source_file::*;
+pub use self::tokenizer::*;
 pub use self::tokens::*;
-
-pub fn tokenize(source: &[u8]) -> anyhow::Result<(Vec<Token>, IdentifierTable, LiteralTable)> {
-    let mut scanner = Scanner::default();
-
-    for &byte in source.iter() {
-        scanner.consume(byte)?;
-    }
-
-    Ok(scanner.into_program())
-}

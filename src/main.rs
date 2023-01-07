@@ -1,5 +1,8 @@
 mod lexer;
 mod parser;
+mod utils;
+
+use crate::lexer::SourceFile;
 use crate::parser::Parser;
 use std::process::ExitCode;
 
@@ -12,7 +15,7 @@ fn main() -> ExitCode {
     }
 
     let path = &args[0];
-    let source = match std::fs::read(path) {
+    let source = match std::fs::read_to_string(path) {
         Ok(source) => source,
         Err(error) => {
             eprintln!("{}", error);
@@ -20,39 +23,39 @@ fn main() -> ExitCode {
         }
     };
 
-    let (tokens, idents, literals) = match lexer::tokenize(&source) {
-        Ok(tokens) => tokens,
+    let source_file = match SourceFile::from_name_and_source(path.clone(), source) {
+        Ok(source_file) => source_file,
         Err(error) => {
-            eprintln!("lexer error: {}", error);
+            eprintln!("{}", error);
             return ExitCode::from(3);
         }
     };
 
-    let root_ast = match Parser::new(&tokens, &idents, &literals).parse() {
-        Ok(root_ast) => root_ast,
-        Err(error) => {
-            eprintln!("parser error: {}", error);
-            return ExitCode::from(4);
-        }
-    };
+    // let root_ast = match Parser::new(&tokens, &idents, &literals).parse() {
+    //     Ok(root_ast) => root_ast,
+    //     Err(error) => {
+    //         eprintln!("parser error: {}", error);
+    //         return ExitCode::from(4);
+    //     }
+    // };
 
     println!("[TOKEN]");
-    for token in tokens.iter() {
+    for token in source_file.spanned_tokens.iter() {
         println!("{:?}", token);
     }
 
     println!("\n[IDENTIFIERS]");
-    for ident in idents.iter() {
+    for ident in source_file.idents.iter() {
         println!("{:?}", ident);
     }
 
     println!("\n[LITERALS]");
-    for literal in literals.iter() {
+    for literal in source_file.literals.iter() {
         println!("{:?}", literal);
     }
 
-    println!("\n[ROOT AST]");
-    println!("{:#?}", root_ast);
+    // println!("\n[ROOT AST]");
+    // println!("{:#?}", root_ast);
 
     ExitCode::SUCCESS
 }
