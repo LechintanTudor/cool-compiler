@@ -10,7 +10,7 @@ pub enum TyAst {
 
 impl Parser<'_> {
     pub fn parse_ty(&mut self) -> anyhow::Result<TyAst> {
-        if self.peek().is(Separator::OpenParanthesis) {
+        if self.peek().is(Separator::OpenParen) {
             self.parse_tuple()
         } else if self.peek().is(Separator::OpenBracket) {
             self.parse_slice()
@@ -22,11 +22,11 @@ impl Parser<'_> {
     }
 
     fn parse_tuple(&mut self) -> anyhow::Result<TyAst> {
-        if !self.next().is(Separator::OpenParanthesis) {
+        if !self.next().is(Separator::OpenParen) {
             panic!("missing '(' in tuple type");
         }
 
-        if self.consume_if_eq(Separator::ClosedParanthesis) {
+        if self.consume_if_eq(Separator::ClosedParen) {
             return Ok(TyAst::Tuple { tys: Vec::new() });
         }
 
@@ -37,11 +37,11 @@ impl Parser<'_> {
 
             match self.next() {
                 Token::Separator(Separator::Comma) => {
-                    if self.consume_if_eq(Separator::ClosedParanthesis) {
+                    if self.consume_if_eq(Separator::ClosedParen) {
                         break;
                     }
                 }
-                Token::Separator(Separator::ClosedParanthesis) => {
+                Token::Separator(Separator::ClosedParen) => {
                     if tys.len() == 1 {
                         panic!("missing ',' in tuple of length 1");
                     }

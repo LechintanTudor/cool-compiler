@@ -95,6 +95,6 @@ Operator! {
     ShiftRightAssign => ">>=",
 }
 
-pub fn is_operator_part(char: char) -> bool {
+pub fn is_op_part(char: char) -> bool {
     OPERATOR_PARTS.contains(&char)
 }

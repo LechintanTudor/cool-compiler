@@ -105,7 +105,7 @@ impl<'a> Tokenizer<'a> {
             None
         } else if let Ok(separator) = Separator::try_from(char) {
             Some(SpannedToken::separator(offset, separator))
-        } else if lexer::is_operator_part(char) {
+        } else if lexer::is_op_part(char) {
             self.state = TokenizerState::Operator;
             self.token_start = offset;
             self.buffer.push(char);
@@ -132,7 +132,7 @@ impl<'a> Tokenizer<'a> {
             self.state = TokenizerState::IdentOrKeyword;
             self.buffer.push(char);
             None
-        } else if lexer::is_operator_part(char) {
+        } else if lexer::is_op_part(char) {
             let token = self.consume_buffer_as_underscore();
             self.state = TokenizerState::Operator;
             self.token_start = offset;
@@ -160,7 +160,7 @@ impl<'a> Tokenizer<'a> {
         Ok(if lexer::is_ident_continue(char) {
             self.buffer.push(char);
             None
-        } else if lexer::is_operator_part(char) {
+        } else if lexer::is_op_part(char) {
             let token = self.consume_buffer_as_ident_or_keyword(offset);
             self.state = TokenizerState::Operator;
             self.token_start = offset;
@@ -182,6 +182,16 @@ impl<'a> Tokenizer<'a> {
         })
     }
 
+    fn next_from_operator(&mut self, offset: u32, char: char) -> NextTokenResult {
+        if lexer::is_op_part(char) {
+            self.buffer.push(char);
+            // None
+        } else {
+        }
+
+        todo!()
+    }
+
     fn next_before_eof(&mut self) -> NextTokenResult {
         Ok(match self.state {
             TokenizerState::Default => None,
@@ -197,7 +207,7 @@ impl<'a> Tokenizer<'a> {
                     kind: TokenizerErrorKind::UnexpectedEof,
                 })
             }
-            _ => todo!(),
+            _ => panic!("{}: {:?}", self.current_line(), self.state),
         })
     }
 
@@ -225,6 +235,10 @@ impl<'a> Tokenizer<'a> {
 
         self.buffer.clear();
         SpannedToken::new(self.token_start, offset - self.token_start, token)
+    }
+
+    fn current_line(&mut self) -> u32 {
+        (self.line_offsets.len() + 1) as u32
     }
 }
 
@@ -267,7 +281,8 @@ impl Iterator for Tokenizer<'_> {
                 TokenizerState::Default => self.next_from_default(offset, char),
                 TokenizerState::Underscore => self.next_from_underscore(offset, char),
                 TokenizerState::IdentOrKeyword => self.next_from_ident_or_keyword(offset, char),
-                _ => continue,
+                TokenizerState::Operator => self.next_from_operator(offset, char),
+                _ => todo!(),
             };
 
             match token_result {

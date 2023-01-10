@@ -44,8 +44,35 @@ impl<'a> Parser<'a> {
             .unwrap_or(Token::Eof)
     }
 
+    pub fn peek_eq<T>(&mut self, token: T) -> bool
+    where
+        T: Into<Token>,
+    {
+        self.peek() == token.into()
+    }
+
     pub fn consume(&mut self) {
         self.next();
+    }
+
+    pub fn consume_ident(&mut self) -> Option<u32> {
+        let index = self.peek().as_ident_index();
+
+        if index.is_some() {
+            self.consume();
+        }
+
+        index
+    }
+
+    pub fn consume_lit(&mut self) -> Option<u32> {
+        let index = self.peek().as_lit_index();
+
+        if index.is_some() {
+            self.consume();
+        }
+
+        index
     }
 
     pub fn consume_if<F>(&mut self, f: F) -> bool

@@ -31,13 +31,19 @@ fn main() -> ExitCode {
         }
     };
 
-    // let root_ast = match Parser::new(&tokens, &idents, &literals).parse() {
-    //     Ok(root_ast) => root_ast,
-    //     Err(error) => {
-    //         eprintln!("parser error: {}", error);
-    //         return ExitCode::from(4);
-    //     }
-    // };
+    let tokens = source_file
+        .spanned_tokens
+        .iter()
+        .map(|spanned_token| spanned_token.token.clone())
+        .collect::<Vec<_>>();
+
+    let root_ast = match Parser::new(&tokens, &source_file.idents, &source_file.literals).parse() {
+        Ok(root_ast) => root_ast,
+        Err(error) => {
+            eprintln!("parser error: {}", error);
+            return ExitCode::from(4);
+        }
+    };
 
     println!("[TOKEN]");
     for token in source_file.spanned_tokens.iter() {
@@ -54,8 +60,8 @@ fn main() -> ExitCode {
         println!("{:?}", literal);
     }
 
-    // println!("\n[ROOT AST]");
-    // println!("{:#?}", root_ast);
+    println!("\n[ROOT AST]");
+    println!("{:#?}", root_ast);
 
     ExitCode::SUCCESS
 }

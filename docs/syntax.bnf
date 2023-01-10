@@ -19,3 +19,8 @@
 
 <module> ::= </>
            | <nonempty-module>
+
+<bin_op> ::= + | - | * | /
+
+<expr> ::= <ident>
+       ::= 

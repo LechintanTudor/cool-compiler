@@ -25,6 +25,13 @@ impl Token {
             _ => None,
         }
     }
+
+    pub fn as_lit_index(&self) -> Option<u32> {
+        match self {
+            Self::Literal { index } => Some(*index),
+            _ => None,
+        }
+    }
 }
 
 impl From<Keyword> for Token {

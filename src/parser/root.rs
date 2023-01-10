@@ -1,18 +1,19 @@
-use crate::parser::{FnAst, Parser};
+use crate::lexer::Token;
+use crate::parser::{Parser, StmtAst};
 
 #[derive(Clone, Debug)]
 pub struct RootAst {
-    pub fns: Vec<FnAst>,
+    pub stmts: Vec<StmtAst>,
 }
 
 impl Parser<'_> {
     pub fn parse_root(&mut self) -> anyhow::Result<RootAst> {
-        let mut fns = Vec::<FnAst>::new();
+        let mut stmts = Vec::new();
 
-        while !self.consume_if_eof() {
-            fns.push(self.parse_fn()?);
+        while !self.peek_eq(Token::Eof) {
+            stmts.push(self.parse_stmt()?);
         }
 
-        Ok(RootAst { fns })
+        Ok(RootAst { stmts })
     }
 }

@@ -38,11 +38,11 @@ impl Parser<'_> {
     }
 
     pub fn parse_fn_arg_list(&mut self) -> anyhow::Result<FnArgListAst> {
-        if !self.consume_if_eq(Separator::OpenParanthesis) {
+        if !self.consume_if_eq(Separator::OpenParen) {
             panic!("missing '(' in function argument list");
         }
 
-        if self.consume_if_eq(Separator::ClosedParanthesis) {
+        if self.consume_if_eq(Separator::ClosedParen) {
             return Ok(FnArgListAst { args: Vec::new() });
         }
 
@@ -53,11 +53,11 @@ impl Parser<'_> {
 
             match self.next() {
                 Token::Separator(Separator::Comma) => {
-                    if self.consume_if_eq(Separator::ClosedParanthesis) {
+                    if self.consume_if_eq(Separator::ClosedParen) {
                         break;
                     }
                 }
-                Token::Separator(Separator::ClosedParanthesis) => break,
+                Token::Separator(Separator::ClosedParen) => break,
                 _ => panic!("unexpected token while parsing argument list"),
             }
         }
