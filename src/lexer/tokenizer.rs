@@ -1,295 +1,217 @@
 use crate::lexer::{
-    self, IdentTable, Keyword, LiteralTable, Separator, SourceCharIter, SpannedToken, Token,
+    is_operator_part, Cursor, IdentTable, Keyword, LineOffsets, Literal, LiteralTable, Operator,
+    Separator, Token, TokenKind, EOF_CHAR,
 };
-use std::error::Error;
-use std::fmt;
-
-type NextTokenResult = Result<Option<SpannedToken>, TokenizerError>;
-
-#[derive(Clone, Debug)]
-pub struct TokenizerError {
-    pub offset: u32,
-    pub kind: TokenizerErrorKind,
-}
-
-impl Error for TokenizerError {}
-
-impl fmt::Display for TokenizerError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.kind {
-            TokenizerErrorKind::SourceTooLong => {
-                write!(f, "source file is too long")
-            }
-            TokenizerErrorKind::UnexpectedChar { char } => {
-                write!(f, "unexpected char {} at position {}", char, self.offset)
-            }
-            TokenizerErrorKind::UnexpectedEof => {
-                write!(f, "unexepected end of file")
-            }
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum TokenizerErrorKind {
-    SourceTooLong,
-    UnexpectedChar { char: char },
-    UnexpectedEof,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Default, Debug)]
-pub enum TokenizerState {
-    #[default]
-    Default,
-    Underscore,
-    IdentOrKeyword,
-    Integer,
-    String,
-    StringEscape,
-    Operator,
-    Separator(Separator),
-    Eof,
-    Terminated,
-}
 
 pub struct Tokenizer<'a> {
-    chars: SourceCharIter<'a>,
+    cursor: Cursor<'a>,
     source_len: u32,
-    state: TokenizerState,
-    terminated: bool,
-    token_start: u32,
-    buffer: String,
-    line_offsets: &'a mut Vec<u32>,
+    line_offsets: &'a mut LineOffsets,
     idents: &'a mut IdentTable,
     literals: &'a mut LiteralTable,
+    buffer: String,
 }
 
 impl<'a> Tokenizer<'a> {
     pub fn new(
         source: &'a str,
-        line_offsets: &'a mut Vec<u32>,
+        line_offsets: &'a mut LineOffsets,
         idents: &'a mut IdentTable,
         literals: &'a mut LiteralTable,
-    ) -> Result<Self, TokenizerError> {
-        if source.len() >= u32::MAX as usize {
-            return Err(TokenizerError {
-                offset: 0,
-                kind: TokenizerErrorKind::SourceTooLong,
-            });
-        }
-
-        Ok(Self {
-            chars: SourceCharIter::from(source),
+    ) -> Self {
+        Self {
+            cursor: Cursor::from(source),
             source_len: source.len() as u32,
-            state: Default::default(),
-            terminated: false,
-            token_start: 0,
-            buffer: String::new(),
             line_offsets,
             idents,
             literals,
-        })
-    }
-
-    fn next_from_default(&mut self, offset: u32, char: char) -> NextTokenResult {
-        debug_assert_eq!(self.state, TokenizerState::Default);
-
-        Ok(if char == '_' {
-            self.state = TokenizerState::Underscore;
-            self.token_start = offset;
-            self.buffer.push('_');
-            None
-        } else if char == '"' {
-            self.state = TokenizerState::String;
-            self.token_start = offset;
-            None
-        } else if let Ok(separator) = Separator::try_from(char) {
-            Some(SpannedToken::separator(offset, separator))
-        } else if lexer::is_op_part(char) {
-            self.state = TokenizerState::Operator;
-            self.token_start = offset;
-            self.buffer.push(char);
-            None
-        } else if unicode_ident::is_xid_start(char) {
-            self.state = TokenizerState::IdentOrKeyword;
-            self.token_start = offset;
-            self.buffer.push(char);
-            None
-        } else if char.is_whitespace() {
-            None
-        } else {
-            return Err(TokenizerError {
-                offset,
-                kind: TokenizerErrorKind::UnexpectedChar { char },
-            });
-        })
-    }
-
-    fn next_from_underscore(&mut self, offset: u32, char: char) -> NextTokenResult {
-        debug_assert_eq!(self.state, TokenizerState::Underscore);
-
-        Ok(if lexer::is_ident_continue(char) {
-            self.state = TokenizerState::IdentOrKeyword;
-            self.buffer.push(char);
-            None
-        } else if lexer::is_op_part(char) {
-            let token = self.consume_buffer_as_underscore();
-            self.state = TokenizerState::Operator;
-            self.token_start = offset;
-            self.buffer.push(char);
-            Some(token)
-        } else if let Ok(separator) = Separator::try_from(char) {
-            let token = self.consume_buffer_as_underscore();
-            self.set_separator(offset, separator);
-            Some(token)
-        } else if char.is_whitespace() {
-            let token = self.consume_buffer_as_underscore();
-            self.state = TokenizerState::Default;
-            Some(token)
-        } else {
-            return Err(TokenizerError {
-                offset,
-                kind: TokenizerErrorKind::UnexpectedChar { char },
-            });
-        })
-    }
-
-    fn next_from_ident_or_keyword(&mut self, offset: u32, char: char) -> NextTokenResult {
-        debug_assert_eq!(self.state, TokenizerState::IdentOrKeyword);
-
-        Ok(if lexer::is_ident_continue(char) {
-            self.buffer.push(char);
-            None
-        } else if lexer::is_op_part(char) {
-            let token = self.consume_buffer_as_ident_or_keyword(offset);
-            self.state = TokenizerState::Operator;
-            self.token_start = offset;
-            self.buffer.push(char);
-            Some(token)
-        } else if let Ok(separator) = Separator::try_from(char) {
-            let token = self.consume_buffer_as_ident_or_keyword(offset);
-            self.set_separator(offset, separator);
-            Some(token)
-        } else if char.is_whitespace() {
-            let token = self.consume_buffer_as_ident_or_keyword(offset);
-            self.state = TokenizerState::Default;
-            Some(token)
-        } else {
-            return Err(TokenizerError {
-                offset,
-                kind: TokenizerErrorKind::UnexpectedChar { char },
-            });
-        })
-    }
-
-    fn next_from_operator(&mut self, offset: u32, char: char) -> NextTokenResult {
-        if lexer::is_op_part(char) {
-            self.buffer.push(char);
-            // None
-        } else {
+            buffer: Default::default(),
         }
-
-        todo!()
     }
 
-    fn next_before_eof(&mut self) -> NextTokenResult {
-        Ok(match self.state {
-            TokenizerState::Default => None,
-            TokenizerState::Underscore => {
-                Some(SpannedToken::new(self.token_start, 1, Token::Underscore))
+    pub fn next_token(&mut self) -> Token {
+        let (offset, first_char) = self.cursor.bump_with_offset();
+
+        let token_kind = match first_char {
+            // Identifier or wildcard
+            '_' => {
+                if is_ident_continue(self.cursor.first()) {
+                    self.buffer.push(first_char);
+                    self.ident_or_keyword()
+                } else {
+                    TokenKind::Underscore
+                }
             }
-            TokenizerState::IdentOrKeyword => {
-                Some(self.consume_buffer_as_ident_or_keyword(self.source_len))
-            }
-            TokenizerState::String => {
-                return Err(TokenizerError {
-                    offset: self.source_len,
-                    kind: TokenizerErrorKind::UnexpectedEof,
-                })
-            }
-            _ => panic!("{}: {:?}", self.current_line(), self.state),
-        })
-    }
 
-    fn set_separator(&mut self, offset: u32, separator: Separator) {
-        self.token_start = offset;
-        self.state = TokenizerState::Separator(separator);
-    }
-
-    fn consume_buffer_as_underscore(&mut self) -> SpannedToken {
-        debug_assert_eq!(self.state, TokenizerState::Underscore);
-
-        self.buffer.clear();
-        SpannedToken::new(self.token_start, 1, Token::Underscore)
-    }
-
-    fn consume_buffer_as_ident_or_keyword(&mut self, offset: u32) -> SpannedToken {
-        debug_assert_eq!(self.state, TokenizerState::IdentOrKeyword);
-
-        let token = match Keyword::try_from(self.buffer.as_str()) {
-            Ok(keyword) => Token::Keyword(keyword),
-            Err(_) => Token::Ident {
-                index: self.idents.insert(&self.buffer),
+            '/' => match self.cursor.first() {
+                '/' => {
+                    self.cursor.bump();
+                    self.line_comment()
+                }
+                _ => {
+                    self.buffer.push(first_char);
+                    self.operator()
+                }
             },
+
+            // Identifier or keyword
+            _ if is_ident_start(first_char) => {
+                self.buffer.push(first_char);
+                self.ident_or_keyword()
+            }
+
+            // Operator
+            _ if is_operator_part(first_char) => {
+                self.buffer.push(first_char);
+                self.operator()
+            }
+
+            // Separators
+            ',' => Separator::Comma.into(),
+            ';' => Separator::Semi.into(),
+            '(' => Separator::OpenParen.into(),
+            ')' => Separator::ClosedParen.into(),
+            '[' => Separator::OpenBracket.into(),
+            ']' => Separator::ClosedBracket.into(),
+            '{' => Separator::OpenBrace.into(),
+            '}' => Separator::ClosedBrace.into(),
+
+            // Numbers
+            '0'..='9' => {
+                self.buffer.push(first_char);
+                self.number()
+            }
+
+            // Whitespace
+            _ if first_char.is_whitespace() => {
+                if first_char == '\n' {
+                    self.line_offsets.add(self.cursor.offset());
+                }
+
+                self.whitespace()
+            }
+
+            // End of file
+            EOF_CHAR => TokenKind::Eof,
+
+            // If nothing else matches, return the unknown token
+            _ => TokenKind::Unknown,
+        };
+
+        Token::new(offset, self.cursor.offset() - offset, token_kind)
+    }
+
+    fn ident_or_keyword(&mut self) -> TokenKind {
+        self.cursor.consume_while(|char| {
+            if !is_ident_continue(char) {
+                return false;
+            }
+
+            self.buffer.push(char);
+            true
+        });
+
+        let token = if let Ok(keyword) = Keyword::try_from(self.buffer.as_str()) {
+            TokenKind::Keyword(keyword)
+        } else {
+            let index = self.idents.insert(&self.buffer);
+            TokenKind::Ident { index }
         };
 
         self.buffer.clear();
-        SpannedToken::new(self.token_start, offset - self.token_start, token)
+        token
     }
 
-    fn current_line(&mut self) -> u32 {
-        (self.line_offsets.len() + 1) as u32
+    fn ident_or_wildcard(&mut self) -> TokenKind {
+        self.cursor.consume_while(|char| {
+            if !is_ident_continue(char) {
+                return false;
+            }
+
+            self.buffer.push(char);
+            true
+        });
+
+        let token = if self.buffer.len() == 1 {
+            TokenKind::Underscore
+        } else {
+            let index = self.idents.insert(&self.buffer);
+            TokenKind::Ident { index }
+        };
+
+        self.buffer.clear();
+        token
+    }
+
+    fn operator(&mut self) -> TokenKind {
+        let mut operator = Operator::try_from(self.buffer.as_str())
+            .expect("all operator parts are valid operators");
+
+        self.cursor.consume_while(|char| {
+            if !is_operator_part(char) {
+                return false;
+            }
+
+            self.buffer.push(char);
+
+            match Operator::try_from(self.buffer.as_str()) {
+                Ok(new_operator) => {
+                    operator = new_operator;
+                    true
+                }
+                Err(_) => false,
+            }
+        });
+
+        self.buffer.clear();
+        TokenKind::Operator(operator)
+    }
+
+    fn number(&mut self) -> TokenKind {
+        self.cursor.consume_while(|char| {
+            if !(('0'..='9').contains(&char) || char == '_') {
+                return false;
+            }
+
+            self.buffer.push(char);
+            true
+        });
+
+        let index = self.literals.insert(Literal::Integer(self.buffer.clone()));
+        self.buffer.clear();
+        TokenKind::Literal { index }
+    }
+
+    fn whitespace(&mut self) -> TokenKind {
+        loop {
+            let char = self.cursor.first();
+
+            if !char.is_whitespace() {
+                break;
+            }
+
+            self.cursor.bump();
+            self.line_offsets.add(self.cursor.offset());
+        }
+
+        TokenKind::Whitespace
+    }
+
+    fn line_comment(&mut self) -> TokenKind {
+        self.cursor.consume_while(|char| char != '\n');
+
+        if self.cursor.consume_if(|char| char == '\n') {
+            self.line_offsets.add(self.cursor.offset());
+        }
+
+        TokenKind::Comment
     }
 }
 
-impl Iterator for Tokenizer<'_> {
-    type Item = Result<SpannedToken, TokenizerError>;
+fn is_ident_start(char: char) -> bool {
+    unicode_ident::is_xid_start(char)
+}
 
-    fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            match self.state {
-                TokenizerState::Separator(separator) => {
-                    self.state = TokenizerState::Default;
-                    return Some(Ok(SpannedToken::separator(self.token_start, separator)));
-                }
-                TokenizerState::Eof => {
-                    self.state = TokenizerState::Terminated;
-                    return Some(Ok(SpannedToken::new(self.source_len, 0, Token::Eof)));
-                }
-                TokenizerState::Terminated => {
-                    return None;
-                }
-                _ => (),
-            }
-
-            let Some((offset, char)) = self.chars.next() else {
-                let token_result = self.next_before_eof();
-                self.state = TokenizerState::Eof;
-                
-                match token_result {
-                    Ok(Some(token)) => break Some(Ok(token)),
-                    Err(error) => break Some(Err(error)),
-                    _ => continue,
-                }
-            };
-
-            if char == '\n' {
-                self.line_offsets.push(offset);
-            }
-
-            let token_result = match self.state {
-                TokenizerState::Default => self.next_from_default(offset, char),
-                TokenizerState::Underscore => self.next_from_underscore(offset, char),
-                TokenizerState::IdentOrKeyword => self.next_from_ident_or_keyword(offset, char),
-                TokenizerState::Operator => self.next_from_operator(offset, char),
-                _ => todo!(),
-            };
-
-            match token_result {
-                Ok(Some(token)) => break Some(Ok(token)),
-                Err(error) => break Some(Err(error)),
-                _ => continue,
-            }
-        }
-    }
+fn is_ident_continue(char: char) -> bool {
+    unicode_ident::is_xid_continue(char) || char == '_'
 }

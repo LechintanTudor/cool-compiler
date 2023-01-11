@@ -1,4 +1,4 @@
-use crate::lexer::{Separator, Token};
+use crate::lexer::{Separator, TokenKind};
 use crate::parser::Parser;
 
 #[derive(Clone, Debug)]
@@ -36,12 +36,12 @@ impl Parser<'_> {
             tys.push(self.parse_ty()?);
 
             match self.next() {
-                Token::Separator(Separator::Comma) => {
+                TokenKind::Separator(Separator::Comma) => {
                     if self.consume_if_eq(Separator::ClosedParen) {
                         break;
                     }
                 }
-                Token::Separator(Separator::ClosedParen) => {
+                TokenKind::Separator(Separator::ClosedParen) => {
                     if tys.len() == 1 {
                         panic!("missing ',' in tuple of length 1");
                     }

@@ -1,36 +1,46 @@
-use crate::lexer::{IdentTable, LiteralTable, SpannedToken, Token, Tokenizer, TokenizerError};
+use crate::lexer::{IdentTable, LineOffsets, LiteralTable, Token, TokenKind, Tokenizer};
 
 pub struct SourceFile {
     pub name: String,
     pub source: String,
-    pub line_offsets: Vec<u32>,
+    pub line_offsets: LineOffsets,
     pub idents: IdentTable,
     pub literals: LiteralTable,
-    pub spanned_tokens: Vec<SpannedToken>,
+    pub tokens: Vec<Token>,
 }
 
 impl SourceFile {
-    pub fn from_name_and_source(name: String, source: String) -> Result<Self, TokenizerError> {
-        let mut line_offsets = Vec::<u32>::new();
+    pub fn from_name_and_source(name: String, source: String) -> Self {
+        let mut line_offsets = LineOffsets::default();
         let mut idents = IdentTable::default();
         let mut literals = LiteralTable::default();
 
-        let tokenizer = Tokenizer::new(&source, &mut line_offsets, &mut idents, &mut literals)?;
-        let spanned_tokens = tokenizer.collect::<Result<Vec<_>, _>>()?;
+        let mut tokenizer = Tokenizer::new(&source, &mut line_offsets, &mut idents, &mut literals);
+        let mut tokens = Vec::<Token>::new();
 
-        Ok(Self {
+        loop {
+            let token = tokenizer.next_token();
+            tokens.push(token);
+
+            if token.kind == TokenKind::Eof {
+                break;
+            }
+        }
+
+        Self {
             name,
             source,
             line_offsets,
             idents,
             literals,
-            spanned_tokens,
-        })
+            tokens,
+        }
     }
 
-    pub fn iter_tokens(&self) -> impl Iterator<Item = Token> + '_ {
-        self.spanned_tokens
+    pub fn iter_tokens(&self) -> impl Iterator<Item = TokenKind> + '_ {
+        self.tokens
             .iter()
-            .map(|spanned_token| spanned_token.token)
+            .map(|token| token.kind)
+            .filter(|&kind| kind != TokenKind::Whitespace)
     }
 }

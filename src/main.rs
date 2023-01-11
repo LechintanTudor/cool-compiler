@@ -1,9 +1,10 @@
+#![allow(dead_code)]
+
 mod lexer;
 mod parser;
 mod utils;
 
 use crate::lexer::SourceFile;
-use crate::parser::Parser;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
@@ -23,30 +24,29 @@ fn main() -> ExitCode {
         }
     };
 
-    let source_file = match SourceFile::from_name_and_source(path.clone(), source) {
-        Ok(source_file) => source_file,
-        Err(error) => {
-            eprintln!("{}", error);
-            return ExitCode::from(3);
-        }
-    };
+    let source_file = SourceFile::from_name_and_source(path.clone(), source);
 
-    let tokens = source_file
-        .spanned_tokens
-        .iter()
-        .map(|spanned_token| spanned_token.token.clone())
-        .collect::<Vec<_>>();
+    // let tokens = source_file
+    //     .tokens
+    //     .iter()
+    //     .map(|token| token.kind.clone())
+    //     .collect::<Vec<_>>();
 
-    let root_ast = match Parser::new(&tokens, &source_file.idents, &source_file.literals).parse() {
-        Ok(root_ast) => root_ast,
-        Err(error) => {
-            eprintln!("parser error: {}", error);
-            return ExitCode::from(4);
-        }
-    };
+    // let root_ast = match Parser::new(&tokens, &source_file.idents, &source_file.literals).parse() {
+    //     Ok(root_ast) => root_ast,
+    //     Err(error) => {
+    //         eprintln!("parser error: {}", error);
+    //         return ExitCode::from(4);
+    //     }
+    // };
+
+    println!("[LINE OFFSETS]");
+    for offset in source_file.line_offsets.as_slice() {
+        println!("{:?}", offset);
+    }
 
     println!("[TOKEN]");
-    for token in source_file.spanned_tokens.iter() {
+    for token in source_file.iter_tokens() {
         println!("{:?}", token);
     }
 
@@ -60,8 +60,8 @@ fn main() -> ExitCode {
         println!("{:?}", literal);
     }
 
-    println!("\n[ROOT AST]");
-    println!("{:#?}", root_ast);
+    // println!("\n[ROOT AST]");
+    // println!("{:#?}", root_ast);
 
     ExitCode::SUCCESS
 }

@@ -43,6 +43,9 @@ macro_rules! Keyword {
 }
 
 Keyword! {
+    Break => "break",
+    Continue => "continue",
+    Defer => "defer",
     Else => "else",
     Enum => "enum",
     False => "false",

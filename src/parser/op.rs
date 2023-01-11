@@ -60,15 +60,15 @@ impl TryFrom<Operator> for BinOp {
             Operator::Minus => Self::Sub,
             Operator::Star => Self::Mul,
             Operator::Slash => Self::Div,
-            Operator::Modulo => Self::Rem,
+            Operator::Percent => Self::Rem,
 
             // Relational
-            Operator::Equal => Self::Eq,
-            Operator::NotEqual => Self::NotEq,
+            Operator::Eq => Self::Eq,
+            Operator::NotEq => Self::NotEq,
             Operator::Less => Self::Less,
-            Operator::LessOrEqual => Self::LessOrEq,
+            Operator::LessOrEq => Self::LessOrEq,
             Operator::Greater => Self::Greater,
-            Operator::GreaterOrEqual => Self::GreaterOrEq,
+            Operator::GreaterOrEq => Self::GreaterOrEq,
 
             // Logical
             Operator::LogicalAnd => Self::And,
@@ -78,8 +78,8 @@ impl TryFrom<Operator> for BinOp {
             Operator::Or => Self::BitOr,
             Operator::And => Self::BitAnd,
             Operator::Caret => Self::Xor,
-            Operator::ShiftLeft => Self::Shl,
-            Operator::ShiftRight => Self::Shr,
+            Operator::Shl => Self::Shl,
+            Operator::Shr => Self::Shr,
 
             // Error
             _ => return Err(InvalidOpConversion),

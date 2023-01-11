@@ -44,8 +44,7 @@ macro_rules! Separator {
 
 Separator! {
     Comma => ',',
-    Colon => ':',
-    Semicolon => ';',
+    Semi => ';',
     OpenParen => '(',
     ClosedParen => ')',
     OpenBracket => '[',

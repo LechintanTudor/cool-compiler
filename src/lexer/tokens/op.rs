@@ -2,7 +2,7 @@ use std::error::Error;
 use std::fmt;
 
 const OPERATOR_PARTS: &[char] = &[
-    '=', '!', '<', '>', '+', '-', '*', '/', '%', '|', '&', '~', '^',
+    '=', '!', '<', '>', '+', '-', '*', '/', '%', '|', '&', '~', '^', ':',
 ];
 
 #[derive(Clone, Debug)]
@@ -21,6 +21,16 @@ macro_rules! Operator {
         #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
         pub enum Operator {
             $($variant,)+
+        }
+
+        impl Operator {
+            pub fn len(&self) -> u32 {
+                let len = match self {
+                    $(Self::$variant => $str.len(),)+
+                };
+
+                len as u32
+            }
         }
 
         impl fmt::Display for Operator {
@@ -48,19 +58,19 @@ macro_rules! Operator {
 
 Operator! {
     // Relational
-    Equal => "==",
-    NotEqual => "!=",
+    Eq => "==",
+    NotEq => "!=",
     Less => "<",
-    LessOrEqual => "<=",
+    LessOrEq => "<=",
     Greater => ">",
-    GreaterOrEqual => ">=",
+    GreaterOrEq => ">=",
 
     // Arithmetic
     Plus => "+",
     Minus => "-",
     Star => "*",
     Slash => "/",
-    Modulo => "%",
+    Percent => "%",
 
     // Logical
     LogicalOr => "||",
@@ -73,8 +83,8 @@ Operator! {
     Caret => "^",
 
     // Bitshift
-    ShiftLeft => "<<",
-    ShiftRight => ">>",
+    Shl => "<<",
+    Shr => ">>",
 
     // Assignment
     Assign => "=",
@@ -83,7 +93,7 @@ Operator! {
     MinusAssign => "-=",
     StarAssign => "*=",
     SlashAssign => "/=",
-    ModuloAssign => "%=",
+    PercentAssign => "%=",
 
     LogicalOrAssign => "||=",
     LogicalAndAssign => "&&=",
@@ -91,10 +101,16 @@ Operator! {
     OrAssign => "|=",
     AndAssign => "&=",
     XorAssign => "^=",
-    ShiftLeftAssign => "<<=",
-    ShiftRightAssign => ">>=",
+    ShlAssign => "<<=",
+    ShrAssign => ">>=",
+
+    // Access
+    Dot => ".",
+    Arrow => "->",
+    Colon => ":",
+    ColonColon => "::",
 }
 
-pub fn is_op_part(char: char) -> bool {
+pub fn is_operator_part(char: char) -> bool {
     OPERATOR_PARTS.contains(&char)
 }

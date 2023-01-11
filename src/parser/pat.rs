@@ -1,4 +1,4 @@
-use crate::lexer::{Keyword, Separator, Token};
+use crate::lexer::{Keyword, Separator, TokenKind};
 use crate::parser::Parser;
 
 #[derive(Clone, Debug)]
@@ -27,11 +27,11 @@ pub struct ArrayPatAst {
 
 impl Parser<'_> {
     pub fn parse_pat(&mut self) -> anyhow::Result<PatAst> {
-        if self.consume_if_eq(Token::Underscore) {
+        if self.consume_if_eq(TokenKind::Underscore) {
             Ok(PatAst::Wildcard)
         } else if self.peek_eq(Keyword::Mut) {
             self.parse_ident_pat().map(PatAst::Ident)
-        } else if matches!(self.peek(), Token::Ident { .. }) {
+        } else if matches!(self.peek(), TokenKind::Ident { .. }) {
             self.parse_ident_pat().map(PatAst::Ident)
         } else if self.peek_eq(Separator::OpenParen) {
             self.parse_tuple_pat().map(PatAst::Tuple)

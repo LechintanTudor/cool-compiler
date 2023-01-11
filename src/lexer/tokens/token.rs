@@ -1,53 +1,48 @@
-use crate::lexer::{Keyword, Operator, Separator};
+use crate::lexer::{Operator, Separator, TokenKind};
+use crate::utils::Span;
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Token {
-    Keyword(Keyword),
-    Operator(Operator),
-    Separator(Separator),
-    Underscore,
-    Ident { index: u32 },
-    Literal { index: u32 },
-    Eof,
+#[derive(Clone, Copy, Debug)]
+pub struct Token {
+    pub span: Span,
+    pub kind: TokenKind,
 }
 
 impl Token {
-    pub fn is<T>(&self, token: T) -> bool
+    pub fn new<K>(start: u32, len: u32, kind: K) -> Self
     where
-        T: Into<Token>,
+        K: Into<TokenKind>,
     {
-        self == &token.into()
-    }
-
-    pub fn as_ident_index(&self) -> Option<u32> {
-        match self {
-            Self::Ident { index } => Some(*index),
-            _ => None,
+        Self {
+            span: Span::new(start, len),
+            kind: kind.into(),
         }
     }
 
-    pub fn as_lit_index(&self) -> Option<u32> {
-        match self {
-            Self::Literal { index } => Some(*index),
-            _ => None,
+    pub fn separator(start: u32, separator: Separator) -> Self {
+        Self {
+            span: Span::new(start, 1),
+            kind: separator.into(),
         }
     }
-}
 
-impl From<Keyword> for Token {
-    fn from(keyword: Keyword) -> Self {
-        Self::Keyword(keyword)
+    pub fn operator(start: u32, operator: Operator) -> Self {
+        Self {
+            span: Span::new(start, operator.len()),
+            kind: operator.into(),
+        }
     }
-}
 
-impl From<Operator> for Token {
-    fn from(operator: Operator) -> Self {
-        Self::Operator(operator)
+    pub fn unknown(start: u32) -> Self {
+        Self {
+            span: Span::new(start, 1),
+            kind: TokenKind::Unknown,
+        }
     }
-}
 
-impl From<Separator> for Token {
-    fn from(separator: Separator) -> Self {
-        Self::Separator(separator)
+    pub fn eof(source_len: u32) -> Self {
+        Self {
+            span: Span::new(source_len, 0),
+            kind: TokenKind::Eof,
+        }
     }
 }

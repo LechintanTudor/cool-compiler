@@ -1,17 +1,17 @@
-use crate::lexer::{IdentTable, LiteralTable, Token};
+use crate::lexer::{IdentTable, LiteralTable, TokenKind};
 use crate::parser::RootAst;
 use std::iter::Peekable;
 use std::slice::Iter as SliceIter;
 
 pub struct Parser<'a> {
-    tokens: Peekable<SliceIter<'a, Token>>,
+    tokens: Peekable<SliceIter<'a, TokenKind>>,
     identifier_table: &'a IdentTable,
     literal_table: &'a LiteralTable,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(
-        tokens: &'a [Token],
+        tokens: &'a [TokenKind],
         identifier_table: &'a IdentTable,
         literal_table: &'a LiteralTable,
     ) -> Self {
@@ -26,27 +26,27 @@ impl<'a> Parser<'a> {
         self.parse_root()
     }
 
-    pub fn next(&mut self) -> Token {
-        self.tokens.next().copied().unwrap_or(Token::Eof)
+    pub fn next(&mut self) -> TokenKind {
+        self.tokens.next().copied().unwrap_or(TokenKind::Eof)
     }
 
     pub fn next_and<F>(&mut self, f: F) -> bool
     where
-        F: FnOnce(Token) -> bool,
+        F: FnOnce(TokenKind) -> bool,
     {
         f(self.next())
     }
 
-    pub fn peek(&mut self) -> Token {
+    pub fn peek(&mut self) -> TokenKind {
         self.tokens
             .peek()
             .map(|&&token| token)
-            .unwrap_or(Token::Eof)
+            .unwrap_or(TokenKind::Eof)
     }
 
     pub fn peek_eq<T>(&mut self, token: T) -> bool
     where
-        T: Into<Token>,
+        T: Into<TokenKind>,
     {
         self.peek() == token.into()
     }
@@ -77,7 +77,7 @@ impl<'a> Parser<'a> {
 
     pub fn consume_if<F>(&mut self, f: F) -> bool
     where
-        F: FnOnce(Token) -> bool,
+        F: FnOnce(TokenKind) -> bool,
     {
         if f(self.peek()) {
             self.consume();
@@ -89,7 +89,7 @@ impl<'a> Parser<'a> {
 
     pub fn consume_if_eq<T>(&mut self, token: T) -> bool
     where
-        T: Into<Token>,
+        T: Into<TokenKind>,
     {
         if self.peek() == token.into() {
             self.consume();
@@ -100,7 +100,7 @@ impl<'a> Parser<'a> {
     }
 
     pub fn consume_if_eof(&mut self) -> bool {
-        if self.peek().is(Token::Eof) {
+        if self.peek().is(TokenKind::Eof) {
             self.consume();
             true
         } else {

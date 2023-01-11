@@ -1,4 +1,4 @@
-use crate::lexer::Token;
+use crate::lexer::TokenKind;
 use crate::parser::{Parser, StmtAst};
 
 #[derive(Clone, Debug)]
@@ -10,7 +10,7 @@ impl Parser<'_> {
     pub fn parse_root(&mut self) -> anyhow::Result<RootAst> {
         let mut stmts = Vec::new();
 
-        while !self.peek_eq(Token::Eof) {
+        while !self.peek_eq(TokenKind::Eof) {
             stmts.push(self.parse_stmt()?);
         }
 

@@ -1,4 +1,4 @@
-use crate::lexer::{Keyword, Separator, Token};
+use crate::lexer::{Keyword, Operator, Separator, TokenKind};
 use crate::parser::{Parser, TyAst};
 
 #[derive(Clone, Debug)]
@@ -52,12 +52,12 @@ impl Parser<'_> {
             arg_list.push(self.parse_fn_arg()?);
 
             match self.next() {
-                Token::Separator(Separator::Comma) => {
+                TokenKind::Separator(Separator::Comma) => {
                     if self.consume_if_eq(Separator::ClosedParen) {
                         break;
                     }
                 }
-                Token::Separator(Separator::ClosedParen) => break,
+                TokenKind::Separator(Separator::ClosedParen) => break,
                 _ => panic!("unexpected token while parsing argument list"),
             }
         }
@@ -72,7 +72,7 @@ impl Parser<'_> {
             panic!("missing identifier in function argument");
         };
 
-        if !self.next().is(Separator::Colon) {
+        if !self.next().is(Operator::Colon) {
             panic!("missing ':' in function argument");
         }
 
