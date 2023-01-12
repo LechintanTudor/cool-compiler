@@ -42,12 +42,12 @@ fn main() -> ExitCode {
 
     println!("[LINE OFFSETS]");
     for offset in source_file.line_offsets.as_slice() {
-        println!("{:?}", offset);
+        println!("{}", offset);
     }
 
-    println!("[TOKEN]");
+    println!("\n[TOKENS]");
     for token in source_file.iter_tokens() {
-        println!("{:?}", token);
+        println!("{}", token);
     }
 
     println!("\n[IDENTIFIERS]");

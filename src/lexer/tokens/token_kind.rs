@@ -1,4 +1,5 @@
 use crate::lexer::{Keyword, Operator, Separator};
+use std::fmt;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum TokenKind {
@@ -33,6 +34,23 @@ impl TokenKind {
         match self {
             Self::Literal { index } => Some(*index),
             _ => None,
+        }
+    }
+}
+
+impl fmt::Display for TokenKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Unknown => write!(f, "<unknown>"),
+            Self::Keyword(keyword) => write!(f, "{}", keyword),
+            Self::Operator(operator) => write!(f, "{}", operator),
+            Self::Separator(separator) => write!(f, "{}", separator),
+            Self::Underscore => write!(f, "_"),
+            Self::Ident { index } => write!(f, "<ident {}>", index),
+            Self::Literal { index } => write!(f, "<literal {}>", index),
+            Self::Whitespace => write!(f, "<whitespace>"),
+            Self::Comment => write!(f, "<comment>"),
+            Self::Eof => write!(f, "<eof>"),
         }
     }
 }

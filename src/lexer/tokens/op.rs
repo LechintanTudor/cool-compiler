@@ -108,7 +108,6 @@ Operator! {
     Dot => ".",
     Arrow => "->",
     Colon => ":",
-    ColonColon => "::",
 }
 
 pub fn is_operator_part(char: char) -> bool {
