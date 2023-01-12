@@ -66,7 +66,7 @@ impl<'a> Parser<'a> {
     }
 
     pub fn consume_lit(&mut self) -> Option<u32> {
-        let index = self.peek().as_lit_index();
+        let index = self.peek().as_literal_index();
 
         if index.is_some() {
             self.consume();

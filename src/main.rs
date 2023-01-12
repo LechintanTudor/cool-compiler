@@ -46,8 +46,8 @@ fn main() -> ExitCode {
     }
 
     println!("\n[TOKENS]");
-    for token in source_file.iter_tokens() {
-        println!("{}", token);
+    for token in source_file.iter_lang_tokens() {
+        println!("{}", token.kind);
     }
 
     println!("\n[IDENTIFIERS]");

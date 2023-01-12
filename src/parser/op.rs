@@ -63,7 +63,7 @@ impl TryFrom<Operator> for BinOp {
             Operator::Percent => Self::Rem,
 
             // Relational
-            Operator::Eq => Self::Eq,
+            Operator::EqEq => Self::Eq,
             Operator::NotEq => Self::NotEq,
             Operator::Less => Self::Less,
             Operator::LessOrEq => Self::LessOrEq,
@@ -71,8 +71,8 @@ impl TryFrom<Operator> for BinOp {
             Operator::GreaterOrEq => Self::GreaterOrEq,
 
             // Logical
-            Operator::LogicalAnd => Self::And,
-            Operator::LogicalOr => Self::Or,
+            Operator::AndAnd => Self::And,
+            Operator::OrOr => Self::Or,
 
             // Bitwise
             Operator::Or => Self::BitOr,

@@ -37,10 +37,11 @@ impl SourceFile {
         }
     }
 
-    pub fn iter_tokens(&self) -> impl Iterator<Item = TokenKind> + '_ {
-        self.tokens
-            .iter()
-            .map(|token| token.kind)
-            .filter(|&kind| kind != TokenKind::Whitespace)
+    pub fn iter_all_tokens(&self) -> impl Iterator<Item = &Token> + '_ {
+        self.tokens.iter()
+    }
+
+    pub fn iter_lang_tokens(&self) -> impl Iterator<Item = &Token> + '_ {
+        self.tokens.iter().filter(|token| token.kind.is_lang_part())
     }
 }

@@ -2,7 +2,7 @@ use std::error::Error;
 use std::fmt;
 
 const OPERATOR_PARTS: &[char] = &[
-    '=', '!', '<', '>', '+', '-', '*', '/', '%', '|', '&', '~', '^', ':',
+    '!', '%', '&', '*', '+', '-', '/', ':', '<', '=', '>', '^', '|', '~',
 ];
 
 #[derive(Clone, Debug)]
@@ -58,7 +58,7 @@ macro_rules! Operator {
 
 Operator! {
     // Relational
-    Eq => "==",
+    EqEq => "==",
     NotEq => "!=",
     Less => "<",
     LessOrEq => "<=",
@@ -73,8 +73,8 @@ Operator! {
     Percent => "%",
 
     // Logical
-    LogicalOr => "||",
-    LogicalAnd => "&&",
+    OrOr => "||",
+    AndAnd => "&&",
 
     // Bitwise
     Not => "!",
@@ -87,22 +87,22 @@ Operator! {
     Shr => ">>",
 
     // Assignment
-    Assign => "=",
+    Eq => "=",
 
-    PlusAssign => "+=",
-    MinusAssign => "-=",
-    StarAssign => "*=",
-    SlashAssign => "/=",
-    PercentAssign => "%=",
+    PlusEq => "+=",
+    MinusEq => "-=",
+    StarEq => "*=",
+    SlashEq => "/=",
+    PercentEq => "%=",
 
-    LogicalOrAssign => "||=",
-    LogicalAndAssign => "&&=",
+    OrlOrEq => "||=",
+    AndAndEq => "&&=",
 
-    OrAssign => "|=",
-    AndAssign => "&=",
-    XorAssign => "^=",
-    ShlAssign => "<<=",
-    ShrAssign => ">>=",
+    OrEq => "|=",
+    AndEq => "&=",
+    CaretEq => "^=",
+    ShlEq => "<<=",
+    ShrEq => ">>=",
 
     // Access
     Dot => ".",

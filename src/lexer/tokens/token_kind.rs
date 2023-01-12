@@ -30,11 +30,15 @@ impl TokenKind {
         }
     }
 
-    pub fn as_lit_index(&self) -> Option<u32> {
+    pub fn as_literal_index(&self) -> Option<u32> {
         match self {
             Self::Literal { index } => Some(*index),
             _ => None,
         }
+    }
+
+    pub fn is_lang_part(&self) -> bool {
+        !matches!(self, Self::Comment | Self::Whitespace)
     }
 }
 

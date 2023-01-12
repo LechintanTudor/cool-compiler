@@ -21,13 +21,13 @@ impl Parser<'_> {
             panic!("missing ':' in declaration statement");
         }
 
-        let ty = if self.peek_eq(Operator::Eq) {
+        let ty = if self.peek_eq(Operator::EqEq) {
             None
         } else {
             Some(self.parse_ty()?)
         };
 
-        if !self.consume_if_eq(Operator::Eq) {
+        if !self.consume_if_eq(Operator::EqEq) {
             panic!("missing '=' in declaration statement");
         }
 
