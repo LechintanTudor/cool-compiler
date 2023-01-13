@@ -1,11 +1,9 @@
-mod keyword;
 mod literal;
 mod operator;
 mod separator;
 mod token;
 mod token_kind;
 
-pub use self::keyword::*;
 pub use self::literal::*;
 pub use self::operator::*;
 pub use self::separator::*;

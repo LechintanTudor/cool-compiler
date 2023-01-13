@@ -1,14 +1,13 @@
 use crate::lexer::{
-    is_operator_part, Cursor, IdentTable, Keyword, LineOffsets, Literal, LiteralTable, Operator,
-    Separator, Token, TokenKind, EOF_CHAR,
+    Cursor, LineOffsets, Literal, LiteralKind, Operator, Separator, Token, TokenKind, EOF_CHAR,
 };
+use crate::symbol::SymbolTable;
 
 pub struct Tokenizer<'a> {
     cursor: Cursor<'a>,
     source_len: u32,
     line_offsets: &'a mut LineOffsets,
-    idents: &'a mut IdentTable,
-    literals: &'a mut LiteralTable,
+    symbols: &'a mut SymbolTable,
     buffer: String,
 }
 
@@ -16,15 +15,13 @@ impl<'a> Tokenizer<'a> {
     pub fn new(
         source: &'a str,
         line_offsets: &'a mut LineOffsets,
-        idents: &'a mut IdentTable,
-        literals: &'a mut LiteralTable,
+        symbols: &'a mut SymbolTable,
     ) -> Self {
         Self {
             cursor: Cursor::from(source),
             source_len: source.len() as u32,
             line_offsets,
-            idents,
-            literals,
+            symbols,
             buffer: Default::default(),
         }
     }
@@ -33,16 +30,6 @@ impl<'a> Tokenizer<'a> {
         let (offset, first_char) = self.cursor.bump_with_offset();
 
         let token_kind = match first_char {
-            // Identifier or wildcard
-            '_' => {
-                if is_ident_continue(self.cursor.first()) {
-                    self.buffer.push(first_char);
-                    self.ident_or_keyword()
-                } else {
-                    TokenKind::Underscore
-                }
-            }
-
             '/' => match self.cursor.first() {
                 '/' => {
                     self.cursor.bump();
@@ -111,32 +98,12 @@ impl<'a> Tokenizer<'a> {
             true
         });
 
-        let token = if let Ok(keyword) = Keyword::try_from(self.buffer.as_str()) {
-            TokenKind::Keyword(keyword)
+        let symbol = self.symbols.insert(&self.buffer);
+
+        let token = if symbol.is_keyword() {
+            TokenKind::Keyword(symbol)
         } else {
-            let index = self.idents.insert(&self.buffer);
-            TokenKind::Ident { index }
-        };
-
-        self.buffer.clear();
-        token
-    }
-
-    fn ident_or_wildcard(&mut self) -> TokenKind {
-        self.cursor.consume_while(|char| {
-            if !is_ident_continue(char) {
-                return false;
-            }
-
-            self.buffer.push(char);
-            true
-        });
-
-        let token = if self.buffer.len() == 1 {
-            TokenKind::Underscore
-        } else {
-            let index = self.idents.insert(&self.buffer);
-            TokenKind::Ident { index }
+            TokenKind::Ident(symbol)
         };
 
         self.buffer.clear();
@@ -177,9 +144,13 @@ impl<'a> Tokenizer<'a> {
             true
         });
 
-        let index = self.literals.insert(Literal::Integer(self.buffer.clone()));
+        let symbol = self.symbols.insert(&self.buffer);
         self.buffer.clear();
-        TokenKind::Literal { index }
+
+        TokenKind::Literal(Literal {
+            kind: LiteralKind::Integer,
+            symbol,
+        })
     }
 
     fn whitespace(&mut self) -> TokenKind {
@@ -191,7 +162,10 @@ impl<'a> Tokenizer<'a> {
             }
 
             self.cursor.bump();
-            self.line_offsets.add(self.cursor.offset());
+
+            if char == '\n' {
+                self.line_offsets.add(self.cursor.offset());
+            }
         }
 
         TokenKind::Whitespace
@@ -209,9 +183,17 @@ impl<'a> Tokenizer<'a> {
 }
 
 fn is_ident_start(char: char) -> bool {
-    unicode_ident::is_xid_start(char)
+    unicode_ident::is_xid_start(char) || char == '_'
 }
 
 fn is_ident_continue(char: char) -> bool {
     unicode_ident::is_xid_continue(char) || char == '_'
+}
+
+pub fn is_operator_part(char: char) -> bool {
+    const OPERATOR_PARTS: &[char] = &[
+        '!', '%', '&', '*', '+', '-', '/', ':', '<', '=', '>', '^', '|',
+    ];
+
+    OPERATOR_PARTS.contains(&char)
 }

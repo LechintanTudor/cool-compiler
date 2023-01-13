@@ -1,10 +1,6 @@
 use std::error::Error;
 use std::fmt;
 
-const OPERATOR_PARTS: &[char] = &[
-    '!', '%', '&', '*', '+', '-', '/', ':', '<', '=', '>', '^', '|', '~',
-];
-
 #[derive(Clone, Debug)]
 pub struct InvalidOperator;
 
@@ -95,9 +91,6 @@ Operator! {
     SlashEq => "/=",
     PercentEq => "%=",
 
-    OrlOrEq => "||=",
-    AndAndEq => "&&=",
-
     OrEq => "|=",
     AndEq => "&=",
     CaretEq => "^=",
@@ -108,8 +101,4 @@ Operator! {
     Dot => ".",
     Arrow => "->",
     Colon => ":",
-}
-
-pub fn is_operator_part(char: char) -> bool {
-    OPERATOR_PARTS.contains(&char)
 }

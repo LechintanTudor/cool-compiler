@@ -1,21 +1,20 @@
-use crate::lexer::{IdentTable, LineOffsets, LiteralTable, Token, TokenKind, Tokenizer};
+use crate::lexer::{LineOffsets, Token, TokenKind, Tokenizer};
+use crate::symbol::SymbolTable;
 
 pub struct SourceFile {
     pub name: String,
     pub source: String,
     pub line_offsets: LineOffsets,
-    pub idents: IdentTable,
-    pub literals: LiteralTable,
+    pub symbols: SymbolTable,
     pub tokens: Vec<Token>,
 }
 
 impl SourceFile {
     pub fn from_name_and_source(name: String, source: String) -> Self {
         let mut line_offsets = LineOffsets::default();
-        let mut idents = IdentTable::default();
-        let mut literals = LiteralTable::default();
+        let mut symbols = SymbolTable::default();
 
-        let mut tokenizer = Tokenizer::new(&source, &mut line_offsets, &mut idents, &mut literals);
+        let mut tokenizer = Tokenizer::new(&source, &mut line_offsets, &mut symbols);
         let mut tokens = Vec::<Token>::new();
 
         loop {
@@ -31,8 +30,7 @@ impl SourceFile {
             name,
             source,
             line_offsets,
-            idents,
-            literals,
+            symbols,
             tokens,
         }
     }

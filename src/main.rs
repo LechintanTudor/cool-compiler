@@ -1,7 +1,8 @@
 #![allow(dead_code)]
 
 mod lexer;
-mod parser;
+mod parser2;
+mod symbol;
 mod utils;
 
 use crate::lexer::SourceFile;
@@ -26,12 +27,6 @@ fn main() -> ExitCode {
 
     let source_file = SourceFile::from_name_and_source(path.clone(), source);
 
-    // let tokens = source_file
-    //     .tokens
-    //     .iter()
-    //     .map(|token| token.kind.clone())
-    //     .collect::<Vec<_>>();
-
     // let root_ast = match Parser::new(&tokens, &source_file.idents, &source_file.literals).parse() {
     //     Ok(root_ast) => root_ast,
     //     Err(error) => {
@@ -50,14 +45,9 @@ fn main() -> ExitCode {
         println!("{}", token.kind);
     }
 
-    println!("\n[IDENTIFIERS]");
-    for ident in source_file.idents.iter() {
-        println!("{:?}", ident);
-    }
-
-    println!("\n[LITERALS]");
-    for literal in source_file.literals.iter() {
-        println!("{:?}", literal);
+    println!("\n[SYMBOLS]");
+    for symbols in source_file.symbols.iter() {
+        println!("{}", symbols);
     }
 
     // println!("\n[ROOT AST]");
