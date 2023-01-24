@@ -1,6 +1,6 @@
 use crate::lexer::Token;
-use crate::parser2::error::ParseResult;
-use crate::parser2::parser::Parser;
+use crate::parser::error::ParseResult;
+use crate::parser::parser::Parser;
 
 #[derive(Clone, Debug)]
 pub struct IdentAst {

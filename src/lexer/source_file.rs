@@ -1,20 +1,18 @@
 use crate::lexer::{LineOffsets, Token, TokenKind, Tokenizer};
-use crate::symbol::SymbolTable;
+use crate::symbol::SYMBOL_TABLE;
 
 pub struct SourceFile {
     pub name: String,
     pub source: String,
     pub line_offsets: LineOffsets,
-    pub symbols: SymbolTable,
     pub tokens: Vec<Token>,
 }
 
 impl SourceFile {
     pub fn from_name_and_source(name: String, source: String) -> Self {
+        let mut symbol_table = SYMBOL_TABLE.write_inner();
         let mut line_offsets = LineOffsets::default();
-        let mut symbols = SymbolTable::default();
-
-        let mut tokenizer = Tokenizer::new(&source, &mut line_offsets, &mut symbols);
+        let mut tokenizer = Tokenizer::new(&source, &mut line_offsets, &mut symbol_table);
         let mut tokens = Vec::<Token>::new();
 
         loop {
@@ -30,7 +28,6 @@ impl SourceFile {
             name,
             source,
             line_offsets,
-            symbols,
             tokens,
         }
     }

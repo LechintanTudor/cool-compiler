@@ -56,6 +56,7 @@ impl<'a> Tokenizer<'a> {
             // Separators
             ',' => Separator::Comma.into(),
             ';' => Separator::Semi.into(),
+            ':' => Separator::Colon.into(),
             '(' => Separator::OpenParen.into(),
             ')' => Separator::ClosedParen.into(),
             '[' => Separator::OpenBracket.into(),
@@ -112,7 +113,7 @@ impl<'a> Tokenizer<'a> {
 
     fn operator(&mut self) -> TokenKind {
         let mut operator = Operator::try_from(self.buffer.as_str())
-            .expect("all operator parts are valid operators");
+            .expect("all operator parts mut be valid operators");
 
         self.cursor.consume_while(|char| {
             if !is_operator_part(char) {
@@ -192,7 +193,7 @@ fn is_ident_continue(char: char) -> bool {
 
 pub fn is_operator_part(char: char) -> bool {
     const OPERATOR_PARTS: &[char] = &[
-        '!', '%', '&', '*', '+', '-', '/', ':', '<', '=', '>', '^', '|',
+        '!', '%', '&', '*', '+', '-', '/', '<', '=', '>', '^', '|', '.',
     ];
 
     OPERATOR_PARTS.contains(&char)

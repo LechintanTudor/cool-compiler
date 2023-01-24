@@ -1,3 +1,4 @@
+use crate::symbol::SYMBOL_TABLE;
 use std::fmt;
 
 pub type SymbolIndex = u32;
@@ -17,11 +18,7 @@ impl Symbol {
 
 impl fmt::Display for Symbol {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.is_keyword() {
-            write!(f, "{}", kw::ALL[self.0 as usize])
-        } else {
-            write!(f, "<ident {}>", self.0)
-        }
+        write!(f, "{}", SYMBOL_TABLE.get(*self))
     }
 }
 
@@ -36,7 +33,7 @@ macro_rules! kw_module {
                 pub const $kw: SymbolIndex = $idx;
             )+
 
-            pub(crate) fn add_keywords(symbols: &mut SymbolTable) {
+            pub(crate) fn intern_keywords(symbols: &mut SymbolTable) {
                 $({
                     let symbol = symbols.insert($repr);
                     assert!(symbol.0 == $idx);

@@ -15,11 +15,9 @@ pub struct Literal {
 
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let kind_str = match self.kind {
-            LiteralKind::Integer => "integer",
-            LiteralKind::String => "string",
-        };
-
-        write!(f, "<{} {}>", kind_str, self.symbol.0)
+        match self.kind {
+            LiteralKind::Integer => write!(f, "{}", self.symbol),
+            LiteralKind::String => write!(f, "\"{}\"", self.symbol),
+        }
     }
 }

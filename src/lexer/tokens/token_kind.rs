@@ -33,7 +33,7 @@ impl fmt::Display for TokenKind {
         match self {
             Self::Unknown => write!(f, "<unknown>"),
             Self::Keyword(symbol) => fmt::Display::fmt(symbol, f),
-            Self::Ident(symbol) => write!(f, "<ident {}>", symbol.0),
+            Self::Ident(symbol) => fmt::Display::fmt(symbol, f),
             Self::Literal(literal) => fmt::Display::fmt(literal, f),
             Self::Operator(operator) => write!(f, "{}", operator),
             Self::Separator(separator) => write!(f, "{}", separator),

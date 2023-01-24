@@ -100,5 +100,4 @@ Operator! {
     // Access
     Dot => ".",
     Arrow => "->",
-    Colon => ":",
 }

@@ -1,11 +1,12 @@
 #![allow(dead_code)]
 
 mod lexer;
-mod parser2;
+mod parser;
 mod symbol;
 mod utils;
 
 use crate::lexer::SourceFile;
+use crate::symbol::SYMBOL_TABLE;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
@@ -27,14 +28,6 @@ fn main() -> ExitCode {
 
     let source_file = SourceFile::from_name_and_source(path.clone(), source);
 
-    // let root_ast = match Parser::new(&tokens, &source_file.idents, &source_file.literals).parse() {
-    //     Ok(root_ast) => root_ast,
-    //     Err(error) => {
-    //         eprintln!("parser error: {}", error);
-    //         return ExitCode::from(4);
-    //     }
-    // };
-
     println!("[LINE OFFSETS]");
     for offset in source_file.line_offsets.as_slice() {
         println!("{}", offset);
@@ -46,12 +39,9 @@ fn main() -> ExitCode {
     }
 
     println!("\n[SYMBOLS]");
-    for symbols in source_file.symbols.iter() {
+    for symbols in SYMBOL_TABLE.read_inner().iter() {
         println!("{}", symbols);
     }
-
-    // println!("\n[ROOT AST]");
-    // println!("{:#?}", root_ast);
 
     ExitCode::SUCCESS
 }

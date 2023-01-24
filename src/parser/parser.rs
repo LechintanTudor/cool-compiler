@@ -1,5 +1,5 @@
 use crate::lexer::Token;
-use crate::parser2::root::RootAst;
+use crate::parser::root::RootAst;
 
 pub struct Parser<T> {
     tokens: T,
@@ -13,9 +13,11 @@ where
         Self { tokens }
     }
 
+    pub fn bump(&mut self) -> Token {
+        self.tokens.next().unwrap_or(Token::eof(0))
+    }
+
     pub fn parse(&mut self) -> RootAst {
         todo!()
     }
-
-    // pub fn bump()
 }
