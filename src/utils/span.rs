@@ -5,6 +5,10 @@ pub struct Span {
 }
 
 impl Span {
+    pub const fn empty() -> Self {
+        Self { start: 0, len: 0 }
+    }
+
     pub fn new(start: u32, len: u32) -> Self {
         Self { start, len }
     }
@@ -14,5 +18,13 @@ impl Span {
             start,
             len: end - start,
         }
+    }
+
+    pub fn from_start_and_end_spans(start_span: Span, end_span: Span) -> Self {
+        Self::from_start_and_end(start_span.start, end_span.end())
+    }
+
+    pub fn end(&self) -> u32 {
+        self.start + self.len
     }
 }

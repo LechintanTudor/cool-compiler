@@ -1,4 +1,4 @@
-use crate::symbol::{kw, InternedStr, Symbol};
+use crate::symbol::{sym, InternedStr, Symbol};
 use bumpalo::Bump;
 use rustc_hash::FxHashMap;
 
@@ -21,7 +21,7 @@ impl SymbolTable {
 
     pub fn with_preinterned_keywords() -> Self {
         let mut symbols = Self::empty();
-        kw::intern_keywords(&mut symbols);
+        sym::intern_keywords(&mut symbols);
         symbols
     }
 

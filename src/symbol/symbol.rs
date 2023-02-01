@@ -8,11 +8,11 @@ pub struct Symbol(pub SymbolIndex);
 
 impl Symbol {
     pub fn is_keyword(&self) -> bool {
-        self.0 <= kw::WHILE
+        self <= &sym::WHILE
     }
 
     pub fn is_bool_literal(&self) -> bool {
-        self.0 == kw::FALSE || self.0 == kw::TRUE
+        self == &sym::FALSE || self == &sym::TRUE
     }
 }
 
@@ -22,15 +22,15 @@ impl fmt::Display for Symbol {
     }
 }
 
-macro_rules! kw_module {
+macro_rules! const_module {
     { $($kw:ident => ($idx:literal, $repr:literal),)+ } => {
-        pub mod kw {
-            use crate::symbol::{SymbolIndex, SymbolTable};
+        pub mod sym {
+            use crate::symbol::{Symbol, SymbolTable};
 
             pub const ALL: &[&str] = &[$($repr,)+];
 
             $(
-                pub const $kw: SymbolIndex = $idx;
+                pub const $kw: Symbol = Symbol($idx);
             )+
 
             pub(crate) fn intern_keywords(symbols: &mut SymbolTable) {
@@ -40,10 +40,19 @@ macro_rules! kw_module {
                 })+
             }
         }
+
+        pub mod kw {
+            use crate::lexer::TokenKind;
+            use crate::symbol::Symbol;
+
+            $(
+                pub const $kw: TokenKind = TokenKind::Keyword(Symbol($idx));
+            )+
+        }
     };
 }
 
-kw_module! {
+const_module! {
     BREAK => (0, "break"),
     CONTINUE => (1, "continue"),
     DEFER => (2, "defer"),

@@ -1,5 +1,5 @@
 use crate::utils::Span;
 
-pub trait Ast {
+pub trait ParseTree {
     fn span(&self) -> Span;
 }

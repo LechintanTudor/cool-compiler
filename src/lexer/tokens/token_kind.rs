@@ -44,6 +44,16 @@ impl fmt::Display for TokenKind {
     }
 }
 
+impl From<Symbol> for TokenKind {
+    fn from(symbol: Symbol) -> Self {
+        if symbol.is_keyword() {
+            Self::Keyword(symbol)
+        } else {
+            Self::Ident(symbol)
+        }
+    }
+}
+
 impl From<Operator> for TokenKind {
     fn from(operator: Operator) -> Self {
         Self::Operator(operator)

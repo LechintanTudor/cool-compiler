@@ -6,6 +6,7 @@ mod symbol;
 mod utils;
 
 use crate::lexer::SourceFile;
+use crate::parser::Parser;
 use crate::symbol::SYMBOL_TABLE;
 use std::process::ExitCode;
 
@@ -33,15 +34,30 @@ fn main() -> ExitCode {
         println!("{}", offset);
     }
 
+    println!("\n[SYMBOLS]");
+    for symbols in SYMBOL_TABLE.read_inner().iter() {
+        println!("{}", symbols);
+    }
+
     println!("\n[TOKENS]");
     for token in source_file.iter_lang_tokens() {
         println!("{}", token.kind);
     }
 
-    println!("\n[SYMBOLS]");
-    for symbols in SYMBOL_TABLE.read_inner().iter() {
-        println!("{}", symbols);
-    }
+    let mut parser = Parser::new(
+        source_file.iter_lang_tokens(),
+        source_file.source.len() as u32,
+    );
+    let module = match parser.parse_module() {
+        Ok(module) => module,
+        Err(error) => {
+            eprintln!("{}", error);
+            return ExitCode::from(3);
+        }
+    };
+
+    println!("\n[MODULE]");
+    println!("{:#?}", module);
 
     ExitCode::SUCCESS
 }

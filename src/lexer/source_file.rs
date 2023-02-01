@@ -32,11 +32,10 @@ impl SourceFile {
         }
     }
 
-    pub fn iter_all_tokens(&self) -> impl Iterator<Item = &Token> + '_ {
-        self.tokens.iter()
-    }
-
-    pub fn iter_lang_tokens(&self) -> impl Iterator<Item = &Token> + '_ {
-        self.tokens.iter().filter(|token| token.kind.is_lang_part())
+    pub fn iter_lang_tokens(&self) -> impl Iterator<Item = Token> + '_ {
+        self.tokens
+            .iter()
+            .filter(|token| token.kind.is_lang_part())
+            .copied()
     }
 }

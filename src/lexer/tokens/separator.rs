@@ -39,6 +39,18 @@ macro_rules! Separator {
                 })
             }
         }
+
+        pub mod sep {
+            use crate::lexer::{Separator, TokenKind};
+            use paste::paste;
+
+            paste! {
+                $(
+                    pub const [<$variant:snake:upper>]: TokenKind
+                        = TokenKind::Separator(Separator::$variant);
+                )+
+            }
+        }
     };
 }
 
