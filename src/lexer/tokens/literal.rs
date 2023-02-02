@@ -3,7 +3,8 @@ use std::fmt;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum LiteralKind {
-    Integer,
+    Integer { suffix: Option<Symbol> },
+    Boolean,
     String,
 }
 
@@ -16,7 +17,13 @@ pub struct Literal {
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.kind {
-            LiteralKind::Integer => write!(f, "{}", self.symbol),
+            LiteralKind::Integer { suffix: None } => write!(f, "{}", self.symbol),
+            LiteralKind::Integer {
+                suffix: Some(suffix),
+            } => {
+                write!(f, "{}{}", self.symbol, suffix)
+            }
+            LiteralKind::Boolean => write!(f, "{}", self.symbol),
             LiteralKind::String => write!(f, "\"{}\"", self.symbol),
         }
     }

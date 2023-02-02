@@ -44,6 +44,8 @@ macro_rules! Separator {
             use crate::lexer::{Separator, TokenKind};
             use paste::paste;
 
+            pub const ALL: &[char] = &[$($char,)+];
+
             paste! {
                 $(
                     pub const [<$variant:snake:upper>]: TokenKind

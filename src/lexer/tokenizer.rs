@@ -1,5 +1,5 @@
 use crate::lexer::{
-    Cursor, LineOffsets, Literal, LiteralKind, Operator, Separator, Token, TokenKind, EOF_CHAR,
+    sep, Cursor, LineOffsets, Literal, LiteralKind, Operator, Separator, Token, TokenKind, EOF_CHAR,
 };
 use crate::symbol::SymbolTable;
 
@@ -41,10 +41,10 @@ impl<'a> Tokenizer<'a> {
                 }
             },
 
-            // Identifier or keyword
+            // Identifier or keyword or bool literal
             _ if is_ident_start(first_char) => {
                 self.buffer.push(first_char);
-                self.ident_or_keyword()
+                self.ident_or_keyword_or_bool_literal()
             }
 
             // Operator
@@ -89,7 +89,7 @@ impl<'a> Tokenizer<'a> {
         Token::new(offset, self.cursor.offset() - offset, token_kind)
     }
 
-    fn ident_or_keyword(&mut self) -> TokenKind {
+    fn ident_or_keyword_or_bool_literal(&mut self) -> TokenKind {
         self.cursor.consume_while(|char| {
             if !is_ident_continue(char) {
                 return false;
@@ -102,7 +102,14 @@ impl<'a> Tokenizer<'a> {
         let symbol = self.symbols.insert(&self.buffer);
 
         let token = if symbol.is_keyword() {
-            TokenKind::Keyword(symbol)
+            if symbol.is_bool_literal() {
+                TokenKind::Literal(Literal {
+                    kind: LiteralKind::Boolean,
+                    symbol,
+                })
+            } else {
+                TokenKind::Keyword(symbol)
+            }
         } else {
             TokenKind::Ident(symbol)
         };
@@ -146,10 +153,27 @@ impl<'a> Tokenizer<'a> {
         });
 
         let symbol = self.symbols.insert(&self.buffer);
+
+        let suffix_start = self.buffer.len();
+        self.cursor.consume_while(|char| {
+            if char.is_whitespace() || is_separator(char) || is_operator_part(char) {
+                return false;
+            }
+
+            self.buffer.push(char);
+            true
+        });
+
+        let suffix = if suffix_start != self.buffer.len() {
+            Some(self.symbols.insert(&self.buffer[suffix_start..]))
+        } else {
+            None
+        };
+
         self.buffer.clear();
 
         TokenKind::Literal(Literal {
-            kind: LiteralKind::Integer,
+            kind: LiteralKind::Integer { suffix },
             symbol,
         })
     }
@@ -191,7 +215,11 @@ fn is_ident_continue(char: char) -> bool {
     unicode_ident::is_xid_continue(char) || char == '_'
 }
 
-pub fn is_operator_part(char: char) -> bool {
+fn is_separator(char: char) -> bool {
+    sep::ALL.contains(&char)
+}
+
+fn is_operator_part(char: char) -> bool {
     const OPERATOR_PARTS: &[char] = &[
         '!', '%', '&', '*', '+', '-', '/', '<', '=', '>', '^', '|', '.',
     ];

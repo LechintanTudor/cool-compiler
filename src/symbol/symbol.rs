@@ -8,11 +8,15 @@ pub struct Symbol(pub SymbolIndex);
 
 impl Symbol {
     pub fn is_keyword(&self) -> bool {
-        self <= &sym::WHILE
+        *self <= sym::WHILE
     }
 
     pub fn is_bool_literal(&self) -> bool {
-        self == &sym::FALSE || self == &sym::TRUE
+        *self == sym::FALSE || *self == sym::TRUE
+    }
+
+    pub fn is_known_suffix(&self) -> bool {
+        *self >= sym::I8 && *self <= sym::F64
     }
 }
 
@@ -22,22 +26,30 @@ impl fmt::Display for Symbol {
     }
 }
 
-macro_rules! const_module {
-    { $($kw:ident => ($idx:literal, $repr:literal),)+ } => {
+macro_rules! define_symbols {
+    { $($kw:ident => $idx:literal,)+ } => {
         pub mod sym {
             use crate::symbol::{Symbol, SymbolTable};
+            use paste::paste;
 
-            pub const ALL: &[&str] = &[$($repr,)+];
+            paste! {
+                pub const ALL: &[&str] = &[$(
+                    stringify!([<$kw:lower>]),
+                )+];
+            }
 
             $(
                 pub const $kw: Symbol = Symbol($idx);
             )+
 
             pub(crate) fn intern_keywords(symbols: &mut SymbolTable) {
-                $({
-                    let symbol = symbols.insert($repr);
-                    assert!(symbol.0 == $idx);
-                })+
+                paste! {
+                    $({
+                        let symbol_str = stringify!([<$kw:lower>]);
+                        let symbol = symbols.insert(symbol_str);
+                        assert!(symbol.0 == $idx);
+                    })+
+                }
             }
         }
 
@@ -52,20 +64,38 @@ macro_rules! const_module {
     };
 }
 
-const_module! {
-    BREAK => (0, "break"),
-    CONTINUE => (1, "continue"),
-    DEFER => (2, "defer"),
-    ELSE => (3, "else"),
-    ENUM => (4, "enum"),
-    EXPORT => (5, "export"),
-    FALSE => (6, "false"),
-    FN => (7, "fn"),
-    IF => (8, "if"),
-    IMPORT => (9, "import"),
-    MODULE => (10, "module"),
-    MUT => (11, "mut"),
-    STRUCT => (12, "struct"),
-    TRUE => (13, "true"),
-    WHILE => (14, "while"),
+define_symbols! {
+    // Keywords
+    BREAK => 0,
+    CONTINUE => 1,
+    DEFER => 2,
+    ELSE => 3,
+    ENUM => 4,
+    EXPORT => 5,
+    FALSE => 6,
+    FN => 7,
+    IF => 8,
+    IMPORT => 9,
+    MODULE => 10,
+    MUT => 11,
+    STRUCT => 12,
+    TRUE => 13,
+    WHILE => 14,
+
+    // Primitives
+    I8 => 15,
+    I16 => 16,
+    I32 => 17,
+    I64 => 18,
+
+    U8 => 19,
+    U16 => 20,
+    U32 => 21,
+    U64 => 22,
+
+    ISIZE => 23,
+    USIZE => 24,
+
+    F32 => 25,
+    F64 => 26,
 }
