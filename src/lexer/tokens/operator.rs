@@ -49,6 +49,18 @@ macro_rules! Operator {
                 })
             }
         }
+
+        pub mod op {
+            use crate::lexer::{Operator, TokenKind};
+            use paste::paste;
+
+            paste! {
+                $(
+                    pub const [<$variant:snake:upper>]: TokenKind
+                        = TokenKind::Operator(Operator::$variant);
+                )+
+            }
+        }
     };
 }
 
