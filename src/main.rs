@@ -48,7 +48,7 @@ fn main() -> ExitCode {
         source_file.iter_lang_tokens(),
         source_file.source.len() as u32,
     );
-    let module = match parser.parse_module() {
+    let module = match parser.parse_module_item() {
         Ok(module) => module,
         Err(error) => {
             eprintln!("{}", error);

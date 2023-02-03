@@ -1,10 +1,10 @@
 use crate::lexer::{sep, Token, TokenKind};
-use crate::parser::{ParseResult, Parser, UnexpectedToken};
+use crate::parser::{ParseResult, Parser, Stmt, UnexpectedToken};
 use crate::symbol::{kw, Symbol};
 use crate::utils::Span;
 
 #[derive(Clone, Debug)]
-pub struct FnExpr {
+pub struct FnItem {
     pub span: Span,
     pub arg_list: FnArgList,
     pub body: FnBody,
@@ -28,19 +28,20 @@ pub struct FnArg {
 #[derive(Clone, Debug)]
 pub struct FnBody {
     pub span: Span,
+    pub stmts: Vec<Stmt>,
 }
 
 impl<T> Parser<T>
 where
     T: Iterator<Item = Token>,
 {
-    pub fn parse_fn(&mut self) -> ParseResult<FnExpr> {
+    pub fn parse_fn_item(&mut self) -> ParseResult<FnItem> {
         let start_token = self.bump_expect(&[kw::FN])?;
         let arg_list = self.parse_fn_arg_list()?;
         let body = self.parse_fn_body()?;
         let span = Span::from_start_and_end_spans(start_token.span, body.span);
 
-        Ok(FnExpr {
+        Ok(FnItem {
             span,
             arg_list,
             body,
@@ -148,17 +149,19 @@ where
             })?;
         }
 
-        let end_token = self.bump();
+        let mut stmts = Vec::<Stmt>::new();
 
-        if end_token.kind != sep::CLOSED_BRACE {
-            return Err(UnexpectedToken {
-                found: start_token,
-                expected: &[sep::CLOSED_BRACE],
-            })?;
-        }
+        let end_token = loop {
+            if self.peek().kind == sep::CLOSED_BRACE {
+                break self.bump();
+            }
+
+            let stmt = self.parse_stmt()?;
+            stmts.push(stmt);
+        };
 
         let span = Span::from_start_and_end_spans(start_token.span, end_token.span);
 
-        Ok(FnBody { span })
+        Ok(FnBody { span, stmts })
     }
 }

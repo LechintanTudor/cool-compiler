@@ -1,6 +1,6 @@
-use crate::lexer::{Token, TokenKind, sep, op};
-use crate::parser::{Expr, Parser, ParseResult, UnexpectedToken};
-use crate::symbol::{Symbol, kw};
+use crate::lexer::{op, sep, Token, TokenKind};
+use crate::parser::{Expr, ParseResult, Parser, UnexpectedToken};
+use crate::symbol::{kw, Symbol};
 use crate::utils::Span;
 
 #[derive(Clone, Debug)]
@@ -18,7 +18,7 @@ where
 {
     pub fn parse_decl_stmt(&mut self) -> ParseResult<DeclStmt> {
         let start_token = self.bump();
-        
+
         let (is_mutable, ident_span, ident) = match start_token.kind {
             kw::MUT => {
                 let next_token = self.bump();
@@ -49,7 +49,7 @@ where
         let semi = self.bump_expect(&[sep::SEMI])?;
 
         let span = Span::from_start_and_end_spans(start_token.span, semi.span);
-        
+
         Ok(DeclStmt {
             span,
             is_mutable,
