@@ -1,5 +1,5 @@
 use crate::lexer::{Token, TokenKind};
-use crate::parser::{ParseResult, Parser, ItemDecl};
+use crate::parser::{ItemDecl, ParseResult, Parser};
 use crate::utils::Span;
 
 #[derive(Clone, Debug)]

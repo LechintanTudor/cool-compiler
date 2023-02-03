@@ -1,5 +1,6 @@
-use crate::lexer::{LineOffsets, Token, TokenKind, Tokenizer};
+use crate::lexer::{Token, TokenKind, Tokenizer};
 use crate::symbol::SYMBOL_TABLE;
+use crate::utils::LineOffsets;
 
 pub struct SourceFile {
     pub name: String,

@@ -1,4 +1,5 @@
 use crate::lexer::{Token, TokenKind};
+use crate::utils::Span;
 use std::error::Error;
 use std::fmt;
 
@@ -7,6 +8,14 @@ pub type ParseResult<T> = Result<T, ParseError>;
 #[derive(Clone, Debug)]
 pub enum ParseError {
     UnexpectedToken(UnexpectedToken),
+}
+
+impl ParseError {
+    pub fn span(&self) -> Span {
+        match self {
+            Self::UnexpectedToken(error) => error.found.span,
+        }
+    }
 }
 
 impl Error for ParseError {
@@ -43,9 +52,8 @@ impl fmt::Display for UnexpectedToken {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Unexpected token '{}' at position {}. Expected one of: {}.",
+            "Unexpected token '{}'. Expected one of: {}.",
             self.found.kind,
-            self.found.span.start,
             TokenKindListDisplayer(self.expected),
         )
     }

@@ -51,7 +51,8 @@ fn main() -> ExitCode {
     let module = match parser.parse_module_item() {
         Ok(module) => module,
         Err(error) => {
-            eprintln!("{}", error);
+            let line = source_file.line_offsets.to_line(error.span().start);
+            eprintln!("\nError on line {}: {}", line, error);
             return ExitCode::from(3);
         }
     };

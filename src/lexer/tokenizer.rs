@@ -1,7 +1,8 @@
 use crate::lexer::{
-    sep, Cursor, LineOffsets, Literal, LiteralKind, Operator, Separator, Token, TokenKind, EOF_CHAR,
+    sep, Cursor, Literal, LiteralKind, Operator, Separator, Token, TokenKind, EOF_CHAR,
 };
 use crate::symbol::SymbolTable;
+use crate::utils::LineOffsets;
 
 pub struct Tokenizer<'a> {
     cursor: Cursor<'a>,
