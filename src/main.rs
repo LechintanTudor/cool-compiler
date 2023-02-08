@@ -1,8 +1,10 @@
 #![allow(dead_code)]
 
+mod ast;
 mod lexer;
 mod parser;
 mod symbol;
+mod ty;
 mod utils;
 
 use crate::lexer::SourceFile;
