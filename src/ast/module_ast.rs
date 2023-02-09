@@ -8,25 +8,3 @@ pub struct ModuleAst {
     pub name: Symbol,
     pub items: Vec<ItemAst>,
 }
-
-/*
-utils :: module {
-    export heyooo :: fn() {
-        println("Heyooo");
-    };
-};
-
-main :: fn() {
-    import utils.heyooo;
-
-    import {
-        utils.heyooo as bababoooo,
-        utils.{self, heyooo as huuuuu};
-    };
-
-    i32 ::  utils.String;
-
-    utils.heyooo();
-}
-
-*/

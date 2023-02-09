@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0"
 bumpalo = "3.11"
+clap = "4.1"
 lazy_static = "1.4"
 llvm-sys = "150"
 paste = "1.0"

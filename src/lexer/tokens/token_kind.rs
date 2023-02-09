@@ -23,6 +23,14 @@ impl TokenKind {
         self == &token.into()
     }
 
+    pub fn is_keyword(&self) -> bool {
+        matches!(self, Self::Keyword(_))
+    }
+
+    pub fn is_ident(&self) -> bool {
+        matches!(self, Self::Ident(_))
+    }
+
     pub fn is_lang_part(&self) -> bool {
         !matches!(self, Self::Comment | Self::Whitespace)
     }

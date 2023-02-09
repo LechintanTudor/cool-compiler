@@ -1,5 +1,5 @@
-use crate::lexer::{sep, Token, TokenKind};
-use crate::parser::{ParseResult, Parser, Stmt, UnexpectedToken};
+use crate::lexer::{op, sep, Token, TokenKind};
+use crate::parser::{ParseResult, Parser, Stmt, Ty, UnexpectedToken};
 use crate::symbol::{kw, Symbol};
 use crate::utils::Span;
 
@@ -7,6 +7,7 @@ use crate::utils::Span;
 pub struct FnItem {
     pub span: Span,
     pub arg_list: FnArgList,
+    pub return_ty: Option<Ty>,
     pub body: FnBody,
 }
 
@@ -38,12 +39,20 @@ where
     pub fn parse_fn_item(&mut self) -> ParseResult<FnItem> {
         let start_token = self.bump_expect(&[kw::FN])?;
         let arg_list = self.parse_fn_arg_list()?;
+
+        let return_ty = if self.peek().kind == op::ARROW {
+            self.bump();
+            Some(self.parse_ty()?)
+        } else {
+            None
+        };
+
         let body = self.parse_fn_body()?;
-        let span = Span::from_start_and_end_spans(start_token.span, body.span);
 
         Ok(FnItem {
-            span,
+            span: Span::from_start_and_end_spans(start_token.span, body.span),
             arg_list,
+            return_ty,
             body,
         })
     }
