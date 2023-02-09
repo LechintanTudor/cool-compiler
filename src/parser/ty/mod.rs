@@ -43,7 +43,7 @@ where
                 return Err(UnexpectedToken {
                     found: start_token,
                     expected: &[sep::OPEN_PAREN],
-                })?
+                })?;
             }
         })
     }
@@ -65,6 +65,7 @@ where
         }
 
         while self.peek().kind == op::DOT {
+            self.bump_expect(&[op::DOT])?;
             let token = self.bump();
 
             if let TokenKind::Ident(ident) = token.kind {
