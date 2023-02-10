@@ -1,4 +1,4 @@
-use crate::lexer::{sep, Token, TokenKind};
+use crate::lexer::{tk, Token, TokenKind};
 use crate::parser::{FnItem, ParseResult, Parser, UnexpectedToken};
 use crate::symbol::Symbol;
 use crate::utils::Span;
@@ -27,14 +27,17 @@ where
             }
         };
 
-        self.bump_expect(&[sep::COLON])?;
-        self.bump_expect(&[sep::COLON])?;
+        self.bump_expect(&[tk::COLON])?;
+        self.bump_expect(&[tk::COLON])?;
 
         let expr = self.parse_fn_item()?;
 
-        let end_token = self.bump_expect(&[sep::SEMI])?;
-        let span = Span::from_start_and_end_spans(start_token.span, end_token.span);
+        let end_token = self.bump_expect(&[tk::SEMICOLON])?;
 
-        Ok(ItemDecl { span, ident, expr })
+        Ok(ItemDecl {
+            span: start_token.span.to(end_token.span),
+            ident,
+            expr,
+        })
     }
 }

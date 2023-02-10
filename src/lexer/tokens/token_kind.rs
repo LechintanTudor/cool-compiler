@@ -1,4 +1,4 @@
-use crate::lexer::{Literal, Operator, Separator};
+use crate::lexer::{Literal, Punctuation};
 use crate::symbol::Symbol;
 use std::fmt;
 
@@ -8,32 +8,21 @@ pub enum TokenKind {
     Keyword(Symbol),
     Ident(Symbol),
     Literal(Literal),
-    Operator(Operator),
-    Separator(Separator),
+    Punctuation(Punctuation),
     Whitespace,
     Comment,
     Eof,
 }
 
 impl TokenKind {
-    pub fn is<T>(&self, token: T) -> bool
-    where
-        T: Into<TokenKind>,
-    {
-        self == &token.into()
-    }
-
-    pub fn is_keyword(&self) -> bool {
-        matches!(self, Self::Keyword(_))
-    }
-
-    pub fn is_ident(&self) -> bool {
-        matches!(self, Self::Ident(_))
-    }
-
     pub fn is_lang_part(&self) -> bool {
         !matches!(self, Self::Comment | Self::Whitespace)
     }
+}
+
+pub mod tk {
+    pub use crate::lexer::pct::*;
+    pub use crate::symbol::kw::*;
 }
 
 impl fmt::Display for TokenKind {
@@ -43,8 +32,7 @@ impl fmt::Display for TokenKind {
             Self::Keyword(symbol) => fmt::Display::fmt(symbol, f),
             Self::Ident(symbol) => fmt::Display::fmt(symbol, f),
             Self::Literal(literal) => fmt::Display::fmt(literal, f),
-            Self::Operator(operator) => write!(f, "{}", operator),
-            Self::Separator(separator) => write!(f, "{}", separator),
+            Self::Punctuation(punctuation) => fmt::Display::fmt(punctuation, f),
             Self::Whitespace => write!(f, "<whitespace>"),
             Self::Comment => write!(f, "<comment>"),
             Self::Eof => write!(f, "<eof>"),
@@ -62,14 +50,8 @@ impl From<Symbol> for TokenKind {
     }
 }
 
-impl From<Operator> for TokenKind {
-    fn from(operator: Operator) -> Self {
-        Self::Operator(operator)
-    }
-}
-
-impl From<Separator> for TokenKind {
-    fn from(separator: Separator) -> Self {
-        Self::Separator(separator)
+impl From<Punctuation> for TokenKind {
+    fn from(punctuation: Punctuation) -> Self {
+        Self::Punctuation(punctuation)
     }
 }

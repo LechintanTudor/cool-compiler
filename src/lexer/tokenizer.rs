@@ -1,8 +1,6 @@
-use crate::lexer::{
-    sep, Cursor, Literal, LiteralKind, Operator, Separator, Token, TokenKind, EOF_CHAR,
-};
+use crate::lexer::{Cursor, Literal, LiteralKind, Punctuation, Token, TokenKind, EOF_CHAR};
 use crate::symbol::SymbolTable;
-use crate::utils::LineOffsets;
+use crate::utils::{LineOffsets, Span};
 
 pub struct Tokenizer<'a> {
     cursor: Cursor<'a>,
@@ -30,64 +28,32 @@ impl<'a> Tokenizer<'a> {
     pub fn next_token(&mut self) -> Token {
         let (offset, first_char) = self.cursor.bump_with_offset();
 
-        let token_kind = match first_char {
-            '/' => match self.cursor.first() {
-                '/' => {
-                    self.cursor.bump();
-                    self.line_comment()
-                }
-                _ => {
-                    self.buffer.push(first_char);
-                    self.operator()
-                }
-            },
-
-            // Identifier or keyword or bool literal
-            _ if is_ident_start(first_char) => {
-                self.buffer.push(first_char);
-                self.ident_or_keyword_or_bool_literal()
+        let token_kind = if first_char == '/' && self.cursor.first() == '/' {
+            self.cursor.bump();
+            self.line_comment()
+        } else if is_ident_start(first_char) {
+            self.buffer.push(first_char);
+            self.ident_or_keyword_or_bool_literal()
+        } else if let Ok(start) = Punctuation::try_from(first_char) {
+            self.punctuation(start)
+        } else if ('0'..='9').contains(&first_char) {
+            self.buffer.push(first_char);
+            self.number()
+        } else if first_char.is_whitespace() {
+            if first_char == '\n' {
+                self.line_offsets.add(self.cursor.offset());
             }
-
-            // Operator
-            _ if is_operator_part(first_char) => {
-                self.buffer.push(first_char);
-                self.operator()
-            }
-
-            // Separators
-            ',' => Separator::Comma.into(),
-            ';' => Separator::Semi.into(),
-            ':' => Separator::Colon.into(),
-            '(' => Separator::OpenParen.into(),
-            ')' => Separator::ClosedParen.into(),
-            '[' => Separator::OpenBracket.into(),
-            ']' => Separator::ClosedBracket.into(),
-            '{' => Separator::OpenBrace.into(),
-            '}' => Separator::ClosedBrace.into(),
-
-            // Numbers
-            '0'..='9' => {
-                self.buffer.push(first_char);
-                self.number()
-            }
-
-            // Whitespace
-            _ if first_char.is_whitespace() => {
-                if first_char == '\n' {
-                    self.line_offsets.add(self.cursor.offset());
-                }
-
-                self.whitespace()
-            }
-
-            // End of file
-            EOF_CHAR => TokenKind::Eof,
-
-            // If nothing else matches, return the unknown token
-            _ => TokenKind::Unknown,
+            self.whitespace()
+        } else if first_char == EOF_CHAR {
+            TokenKind::Eof
+        } else {
+            TokenKind::Unknown
         };
 
-        Token::new(offset, self.cursor.offset() - offset, token_kind)
+        Token {
+            span: Span::from_to(offset, self.cursor.offset()),
+            kind: token_kind,
+        }
     }
 
     fn ident_or_keyword_or_bool_literal(&mut self) -> TokenKind {
@@ -119,28 +85,20 @@ impl<'a> Tokenizer<'a> {
         token
     }
 
-    fn operator(&mut self) -> TokenKind {
-        let mut operator = Operator::try_from(self.buffer.as_str())
-            .expect("all operator parts mut be valid operators");
+    fn punctuation(&mut self, start: Punctuation) -> TokenKind {
+        let mut punctuation = start;
 
-        self.cursor.consume_while(|char| {
-            if !is_operator_part(char) {
-                return false;
-            }
-
-            self.buffer.push(char);
-
-            match Operator::try_from(self.buffer.as_str()) {
-                Ok(new_operator) => {
-                    operator = new_operator;
-                    true
+        while let Ok(next) = Punctuation::try_from(self.cursor.first()) {
+            match punctuation.join(next) {
+                Ok(joined) => {
+                    self.cursor.bump();
+                    punctuation = joined;
                 }
-                Err(_) => false,
+                Err(_) => break,
             }
-        });
+        }
 
-        self.buffer.clear();
-        TokenKind::Operator(operator)
+        TokenKind::Punctuation(punctuation)
     }
 
     fn number(&mut self) -> TokenKind {
@@ -157,7 +115,7 @@ impl<'a> Tokenizer<'a> {
 
         let suffix_start = self.buffer.len();
         self.cursor.consume_while(|char| {
-            if char.is_whitespace() || is_separator(char) || is_operator_part(char) {
+            if char.is_whitespace() || is_punctuation(char) {
                 return false;
             }
 
@@ -216,14 +174,6 @@ fn is_ident_continue(char: char) -> bool {
     unicode_ident::is_xid_continue(char) || char == '_'
 }
 
-fn is_separator(char: char) -> bool {
-    sep::ALL.contains(&char)
-}
-
-fn is_operator_part(char: char) -> bool {
-    const OPERATOR_PARTS: &[char] = &[
-        '!', '%', '&', '*', '+', '-', '/', '<', '=', '>', '^', '|', '.',
-    ];
-
-    OPERATOR_PARTS.contains(&char)
+fn is_punctuation(char: char) -> bool {
+    Punctuation::try_from(char).is_ok()
 }

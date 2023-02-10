@@ -13,15 +13,15 @@ impl Span {
         Self { start, len }
     }
 
-    pub fn from_start_and_end(start: u32, end: u32) -> Self {
+    pub fn from_to(start: u32, end: u32) -> Self {
         Self {
             start,
             len: end - start,
         }
     }
 
-    pub fn from_start_and_end_spans(start_span: Span, end_span: Span) -> Self {
-        Self::from_start_and_end(start_span.start, end_span.end())
+    pub fn to(&self, end_span: Span) -> Self {
+        Self::from_to(self.start, end_span.end())
     }
 
     pub fn end(&self) -> u32 {

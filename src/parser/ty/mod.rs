@@ -1,4 +1,4 @@
-use crate::lexer::{op, sep, Token, TokenKind};
+use crate::lexer::{tk, Token, TokenKind};
 use crate::parser::{ParseResult, Parser, UnexpectedToken};
 use crate::symbol::Symbol;
 use crate::utils::Span;
@@ -37,12 +37,12 @@ where
         let start_token = self.peek();
 
         Ok(match start_token.kind {
-            sep::OPEN_PAREN => Ty::Tuple(self.parse_tuple_ty()?),
+            tk::OPEN_PAREN => Ty::Tuple(self.parse_tuple_ty()?),
             TokenKind::Ident(_) => Ty::Path(self.parse_path_ty()?),
             _ => {
                 return Err(UnexpectedToken {
                     found: start_token,
-                    expected: &[sep::OPEN_PAREN],
+                    expected: &[tk::OPEN_PAREN],
                 })?;
             }
         })
@@ -64,8 +64,8 @@ where
             })?;
         }
 
-        while self.peek().kind == op::DOT {
-            self.bump_expect(&[op::DOT])?;
+        while self.peek().kind == tk::DOT {
+            self.bump_expect(&[tk::DOT])?;
             let token = self.bump();
 
             if let TokenKind::Ident(ident) = token.kind {
@@ -85,10 +85,10 @@ where
     }
 
     pub fn parse_tuple_ty(&mut self) -> ParseResult<TupleTy> {
-        let open_paren = self.bump_expect(&[sep::OPEN_PAREN])?;
+        let open_paren = self.bump_expect(&[tk::OPEN_PAREN])?;
         let mut elements = Vec::<Ty>::new();
 
-        let closed_paren = if self.peek().kind == sep::CLOSED_PAREN {
+        let closed_paren = if self.peek().kind == tk::CLOSE_PAREN {
             self.bump()
         } else {
             loop {
@@ -98,26 +98,26 @@ where
                 let next_token = self.bump();
 
                 match next_token.kind {
-                    sep::COMMA => {
-                        if self.peek().kind == sep::CLOSED_PAREN {
+                    tk::COMMA => {
+                        if self.peek().kind == tk::CLOSE_PAREN {
                             break self.bump();
                         }
                     }
-                    sep::CLOSED_PAREN => {
+                    tk::CLOSE_PAREN => {
                         break next_token;
                     }
                     _ => {
                         return Err(UnexpectedToken {
                             found: next_token,
-                            expected: &[sep::COMMA, sep::CLOSED_PAREN],
-                        })?
+                            expected: &[tk::COMMA, tk::CLOSE_PAREN],
+                        })?;
                     }
                 }
             }
         };
 
         Ok(TupleTy {
-            span: Span::from_start_and_end_spans(open_paren.span, closed_paren.span),
+            span: open_paren.span.to(closed_paren.span),
             elements,
         })
     }

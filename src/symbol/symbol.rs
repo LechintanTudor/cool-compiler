@@ -60,7 +60,7 @@ macro_rules! kw_module {
 
             paste! {
                 $(
-                    pub const [<$kw:upper>]: TokenKind = TokenKind::Keyword(Symbol($idx));
+                    pub const [<KW_ $kw:upper>]: TokenKind = TokenKind::Keyword(Symbol($idx));
                 )+
             }
         }

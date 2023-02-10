@@ -1,6 +1,6 @@
-use crate::lexer::{op, sep, Token, TokenKind};
+use crate::lexer::{tk, Token, TokenKind};
 use crate::parser::{ParseResult, Parser, Stmt, Ty, UnexpectedToken};
-use crate::symbol::{kw, Symbol};
+use crate::symbol::Symbol;
 use crate::utils::Span;
 
 #[derive(Clone, Debug)]
@@ -37,10 +37,10 @@ where
     T: Iterator<Item = Token>,
 {
     pub fn parse_fn_item(&mut self) -> ParseResult<FnItem> {
-        let start_token = self.bump_expect(&[kw::FN])?;
+        let start_token = self.bump_expect(&[tk::KW_FN])?;
         let arg_list = self.parse_fn_arg_list()?;
 
-        let return_ty = if self.peek().kind == op::ARROW {
+        let return_ty = if self.peek().kind == tk::ARROW {
             self.bump();
             Some(self.parse_ty()?)
         } else {
@@ -50,7 +50,7 @@ where
         let body = self.parse_fn_body()?;
 
         Ok(FnItem {
-            span: Span::from_start_and_end_spans(start_token.span, body.span),
+            span: start_token.span.to(body.span),
             arg_list,
             return_ty,
             body,
@@ -58,11 +58,11 @@ where
     }
 
     pub fn parse_fn_arg_list(&mut self) -> ParseResult<FnArgList> {
-        let start_token = self.bump_expect(&[sep::OPEN_PAREN])?;
+        let start_token = self.bump_expect(&[tk::OPEN_PAREN])?;
 
         let mut args = Vec::<FnArg>::new();
 
-        let (end_span, has_trailing_comma) = if self.peek_kind() == sep::CLOSED_PAREN {
+        let (end_span, has_trailing_comma) = if self.peek_kind() == tk::CLOSE_PAREN {
             (self.bump().span, false)
         } else {
             loop {
@@ -72,28 +72,26 @@ where
                 let next_token = self.bump();
 
                 match next_token.kind {
-                    sep::CLOSED_PAREN => {
+                    tk::CLOSE_PAREN => {
                         break (next_token.span, false);
                     }
-                    sep::COMMA => {
-                        if self.peek_kind() == sep::CLOSED_PAREN {
+                    tk::COMMA => {
+                        if self.peek_kind() == tk::CLOSE_PAREN {
                             break (self.bump().span, true);
                         }
                     }
                     _ => {
                         return Err(UnexpectedToken {
                             found: next_token,
-                            expected: &[sep::CLOSED_PAREN, sep::COMMA],
+                            expected: &[tk::CLOSE_PAREN, tk::COMMA],
                         })?;
                     }
                 }
             }
         };
 
-        let span = Span::from_start_and_end_spans(start_token.span, end_span);
-
         Ok(FnArgList {
-            span,
+            span: start_token.span.to(end_span),
             args,
             has_trailing_comma,
         })
@@ -103,7 +101,7 @@ where
         let start_token = self.bump();
 
         let (is_mutable, ident) = match start_token.kind {
-            kw::MUT => {
+            tk::KW_MUT => {
                 let next_token = self.bump();
 
                 match next_token.kind {
@@ -120,12 +118,12 @@ where
             _ => {
                 return Err(UnexpectedToken {
                     found: start_token,
-                    expected: &[kw::MUT],
+                    expected: &[tk::KW_MUT],
                 })?;
             }
         };
 
-        self.bump_expect(&[sep::COLON])?;
+        self.bump_expect(&[tk::COLON])?;
 
         let ty_token = self.bump();
         let ty = match ty_token.kind {
@@ -138,10 +136,8 @@ where
             }
         };
 
-        let span = Span::from_start_and_end_spans(start_token.span, ty_token.span);
-
         Ok(FnArg {
-            span,
+            span: start_token.span.to(ty_token.span),
             is_mutable,
             ident,
             ty,
@@ -151,17 +147,17 @@ where
     pub fn parse_fn_body(&mut self) -> ParseResult<FnBody> {
         let start_token = self.bump();
 
-        if start_token.kind != sep::OPEN_BRACE {
+        if start_token.kind != tk::OPEN_BRACE {
             return Err(UnexpectedToken {
                 found: start_token,
-                expected: &[sep::OPEN_BRACE],
+                expected: &[tk::OPEN_BRACE],
             })?;
         }
 
         let mut stmts = Vec::<Stmt>::new();
 
         let end_token = loop {
-            if self.peek().kind == sep::CLOSED_BRACE {
+            if self.peek().kind == tk::CLOSE_BRACE {
                 break self.bump();
             }
 
@@ -169,8 +165,9 @@ where
             stmts.push(stmt);
         };
 
-        let span = Span::from_start_and_end_spans(start_token.span, end_token.span);
-
-        Ok(FnBody { span, stmts })
+        Ok(FnBody {
+            span: start_token.span.to(end_token.span),
+            stmts,
+        })
     }
 }
