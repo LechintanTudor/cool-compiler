@@ -1,38 +1,24 @@
-use crate::symbols::{Symbol, SymbolTable};
+use crate::symbols::SymbolTable;
 use crate::tokens;
 use lazy_static::lazy_static;
 use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
+pub type Lock<T> = RwLock<T>;
+pub type ReadGuard<'a, T> = RwLockReadGuard<'a, T>;
+pub type WriteGuard<'a, T> = RwLockWriteGuard<'a, T>;
+
 lazy_static! {
-    pub static ref SYMBOL_TABLE: GlobalSymbolTable = {
-        let mut symbols = SymbolTable::new();
+    static ref SYMBOL_TABLE: Lock<SymbolTable> = {
+        let mut symbols = SymbolTable::default();
         tokens::intern_symbols(&mut symbols);
-        GlobalSymbolTable(Lock::new(symbols))
+        Lock::new(symbols)
     };
 }
 
-pub type Lock<T> = RwLock<T>;
-pub type ReadLockGuard<'a, T> = RwLockReadGuard<'a, T>;
-pub type WriteLockGuard<'a, T> = RwLockWriteGuard<'a, T>;
+pub fn read_symbol_table() -> ReadGuard<'static, SymbolTable> {
+    SYMBOL_TABLE.read().unwrap()
+}
 
-pub struct GlobalSymbolTable(Lock<SymbolTable>);
-
-impl GlobalSymbolTable {
-    pub fn read_inner(&self) -> ReadLockGuard<SymbolTable> {
-        self.0.read().unwrap()
-    }
-
-    pub fn write_inner(&self) -> WriteLockGuard<SymbolTable> {
-        self.0.write().unwrap()
-    }
-
-    pub fn insert(&self, symbol_str: &str) -> Symbol {
-        let mut table = self.0.write().unwrap();
-        table.insert(symbol_str)
-    }
-
-    pub fn get(&self, symbol: Symbol) -> &str {
-        let table = self.0.read().unwrap();
-        unsafe { &*(table.get(symbol) as *const str) }
-    }
+pub fn write_symbol_table() -> WriteGuard<'static, SymbolTable> {
+    SYMBOL_TABLE.write().unwrap()
 }

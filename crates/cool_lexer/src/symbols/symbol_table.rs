@@ -10,15 +10,17 @@ pub struct SymbolTable {
 
 unsafe impl Sync for SymbolTable {}
 
-impl SymbolTable {
-    pub fn new() -> Self {
+impl Default for SymbolTable {
+    fn default() -> Self {
         Self {
             bump: Default::default(),
             symbols: Default::default(),
             strings: vec![InternedStr::empty()],
         }
     }
+}
 
+impl SymbolTable {
     pub fn insert(&mut self, symbol_str: &str) -> Symbol {
         if let Some(&symbol) = self.symbols.get(symbol_str) {
             return symbol;
@@ -50,7 +52,7 @@ mod tests {
 
     #[test]
     fn symbol_table() {
-        let mut table = SymbolTable::empty();
+        let mut table = SymbolTable::default();
 
         // The symbol table should start out empty.
         assert!(table.symbols.is_empty());

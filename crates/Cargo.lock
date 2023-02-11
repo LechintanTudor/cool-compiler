@@ -13,6 +13,7 @@ name = "cool_cli"
 version = "0.1.0"
 dependencies = [
  "cool_lexer",
+ "cool_parser",
 ]
 
 [[package]]
@@ -24,11 +25,17 @@ dependencies = [
  "lazy_static",
  "paste",
  "rustc-hash",
+ "unicode-ident",
 ]
 
 [[package]]
 name = "cool_parser"
 version = "0.1.0"
+dependencies = [
+ "cool_lexer",
+ "cool_span",
+ "smallvec",
+]
 
 [[package]]
 name = "cool_span"
@@ -51,3 +58,15 @@ name = "rustc-hash"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
+
+[[package]]
+name = "smallvec"
+version = "1.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
+
+[[package]]
+name = "unicode-ident"
+version = "1.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "84a22b9f218b40614adcb3f4ff08b703773ad44fa9423e4e0d346d5db86e4ebc"
