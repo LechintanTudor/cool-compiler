@@ -1,6 +1,7 @@
-use crate::symbol::{self, InternedStr, Symbol};
+use crate::symbol::{sym, InternedStr, Symbol};
 use bumpalo::Bump;
 use rustc_hash::FxHashMap;
+use std::num::NonZeroU32;
 
 pub struct SymbolTable {
     bump: Bump,
@@ -15,13 +16,13 @@ impl SymbolTable {
         Self {
             bump: Default::default(),
             symbols: Default::default(),
-            strings: Default::default(),
+            strings: vec![InternedStr::empty()],
         }
     }
 
     pub fn with_preinterned_keywords() -> Self {
         let mut symbols = Self::empty();
-        symbol::intern_symbols(&mut symbols);
+        sym::intern_symbols(&mut symbols);
         symbols
     }
 
@@ -34,7 +35,9 @@ impl SymbolTable {
             let symbol_str = self.bump.alloc_str(symbol_str);
             InternedStr::from_str(symbol_str)
         };
-        let symbol = Symbol(self.strings.len() as u32);
+        let symbol = NonZeroU32::new(self.strings.len() as u32)
+            .map(Symbol)
+            .expect("ran out of symbol indexes");
 
         self.symbols.insert(symbol_str, symbol);
         self.strings.push(symbol_str);
@@ -42,11 +45,11 @@ impl SymbolTable {
     }
 
     pub fn get(&self, symbol: Symbol) -> &str {
-        self.strings[symbol.0 as usize].as_str()
+        self.strings[symbol.0.get() as usize].as_str()
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &str> {
-        self.strings.iter().map(InternedStr::as_str)
+        self.strings[1..].iter().map(InternedStr::as_str)
     }
 }
 

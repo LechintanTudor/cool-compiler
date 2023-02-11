@@ -1,26 +1,29 @@
-use crate::symbol::{SymbolTable, SYMBOL_TABLE};
+use crate::symbol::SYMBOL_TABLE;
 use std::fmt;
-
-pub type SymbolIndex = u32;
+use std::num::NonZeroU32;
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
-pub struct Symbol(pub SymbolIndex);
+pub struct Symbol(pub NonZeroU32);
 
 impl Symbol {
+    pub const unsafe fn new_unchecked(index: u32) -> Self {
+        Self(NonZeroU32::new_unchecked(index))
+    }
+
     pub fn is_keyword(&self) -> bool {
-        *self <= kw::sym::WHILE
+        *self <= sym::KW_WHILE
     }
 
     pub fn is_bool_literal(&self) -> bool {
-        *self == kw::sym::FALSE || *self == kw::sym::TRUE
+        *self == sym::KW_FALSE || *self == sym::KW_TRUE
     }
 
     pub fn is_known_suffix(&self) -> bool {
-        *self >= ident::sym::I8 && *self <= ident::sym::F64
+        *self >= sym::I8 && *self <= sym::F64
     }
 
     pub fn is_wildcard(&self) -> bool {
-        *self == ident::sym::WILDCARD
+        *self == sym::WILDCARD
     }
 }
 
@@ -30,111 +33,125 @@ impl fmt::Display for Symbol {
     }
 }
 
-pub fn intern_symbols(symbols: &mut SymbolTable) {
-    kw::sym::intern(symbols);
-    ident::sym::intern(symbols);
-}
-
-macro_rules! kw_module {
-    { $($kw:ident => $idx:literal,)+ } => {
-        pub mod kw {
-            use crate::lexer::TokenKind;
+macro_rules! define_symbols {
+    {
+        Keywords {
+            $($kw:ident => $kw_idx:literal,)+
+        },
+        Primitives {
+            $($primitive:ident => $primitive_idx:literal,)+
+        },
+        Extra {
+            $($extra:ident: $extra_repr:literal => $extra_idx:literal,)+
+        },
+    } => {
+        pub mod sym {
             use crate::symbol::{Symbol, SymbolTable};
             use paste::paste;
 
-            pub mod sym {
-                use super::*;
-
-                paste! {
-                    $(
-                        pub const [<$kw:upper>]: Symbol = Symbol($idx);
-                    )+
-                }
-
-                pub fn intern(symbols: &mut SymbolTable) {
-                    $(
-                        assert_eq!(symbols.insert(stringify!($kw)), Symbol($idx));
-                    )+
-                }
-            }
-
             paste! {
+                // Keywords
                 $(
-                    pub const [<KW_ $kw:upper>]: TokenKind = TokenKind::Keyword(Symbol($idx));
+                    pub const [<KW_ $kw:upper>]: Symbol
+                        = unsafe { Symbol::new_unchecked($kw_idx) };
+                )+
+
+                // Primitives
+                $(
+                    pub const [<$primitive:upper>]: Symbol
+                        = unsafe { Symbol::new_unchecked($primitive_idx) };
                 )+
             }
+
+            // Extra
+            $(
+                pub const $extra: Symbol = unsafe { Symbol::new_unchecked($extra_idx) };
+            )+
+
+            pub fn intern_symbols(symbols: &mut SymbolTable) {
+                paste! {
+                    // Keywords
+                    $(
+                        assert_eq!(symbols.insert(stringify!($kw)), [<KW_ $kw:upper>]);
+                    )+
+
+                    // Primitives
+                    $(
+                        assert_eq!(symbols.insert(stringify!($primitive)), [<$primitive:upper>]);
+                    )+
+
+                    // Extra
+                    $(
+                        assert_eq!(symbols.insert($extra_repr), $extra);
+                    )+
+                }
+            }
+        }
+
+        pub mod tk {
+            use crate::lexer::TokenKind;
+            use crate::symbol::sym;
+            use paste::paste;
+
+            paste! {
+                // Keywords
+                $(
+                    pub const [<KW_ $kw:upper>]: TokenKind
+                        = TokenKind::Keyword(sym::[<KW_ $kw:upper>]);
+                )+
+
+                // Primitives
+                $(
+                    pub const [<$primitive:upper>]: TokenKind
+                        = TokenKind::Ident(sym::[<$primitive:upper>]);
+                )+
+            }
+
+            // Extra
+            $(
+                pub const $extra: TokenKind = TokenKind::Ident(sym::$extra);
+            )+
         }
     };
 }
 
-macro_rules! ident_module {
-    { $($ident:ident => $idx:literal,)+ } => {
-        pub mod ident {
-            use crate::lexer::TokenKind;
-            use crate::symbol::{Symbol, SymbolTable};
-            use paste::paste;
+define_symbols! {
+    Keywords {
+        break => 1,
+        continue => 2,
+        defer => 3,
+        else => 4,
+        enum => 5,
+        export => 6,
+        false => 7,
+        fn => 8,
+        if => 9,
+        import => 10,
+        module => 11,
+        mut => 12,
+        struct => 13,
+        true => 14,
+        while => 15,
+    },
+    Primitives {
+        i8 => 16,
+        i16 => 17,
+        i32 => 18,
+        i64 => 19,
 
-            pub mod sym {
-                use super::*;
+        u8 => 20,
+        u16 => 21,
+        u32 => 22,
+        u64 => 23,
 
-                paste! {
-                    $(
-                        pub const [<$ident:upper>]: Symbol = Symbol($idx);
-                    )+
-                }
+        isize => 24,
+        usize => 25,
 
-                pub const WILDCARD: Symbol = Symbol(27);
-
-                pub fn intern(symbols: &mut SymbolTable) {
-                    $(
-                        assert_eq!(symbols.insert(stringify!($ident)), Symbol($idx));
-                    )+
-                }
-            }
-
-            paste! {
-                $(
-                    pub const [<$ident:upper>]: TokenKind = TokenKind::Ident(Symbol($idx));
-                )+
-            }
-
-            pub const WILDCARD: TokenKind = TokenKind::Ident(sym::WILDCARD);
-        }
-    };
-}
-
-kw_module! {
-    break => 0,
-    continue => 1,
-    defer => 2,
-    else => 3,
-    enum => 4,
-    export => 5,
-    false => 6,
-    fn => 7,
-    if => 8,
-    import => 9,
-    module => 10,
-    mut => 11,
-    struct => 12,
-    true => 13,
-    while => 14,
-}
-
-ident_module! {
-    i8 => 15,
-    i16 => 16,
-    i32 => 17,
-    i64 => 18,
-
-    u8 => 19,
-    u16 => 20,
-    u32 => 21,
-    u64 => 22,
-
-    isize => 23,
-    usize => 24,
-
-    f32 => 25,
-    f64 => 26,
+        f32 => 26,
+        f64 => 27,
+    },
+    Extra {
+        WILDCARD: "_" => 28,
+        ANY_IDENT: "<identifier>" => 29,
+    },
 }

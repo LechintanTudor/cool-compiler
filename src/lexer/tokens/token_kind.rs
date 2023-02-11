@@ -1,4 +1,4 @@
-use crate::lexer::{Literal, Punctuation};
+use crate::lexer::{Literal, LiteralKind, Punctuation};
 use crate::symbol::Symbol;
 use std::fmt;
 
@@ -22,7 +22,7 @@ impl TokenKind {
 
 pub mod tk {
     pub use crate::lexer::pct::*;
-    pub use crate::symbol::kw::*;
+    pub use crate::symbol::tk::*;
 }
 
 impl fmt::Display for TokenKind {
@@ -43,7 +43,14 @@ impl fmt::Display for TokenKind {
 impl From<Symbol> for TokenKind {
     fn from(symbol: Symbol) -> Self {
         if symbol.is_keyword() {
-            Self::Keyword(symbol)
+            if symbol.is_bool_literal() {
+                Self::Literal(Literal {
+                    kind: LiteralKind::Boolean,
+                    symbol,
+                })
+            } else {
+                Self::Keyword(symbol)
+            }
         } else {
             Self::Ident(symbol)
         }

@@ -24,6 +24,10 @@ impl fmt::Display for InternedStr {
 }
 
 impl InternedStr {
+    pub fn empty() -> Self {
+        unsafe { Self::from_str("") }
+    }
+
     pub unsafe fn from_str(str: &str) -> Self {
         Self {
             start: str.as_ptr(),
