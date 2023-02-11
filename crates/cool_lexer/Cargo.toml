@@ -1,0 +1,11 @@
+[package]
+name = "cool_lexer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bumpalo = "3.12"
+cool_span = { path = "../cool_span" }
+lazy_static = "1.4"
+paste = "1.0"
+rustc-hash = "1.1"

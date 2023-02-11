@@ -1,15 +1,7 @@
-use crate::symbol::SYMBOL_TABLE;
+use crate::symbols::{Symbol, SYMBOL_TABLE};
 use std::fmt;
-use std::num::NonZeroU32;
-
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
-pub struct Symbol(pub NonZeroU32);
 
 impl Symbol {
-    pub const unsafe fn new_unchecked(index: u32) -> Self {
-        Self(NonZeroU32::new_unchecked(index))
-    }
-
     pub fn is_keyword(&self) -> bool {
         *self <= sym::KW_WHILE
     }
@@ -29,8 +21,11 @@ impl Symbol {
 
 impl fmt::Display for Symbol {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // TODO: Optimize for preinterned symbols
-        write!(f, "{}", SYMBOL_TABLE.get(*self))
+        if *self <= sym::ANY_IDENT {
+            write!(f, "{}", sym::ALL_REPRS[self.index() as usize])
+        } else {
+            write!(f, "{}", SYMBOL_TABLE.get(*self))
+        }
     }
 }
 
@@ -46,9 +41,17 @@ macro_rules! define_symbols {
             $($extra:ident: $extra_repr:literal => $extra_idx:literal,)+
         },
     } => {
+        #[allow(dead_code)]
         pub mod sym {
-            use crate::symbol::{Symbol, SymbolTable};
+            use crate::symbols::{Symbol, SymbolTable};
             use paste::paste;
+
+            pub const ALL_REPRS: &[&str] = &[
+                "",
+                $(stringify!($kw),)+
+                $(stringify!($primitive),)+
+                $($extra_repr,)+
+            ];
 
             paste! {
                 // Keywords
@@ -89,9 +92,10 @@ macro_rules! define_symbols {
             }
         }
 
+        #[allow(dead_code)]
         pub mod tk {
-            use crate::lexer::TokenKind;
-            use crate::symbol::sym;
+            use crate::tokens::TokenKind;
+            use crate::tokens::symbol::sym;
             use paste::paste;
 
             paste! {
