@@ -1,0 +1,9 @@
+[package]
+name = "cool_parser"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cool_lexer = { path = "../cool_lexer" }
+cool_span = { path = "../cool_span" }
+smallvec = "1.10"
