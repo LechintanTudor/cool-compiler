@@ -65,7 +65,7 @@ where
 
         let mut args = Vec::<FnArg>::new();
 
-        let (end_span, has_trailing_comma) = if self.peek_kind() == tk::CLOSE_PAREN {
+        let (end_span, has_trailing_comma) = if self.peek().kind == tk::CLOSE_PAREN {
             (self.bump().span, false)
         } else {
             loop {
@@ -79,7 +79,7 @@ where
                         break (next_token.span, false);
                     }
                     tk::COMMA => {
-                        if self.peek_kind() == tk::CLOSE_PAREN {
+                        if self.peek().kind == tk::CLOSE_PAREN {
                             break (self.bump().span, true);
                         }
                     }

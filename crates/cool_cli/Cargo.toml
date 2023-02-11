@@ -4,5 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+clap = "4.1"
 cool_lexer = { path = "../cool_lexer" }
 cool_parser = { path = "../cool_parser" }
