@@ -1,3 +1,2 @@
 /programs
-/target
-/crates/target
+target/
