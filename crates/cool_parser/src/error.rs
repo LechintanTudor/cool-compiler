@@ -28,9 +28,8 @@ impl Error for ParseError {
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::UnexpectedToken(e) => fmt::Display::fmt(e, f),
-        }
+        let span = self.span();
+        write!(f, "Parer error at offset {}..{}", span.start, span.end())
     }
 }
 
