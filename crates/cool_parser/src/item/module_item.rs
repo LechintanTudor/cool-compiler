@@ -22,7 +22,7 @@ where
                 break self.bump().span.end();
             }
 
-            let decl = self.parse_static_decl()?;
+            let decl = self.parse_item_decl()?;
             decls.push(decl);
         };
 
