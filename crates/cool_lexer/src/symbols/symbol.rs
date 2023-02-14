@@ -1,21 +1,24 @@
-use std::num::NonZeroU32;
+use cool_arena::StrHandle;
+use std::fmt;
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
-pub struct Symbol(NonZeroU32);
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Symbol(pub(crate) StrHandle);
 
 impl Symbol {
     #[inline]
-    pub fn new(index: u32) -> Option<Self> {
-        NonZeroU32::new(index).map(Self)
-    }
-
-    #[inline]
-    pub const unsafe fn new_unchecked(index: u32) -> Self {
-        Self(NonZeroU32::new_unchecked(index))
+    pub(crate) const unsafe fn new_unchecked(index: u32) -> Self {
+        Self(StrHandle::new_unchecked(index))
     }
 
     #[inline]
     pub const fn index(&self) -> u32 {
-        self.0.get()
+        self.0.index()
+    }
+}
+
+impl fmt::Debug for Symbol {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("Symbol").field(&self.0.index()).finish()
     }
 }

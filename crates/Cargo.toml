@@ -1,5 +1,7 @@
 [workspace]
 members = [
+    "cool_arena",
+    "cool_ast",
     "cool_cli",
     "cool_lexer",
     "cool_parser",
