@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bumpalo = "3.12"
 cool_arena = { path = "../cool_arena" }
 cool_span = { path = "../cool_span" }
 lazy_static = "1.4"

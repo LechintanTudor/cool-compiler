@@ -89,7 +89,6 @@ dependencies = [
 name = "cool_lexer"
 version = "0.1.0"
 dependencies = [
- "bumpalo",
  "cool_arena",
  "cool_span",
  "lazy_static",
