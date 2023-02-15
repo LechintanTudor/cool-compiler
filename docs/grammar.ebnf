@@ -1,0 +1,52 @@
+//
+// Building blocks
+//
+
+path ::= ident ('.' ident)*
+
+bool_literal ::= 'true'
+               | 'false'
+
+literal ::= numeric_literal
+          | string_literal
+          | bool_literal
+
+
+//
+// Items
+//
+
+module_item ::= '{' (item_decl)* '}' ';'
+
+fn_param ::= 'mut'? ident ':' path
+
+fn_param_list ::= ''
+                | fn_param (',' fn_param)* ','?
+
+fn_item ::= 'fn' '(' fn_param_list ')' ('->' path)? '{' (stmt)* '}'
+
+item ::= module_item
+       | fn_item
+       | literal
+
+item_decl ::= 'export'? ident ':' path? ':' item ';'
+
+
+//
+// Expressions
+//
+
+expr ::= path
+       | literal
+
+       
+//
+// Statements
+//
+
+decl_stmt ::= 'mut'? ident ':' path? '=' expr;
+
+assign_stmt ::= path '=' expr;
+
+stmt ::= decl_stmt
+       | assign_stmt
