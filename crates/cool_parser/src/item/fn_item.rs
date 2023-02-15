@@ -112,7 +112,7 @@ where
                     _ => {
                         return Err(UnexpectedToken {
                             found: next_token,
-                            expected: &[],
+                            expected: &[tk::ANY_IDENT],
                         })?;
                     }
                 }
@@ -134,7 +134,7 @@ where
             _ => {
                 return Err(UnexpectedToken {
                     found: ty_token,
-                    expected: &[],
+                    expected: &[tk::ANY_IDENT],
                 })?;
             }
         };

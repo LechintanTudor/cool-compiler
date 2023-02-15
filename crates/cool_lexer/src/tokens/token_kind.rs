@@ -1,5 +1,5 @@
 use crate::symbols::Symbol;
-use crate::tokens::{Literal, LiteralKind, Punctuation};
+use crate::tokens::{Group, Literal, LiteralKind, Punctuation};
 use std::fmt;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -11,16 +11,18 @@ pub enum TokenKind {
     Punctuation(Punctuation),
     Whitespace,
     Comment,
+    Group(Group),
     Eof,
 }
 
 impl TokenKind {
     pub const fn is_lang_part(&self) -> bool {
-        !matches!(self, Self::Comment | Self::Whitespace)
+        !matches!(self, Self::Whitespace | Self::Comment | Self::Group(_))
     }
 }
 
 pub mod tk {
+    pub use crate::tokens::group::tk::*;
     pub use crate::tokens::punctuation::tk::*;
     pub use crate::tokens::symbol::tk::*;
 }
@@ -35,6 +37,7 @@ impl fmt::Display for TokenKind {
             Self::Punctuation(punctuation) => fmt::Display::fmt(punctuation, f),
             Self::Whitespace => write!(f, "<whitespace>"),
             Self::Comment => write!(f, "<comment>"),
+            Self::Group(group) => fmt::Display::fmt(group, f),
             Self::Eof => write!(f, "<eof>"),
         }
     }

@@ -15,3 +15,13 @@ impl Token {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn token_size() {
+        assert!(std::mem::size_of::<Token>() <= 24);
+    }
+}

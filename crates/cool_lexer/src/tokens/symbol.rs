@@ -21,7 +21,7 @@ impl Symbol {
 
 impl fmt::Display for Symbol {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if *self <= sym::ANY_IDENT {
+        if *self <= sym::WILDCARD {
             write!(f, "{}", sym::ALL_REPRS[self.index() as usize])
         } else {
             let symbol_table = symbols::read_symbol_table();
@@ -158,6 +158,5 @@ define_symbols! {
     },
     Extra {
         WILDCARD: "_" => 28,
-        ANY_IDENT: "<identifier>" => 29,
     },
 }

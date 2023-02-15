@@ -18,7 +18,10 @@ impl SourceFile {
 
         loop {
             let token = tokenizer.next_token();
-            tokens.push(token);
+
+            if token.kind.is_lang_part() {
+                tokens.push(token);
+            }
 
             if token.kind == TokenKind::Eof {
                 break;
@@ -33,10 +36,7 @@ impl SourceFile {
         }
     }
 
-    pub fn iter_lang_tokens(&self) -> impl Iterator<Item = Token> + '_ {
-        self.tokens
-            .iter()
-            .filter(|token| token.kind.is_lang_part())
-            .copied()
+    pub fn iter_tokens(&self) -> impl Iterator<Item = Token> + '_ {
+        self.tokens.iter().copied()
     }
 }

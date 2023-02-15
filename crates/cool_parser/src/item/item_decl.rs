@@ -1,5 +1,5 @@
 use crate::error::{ParseResult, UnexpectedToken};
-use crate::item::FnItem;
+use crate::item::Item;
 use crate::parser::Parser;
 use cool_lexer::symbols::Symbol;
 use cool_lexer::tokens::{tk, Token, TokenKind};
@@ -11,7 +11,7 @@ pub struct ItemDecl {
     pub is_exported: bool,
     pub ident_span: Span,
     pub ident: Symbol,
-    pub expr: FnItem,
+    pub item: Item,
 }
 
 impl<T> Parser<T>
@@ -47,7 +47,16 @@ where
         self.bump_expect(&[tk::COLON])?;
         self.bump_expect(&[tk::COLON])?;
 
-        let expr = self.parse_fn_item()?;
+        let item = match self.peek().kind {
+            tk::KW_MODULE => Item::Module(self.parse_module_item()?),
+            tk::KW_FN => Item::Fn(self.parse_fn_item()?),
+            _ => {
+                return Err(UnexpectedToken {
+                    found: self.peek(),
+                    expected: &[tk::KW_MODULE, tk::KW_FN],
+                })?
+            }
+        };
 
         let end_token = self.bump_expect(&[tk::SEMICOLON])?;
 
@@ -56,7 +65,7 @@ where
             is_exported,
             ident_span,
             ident,
-            expr,
+            item,
         })
     }
 }

@@ -1,6 +1,6 @@
 use crate::error::{ParseResult, UnexpectedToken};
 use crate::parser::Parser;
-use cool_lexer::tokens::{Literal, Token, TokenKind};
+use cool_lexer::tokens::{tk, Literal, Token, TokenKind};
 use cool_span::Span;
 
 #[derive(Clone, Debug)]
@@ -19,7 +19,7 @@ where
         let TokenKind::Literal(literal) = start_token.kind else {
             return Err(UnexpectedToken {
                 found: start_token,
-                expected: &[],
+                expected: &[tk::ANY_LITERAL],
             })?;
         };
 

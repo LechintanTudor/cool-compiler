@@ -25,17 +25,14 @@ fn main() -> anyhow::Result<()> {
     println!();
 
     println!("[TOKENS]");
-    for token in source_file.iter_lang_tokens() {
+    for token in source_file.iter_tokens() {
         println!("{}", token.kind);
     }
     println!();
 
-    let mut parser = Parser::new(
-        source_file.iter_lang_tokens(),
-        source_file.source.len() as u32,
-    );
+    let mut parser = Parser::new(source_file.iter_tokens(), source_file.source.len() as u32);
 
-    let module = parser.parse_module_item().map_err(|error| {
+    let module = parser.parse_module_file().map_err(|error| {
         let line = source_file.line_offsets.to_line(error.span().start);
         anyhow::Error::new(error).context(format!("Parser error on line {}.", line))
     })?;
