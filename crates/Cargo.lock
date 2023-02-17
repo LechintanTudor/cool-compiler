@@ -74,6 +74,10 @@ dependencies = [
 [[package]]
 name = "cool_ast"
 version = "0.1.0"
+dependencies = [
+ "cool_resolve",
+ "cool_span",
+]
 
 [[package]]
 name = "cool_cli"
@@ -81,8 +85,17 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "cool_driver",
+ "cool_parser",
+]
+
+[[package]]
+name = "cool_driver"
+version = "0.1.0"
+dependencies = [
  "cool_lexer",
  "cool_parser",
+ "cool_span",
 ]
 
 [[package]]
@@ -103,6 +116,15 @@ dependencies = [
  "cool_lexer",
  "cool_span",
  "smallvec",
+]
+
+[[package]]
+name = "cool_resolve"
+version = "0.1.0"
+dependencies = [
+ "cool_arena",
+ "cool_lexer",
+ "rustc-hash",
 ]
 
 [[package]]

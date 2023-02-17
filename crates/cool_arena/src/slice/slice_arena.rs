@@ -5,14 +5,16 @@ use rustc_hash::FxHashMap;
 use std::fmt;
 use std::hash::Hash;
 
+pub type SliceHandle<T> = Handle<[T]>;
+
 pub struct SliceArena<T> {
     bump: Bump,
-    handles: FxHashMap<InternedSlice<T>, Handle<[T]>>,
+    handles: FxHashMap<InternedSlice<T>, SliceHandle<T>>,
     slices: Vec<InternedSlice<T>>,
 }
 
 impl<T> SliceArena<T> {
-    pub fn insert(&mut self, slice: &[T]) -> Handle<[T]>
+    pub fn insert(&mut self, slice: &[T]) -> SliceHandle<T>
     where
         T: Copy + PartialEq + Eq + Hash,
     {

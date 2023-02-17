@@ -1,6 +1,7 @@
 use crate::error::{ParseResult, UnexpectedToken};
 use crate::parser::Parser;
 use crate::path::Path;
+use crate::ParseTree;
 use cool_lexer::tokens::{tk, Token, TokenKind};
 use cool_span::Span;
 
@@ -10,10 +11,25 @@ pub enum Ty {
     Tuple(TupleTy),
 }
 
+impl ParseTree for Ty {
+    fn span(&self) -> Span {
+        match self {
+            Self::Path(path) => path.span(),
+            Self::Tuple(tuple) => tuple.span(),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct TupleTy {
     pub span: Span,
     pub elements: Vec<Ty>,
+}
+
+impl ParseTree for TupleTy {
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl<T> Parser<T>

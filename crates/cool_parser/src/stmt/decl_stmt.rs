@@ -1,6 +1,7 @@
 use crate::error::{ParseResult, UnexpectedToken};
 use crate::expr::Expr;
 use crate::parser::Parser;
+use crate::ParseTree;
 use cool_lexer::symbols::Symbol;
 use cool_lexer::tokens::{tk, Token, TokenKind};
 use cool_span::Span;
@@ -12,6 +13,12 @@ pub struct DeclStmt {
     pub ident_span: Span,
     pub ident: Symbol,
     pub expr: Expr,
+}
+
+impl ParseTree for DeclStmt {
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl<T> Parser<T>

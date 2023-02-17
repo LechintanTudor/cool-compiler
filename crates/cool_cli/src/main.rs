@@ -2,43 +2,18 @@ mod args;
 
 use crate::args::Args;
 use clap::Parser as _;
-use cool_lexer::lexer::SourceFile;
-use cool_lexer::symbols;
-use cool_parser::parser::Parser;
+use cool_driver::SourceFile;
+use cool_parser::ParseTree;
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
+    let source_file = SourceFile::from_path(args.crate_root_file)?;
 
-    let source = std::fs::read_to_string(args.crate_root_file)?;
-    let source_file = SourceFile::from_name_and_source(args.crate_name, source);
-
-    println!("[LINE OFFSETS]");
-    for offset in source_file.line_offsets.as_slice() {
-        println!("{}", offset);
+    for decl in source_file.module.decls.iter() {
+        let ident = source_file.span_content(decl.ident_span);
+        let item = source_file.span_content(decl.item.span());
+        println!("--> {}\n{}\n", ident, item);
     }
-    println!();
-
-    println!("[SYMBOLS]");
-    for symbols in symbols::read_symbol_table().iter() {
-        println!("{}", symbols);
-    }
-    println!();
-
-    println!("[TOKENS]");
-    for token in source_file.iter_tokens() {
-        println!("{}", token.kind);
-    }
-    println!();
-
-    let mut parser = Parser::new(source_file.iter_tokens(), source_file.source.len() as u32);
-
-    let module = parser.parse_module_file().map_err(|error| {
-        let line = source_file.line_offsets.to_line(error.span().start);
-        anyhow::Error::new(error).context(format!("Parser error on line {}.", line))
-    })?;
-
-    println!("[MODULE]");
-    println!("{:#?}", module);
 
     Ok(())
 }

@@ -7,17 +7,15 @@ where
     T: Iterator<Item = Token>,
 {
     tokens: Peekable<T>,
-    source_len: u32,
 }
 
 impl<T> Parser<T>
 where
     T: Iterator<Item = Token>,
 {
-    pub fn new(tokens: T, source_len: u32) -> Self {
+    pub fn new(tokens: T) -> Self {
         Self {
             tokens: tokens.peekable(),
-            source_len,
         }
     }
 
@@ -43,6 +41,6 @@ where
     }
 
     fn eof_token(&self) -> Token {
-        Token::eof(self.source_len)
+        Token::eof(0)
     }
 }

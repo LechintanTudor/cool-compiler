@@ -82,7 +82,10 @@ where
     // Empty
 }
 
-impl<T> fmt::Debug for Handle<T> {
+impl<T> fmt::Debug for Handle<T>
+where
+    T: ?Sized,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple("Handle").field(&self.index.get()).finish()
     }

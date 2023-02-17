@@ -20,7 +20,7 @@ where
 {
     pub fn parse_item_decl(&mut self) -> ParseResult<ItemDecl> {
         let start_token = self.bump();
-        
+
         let (is_exported, ident_span, ident) = match start_token.kind {
             tk::KW_EXPORT => {
                 let next_token = self.bump();

@@ -1,6 +1,7 @@
 use crate::error::ParseResult;
 use crate::item::ItemDecl;
 use crate::parser::Parser;
+use crate::ParseTree;
 use cool_lexer::tokens::{tk, Token, TokenKind};
 use cool_span::Span;
 
@@ -13,6 +14,12 @@ pub struct ModuleContent {
 pub struct ModuleItem {
     pub span: Span,
     pub content: ModuleContent,
+}
+
+impl ParseTree for ModuleItem {
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl<T> Parser<T>

@@ -1,0 +1,9 @@
+[package]
+name = "cool_resolve"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cool_arena = { path = "../cool_arena" }
+cool_lexer = { path = "../cool_lexer" }
+rustc-hash = "1.1"

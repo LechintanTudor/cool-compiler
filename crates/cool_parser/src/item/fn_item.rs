@@ -2,6 +2,7 @@ use crate::error::{ParseResult, UnexpectedToken};
 use crate::parser::Parser;
 use crate::stmt::Stmt;
 use crate::ty::Ty;
+use crate::ParseTree;
 use cool_lexer::symbols::Symbol;
 use cool_lexer::tokens::{tk, Token, TokenKind};
 use cool_span::Span;
@@ -14,6 +15,12 @@ pub struct FnItem {
     pub body: FnBody,
 }
 
+impl ParseTree for FnItem {
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct FnArgList {
     pub span: Span,
@@ -21,18 +28,36 @@ pub struct FnArgList {
     pub has_trailing_comma: bool,
 }
 
+impl ParseTree for FnArgList {
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct FnArg {
     pub span: Span,
     pub is_mutable: bool,
     pub ident: Symbol,
-    pub ty: Symbol,
+    pub ty: Ty,
+}
+
+impl ParseTree for FnArg {
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 #[derive(Clone, Debug)]
 pub struct FnBody {
     pub span: Span,
     pub stmts: Vec<Stmt>,
+}
+
+impl ParseTree for FnBody {
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl<T> Parser<T>
@@ -127,20 +152,10 @@ where
         };
 
         self.bump_expect(&[tk::COLON])?;
-
-        let ty_token = self.bump();
-        let ty = match ty_token.kind {
-            TokenKind::Ident(ty) => ty,
-            _ => {
-                return Err(UnexpectedToken {
-                    found: ty_token,
-                    expected: &[tk::ANY_IDENT],
-                })?;
-            }
-        };
+        let ty = self.parse_ty()?;
 
         Ok(FnArg {
-            span: start_token.span.to(ty_token.span),
+            span: start_token.span.to(ty.span()),
             is_mutable,
             ident,
             ty,

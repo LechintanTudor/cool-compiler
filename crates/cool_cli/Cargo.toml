@@ -6,5 +6,5 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0"
 clap = { version = "4.1", features = ["derive"] }
-cool_lexer = { path = "../cool_lexer" }
+cool_driver = { path = "../cool_driver" }
 cool_parser = { path = "../cool_parser" }

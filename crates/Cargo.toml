@@ -3,7 +3,9 @@ members = [
     "cool_arena",
     "cool_ast",
     "cool_cli",
+    "cool_driver",
     "cool_lexer",
     "cool_parser",
+    "cool_resolve",
     "cool_span",
 ]
