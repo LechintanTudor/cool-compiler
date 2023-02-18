@@ -22,6 +22,27 @@ impl<T> SliceArena<T> {
             return handle;
         }
 
+        self.insert_new(slice)
+    }
+
+    #[must_use]
+    pub fn insert_if_not_exists(&mut self, slice: &[T]) -> Option<SliceHandle<T>>
+    where
+        T: Copy + PartialEq + Eq + Hash,
+    {
+        if self.handles.get(slice).is_some() {
+            return None;
+        }
+
+        Some(self.insert_new(slice))
+    }
+
+    fn insert_new(&mut self, slice: &[T]) -> SliceHandle<T>
+    where
+        T: Copy + PartialEq + Eq + Hash,
+    {
+        debug_assert!(self.handles.get(slice).is_none());
+
         if self.slices.len() > u32::MAX as usize {
             panic!("ran out of handle indexes");
         }

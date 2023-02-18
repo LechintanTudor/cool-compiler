@@ -1,9 +1,12 @@
 use crate::error::{DriverError, DriverResult};
 use cool_lexer::lexer::{LineOffsets, Tokenizer};
 use cool_lexer::symbols;
-use cool_parser::item::ModuleContent;
+use cool_parser::item::{Item, ModuleContent};
 use cool_parser::parser::Parser;
+use cool_resolve::ItemTable;
 use cool_span::Span;
+
+use smallvec::{smallvec, SmallVec};
 use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
@@ -15,7 +18,7 @@ pub struct SourceFile {
 }
 
 impl SourceFile {
-    pub fn from_path(path: PathBuf) -> DriverResult<Self> {
+    pub fn from_path(root_module: &str, path: PathBuf) -> DriverResult<Self> {
         let content = std::fs::read_to_string(&path).map_err(DriverError::SourceNotFound)?;
 
         let mut line_offsets = LineOffsets::default();
@@ -35,6 +38,35 @@ impl SourceFile {
             .parse_module_file()
             .expect("failed to parse module file");
 
+        let root_symbol = symbol_table.insert(root_module);
+        drop(symbol_table);
+
+        let mut items = ItemTable::default();
+        let mut modules_to_process = Vec::<(SmallVec<[_; 4]>, _)>::new();
+        modules_to_process.push((smallvec![root_symbol], &module));
+
+        while let Some((path, module)) = modules_to_process.pop() {
+            let mut builder = items.build_module(&path);
+
+            for decl in module.decls.iter() {
+                if let Item::Module(ref child_module) = decl.item {
+                    let mut child_path = path.clone();
+                    child_path.push(decl.ident);
+                    modules_to_process.push((child_path, &child_module.content));
+                } else {
+                    builder.add_item(decl.ident);
+                }
+            }
+        }
+
+        for item in items.iter() {
+            for symbol in item {
+                print!("{} ", symbol);
+            }
+
+            println!();
+        }
+
         Ok(Self {
             path,
             content,
@@ -45,7 +77,6 @@ impl SourceFile {
 
     pub fn span_content(&self, span: Span) -> &str {
         let range = (span.start as usize)..(span.end() as usize);
-
         std::str::from_utf8(&self.content.as_bytes()[range]).expect("invalid span")
     }
 }

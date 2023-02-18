@@ -6,6 +6,11 @@ pub struct Symbol(pub(crate) StrHandle);
 
 impl Symbol {
     #[inline]
+    pub const fn dummy() -> Self {
+        unsafe { Self(StrHandle::new_unchecked(u32::MAX)) }
+    }
+
+    #[inline]
     pub(crate) const unsafe fn new_unchecked(index: u32) -> Self {
         Self(StrHandle::new_unchecked(index))
     }

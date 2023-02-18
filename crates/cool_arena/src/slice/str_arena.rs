@@ -16,6 +16,13 @@ impl StrArena {
     }
 
     #[inline]
+    pub fn insert_if_not_exists(&mut self, str: &str) -> Option<StrHandle> {
+        self.inner
+            .insert_if_not_exists(str.as_bytes())
+            .map(|handle| handle.convert())
+    }
+
+    #[inline]
     pub fn get(&self, handle: StrHandle) -> &str {
         unsafe { std::str::from_utf8_unchecked(self.inner.get(handle.convert())) }
     }

@@ -95,7 +95,9 @@ version = "0.1.0"
 dependencies = [
  "cool_lexer",
  "cool_parser",
+ "cool_resolve",
  "cool_span",
+ "smallvec",
 ]
 
 [[package]]
@@ -125,6 +127,7 @@ dependencies = [
  "cool_arena",
  "cool_lexer",
  "rustc-hash",
+ "smallvec",
 ]
 
 [[package]]
