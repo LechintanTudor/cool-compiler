@@ -61,8 +61,16 @@ impl<T> SliceArena<T> {
     }
 
     #[inline]
-    pub fn get(&self, handle: Handle<[T]>) -> &[T] {
+    pub fn get(&self, handle: SliceHandle<T>) -> &[T] {
         self.slices[handle.index() as usize].as_slice()
+    }
+
+    #[inline]
+    pub fn get_handle(&self, slice: &[T]) -> Option<SliceHandle<T>>
+    where
+        T: Copy + PartialEq + Eq + Hash,
+    {
+        self.handles.get(slice).copied()
     }
 
     #[inline]

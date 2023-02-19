@@ -20,8 +20,6 @@ impl Symbol {
         let symbols = SYMBOL_TABLE.lock().unwrap();
         let str = symbols.get(symbol);
 
-        unsafe {
-            std::mem::transmute::<_, &'static str>(str)
-        }
+        unsafe { std::mem::transmute::<_, &'static str>(str) }
     }
 }

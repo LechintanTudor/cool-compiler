@@ -1,7 +1,7 @@
+use crate::item_path::{ItemPath, ItemPathBuf};
 use cool_arena::{SliceArena, SliceHandle};
 use cool_lexer::symbols::Symbol;
 use rustc_hash::FxHashMap;
-use smallvec::SmallVec;
 
 #[derive(Clone, Debug)]
 pub struct Module {
@@ -20,24 +20,38 @@ pub struct ItemTable {
 
 impl ItemTable {
     #[inline]
-    pub fn build_module(&mut self, module_path: &[Symbol]) -> ModuleBuilder {
-        ModuleBuilder::new(self, module_path)
+    pub fn build_module(&mut self, path: ItemPathBuf) -> ModuleBuilder {
+        ModuleBuilder::new(self, path)
     }
 
     #[inline]
-    pub fn get(&self, item: Item) -> &[Symbol] {
-        self.paths.get(item.0)
+    fn insert_if_not_exists<'a, P>(&mut self, path: P) -> Option<Item>
+    where
+        P: Into<ItemPath<'a>>,
+    {
+        self.paths
+            .insert_if_not_exists(path.into().as_symbol_slice())
+            .map(Item)
     }
 
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item = &[Symbol]> {
-        self.paths.iter()
+    pub fn get_item<'a, P>(&self, path: P) -> Option<Item>
+    where
+        P: Into<ItemPath<'a>>,
+    {
+        self.paths
+            .get_handle(path.into().as_symbol_slice())
+            .map(Item)
     }
 
     #[inline]
-    fn insert_if_not_exists(&mut self, path: &[Symbol]) -> Item {
-        let handle = self.paths.insert_if_not_exists(path).unwrap();
-        Item(handle)
+    pub fn get(&self, item: Item) -> ItemPath {
+        self.paths.get(item.0).into()
+    }
+
+    #[inline]
+    pub fn iter_paths(&self) -> impl Iterator<Item = ItemPath> {
+        self.paths.iter().map(ItemPath::from)
     }
 }
 
@@ -46,15 +60,25 @@ pub struct ModuleBuilder<'a> {
     items: &'a mut ItemTable,
     item: Item,
     module: Module,
-    path: SmallVec<[Symbol; 4]>,
+    path: ItemPathBuf,
 }
 
 impl<'a> ModuleBuilder<'a> {
-    fn new(items: &'a mut ItemTable, path: &[Symbol]) -> Self {
-        let module_symbol = *path.last().expect("empty path");
-        let item = items.insert_if_not_exists(path);
+    fn new(items: &'a mut ItemTable, path: ItemPathBuf) -> Self {
+        let (symbol, item) = match path.as_symbol_slice() {
+            [symbol] => {
+                let item = items.insert_if_not_exists(&path).unwrap();
+                (*symbol, item)
+            }
+            [.., symbol] => {
+                let item = items.get_item(&path).unwrap();
+                (*symbol, item)
+            }
+            _ => panic!("empty module path"),
+        };
+
         let module = Module {
-            symbol: module_symbol,
+            symbol,
             children: FxHashMap::default(),
         };
 
@@ -62,14 +86,15 @@ impl<'a> ModuleBuilder<'a> {
             items,
             item,
             module,
-            path: SmallVec::from_slice(path),
+            path: path.into(),
         }
     }
 
     pub fn add_item(&mut self, symbol: Symbol) {
-        self.path.push(symbol);
-        let child_item = self.items.insert_if_not_exists(&self.path);
-        self.path.pop();
+        let child_item = self
+            .items
+            .insert_if_not_exists(&self.path.append(symbol))
+            .expect("TODO: return duplicate error");
 
         self.module.children.insert(symbol, child_item);
     }

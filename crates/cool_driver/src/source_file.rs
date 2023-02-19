@@ -3,9 +3,10 @@ use cool_lexer::lexer::{LineOffsets, Tokenizer};
 use cool_lexer::symbols::Symbol;
 use cool_parser::item::{Item, ModuleContent};
 use cool_parser::parser::Parser;
+use cool_resolve::item_path::ItemPathBuf;
 use cool_resolve::ItemTable;
 use cool_span::Span;
-use smallvec::{smallvec, SmallVec};
+use std::collections::VecDeque;
 use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
@@ -39,29 +40,20 @@ impl SourceFile {
         let root_symbol = Symbol::insert(root_module);
 
         let mut items = ItemTable::default();
-        let mut modules_to_process = Vec::<(SmallVec<[_; 4]>, _)>::new();
-        modules_to_process.push((smallvec![root_symbol], &module));
+        let mut modules_to_process = VecDeque::<(ItemPathBuf, _)>::new();
+        modules_to_process.push_back((ItemPathBuf::from(root_symbol), &module));
 
-        while let Some((path, module)) = modules_to_process.pop() {
-            let mut builder = items.build_module(&path);
+        while let Some((path, module)) = modules_to_process.pop_front() {
+            let mut builder = items.build_module(path.clone());
 
             for decl in module.decls.iter() {
                 if let Item::Module(ref child_module) = decl.item {
-                    let mut child_path = path.clone();
-                    child_path.push(decl.ident);
-                    modules_to_process.push((child_path, &child_module.content));
-                } else {
-                    builder.add_item(decl.ident);
+                    let child_path = path.append(decl.ident);
+                    modules_to_process.push_back((child_path, &child_module.content));
                 }
-            }
-        }
 
-        for item in items.iter() {
-            for symbol in item {
-                print!("{} ", symbol);
+                builder.add_item(decl.ident);
             }
-
-            println!();
         }
 
         Ok(Self {
