@@ -1,25 +1,19 @@
 use crate::lexer::{Cursor, LineOffsets, EOF_CHAR};
-use crate::symbols::SymbolTable;
+use crate::symbols::Symbol;
 use crate::tokens::{Literal, LiteralKind, Punctuation, Token, TokenKind};
 use cool_span::Span;
 
 pub struct Tokenizer<'a> {
     cursor: Cursor<'a>,
     line_offsets: &'a mut LineOffsets,
-    symbols: &'a mut SymbolTable,
     buffer: String,
 }
 
 impl<'a> Tokenizer<'a> {
-    pub fn new(
-        source: &'a str,
-        line_offsets: &'a mut LineOffsets,
-        symbols: &'a mut SymbolTable,
-    ) -> Self {
+    pub fn new(source: &'a str, line_offsets: &'a mut LineOffsets) -> Self {
         Self {
             cursor: Cursor::from(source),
             line_offsets,
-            symbols,
             buffer: Default::default(),
         }
     }
@@ -65,7 +59,7 @@ impl<'a> Tokenizer<'a> {
             true
         });
 
-        let symbol = self.symbols.insert(&self.buffer);
+        let symbol = Symbol::insert(&self.buffer);
 
         let token = if symbol.is_keyword() {
             if symbol.is_bool_literal() {
@@ -110,7 +104,7 @@ impl<'a> Tokenizer<'a> {
             true
         });
 
-        let symbol = self.symbols.insert(&self.buffer);
+        let symbol = Symbol::insert(&self.buffer);
 
         let suffix_start = self.buffer.len();
         self.cursor.consume_while(|char| {
@@ -123,7 +117,7 @@ impl<'a> Tokenizer<'a> {
         });
 
         let suffix = if suffix_start != self.buffer.len() {
-            Some(self.symbols.insert(&self.buffer[suffix_start..]))
+            Some(Symbol::insert(&self.buffer[suffix_start..]))
         } else {
             None
         };

@@ -6,16 +6,16 @@ use smallvec::SmallVec;
 #[derive(Clone, Debug)]
 pub struct Module {
     pub symbol: Symbol,
-    pub children: FxHashMap<Symbol, ItemId>,
+    pub children: FxHashMap<Symbol, Item>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub struct ItemId(SliceHandle<Symbol>);
+pub struct Item(SliceHandle<Symbol>);
 
 #[derive(Default, Debug)]
 pub struct ItemTable {
     paths: SliceArena<Symbol>,
-    modules: FxHashMap<ItemId, Module>,
+    modules: FxHashMap<Item, Module>,
 }
 
 impl ItemTable {
@@ -25,7 +25,7 @@ impl ItemTable {
     }
 
     #[inline]
-    pub fn get(&self, item: ItemId) -> &[Symbol] {
+    pub fn get(&self, item: Item) -> &[Symbol] {
         self.paths.get(item.0)
     }
 
@@ -35,16 +35,16 @@ impl ItemTable {
     }
 
     #[inline]
-    fn insert_if_not_exists(&mut self, path: &[Symbol]) -> ItemId {
+    fn insert_if_not_exists(&mut self, path: &[Symbol]) -> Item {
         let handle = self.paths.insert_if_not_exists(path).unwrap();
-        ItemId(handle)
+        Item(handle)
     }
 }
 
 #[derive(Debug)]
 pub struct ModuleBuilder<'a> {
     items: &'a mut ItemTable,
-    module_id: ItemId,
+    item: Item,
     module: Module,
     path: SmallVec<[Symbol; 4]>,
 }
@@ -52,7 +52,7 @@ pub struct ModuleBuilder<'a> {
 impl<'a> ModuleBuilder<'a> {
     fn new(items: &'a mut ItemTable, path: &[Symbol]) -> Self {
         let module_symbol = *path.last().expect("empty path");
-        let module_id = items.insert_if_not_exists(path);
+        let item = items.insert_if_not_exists(path);
         let module = Module {
             symbol: module_symbol,
             children: FxHashMap::default(),
@@ -60,7 +60,7 @@ impl<'a> ModuleBuilder<'a> {
 
         Self {
             items,
-            module_id,
+            item,
             module,
             path: SmallVec::from_slice(path),
         }
@@ -68,17 +68,17 @@ impl<'a> ModuleBuilder<'a> {
 
     pub fn add_item(&mut self, symbol: Symbol) {
         self.path.push(symbol);
-        let item_id = self.items.insert_if_not_exists(&self.path);
+        let child_item = self.items.insert_if_not_exists(&self.path);
         self.path.pop();
 
-        self.module.children.insert(symbol, item_id);
+        self.module.children.insert(symbol, child_item);
     }
 }
 
 impl Drop for ModuleBuilder<'_> {
     fn drop(&mut self) {
         self.items.modules.insert(
-            self.module_id,
+            self.item,
             std::mem::replace(
                 &mut self.module,
                 Module {

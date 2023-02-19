@@ -1,24 +1,27 @@
-use crate::symbols::SymbolTable;
+use crate::symbols::{Symbol, SymbolTable};
 use crate::tokens;
 use lazy_static::lazy_static;
-use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
-
-pub type Lock<T> = RwLock<T>;
-pub type ReadGuard<'a, T> = RwLockReadGuard<'a, T>;
-pub type WriteGuard<'a, T> = RwLockWriteGuard<'a, T>;
+use std::sync::Mutex;
 
 lazy_static! {
-    static ref SYMBOL_TABLE: Lock<SymbolTable> = {
+    static ref SYMBOL_TABLE: Mutex<SymbolTable> = {
         let mut symbols = SymbolTable::default();
         tokens::intern_symbols(&mut symbols);
-        Lock::new(symbols)
+        Mutex::new(symbols)
     };
 }
 
-pub fn read_symbol_table() -> ReadGuard<'static, SymbolTable> {
-    SYMBOL_TABLE.read().unwrap()
-}
+impl Symbol {
+    pub fn insert(symbol_str: &str) -> Self {
+        SYMBOL_TABLE.lock().unwrap().insert(symbol_str)
+    }
 
-pub fn write_symbol_table() -> WriteGuard<'static, SymbolTable> {
-    SYMBOL_TABLE.write().unwrap()
+    pub fn get(symbol: Self) -> &'static str {
+        let symbols = SYMBOL_TABLE.lock().unwrap();
+        let str = symbols.get(symbol);
+
+        unsafe {
+            std::mem::transmute::<_, &'static str>(str)
+        }
+    }
 }

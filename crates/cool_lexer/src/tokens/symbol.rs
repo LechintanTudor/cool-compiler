@@ -1,4 +1,4 @@
-use crate::symbols::{self, Symbol};
+use crate::symbols::Symbol;
 use std::fmt;
 
 impl Symbol {
@@ -24,8 +24,7 @@ impl fmt::Display for Symbol {
         if *self <= sym::WILDCARD {
             write!(f, "{}", sym::ALL_REPRS[self.index() as usize])
         } else {
-            let symbol_table = symbols::read_symbol_table();
-            write!(f, "{}", symbol_table.get(*self))
+            write!(f, "{}", Symbol::get(*self))
         }
     }
 }
