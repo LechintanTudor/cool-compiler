@@ -1,7 +1,5 @@
-use crate::error::ParseResult;
-use crate::parser::Parser;
 use crate::stmt::DeclStmt;
-use crate::ParseTree;
+use crate::{ParseResult, ParseTree, Parser};
 use cool_lexer::tokens::Token;
 use cool_span::Span;
 

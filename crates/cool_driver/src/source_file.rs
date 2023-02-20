@@ -2,7 +2,7 @@ use crate::error::{DriverError, DriverResult};
 use cool_lexer::lexer::{LineOffsets, Tokenizer};
 use cool_lexer::symbols::Symbol;
 use cool_parser::item::{Item, ModuleContent};
-use cool_parser::parser::Parser;
+use cool_parser::Parser;
 use cool_resolve::item_path::ItemPathBuf;
 use cool_resolve::ItemTable;
 use cool_span::Span;

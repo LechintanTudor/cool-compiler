@@ -1,19 +1,17 @@
-use crate::error::{ParseResult, UnexpectedToken};
-use crate::parser::Parser;
-use crate::ParseTree;
+use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
 use cool_lexer::symbols::Symbol;
 use cool_lexer::tokens::{tk, Token, TokenKind};
 use cool_span::Span;
 use smallvec::SmallVec;
 
-pub type PathFragmentVec = SmallVec<[PathFragment; 2]>;
+pub type ItemPathFragmentVec = SmallVec<[PathFragment; 2]>;
 
 #[derive(Clone, Debug)]
-pub struct Path {
-    pub fragments: PathFragmentVec,
+pub struct ItemPath {
+    pub fragments: ItemPathFragmentVec,
 }
 
-impl ParseTree for Path {
+impl ParseTree for ItemPath {
     fn span(&self) -> Span {
         match (self.fragments.first(), self.fragments.last()) {
             (Some(first), Some(last)) => first.span_to(last),
@@ -38,9 +36,9 @@ impl<T> Parser<T>
 where
     T: Iterator<Item = Token>,
 {
-    pub fn parse_path(&mut self) -> ParseResult<Path> {
+    pub fn parse_path(&mut self) -> ParseResult<ItemPath> {
         let start_token = self.bump();
-        let mut fragments = PathFragmentVec::new();
+        let mut fragments = ItemPathFragmentVec::new();
 
         if let TokenKind::Ident(ident) = start_token.kind {
             fragments.push(PathFragment {
@@ -71,6 +69,6 @@ where
             }
         }
 
-        Ok(Path { fragments })
+        Ok(ItemPath { fragments })
     }
 }

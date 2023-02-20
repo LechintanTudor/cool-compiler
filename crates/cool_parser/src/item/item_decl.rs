@@ -1,6 +1,5 @@
-use crate::error::{ParseResult, UnexpectedToken};
 use crate::item::Item;
-use crate::parser::Parser;
+use crate::{ParseResult, Parser, UnexpectedToken};
 use cool_lexer::symbols::Symbol;
 use cool_lexer::tokens::{tk, Token, TokenKind};
 use cool_span::Span;

@@ -1,4 +1,4 @@
-use crate::error::{ParseResult, UnexpectedToken};
+use crate::{ParseResult, UnexpectedToken};
 use cool_lexer::tokens::{Token, TokenKind};
 use std::iter::Peekable;
 

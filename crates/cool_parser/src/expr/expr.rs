@@ -1,13 +1,12 @@
-use crate::error::{ParseResult, UnexpectedToken};
 use crate::expr::LiteralExpr;
-use crate::parser::Parser;
-use crate::path::Path;
+use crate::path::ItemPath;
+use crate::{ParseResult, Parser, UnexpectedToken};
 use cool_lexer::tokens::{tk, Token, TokenKind};
 
 #[derive(Clone, Debug)]
 pub enum Expr {
     Literal(LiteralExpr),
-    Path(Path),
+    Path(ItemPath),
 }
 
 impl<T> Parser<T>
