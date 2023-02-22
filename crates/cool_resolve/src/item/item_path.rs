@@ -33,7 +33,7 @@ impl fmt::Display for ItemPathBuf {
         write!(f, "{}", first)?;
 
         for other in others {
-            write!(f, ",{}", other)?;
+            write!(f, ".{}", other)?;
         }
 
         Ok(())

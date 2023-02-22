@@ -1,4 +1,4 @@
-use crate::item_path::{ItemPath, ItemPathBuf};
+use crate::item::{ItemPath, ItemPathBuf};
 use cool_arena::{SliceArena, SliceHandle};
 use cool_lexer::symbols::Symbol;
 use rustc_hash::FxHashMap;
@@ -6,16 +6,16 @@ use rustc_hash::FxHashMap;
 #[derive(Clone, Debug)]
 pub struct Module {
     pub symbol: Symbol,
-    pub children: FxHashMap<Symbol, Item>,
+    pub children: FxHashMap<Symbol, ItemId>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub struct Item(SliceHandle<Symbol>);
+pub struct ItemId(SliceHandle<Symbol>);
 
 #[derive(Default, Debug)]
 pub struct ItemTable {
     paths: SliceArena<Symbol>,
-    modules: FxHashMap<Item, Module>,
+    modules: FxHashMap<ItemId, Module>,
 }
 
 impl ItemTable {
@@ -25,27 +25,27 @@ impl ItemTable {
     }
 
     #[inline]
-    fn insert_if_not_exists<'a, P>(&mut self, path: P) -> Option<Item>
+    fn insert_if_not_exists<'a, P>(&mut self, path: P) -> Option<ItemId>
     where
         P: Into<ItemPath<'a>>,
     {
         self.paths
             .insert_if_not_exists(path.into().as_symbol_slice())
-            .map(Item)
+            .map(ItemId)
     }
 
     #[inline]
-    pub fn get_item<'a, P>(&self, path: P) -> Option<Item>
+    pub fn get_item<'a, P>(&self, path: P) -> Option<ItemId>
     where
         P: Into<ItemPath<'a>>,
     {
         self.paths
             .get_handle(path.into().as_symbol_slice())
-            .map(Item)
+            .map(ItemId)
     }
 
     #[inline]
-    pub fn get(&self, item: Item) -> ItemPath {
+    pub fn get(&self, item: ItemId) -> ItemPath {
         self.paths.get(item.0).into()
     }
 
@@ -58,14 +58,14 @@ impl ItemTable {
 #[derive(Debug)]
 pub struct ModuleBuilder<'a> {
     items: &'a mut ItemTable,
-    item: Item,
+    id: ItemId,
     module: Module,
     path: ItemPathBuf,
 }
 
 impl<'a> ModuleBuilder<'a> {
     fn new(items: &'a mut ItemTable, path: ItemPathBuf) -> Self {
-        let (symbol, item) = match path.as_symbol_slice() {
+        let (symbol, id) = match path.as_symbol_slice() {
             [symbol] => {
                 let item = items.insert_if_not_exists(&path).unwrap();
                 (*symbol, item)
@@ -84,7 +84,7 @@ impl<'a> ModuleBuilder<'a> {
 
         Self {
             items,
-            item,
+            id,
             module,
             path: path.into(),
         }
@@ -103,7 +103,7 @@ impl<'a> ModuleBuilder<'a> {
 impl Drop for ModuleBuilder<'_> {
     fn drop(&mut self) {
         self.items.modules.insert(
-            self.item,
+            self.id,
             std::mem::replace(
                 &mut self.module,
                 Module {

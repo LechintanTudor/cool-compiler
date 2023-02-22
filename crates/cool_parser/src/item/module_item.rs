@@ -9,9 +9,15 @@ pub struct ModuleContent {
 }
 
 #[derive(Clone, Debug)]
+pub enum ModuleKind {
+    External,
+    Inline(ModuleContent),
+}
+
+#[derive(Clone, Debug)]
 pub struct ModuleItem {
     pub span: Span,
-    pub content: ModuleContent,
+    pub kind: ModuleKind,
 }
 
 impl ParseTree for ModuleItem {
@@ -26,20 +32,27 @@ where
 {
     pub fn parse_module_item(&mut self) -> ParseResult<ModuleItem> {
         let start_token = self.bump_expect(&[tk::KW_MODULE])?;
-        self.bump_expect(&[tk::OPEN_BRACE])?;
 
-        let mut decls = Vec::<ItemDecl>::new();
-        let end_token = loop {
-            if self.peek().kind == tk::CLOSE_BRACE {
-                break self.bump();
-            }
+        let (kind, end_token) = if self.peek().kind == tk::OPEN_BRACE {
+            self.bump();
 
-            decls.push(self.parse_item_decl()?);
+            let mut decls = Vec::<ItemDecl>::new();
+            let end_token = loop {
+                if self.peek().kind == tk::CLOSE_BRACE {
+                    break self.bump();
+                }
+
+                decls.push(self.parse_item_decl()?);
+            };
+
+            (ModuleKind::Inline(ModuleContent { decls }), end_token)
+        } else {
+            (ModuleKind::External, start_token)
         };
 
         Ok(ModuleItem {
             span: start_token.span.to(end_token.span),
-            content: ModuleContent { decls },
+            kind,
         })
     }
 

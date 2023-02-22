@@ -38,14 +38,14 @@ impl<T> InternedSlice<T> {
 
 unsafe impl<T> Send for InternedSlice<T>
 where
-    T: Send + Sync,
+    T: Sync,
 {
     // Empty
 }
 
 unsafe impl<T> Sync for InternedSlice<T>
 where
-    T: Send + Sync,
+    T: Sync,
 {
     // Empty
 }
