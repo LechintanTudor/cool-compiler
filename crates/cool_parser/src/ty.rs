@@ -1,11 +1,11 @@
-use crate::path::ItemPath;
+use crate::path::SymbolPath;
 use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
 use cool_lexer::tokens::{tk, Token, TokenKind};
 use cool_span::Span;
 
 #[derive(Clone, Debug)]
 pub enum Ty {
-    Path(ItemPath),
+    Path(SymbolPath),
     Tuple(TupleTy),
 }
 

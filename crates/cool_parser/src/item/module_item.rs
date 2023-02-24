@@ -1,11 +1,11 @@
-use crate::item::ItemDecl;
+use crate::item::Decl;
 use crate::{ParseResult, ParseTree, Parser};
 use cool_lexer::tokens::{tk, Token, TokenKind};
 use cool_span::Span;
 
 #[derive(Clone, Debug)]
 pub struct ModuleContent {
-    pub decls: Vec<ItemDecl>,
+    pub decls: Vec<Decl>,
 }
 
 #[derive(Clone, Debug)]
@@ -36,13 +36,13 @@ where
         let (kind, end_token) = if self.peek().kind == tk::OPEN_BRACE {
             self.bump();
 
-            let mut decls = Vec::<ItemDecl>::new();
+            let mut decls = Vec::<Decl>::new();
             let end_token = loop {
                 if self.peek().kind == tk::CLOSE_BRACE {
                     break self.bump();
                 }
 
-                decls.push(self.parse_item_decl()?);
+                decls.push(self.parse_decl()?);
             };
 
             (ModuleKind::Inline(ModuleContent { decls }), end_token)
@@ -57,14 +57,14 @@ where
     }
 
     pub fn parse_module_file(&mut self) -> ParseResult<ModuleContent> {
-        let mut decls = Vec::<ItemDecl>::new();
+        let mut decls = Vec::<Decl>::new();
 
         loop {
             if self.peek().kind == TokenKind::Eof {
                 break;
             }
 
-            let decl = self.parse_item_decl()?;
+            let decl = self.parse_decl()?;
             decls.push(decl);
         }
 

@@ -82,3 +82,18 @@ impl ModulePaths {
         })
     }
 }
+
+/*
+Module {
+    parent: Module?
+
+    items:
+        private
+        public
+
+    uses:
+        private
+        public
+}
+
+*/

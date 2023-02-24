@@ -131,7 +131,7 @@ define_symbols! {
         false => 7,
         fn => 8,
         if => 9,
-        import => 10,
+        use => 10,
         module => 11,
         mut => 12,
         struct => 13,

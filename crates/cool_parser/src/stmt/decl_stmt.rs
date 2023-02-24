@@ -1,15 +1,13 @@
 use crate::expr::Expr;
-use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
-use cool_lexer::symbols::Symbol;
-use cool_lexer::tokens::{tk, Token, TokenKind};
+use crate::{Ident, ParseResult, ParseTree, Parser};
+use cool_lexer::tokens::{tk, Token};
 use cool_span::Span;
 
 #[derive(Clone, Debug)]
 pub struct DeclStmt {
     pub span: Span,
     pub is_mutable: bool,
-    pub ident_span: Span,
-    pub ident: Symbol,
+    pub ident: Ident,
     pub expr: Expr,
 }
 
@@ -26,28 +24,15 @@ where
     pub fn parse_decl_stmt(&mut self) -> ParseResult<DeclStmt> {
         let start_token = self.bump();
 
-        let (is_mutable, ident_span, ident) = match start_token.kind {
+        let is_mutable = match self.peek().kind {
             tk::KW_MUT => {
-                let next_token = self.bump();
-
-                match next_token.kind {
-                    TokenKind::Ident(ident) => (true, next_token.span, ident),
-                    _ => {
-                        return Err(UnexpectedToken {
-                            found: next_token,
-                            expected: &[],
-                        })?;
-                    }
-                }
+                self.bump();
+                true
             }
-            TokenKind::Ident(ident) => (false, start_token.span, ident),
-            _ => {
-                return Err(UnexpectedToken {
-                    found: start_token,
-                    expected: &[tk::KW_MUT],
-                })?;
-            }
+            _ => false,
         };
+
+        let ident = self.parse_ident()?;
 
         self.bump_expect(&[tk::COLON])?;
         self.bump_expect(&[tk::EQ])?;
@@ -58,7 +43,6 @@ where
         Ok(DeclStmt {
             span: start_token.span.to(semi.span),
             is_mutable,
-            ident_span,
             ident,
             expr,
         })

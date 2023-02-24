@@ -2,7 +2,7 @@ use crate::paths::ModulePaths;
 use crate::SourceFile;
 use cool_lexer::lexer::{LineOffsets, Tokenizer};
 use cool_lexer::symbols::Symbol;
-use cool_parser::item::{Item, ModuleContent, ModuleKind};
+use cool_parser::item::{DeclKind, Item, ModuleContent, ModuleKind};
 use cool_parser::Parser;
 use cool_resolve::item::{ItemPathBuf, ItemTable};
 use std::collections::VecDeque;
@@ -40,26 +40,31 @@ pub fn compile(package_name: &str, path: &Path) -> Package {
             let mut module_builder = items.build_module(item_path.clone());
 
             for decl in module_content.decls.iter() {
-                if let Item::Module(child_module) = &decl.item {
-                    match &child_module.kind {
-                        ModuleKind::Inline(module_content) => {
-                            let child_path = item_path.append(decl.ident);
-                            modules_to_process.push_back((child_path, module_content));
-                        }
-                        ModuleKind::External => {
-                            let child_path = item_path.append(decl.ident);
-                            let child_module_paths = ModulePaths::for_child(
-                                &module_paths.child_module_dir,
-                                Symbol::get(decl.ident),
-                            )
-                            .unwrap();
+                match &decl.kind {
+                    DeclKind::Item(decl) => {
+                        if let Item::Module(child_module) = &decl.item {
+                            match &child_module.kind {
+                                ModuleKind::Inline(module_content) => {
+                                    let child_path = item_path.append(decl.ident.symbol);
+                                    modules_to_process.push_back((child_path, module_content));
+                                }
+                                ModuleKind::External => {
+                                    let child_path = item_path.append(decl.ident.symbol);
+                                    let child_module_paths = ModulePaths::for_child(
+                                        &module_paths.child_module_dir,
+                                        Symbol::get(decl.ident.symbol),
+                                    )
+                                    .unwrap();
 
-                            files_to_process.push_back((child_path, child_module_paths));
+                                    files_to_process.push_back((child_path, child_module_paths));
+                                }
+                            }
                         }
+
+                        module_builder.add_item(decl.ident.symbol);
                     }
+                    _ => (),
                 }
-
-                module_builder.add_item(decl.ident);
             }
         }
 
