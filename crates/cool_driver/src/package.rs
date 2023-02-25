@@ -4,13 +4,11 @@ use cool_lexer::lexer::{LineOffsets, Tokenizer};
 use cool_lexer::symbols::Symbol;
 use cool_parser::item::{DeclKind, Item, ModuleContent, ModuleKind};
 use cool_parser::Parser;
-use cool_resolve::item::{ItemPathBuf, ItemTable};
+use cool_resolve::item::{ItemId, ItemPathBuf, ItemTable};
 use std::collections::VecDeque;
 use std::path::Path;
 
 // TODO:
-// Get a full parse tree (add support for multi-file packages)
-// Then walk the tree to create the item table
 // Then solve imports and use's
 // The generate AST
 
@@ -30,6 +28,9 @@ pub fn compile(package_name: &str, path: &Path) -> Package {
     let mut files_to_process = VecDeque::<(ItemPathBuf, ModulePaths)>::new();
     files_to_process.push_front((ItemPathBuf::from(package_symbol), package_paths));
 
+    // Module ID of the use declaration, whether the use is exported, use path
+    let mut uses_to_resolve = VecDeque::<(ItemId, (bool, ItemPathBuf))>::new();
+
     while let Some((item_path, module_paths)) = files_to_process.pop_front() {
         let source = parse_source_file(item_path.clone(), module_paths.clone());
 
@@ -40,6 +41,8 @@ pub fn compile(package_name: &str, path: &Path) -> Package {
             let mut module_builder = items.build_module(item_path.clone());
 
             for decl in module_content.decls.iter() {
+                let is_exported = decl.is_exported;
+
                 match &decl.kind {
                     DeclKind::Item(decl) => {
                         if let Item::Module(child_module) = &decl.item {
@@ -61,15 +64,36 @@ pub fn compile(package_name: &str, path: &Path) -> Package {
                             }
                         }
 
-                        module_builder.add_item(decl.ident.symbol);
+                        module_builder.add_item(is_exported, decl.ident.symbol);
                     }
-                    _ => (),
+                    DeclKind::Use(decl) => {
+                        let item_path = decl
+                            .path
+                            .idents
+                            .iter()
+                            .map(|ident| ident.symbol)
+                            .collect::<ItemPathBuf>();
+
+                        uses_to_resolve.push_back((module_builder.id(), (is_exported, item_path)));
+                    }
                 }
             }
         }
 
         sources.push(source);
     }
+
+    while !uses_to_resolve.is_empty() {
+        uses_to_resolve = uses_to_resolve
+            .iter()
+            .filter(|(module_id, (is_exported, item_path))| {
+                !items.insert_use_decl(*module_id, *is_exported, item_path.as_path())
+            })
+            .cloned()
+            .collect()
+    }
+
+    items.print_final();
 
     Package { items, sources }
 }

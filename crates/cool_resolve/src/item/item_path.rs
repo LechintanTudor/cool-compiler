@@ -54,6 +54,15 @@ impl From<&[Symbol]> for ItemPathBuf {
     }
 }
 
+impl FromIterator<Symbol> for ItemPathBuf {
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = Symbol>,
+    {
+        Self(SmallVec::from_iter(iter))
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct ItemPath<'a>(&'a [Symbol]);
 
