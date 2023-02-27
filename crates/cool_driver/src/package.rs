@@ -55,7 +55,7 @@ pub fn compile(package_name: &str, path: &Path) -> Package {
                                     let child_path = item_path.append(decl.ident.symbol);
                                     let child_module_paths = ModulePaths::for_child(
                                         &module_paths.child_module_dir,
-                                        Symbol::get(decl.ident.symbol),
+                                        decl.ident.symbol.as_str(),
                                     )
                                     .unwrap();
 
@@ -93,7 +93,13 @@ pub fn compile(package_name: &str, path: &Path) -> Package {
             .collect()
     }
 
-    items.print_final();
+    for source in sources.iter() {
+        println!("[{}]", source.module_path.display());
+        println!("{:#?}", source.module);
+        println!();
+    }
+
+    // items.print_final();
 
     Package { items, sources }
 }

@@ -38,6 +38,11 @@ where
     }
 
     #[inline]
+    pub const fn as_usize(&self) -> usize {
+        self.index.get() as usize
+    }
+
+    #[inline]
     pub const fn convert<U>(&self) -> Handle<U>
     where
         U: ?Sized,

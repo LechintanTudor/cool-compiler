@@ -2,30 +2,47 @@ use crate::symbols::Symbol;
 use std::fmt;
 
 impl Symbol {
+    #[inline]
     pub fn is_keyword(&self) -> bool {
         *self <= sym::KW_WHILE
     }
 
+    #[inline]
     pub fn is_bool_literal(&self) -> bool {
         *self == sym::KW_FALSE || *self == sym::KW_TRUE
     }
 
+    #[inline]
     pub fn is_known_suffix(&self) -> bool {
         *self >= sym::I8 && *self <= sym::F64
     }
 
+    #[inline]
     pub fn is_wildcard(&self) -> bool {
         *self == sym::WILDCARD
+    }
+
+    #[inline]
+    pub fn as_str(&self) -> &'static str {
+        if *self <= sym::WILDCARD {
+            sym::ALL_REPRS[self.as_usize()]
+        } else {
+            Symbol::as_str_from_symbol_table(*self)
+        }
     }
 }
 
 impl fmt::Display for Symbol {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if *self <= sym::WILDCARD {
-            write!(f, "{}", sym::ALL_REPRS[self.index() as usize])
-        } else {
-            write!(f, "{}", Symbol::get(*self))
-        }
+        f.write_str(self.as_str())
+    }
+}
+
+impl fmt::Debug for Symbol {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "\"{}\"", self.as_str())
     }
 }
 

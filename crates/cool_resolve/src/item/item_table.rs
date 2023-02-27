@@ -3,10 +3,19 @@ use cool_arena::{SliceArena, SliceHandle};
 use cool_lexer::symbols::Symbol;
 use rustc_hash::FxHashMap;
 
+/*
+Check order
+1) Local
+2) Global
+3) Glob imports
+3) Builtins
+
+*/
+
 #[derive(Clone, Debug)]
 pub struct Module {
-    pub symbol: Symbol,
-    pub children: FxHashMap<Symbol, ModuleItem>,
+    pub path: ItemPathBuf,
+    pub items: FxHashMap<Symbol, ModuleItem>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -51,7 +60,7 @@ impl ItemTable {
             let module = self.modules.get(&module_id).expect("invalid module id");
             let (first_symbol, other_symbols) = item_path.as_symbol_slice().split_first().unwrap();
 
-            let child_module_id = match module.children.get(first_symbol) {
+            let child_module_id = match module.items.get(first_symbol) {
                 Some(child_module) => child_module.id,
                 None => return false,
             };
@@ -60,7 +69,7 @@ impl ItemTable {
             let (last_symbol, other_symbols) = other_symbols.split_last().unwrap();
 
             for symbol in other_symbols {
-                let Some(item) = child_module.children.get(symbol) else {
+                let Some(item) = child_module.items.get(symbol) else {
                 return false;
             };
 
@@ -75,7 +84,7 @@ impl ItemTable {
                 child_module = next_child_module;
             }
 
-            let Some(item) = child_module.children.get(last_symbol) else {
+            let Some(item) = child_module.items.get(last_symbol) else {
             return false;
         };
 
@@ -89,11 +98,11 @@ impl ItemTable {
         let module = self.modules.get_mut(&module_id).expect("invalid module id");
         let symbol = item_path.as_symbol_slice().last().unwrap();
 
-        if module.children.contains_key(symbol) {
+        if module.items.contains_key(symbol) {
             panic!("duplicate items");
         }
 
-        module.children.insert(
+        module.items.insert(
             *symbol,
             ModuleItem {
                 is_exported,
@@ -108,7 +117,7 @@ impl ItemTable {
             let path = self.get(*item);
             println!("[MODULE {path}]");
 
-            for symbol in module.children.keys() {
+            for symbol in module.items.keys() {
                 println!("- {symbol}");
             }
 
@@ -128,7 +137,7 @@ impl ItemTable {
 
     #[inline]
     pub fn get(&self, item: ItemId) -> ItemPath {
-        self.paths.get(item.0).into()
+        self.paths[item.0].into()
     }
 
     #[inline]
@@ -140,51 +149,43 @@ impl ItemTable {
 #[derive(Debug)]
 pub struct ModuleBuilder<'a> {
     items: &'a mut ItemTable,
-    id: ItemId,
+    module_id: ItemId,
     module: Module,
-    path: ItemPathBuf,
 }
 
 impl<'a> ModuleBuilder<'a> {
     fn new(items: &'a mut ItemTable, path: ItemPathBuf) -> Self {
-        let (symbol, id) = match path.as_symbol_slice() {
-            [symbol] => {
-                let item = items.insert_if_not_exists(&path).unwrap();
-                (*symbol, item)
-            }
-            [.., symbol] => {
-                let item = items.get_item(&path).unwrap();
-                (*symbol, item)
-            }
-            _ => panic!("empty module path"),
+        let module_id = match path.len() {
+            0 => panic!("empty module path"),
+            1 => items.insert_if_not_exists(&path).unwrap(),
+            _ => items.get_item(&path).unwrap(),
         };
 
         let module = Module {
-            symbol,
-            children: FxHashMap::default(),
+            path,
+            items: FxHashMap::default(),
         };
 
         Self {
             items,
-            id,
+            module_id,
             module,
-            path: path.into(),
         }
     }
 
     #[inline]
     pub fn id(&self) -> ItemId {
-        self.id
+        self.module_id
     }
 
     pub fn add_item(&mut self, is_exported: bool, symbol: Symbol) {
         let id = self
             .items
-            .insert_if_not_exists(&self.path.append(symbol))
+            .insert_if_not_exists(&self.module.path.append(symbol))
             .expect("TODO: return duplicate error");
 
         self.module
-            .children
+            .items
             .insert(symbol, ModuleItem { is_exported, id });
     }
 }
@@ -192,12 +193,12 @@ impl<'a> ModuleBuilder<'a> {
 impl Drop for ModuleBuilder<'_> {
     fn drop(&mut self) {
         self.items.modules.insert(
-            self.id,
+            self.module_id,
             std::mem::replace(
                 &mut self.module,
                 Module {
-                    symbol: Symbol::dummy(),
-                    children: FxHashMap::default(),
+                    path: ItemPathBuf::from(Symbol::dummy()),
+                    items: FxHashMap::default(),
                 },
             ),
         );

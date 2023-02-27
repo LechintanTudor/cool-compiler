@@ -1,6 +1,6 @@
 use crate::handle::Handle;
 use crate::slice::SliceArena;
-use std::fmt;
+use std::{fmt, ops};
 
 pub type StrHandle = Handle<str>;
 
@@ -12,7 +12,7 @@ pub struct StrArena {
 impl StrArena {
     #[inline]
     pub fn insert(&mut self, str: &str) -> StrHandle {
-        self.inner.insert(str.as_bytes()).convert()
+        self.inner.get_or_insert(str.as_bytes()).convert()
     }
 
     #[inline]
@@ -23,8 +23,17 @@ impl StrArena {
     }
 
     #[inline]
-    pub fn get(&self, handle: StrHandle) -> &str {
-        unsafe { std::str::from_utf8_unchecked(self.inner.get(handle.convert())) }
+    pub fn get(&self, handle: StrHandle) -> Option<&str> {
+        self.inner
+            .get(handle.convert())
+            .map(|slice| unsafe { std::str::from_utf8_unchecked(slice) })
+    }
+
+    #[inline]
+    pub fn get_handle(&self, str: &str) -> Option<StrHandle> {
+        self.inner
+            .get_handle(str.as_bytes())
+            .map(|handle| handle.convert())
     }
 
     #[inline]
@@ -32,6 +41,15 @@ impl StrArena {
         self.inner
             .iter()
             .map(|slice| unsafe { std::str::from_utf8_unchecked(slice) })
+    }
+}
+
+impl ops::Index<StrHandle> for StrArena {
+    type Output = str;
+
+    fn index(&self, handle: StrHandle) -> &Self::Output {
+        let slice = &self.inner[handle.convert()];
+        unsafe { std::str::from_utf8_unchecked(slice) }
     }
 }
 

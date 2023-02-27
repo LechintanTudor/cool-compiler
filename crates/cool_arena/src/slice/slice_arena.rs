@@ -2,8 +2,8 @@ use crate::handle::Handle;
 use crate::slice::InternedSlice;
 use bumpalo::Bump;
 use rustc_hash::FxHashMap;
-use std::fmt;
 use std::hash::Hash;
+use std::{fmt, ops};
 
 pub type SliceHandle<T> = Handle<[T]>;
 
@@ -14,17 +14,6 @@ pub struct SliceArena<T> {
 }
 
 impl<T> SliceArena<T> {
-    pub fn insert(&mut self, slice: &[T]) -> SliceHandle<T>
-    where
-        T: Copy + PartialEq + Eq + Hash,
-    {
-        if let Some(&handle) = self.handles.get(slice) {
-            return handle;
-        }
-
-        self.insert_new(slice)
-    }
-
     #[must_use]
     pub fn insert_if_not_exists(&mut self, slice: &[T]) -> Option<SliceHandle<T>>
     where
@@ -35,6 +24,17 @@ impl<T> SliceArena<T> {
         }
 
         Some(self.insert_new(slice))
+    }
+
+    pub fn get_or_insert(&mut self, slice: &[T]) -> SliceHandle<T>
+    where
+        T: Copy + PartialEq + Eq + Hash,
+    {
+        if let Some(&handle) = self.handles.get(slice) {
+            return handle;
+        }
+
+        self.insert_new(slice)
     }
 
     fn insert_new(&mut self, slice: &[T]) -> SliceHandle<T>
@@ -61,8 +61,10 @@ impl<T> SliceArena<T> {
     }
 
     #[inline]
-    pub fn get(&self, handle: SliceHandle<T>) -> &[T] {
-        self.slices[handle.index() as usize].as_slice()
+    pub fn get(&self, handle: SliceHandle<T>) -> Option<&[T]> {
+        self.slices
+            .get(handle.as_usize())
+            .map(InternedSlice::as_slice)
     }
 
     #[inline]
@@ -93,6 +95,14 @@ impl<T> Default for SliceArena<T> {
             handles: Default::default(),
             slices: vec![InternedSlice::empty()],
         }
+    }
+}
+
+impl<T> ops::Index<SliceHandle<T>> for SliceArena<T> {
+    type Output = [T];
+
+    fn index(&self, handle: SliceHandle<T>) -> &Self::Output {
+        self.get(handle).unwrap()
     }
 }
 

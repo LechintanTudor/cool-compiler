@@ -20,7 +20,7 @@ impl TyTable {
         }
         .into();
 
-        Ty(self.tys.insert(ty_kind))
+        Ty(self.tys.get_or_insert(ty_kind))
     }
 
     pub fn mk_fn<P>(&mut self, params: P, ret: Ty) -> Ty
@@ -33,11 +33,11 @@ impl TyTable {
         }
         .into();
 
-        Ty(self.tys.insert(ty_kind))
+        Ty(self.tys.get_or_insert(ty_kind))
     }
 
     #[inline]
     pub fn get(&self, ty: Ty) -> &TyKind {
-        self.tys.get(ty.0)
+        &self.tys[ty.0]
     }
 }

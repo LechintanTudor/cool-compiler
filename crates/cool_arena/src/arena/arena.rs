@@ -2,8 +2,8 @@ use crate::arena::InternedRef;
 use crate::handle::Handle;
 use bumpalo::Bump;
 use rustc_hash::FxHashMap;
-use std::fmt;
 use std::hash::Hash;
+use std::{fmt, ops};
 
 pub struct Arena<T> {
     bump: Bump,
@@ -23,22 +23,21 @@ impl<T> Arena<T> {
         }
     }
 
-    #[inline]
-    pub fn get(&self, handle: Handle<T>) -> &T {
-        self.refs[handle.index() as usize].as_ref()
+    pub fn insert_if_not_exists(&mut self, value: T) -> Option<Handle<T>>
+    where
+        T: Eq + PartialEq + Hash,
+    {
+        if self.handles.contains_key(&value) {
+            return None;
+        }
+
+        Some(self.insert_new(value))
     }
 
-    #[inline]
-    pub fn iter(&self) -> impl Iterator<Item = &T> {
-        self.refs[1..].iter().map(InternedRef::as_ref)
-    }
-}
-
-impl<T> Arena<T>
-where
-    T: PartialEq + Eq + Hash,
-{
-    pub fn insert(&mut self, value: T) -> Handle<T> {
+    pub fn get_or_insert(&mut self, value: T) -> Handle<T>
+    where
+        T: Eq + PartialEq + Hash,
+    {
         if let Some(&handle) = self.handles.get(&value) {
             return handle;
         }
@@ -46,7 +45,10 @@ where
         self.insert_new(value)
     }
 
-    fn insert_new(&mut self, value: T) -> Handle<T> {
+    fn insert_new(&mut self, value: T) -> Handle<T>
+    where
+        T: Eq + PartialEq + Hash,
+    {
         debug_assert!(self.handles.get(&value).is_none());
 
         if self.refs.len() > u32::MAX as usize {
@@ -54,13 +56,32 @@ where
         }
 
         let handle = Handle::new(self.refs.len() as u32).unwrap();
-
         let interned_ref = unsafe { InternedRef::new(self.bump.alloc(value)) };
 
         self.handles.insert(interned_ref, handle);
         self.refs.push(interned_ref);
 
         handle
+    }
+
+    #[inline]
+    pub fn get(&self, handle: Handle<T>) -> Option<&T> {
+        self.refs
+            .get(handle.index() as usize)
+            .map(InternedRef::as_ref)
+    }
+
+    #[inline]
+    pub fn get_handle(&self, value: &T) -> Option<Handle<T>>
+    where
+        T: Eq + PartialEq + Hash,
+    {
+        self.handles.get(value).copied()
+    }
+
+    #[inline]
+    pub fn iter(&self) -> impl Iterator<Item = &T> {
+        self.refs[1..].iter().map(InternedRef::as_ref)
     }
 }
 
@@ -70,6 +91,14 @@ where
 {
     fn default() -> Self {
         Self::new(T::default())
+    }
+}
+
+impl<T> ops::Index<Handle<T>> for Arena<T> {
+    type Output = T;
+
+    fn index(&self, handle: Handle<T>) -> &Self::Output {
+        self.get(handle).unwrap()
     }
 }
 

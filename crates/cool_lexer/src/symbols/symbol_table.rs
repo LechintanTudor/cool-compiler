@@ -14,9 +14,10 @@ impl SymbolTable {
 
     #[inline]
     pub fn get(&self, symbol: Symbol) -> &str {
-        self.symbols.get(symbol.0)
+        &self.symbols[symbol.0]
     }
 
+    #[inline]
     pub fn iter(&self) -> impl Iterator<Item = &str> {
         self.symbols.iter()
     }

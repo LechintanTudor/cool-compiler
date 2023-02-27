@@ -16,7 +16,7 @@ impl Symbol {
         SYMBOL_TABLE.lock().unwrap().insert(symbol_str)
     }
 
-    pub fn get(symbol: Self) -> &'static str {
+    pub fn as_str_from_symbol_table(symbol: Self) -> &'static str {
         let symbols = SYMBOL_TABLE.lock().unwrap();
         let str = symbols.get(symbol);
 

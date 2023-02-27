@@ -2,15 +2,10 @@ use cool_lexer::symbols::Symbol;
 use smallvec::SmallVec;
 use std::fmt;
 
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct ItemPathBuf(SmallVec<[Symbol; 4]>);
 
 impl ItemPathBuf {
-    #[inline]
-    pub fn as_symbol_slice(&self) -> &[Symbol] {
-        self.0.as_slice()
-    }
-
     #[inline]
     pub fn as_path(&self) -> ItemPath {
         ItemPath(self.0.as_slice())
@@ -21,22 +16,6 @@ impl ItemPathBuf {
         let mut symbols = self.0.clone();
         symbols.push(symbol);
         Self(symbols)
-    }
-}
-
-impl fmt::Display for ItemPathBuf {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Some((first, others)) = self.0.split_first() else {
-            return Ok(());
-        };
-
-        write!(f, "{}", first)?;
-
-        for other in others {
-            write!(f, ".{}", other)?;
-        }
-
-        Ok(())
     }
 }
 
@@ -63,35 +42,14 @@ impl FromIterator<Symbol> for ItemPathBuf {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ItemPath<'a>(&'a [Symbol]);
 
 impl ItemPath<'_> {
     #[inline]
-    pub fn as_symbol_slice(&self) -> &[Symbol] {
-        self.0
-    }
-
-    #[inline]
     #[must_use]
     pub fn to_path_buf(&self) -> ItemPathBuf {
         ItemPathBuf(SmallVec::from_slice(self.0))
-    }
-}
-
-impl fmt::Display for ItemPath<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Some((first, others)) = self.0.split_first() else {
-            return Ok(());
-        };
-
-        write!(f, "{}", first)?;
-
-        for other in others {
-            write!(f, ".{}", other)?;
-        }
-
-        Ok(())
     }
 }
 
@@ -108,3 +66,65 @@ impl<'a> From<&'a ItemPathBuf> for ItemPath<'a> {
         Self(&path.0)
     }
 }
+
+#[rustfmt::skip]
+macro_rules! impl_path {
+    ($ty:ty) => {
+        impl $ty {
+            #[inline]
+            pub fn as_symbol_slice(&self) -> &[Symbol] {
+                &self.0[..]
+            }
+
+            #[inline]
+            pub fn len(&self) -> usize {
+                self.0.len()
+            }
+
+            #[inline]
+            pub fn first(&self) -> Symbol {
+                *self.0.first().unwrap()
+            }
+
+            #[inline]
+            pub fn last(&self) -> Symbol {
+                *self.0.last().unwrap()
+            }
+        }
+
+        impl fmt::Display for $ty {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                let Some((first, others)) = self.0.split_first() else {
+                    return Ok(());
+                };
+
+                write!(f, "{}", first)?;
+
+                for other in others {
+                    write!(f, ".{}", other)?;
+                }
+
+                Ok(())
+            }
+        }
+
+        impl fmt::Debug for $ty {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                let Some((first, others)) = self.0.split_first() else {
+                    return write!(f, "\"\"")
+                };
+
+                write!(f, "\"{}", first)?;
+
+                for other in others {
+                    write!(f, ".{}", other)?;
+                }
+
+                f.write_str("\"")
+            }
+        }
+    };
+}
+
+impl_path!(ItemPathBuf);
+impl_path!(ItemPath<'_>);
