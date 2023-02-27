@@ -38,7 +38,7 @@ pub fn compile(package_name: &str, path: &Path) -> Package {
         modules_to_process.push_back((item_path, &source.module));
 
         while let Some((item_path, module_content)) = modules_to_process.pop_front() {
-            let mut module_builder = items.build_module(item_path.clone());
+            let mut module_builder = items.build_module(item_path.clone()).unwrap();
 
             for decl in module_content.decls.iter() {
                 let is_exported = decl.is_exported;
@@ -64,7 +64,9 @@ pub fn compile(package_name: &str, path: &Path) -> Package {
                             }
                         }
 
-                        module_builder.add_item(is_exported, decl.ident.symbol);
+                        module_builder
+                            .add_item(is_exported, decl.ident.symbol)
+                            .unwrap();
                     }
                     DeclKind::Use(decl) => {
                         let item_path = decl
@@ -74,7 +76,8 @@ pub fn compile(package_name: &str, path: &Path) -> Package {
                             .map(|ident| ident.symbol)
                             .collect::<ItemPathBuf>();
 
-                        uses_to_resolve.push_back((module_builder.id(), (is_exported, item_path)));
+                        uses_to_resolve
+                            .push_back((module_builder.item_id(), (is_exported, item_path)));
                     }
                 }
             }

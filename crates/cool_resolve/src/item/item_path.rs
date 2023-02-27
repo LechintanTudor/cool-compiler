@@ -1,14 +1,21 @@
-use cool_lexer::symbols::Symbol;
+use cool_lexer::symbols::{sym, Symbol};
 use smallvec::SmallVec;
 use std::fmt;
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash, Default)]
 pub struct ItemPathBuf(SmallVec<[Symbol; 4]>);
 
 impl ItemPathBuf {
     #[inline]
     pub fn as_path(&self) -> ItemPath {
         ItemPath(self.0.as_slice())
+    }
+
+    #[must_use]
+    pub fn pop(&self) -> Self {
+        let remaining_len = self.0.len().checked_sub(1).unwrap_or(0);
+        let remaining_symbols = &self.0[..remaining_len];
+        Self(SmallVec::from_slice(remaining_symbols))
     }
 
     #[must_use]
@@ -42,10 +49,17 @@ impl FromIterator<Symbol> for ItemPathBuf {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub struct ItemPath<'a>(&'a [Symbol]);
 
 impl ItemPath<'_> {
+    #[must_use]
+    pub fn pop(&self) -> Self {
+        let remaining_len = self.0.len().checked_sub(1).unwrap_or(0);
+        let remaining_symbols = &self.0[..remaining_len];
+        Self(remaining_symbols)
+    }
+
     #[inline]
     #[must_use]
     pub fn to_path_buf(&self) -> ItemPathBuf {
@@ -83,12 +97,12 @@ macro_rules! impl_path {
 
             #[inline]
             pub fn first(&self) -> Symbol {
-                *self.0.first().unwrap()
+                self.0.first().copied().unwrap_or(sym::EMPTY)
             }
 
             #[inline]
             pub fn last(&self) -> Symbol {
-                *self.0.last().unwrap()
+                self.0.last().copied().unwrap_or(sym::EMPTY)
             }
         }
 

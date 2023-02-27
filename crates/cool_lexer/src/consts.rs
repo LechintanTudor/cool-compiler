@@ -32,6 +32,13 @@ impl Symbol {
     }
 }
 
+impl Default for Symbol {
+    #[inline]
+    fn default() -> Self {
+        sym::EMPTY
+    }
+}
+
 impl fmt::Display for Symbol {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -111,8 +118,8 @@ macro_rules! define_symbols {
 
         #[allow(dead_code)]
         pub mod tk {
+            use crate::consts::sym;
             use crate::tokens::TokenKind;
-            use crate::tokens::symbol::sym;
             use paste::paste;
 
             paste! {
@@ -173,6 +180,7 @@ define_symbols! {
         f64 => 27,
     },
     Extra {
-        WILDCARD: "_" => 28,
+        EMPTY: "" => 28,
+        WILDCARD: "_" => 29,
     },
 }

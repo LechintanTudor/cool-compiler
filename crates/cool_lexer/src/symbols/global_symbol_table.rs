@@ -1,12 +1,12 @@
+use crate::consts::sym;
 use crate::symbols::{Symbol, SymbolTable};
-use crate::tokens;
 use lazy_static::lazy_static;
 use std::sync::Mutex;
 
 lazy_static! {
     static ref SYMBOL_TABLE: Mutex<SymbolTable> = {
         let mut symbols = SymbolTable::default();
-        tokens::intern_symbols(&mut symbols);
+        sym::intern_symbols(&mut symbols);
         Mutex::new(symbols)
     };
 }

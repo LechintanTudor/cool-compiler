@@ -3,39 +3,37 @@ use std::error::Error;
 use std::fmt;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum ImportErrorKind {
+pub enum ItemErrorKind {
     SymbolNotFound,
-    SymbolAlreadyImported,
+    SymbolAlreadyDefined,
     SymbolIsUnreachable,
 }
 
 #[derive(Clone, Debug)]
-pub struct ImportError {
-    pub kind: ImportErrorKind,
+pub struct ItemError {
+    pub kind: ItemErrorKind,
     pub module_path: ItemPathBuf,
-    pub use_path: ItemPathBuf,
+    pub symbol_path: ItemPathBuf,
 }
 
-impl Error for ImportError {}
+impl Error for ItemError {}
 
-impl fmt::Display for ImportError {
+impl fmt::Display for ItemError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "Failed to import '{}' in '{}': ",
-            self.use_path, self.module_path
+            self.symbol_path, self.module_path
         )?;
 
-        let symbol = self.use_path.last();
+        let symbol = self.symbol_path.last();
 
         match self.kind {
-            ImportErrorKind::SymbolNotFound => write!(f, "symbol '{}' was not found", symbol)?,
-            ImportErrorKind::SymbolAlreadyImported => {
-                write!(f, "symbol '{}' was already imported", symbol)?
+            ItemErrorKind::SymbolNotFound => write!(f, "symbol '{}' was not found", symbol)?,
+            ItemErrorKind::SymbolAlreadyDefined => {
+                write!(f, "symbol '{}' was already defined", symbol)?
             }
-            ImportErrorKind::SymbolIsUnreachable => {
-                write!(f, "symbol '{}' is unreachable", symbol)?
-            }
+            ItemErrorKind::SymbolIsUnreachable => write!(f, "symbol '{}' is unreachable", symbol)?,
         }
 
         Ok(())

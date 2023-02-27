@@ -16,15 +16,10 @@ pub enum TokenKind {
 }
 
 impl TokenKind {
+    #[inline]
     pub const fn is_lang_part(&self) -> bool {
         !matches!(self, Self::Whitespace | Self::Comment | Self::Group(_))
     }
-}
-
-pub mod tk {
-    pub use crate::tokens::group::tk::*;
-    pub use crate::tokens::punctuation::tk::*;
-    pub use crate::tokens::symbol::tk::*;
 }
 
 impl fmt::Display for TokenKind {
@@ -61,6 +56,7 @@ impl From<Symbol> for TokenKind {
 }
 
 impl From<Punctuation> for TokenKind {
+    #[inline]
     fn from(punctuation: Punctuation) -> Self {
         Self::Punctuation(punctuation)
     }
