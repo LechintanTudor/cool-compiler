@@ -12,6 +12,7 @@ lazy_static! {
 }
 
 impl Symbol {
+    #[inline]
     pub fn insert(symbol_str: &str) -> Self {
         SYMBOL_TABLE.lock().unwrap().insert(symbol_str)
     }

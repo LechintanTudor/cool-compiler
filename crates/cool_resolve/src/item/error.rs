@@ -23,7 +23,7 @@ impl fmt::Display for ItemError {
         write!(
             f,
             "Failed to import '{}' in '{}': ",
-            self.symbol_path, self.module_path
+            self.symbol_path, self.module_path,
         )?;
 
         let symbol = self.symbol_path.last();
