@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 cool_arena = { path = "../cool_arena" }
+cool_collections = { path = "../cool_collections" }
 cool_lexer = { path = "../cool_lexer" }
 rustc-hash = "1.1"
 smallvec = { version = "1.10", features = ["const_generics", "const_new", "union"] }

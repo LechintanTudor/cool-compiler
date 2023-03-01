@@ -3,9 +3,13 @@ members = [
     "cool_arena",
     "cool_ast",
     "cool_cli",
+    "cool_collections",
     "cool_driver",
     "cool_lexer",
     "cool_parser",
     "cool_resolve",
     "cool_span",
 ]
+
+[workspace.dependencies]
+smallvec = { version = "1.10", features = ["const_generics", "const_new", "union"] }

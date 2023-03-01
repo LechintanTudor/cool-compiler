@@ -1,7 +1,9 @@
 use crate::item::{ItemError, ItemErrorKind, ItemPath, ItemPathBuf};
 use cool_arena::{SliceArena, SliceHandle};
-use cool_lexer::symbols::Symbol;
+use cool_collections::SmallVecSet;
+use cool_lexer::symbols::{sym, Symbol};
 use rustc_hash::FxHashMap;
+use std::fmt;
 
 /*
 Check order
@@ -15,6 +17,7 @@ Check order
 #[derive(Clone, Default, Debug)]
 pub struct Module {
     pub path: ItemPathBuf,
+    pub parents: SmallVecSet<ItemId, 4>,
     pub items: FxHashMap<Symbol, ModuleItem>,
 }
 
@@ -24,8 +27,14 @@ pub struct ModuleItem {
     pub item_id: ItemId,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ItemId(SliceHandle<Symbol>);
+
+impl fmt::Debug for ItemId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("ItemId").field(&self.0.index()).finish()
+    }
+}
 
 #[derive(Default, Debug)]
 pub struct ItemTable {
@@ -39,7 +48,6 @@ impl ItemTable {
         ModuleBuilder::new(self, path)
     }
 
-    #[inline]
     fn insert_if_not_exists<'a, P>(&mut self, path: P) -> Result<ItemId, ItemError>
     where
         P: Into<ItemPath<'a>>,
@@ -61,6 +69,39 @@ impl ItemTable {
 
         Ok(item_id)
     }
+
+    fn try_resolve_import(
+        &mut self,
+        module_id: ItemId,
+        is_exported: bool,
+        item_path: ItemPath,
+    ) -> Result<bool, ItemError> {
+        let module = self.modules.get(&module_id).expect("module not found");
+
+        if item_path.starts_with_self_or_super() {
+        } else if item_path.starts_with_crate() {
+        } else {
+        }
+
+        todo!()
+    }
+
+    fn try_resolve_local_import(&self, module_path: ItemPath, item_path: ItemPath) {
+        let mut resolved_path = module_path.to_path_buf();
+
+        for symbol in item_path.as_symbol_slice().iter() {
+            resolved_path = match *symbol {
+                sym::KW_SELF => continue,
+                sym::KW_SUPER => resolved_path.pop(), // TODO: Check if path is empty
+                symbol => resolved_path.append(symbol),
+            }
+        }
+
+        // this_crate.this_module.this_submodule
+        // super.other_module -> this_crate.other_module
+    }
+
+    fn try_resolve_crate_import(&self, module_id: ItemId, is_exported: bool, item_path: ItemPath) {}
 
     // Only supports parents importing from children for now
     pub fn insert_use_decl(
@@ -127,7 +168,7 @@ impl ItemTable {
 
     pub fn print_final(&self) {
         for (item, module) in self.modules.iter() {
-            let path = self.get(*item);
+            let path = self.get_path_by_id_unwrap(*item);
             println!("[MODULE {path}]");
 
             for symbol in module.items.keys() {
@@ -149,8 +190,40 @@ impl ItemTable {
     }
 
     #[inline]
-    pub fn get(&self, item: ItemId) -> ItemPath {
+    pub fn get_path_by_id_unwrap(&self, item: ItemId) -> ItemPath {
         self.paths[item.0].into()
+    }
+
+    #[inline]
+    pub fn get_path_by_id(&self, item_id: ItemId) -> Option<ItemPath> {
+        self.paths.get(item_id.0).map(|path| path.into())
+    }
+
+    #[inline]
+    pub fn get_module_by_id(&self, module_id: ItemId) -> Result<Option<&Module>, ItemErrorKind> {
+        match self.modules.get(&module_id) {
+            Some(module) => Ok(Some(module)),
+            None => {
+                if self.paths.contains_handle(module_id.0) {
+                    Err(ItemErrorKind::SymbolIsNotModule)
+                } else {
+                    Ok(None)
+                }
+            }
+        }
+    }
+
+    pub fn get_module_by_path<'a, P>(&self, path: P) -> Result<Option<&Module>, ItemErrorKind>
+    where
+        P: Into<ItemPath<'a>>,
+    {
+        let Some(module_id) = self
+            .paths
+            .get_handle(path.into().as_symbol_slice()).map(ItemId) else {
+                return Ok(None)
+            };
+
+        self.get_module_by_id(module_id)
     }
 
     #[inline]
@@ -178,8 +251,25 @@ impl<'a> ModuleBuilder<'a> {
             })?,
         };
 
+        let parents = {
+            let mut parents = SmallVecSet::<ItemId, 4>::default();
+            let mut parent_module_path = module_path.as_path().pop();
+
+            while !parent_module_path.is_empty() {
+                let parent_module_id = items
+                    .get_item(parent_module_path)
+                    .expect("parent module not found");
+
+                parents.insert(parent_module_id);
+                parent_module_path = parent_module_path.pop();
+            }
+
+            parents
+        };
+
         let module = Module {
             path: module_path,
+            parents,
             items: Default::default(),
         };
 

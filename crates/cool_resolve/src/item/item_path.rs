@@ -85,9 +85,35 @@ impl<'a> From<&'a ItemPathBuf> for ItemPath<'a> {
 macro_rules! impl_path {
     ($ty:ty) => {
         impl $ty {
+            // pub fn parent_module()
+
+            #[inline]
+            pub fn starts_with_self_or_super(&self) -> bool {
+                let first = self.first();
+                first == sym::KW_SELF || first == sym::KW_SUPER
+            }
+            
+            #[inline]
+            pub fn starts_with_crate(&self) -> bool {
+                self.first() == sym::KW_CRATE
+            }
+            
+            #[inline]
+            pub fn starts_with<'a, P>(&self, path: P) -> bool
+            where
+                P: Into<ItemPath<'a>>,
+            {
+                self.0.starts_with(path.into().0)   
+            }
+
             #[inline]
             pub fn as_symbol_slice(&self) -> &[Symbol] {
                 &self.0[..]
+            }
+
+            #[inline]
+            pub fn is_empty(&self) -> bool {
+                self.0.is_empty()
             }
 
             #[inline]

@@ -7,6 +7,7 @@ pub enum ItemErrorKind {
     SymbolNotFound,
     SymbolAlreadyDefined,
     SymbolIsUnreachable,
+    SymbolIsNotModule,
 }
 
 #[derive(Clone, Debug)]
@@ -34,6 +35,7 @@ impl fmt::Display for ItemError {
                 write!(f, "symbol '{}' was already defined", symbol)?
             }
             ItemErrorKind::SymbolIsUnreachable => write!(f, "symbol '{}' is unreachable", symbol)?,
+            ItemErrorKind::SymbolIsNotModule => write!(f, "symbol '{}' is not a module", symbol)?,
         }
 
         Ok(())

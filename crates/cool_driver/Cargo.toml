@@ -9,4 +9,4 @@ cool_lexer = { path = "../cool_lexer" }
 cool_parser = { path = "../cool_parser" }
 cool_resolve = { path = "../cool_resolve" }
 cool_span = { path = "../cool_span" }
-smallvec = { version = "1.10", features = ["const_generics", "const_new", "union"] }
+smallvec = { workspace = true }

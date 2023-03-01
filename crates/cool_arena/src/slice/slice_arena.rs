@@ -17,7 +17,7 @@ impl<T> SliceArena<T> {
     #[must_use]
     pub fn insert_if_not_exists(&mut self, slice: &[T]) -> Option<SliceHandle<T>>
     where
-        T: Copy + PartialEq + Eq + Hash,
+        T: Copy + Eq + Hash,
     {
         if self.handles.get(slice).is_some() {
             return None;
@@ -28,7 +28,7 @@ impl<T> SliceArena<T> {
 
     pub fn get_or_insert(&mut self, slice: &[T]) -> SliceHandle<T>
     where
-        T: Copy + PartialEq + Eq + Hash,
+        T: Copy + Eq + Hash,
     {
         if let Some(&handle) = self.handles.get(slice) {
             return handle;
@@ -39,7 +39,7 @@ impl<T> SliceArena<T> {
 
     fn insert_new(&mut self, slice: &[T]) -> SliceHandle<T>
     where
-        T: Copy + PartialEq + Eq + Hash,
+        T: Copy + Eq + Hash,
     {
         debug_assert!(self.handles.get(slice).is_none());
 
@@ -70,9 +70,14 @@ impl<T> SliceArena<T> {
     #[inline]
     pub fn get_handle(&self, slice: &[T]) -> Option<SliceHandle<T>>
     where
-        T: Copy + PartialEq + Eq + Hash,
+        T: Copy + Eq + Hash,
     {
         self.handles.get(slice).copied()
+    }
+
+    #[inline]
+    pub fn contains_handle(&self, handle: SliceHandle<T>) -> bool {
+        handle.as_usize() < self.slices.len()
     }
 
     #[inline]

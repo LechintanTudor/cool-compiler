@@ -25,7 +25,7 @@ impl<T> Arena<T> {
 
     pub fn insert_if_not_exists(&mut self, value: T) -> Option<Handle<T>>
     where
-        T: Eq + PartialEq + Hash,
+        T: Eq + Hash,
     {
         if self.handles.contains_key(&value) {
             return None;
@@ -36,7 +36,7 @@ impl<T> Arena<T> {
 
     pub fn get_or_insert(&mut self, value: T) -> Handle<T>
     where
-        T: Eq + PartialEq + Hash,
+        T: Eq + Hash,
     {
         if let Some(&handle) = self.handles.get(&value) {
             return handle;
@@ -47,7 +47,7 @@ impl<T> Arena<T> {
 
     fn insert_new(&mut self, value: T) -> Handle<T>
     where
-        T: Eq + PartialEq + Hash,
+        T: Eq + Hash,
     {
         debug_assert!(self.handles.get(&value).is_none());
 
@@ -74,9 +74,14 @@ impl<T> Arena<T> {
     #[inline]
     pub fn get_handle(&self, value: &T) -> Option<Handle<T>>
     where
-        T: Eq + PartialEq + Hash,
+        T: Eq + Hash,
     {
         self.handles.get(value).copied()
+    }
+
+    #[inline]
+    pub fn contains_handle(&self, handle: Handle<T>) -> bool {
+        handle.as_usize() < self.refs.len()
     }
 
     #[inline]

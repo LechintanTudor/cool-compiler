@@ -1,7 +1,7 @@
 use crate::paths::ModulePaths;
 use crate::SourceFile;
 use cool_lexer::lexer::{LineOffsets, Tokenizer};
-use cool_lexer::symbols::Symbol;
+use cool_lexer::symbols::{sym, Symbol};
 use cool_parser::item::{DeclKind, Item, ModuleContent, ModuleKind};
 use cool_parser::Parser;
 use cool_resolve::item::{ItemId, ItemPathBuf, ItemTable};
@@ -96,11 +96,13 @@ pub fn compile(package_name: &str, path: &Path) -> Package {
             .collect()
     }
 
-    for source in sources.iter() {
-        println!("[{}]", source.module_path.display());
-        println!("{:#?}", source.module);
-        println!();
-    }
+    println!("{:#?}", items);
+
+    // for source in sources.iter() {
+    //     println!("[{}]", source.module_path.display());
+    //     println!("{:#?}", source.module);
+    //     println!();
+    // }
 
     // items.print_final();
 

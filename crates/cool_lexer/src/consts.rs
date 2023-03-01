@@ -18,11 +18,6 @@ impl Symbol {
     }
 
     #[inline]
-    pub fn is_wildcard(&self) -> bool {
-        *self == sym::WILDCARD
-    }
-
-    #[inline]
     pub fn as_str(&self) -> &'static str {
         if *self <= sym::WILDCARD {
             sym::ALL_REPRS[self.as_usize()]
@@ -148,39 +143,42 @@ define_symbols! {
     Keywords {
         break => 1,
         continue => 2,
-        defer => 3,
-        else => 4,
-        enum => 5,
-        export => 6,
-        false => 7,
-        fn => 8,
-        if => 9,
-        use => 10,
+        crate => 3,
+        defer => 4,
+        else => 5,
+        enum => 6,
+        export => 7,
+        false => 8,
+        fn => 9,
+        if => 10,
         module => 11,
         mut => 12,
-        struct => 13,
-        true => 14,
-        while => 15,
+        self => 13,
+        struct => 14,
+        super => 15,
+        true => 16,
+        use => 17,
+        while => 18,
     },
     Primitives {
-        i8 => 16,
-        i16 => 17,
-        i32 => 18,
-        i64 => 19,
+        i8 => 19,
+        i16 => 20,
+        i32 => 21,
+        i64 => 22,
 
-        u8 => 20,
-        u16 => 21,
-        u32 => 22,
-        u64 => 23,
+        u8 => 23,
+        u16 => 24,
+        u32 => 25,
+        u64 => 26,
 
-        isize => 24,
-        usize => 25,
+        isize => 27,
+        usize => 28,
 
-        f32 => 26,
-        f64 => 27,
+        f32 => 29,
+        f64 => 30,
     },
     Extra {
-        EMPTY: "" => 28,
-        WILDCARD: "_" => 29,
+        EMPTY: "" => 31,
+        WILDCARD: "_" => 32,
     },
 }
