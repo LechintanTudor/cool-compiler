@@ -65,6 +65,7 @@ where
         }
 
         while self.peek().kind == tk::DOT {
+            self.bump_expect(&[tk::DOT])?;
             idents.push(self.parse_ident()?);
         }
 
@@ -92,6 +93,7 @@ where
         }
 
         while self.peek().kind == tk::DOT {
+            self.bump_expect(&[tk::DOT])?;
             idents.push(self.parse_ident()?);
         }
 

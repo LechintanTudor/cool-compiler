@@ -1,16 +1,16 @@
-use crate::item::{ItemError, ItemErrorKind, ItemId, ItemPathBuf, ItemTable};
+use crate::item::{ItemError, ItemErrorKind, ItemId, ItemPath, ItemPathBuf, ItemTable};
 use cool_lexer::symbols::sym;
 
 pub fn resolve_import(
     items: &ItemTable,
     module_id: ItemId,
-    import_path: ItemPathBuf,
+    import_path: ItemPath,
 ) -> Result<Option<ItemId>, ItemError> {
-    let module_path = items.get_path_by_id_unwrap(module_id);
+    let module_path = items.get_path_by_id(module_id).unwrap();
 
-    let mut resolved_path = if module_path.starts_with_crate() {
+    let mut resolved_path = if import_path.starts_with_crate() {
         ItemPathBuf::from(module_path.first())
-    } else if module_path.starts_with_self_or_super() {
+    } else if import_path.starts_with_self_or_super() {
         module_path.to_path_buf()
     } else {
         todo!()
@@ -24,7 +24,7 @@ pub fn resolve_import(
         };
     }
 
-    let Some((final_symbol, module_symbols)) = resolved_path.as_symbol_slice().split_first() else {
+    let Some((final_symbol, module_symbols)) = resolved_path.as_symbol_slice().split_last() else {
         panic!("resolved path is empty");
     };
 
@@ -35,12 +35,12 @@ pub fn resolve_import(
             return Err(ItemError {
                 kind,
                 module_path: module_path.to_path_buf(),
-                symbol_path: import_path,
+                symbol_path: import_path.to_path_buf(),
             })
         }
     };
 
-    for symbol in module_symbols {
+    for symbol in &module_symbols[1..] {
         let Some(module_item) = current_module.items.get(symbol) else {
             return Ok(None);
         };
@@ -49,7 +49,7 @@ pub fn resolve_import(
             return Err(ItemError {
                 kind: ItemErrorKind::SymbolIsUnreachable,
                 module_path: module_path.to_path_buf(),
-                symbol_path: import_path,
+                symbol_path: import_path.to_path_buf(),
             });
         };
 
@@ -60,7 +60,7 @@ pub fn resolve_import(
                 return Err(ItemError {
                     kind,
                     module_path: module_path.to_path_buf(),
-                    symbol_path: import_path,
+                    symbol_path: import_path.to_path_buf(),
                 })
             }
         };
@@ -77,7 +77,7 @@ pub fn resolve_import(
             return Err(ItemError {
                 kind: ItemErrorKind::SymbolIsUnreachable,
                 module_path: module_path.to_path_buf(),
-                symbol_path: import_path,
+                symbol_path: import_path.to_path_buf(),
             });
         }
 

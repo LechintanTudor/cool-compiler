@@ -1,12 +1,10 @@
 use cool_lexer::lexer::LineOffsets;
 use cool_parser::item::ModuleContent;
-use cool_resolve::item::ItemPathBuf;
 use cool_span::Span;
 use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
 pub struct SourceFile {
-    pub item_path: ItemPathBuf,
     pub module_path: PathBuf,
     pub child_module_dir: PathBuf,
     pub content: String,
