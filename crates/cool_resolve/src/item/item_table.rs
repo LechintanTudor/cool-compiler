@@ -175,6 +175,20 @@ impl ItemTable {
         }
     }
 
+    pub fn print_final(&self) {
+        for (item, module) in self.modules.iter() {
+            let module_path = self.get_path_by_id(*item).unwrap();
+            println!("[MODULE {}]", module_path);
+
+            for (symbol, item) in module.items.iter() {
+                let item_path = self.get_path_by_id(item.item_id).unwrap();
+                println!("{}: {}", symbol, item_path);
+            }
+
+            println!()
+        }
+    }
+
     #[inline]
     pub fn get_item<'a, P>(&self, path: P) -> Option<ItemId>
     where

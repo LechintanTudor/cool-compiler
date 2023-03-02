@@ -18,7 +18,7 @@ pub fn resolve_import(
 
     for symbol in import_path.as_symbol_slice() {
         resolved_path = match *symbol {
-            sym::KW_SELF => continue,
+            sym::KW_SELF | sym::KW_CRATE => continue,
             sym::KW_SUPER => resolved_path.pop(), // TODO: Return error if resolved path gets empty,
             symbol => resolved_path.append(symbol),
         };

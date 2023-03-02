@@ -4,7 +4,7 @@ use cool_lexer::lexer::{LineOffsets, Tokenizer};
 use cool_lexer::symbols::Symbol;
 use cool_parser::item::{DeclKind, Item, ModuleContent, ModuleKind};
 use cool_parser::Parser;
-use cool_resolve::item::{ItemId, ItemPathBuf, ItemTable};
+use cool_resolve::item::{ItemError, ItemErrorKind, ItemId, ItemPathBuf, ItemTable};
 use std::collections::VecDeque;
 use std::path::Path;
 
@@ -31,7 +31,7 @@ pub fn compile(package_name: &str, path: &Path) -> Package {
     file_modules_to_process.push_front((root_module_id, root_paths));
 
     // Module ID of the use declaration, whether the use is exported, use path
-    let mut uses_to_resolve = VecDeque::<(ItemId, (bool, ItemPathBuf))>::new();
+    let mut imports_to_resolve = VecDeque::<(ItemId, (bool, ItemPathBuf))>::new();
 
     while let Some((module_id, module_paths)) = file_modules_to_process.pop_front() {
         let source = parse_source_file(module_paths.clone());
@@ -80,7 +80,7 @@ pub fn compile(package_name: &str, path: &Path) -> Package {
                             .map(|ident| ident.symbol)
                             .collect::<ItemPathBuf>();
 
-                        uses_to_resolve.push_back((module_id, (is_exported, item_path)));
+                        imports_to_resolve.push_back((module_id, (is_exported, item_path)));
                     }
                 }
             }
@@ -89,17 +89,48 @@ pub fn compile(package_name: &str, path: &Path) -> Package {
         sources.push(source);
     }
 
-    while !uses_to_resolve.is_empty() {
-        uses_to_resolve = uses_to_resolve
-            .iter()
-            .filter(|(module_id, (is_exported, item_path))| {
-                !items
-                    .insert_use_decl(*module_id, *is_exported, item_path.as_path())
-                    .unwrap()
-            })
-            .cloned()
-            .collect()
+    let mut import_errors = Vec::<ItemError>::new();
+
+    while !imports_to_resolve.is_empty() {
+        let mut solved_any_import = false;
+        let initial_import_count = imports_to_resolve.len();
+
+        for _ in 0..initial_import_count {
+            let (module_id, (is_exported, item_path)) = imports_to_resolve.pop_front().unwrap();
+
+            match items.insert_use_decl(module_id, is_exported, item_path.as_path()) {
+                Ok(true) => solved_any_import = true,
+                Ok(false) => imports_to_resolve.push_back((module_id, (is_exported, item_path))),
+                Err(error) => import_errors.push(error),
+            }
+        }
+
+        if !solved_any_import {
+            break;
+        }
     }
+
+    for (module_id, (_, import_path)) in imports_to_resolve {
+        let module_path = items.get_path_by_id(module_id).unwrap();
+
+        import_errors.push(ItemError {
+            kind: ItemErrorKind::SymbolNotFound,
+            module_path: module_path.to_path_buf(),
+            symbol_path: import_path,
+        });
+    }
+
+    if !import_errors.is_empty() {
+        println!("[{} unresolved imports]", import_errors.len());
+
+        for error in import_errors {
+            println!("{:?} in {:?}", error.symbol_path, error.module_path);
+        }
+
+        println!();
+    }
+
+    items.print_final();
 
     Package { items, sources }
 }
