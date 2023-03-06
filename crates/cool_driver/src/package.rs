@@ -5,12 +5,14 @@ use cool_lexer::symbols::Symbol;
 use cool_parser::item::{DeclKind, Item, ModuleContent, ModuleKind};
 use cool_parser::Parser;
 use cool_resolve::item::{ItemError, ItemErrorKind, ItemId, ItemPathBuf, ItemTable};
+use cool_resolve::ty::TyTable;
 use std::collections::VecDeque;
 use std::path::Path;
 
 #[derive(Debug)]
 pub struct Package {
     pub items: ItemTable,
+    pub tys: TyTable,
     pub sources: Vec<SourceFile>,
 }
 
@@ -20,6 +22,8 @@ pub fn compile(package_name: &str, path: &Path) -> Result<Package, CompileError>
 
     let mut items = ItemTable::with_builtins();
     let root_module_id = items.insert_root_module(root_symbol).unwrap();
+
+    let tys = TyTable::with_builtins();
 
     let mut sources = Vec::<SourceFile>::new();
 
@@ -120,7 +124,11 @@ pub fn compile(package_name: &str, path: &Path) -> Result<Package, CompileError>
         return Err(CompileError { import_errors });
     }
 
-    Ok(Package { items, sources })
+    Ok(Package {
+        items,
+        tys,
+        sources,
+    })
 }
 
 fn parse_source_file(module_paths: ModulePaths) -> SourceFile {

@@ -5,17 +5,15 @@ use rustc_hash::FxHashMap;
 use std::hash::Hash;
 use std::{fmt, ops};
 
-pub type SliceHandle<T> = Handle<[T]>;
-
 pub struct SliceArena<T> {
     bump: Bump,
-    handles: FxHashMap<InternedSlice<T>, SliceHandle<T>>,
+    handles: FxHashMap<InternedSlice<T>, Handle>,
     slices: Vec<InternedSlice<T>>,
 }
 
 impl<T> SliceArena<T> {
     #[must_use]
-    pub fn insert_if_not_exists(&mut self, slice: &[T]) -> Option<SliceHandle<T>>
+    pub fn insert_if_not_exists(&mut self, slice: &[T]) -> Option<Handle>
     where
         T: Copy + Eq + Hash,
     {
@@ -26,7 +24,7 @@ impl<T> SliceArena<T> {
         Some(self.insert_new(slice))
     }
 
-    pub fn get_or_insert(&mut self, slice: &[T]) -> SliceHandle<T>
+    pub fn get_or_insert(&mut self, slice: &[T]) -> Handle
     where
         T: Copy + Eq + Hash,
     {
@@ -37,7 +35,7 @@ impl<T> SliceArena<T> {
         self.insert_new(slice)
     }
 
-    fn insert_new(&mut self, slice: &[T]) -> SliceHandle<T>
+    fn insert_new(&mut self, slice: &[T]) -> Handle
     where
         T: Copy + Eq + Hash,
     {
@@ -61,14 +59,14 @@ impl<T> SliceArena<T> {
     }
 
     #[inline]
-    pub fn get(&self, handle: SliceHandle<T>) -> Option<&[T]> {
+    pub fn get(&self, handle: Handle) -> Option<&[T]> {
         self.slices
             .get(handle.as_usize())
             .map(InternedSlice::as_slice)
     }
 
     #[inline]
-    pub fn get_handle(&self, slice: &[T]) -> Option<SliceHandle<T>>
+    pub fn get_handle(&self, slice: &[T]) -> Option<Handle>
     where
         T: Copy + Eq + Hash,
     {
@@ -76,7 +74,7 @@ impl<T> SliceArena<T> {
     }
 
     #[inline]
-    pub fn contains_handle(&self, handle: SliceHandle<T>) -> bool {
+    pub fn contains_handle(&self, handle: Handle) -> bool {
         handle.as_usize() < self.slices.len()
     }
 
@@ -103,10 +101,10 @@ impl<T> Default for SliceArena<T> {
     }
 }
 
-impl<T> ops::Index<SliceHandle<T>> for SliceArena<T> {
+impl<T> ops::Index<Handle> for SliceArena<T> {
     type Output = [T];
 
-    fn index(&self, handle: SliceHandle<T>) -> &Self::Output {
+    fn index(&self, handle: Handle) -> &Self::Output {
         self.get(handle).unwrap()
     }
 }

@@ -7,7 +7,7 @@ fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     match cool_driver::compile(&args.crate_name, &args.crate_root_file) {
-        Ok(_package) => println!("Crate compiled successfully."),
+        Ok(package) => println!("Crate compiled successfully.\n {:#?}", package),
         Err(error) => println!("{}", error),
     }
 

@@ -1,4 +1,4 @@
-use crate::ty::Ty;
+use crate::ty::TyId;
 use smallvec::SmallVec;
 
 #[derive(Clone, PartialEq, Eq, Hash, Default, Debug)]
@@ -49,6 +49,7 @@ pub enum IntTy {
     I32,
     I64,
     I128,
+    Isize,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -58,6 +59,7 @@ pub enum UintTy {
     U32,
     U64,
     U128,
+    Usize,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -68,11 +70,11 @@ pub enum FloatTy {
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TupleTy {
-    pub elems: SmallVec<[Ty; 6]>,
+    pub elems: SmallVec<[TyId; 6]>,
 }
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct FnTy {
-    pub args: SmallVec<[Ty; 4]>,
-    pub ret: Ty,
+    pub args: SmallVec<[TyId; 4]>,
+    pub ret: TyId,
 }

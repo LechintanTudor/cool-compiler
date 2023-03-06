@@ -1,9 +1,9 @@
 use cool_lexer::symbols::Symbol;
-use cool_resolve::ty::Ty;
+use cool_resolve::ty::TyId;
 
 #[derive(Clone, Debug)]
 pub struct FnAst {
-    pub ty: Ty,
+    pub ty: TyId,
     pub args: Vec<FnArgAst>,
 }
 

@@ -1,3 +1,7 @@
+pub mod tys {
+    pub use crate::consts::tys::*;
+}
+
 mod ty;
 mod ty_table;
 

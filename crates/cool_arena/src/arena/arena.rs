@@ -7,7 +7,7 @@ use std::{fmt, ops};
 
 pub struct Arena<T> {
     bump: Bump,
-    handles: FxHashMap<InternedRef<T>, Handle<T>>,
+    handles: FxHashMap<InternedRef<T>, Handle>,
     refs: Vec<InternedRef<T>>,
 }
 
@@ -23,7 +23,7 @@ impl<T> Arena<T> {
         }
     }
 
-    pub fn insert_if_not_exists(&mut self, value: T) -> Option<Handle<T>>
+    pub fn insert_if_not_exists(&mut self, value: T) -> Option<Handle>
     where
         T: Eq + Hash,
     {
@@ -34,7 +34,7 @@ impl<T> Arena<T> {
         Some(self.insert_new(value))
     }
 
-    pub fn get_or_insert(&mut self, value: T) -> Handle<T>
+    pub fn get_or_insert(&mut self, value: T) -> Handle
     where
         T: Eq + Hash,
     {
@@ -45,7 +45,7 @@ impl<T> Arena<T> {
         self.insert_new(value)
     }
 
-    fn insert_new(&mut self, value: T) -> Handle<T>
+    fn insert_new(&mut self, value: T) -> Handle
     where
         T: Eq + Hash,
     {
@@ -65,14 +65,14 @@ impl<T> Arena<T> {
     }
 
     #[inline]
-    pub fn get(&self, handle: Handle<T>) -> Option<&T> {
+    pub fn get(&self, handle: Handle) -> Option<&T> {
         self.refs
             .get(handle.index() as usize)
             .map(InternedRef::as_ref)
     }
 
     #[inline]
-    pub fn get_handle(&self, value: &T) -> Option<Handle<T>>
+    pub fn get_handle(&self, value: &T) -> Option<Handle>
     where
         T: Eq + Hash,
     {
@@ -80,7 +80,7 @@ impl<T> Arena<T> {
     }
 
     #[inline]
-    pub fn contains_handle(&self, handle: Handle<T>) -> bool {
+    pub fn contains_handle(&self, handle: Handle) -> bool {
         handle.as_usize() < self.refs.len()
     }
 
@@ -99,10 +99,10 @@ where
     }
 }
 
-impl<T> ops::Index<Handle<T>> for Arena<T> {
+impl<T> ops::Index<Handle> for Arena<T> {
     type Output = T;
 
-    fn index(&self, handle: Handle<T>) -> &Self::Output {
+    fn index(&self, handle: Handle) -> &Self::Output {
         self.get(handle).unwrap()
     }
 }

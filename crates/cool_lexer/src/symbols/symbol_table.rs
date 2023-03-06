@@ -1,8 +1,9 @@
-use cool_arena::{handle_newtype, StrArena, StrHandle};
+use cool_arena::{handle_newtype, StrArena};
+use std::fmt;
 
-handle_newtype!(Symbol wraps StrHandle);
+handle_newtype!(Symbol);
 
-#[derive(Default, Debug)]
+#[derive(Default)]
 pub struct SymbolTable {
     symbols: StrArena,
 }
@@ -21,5 +22,12 @@ impl SymbolTable {
     #[inline]
     pub fn iter(&self) -> impl Iterator<Item = &str> {
         self.symbols.iter()
+    }
+}
+
+impl fmt::Debug for SymbolTable {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&self.symbols, f)
     }
 }

@@ -3,6 +3,7 @@ use cool_arena::SliceArena;
 use cool_lexer::symbols::Symbol;
 use rustc_hash::FxHashMap;
 use std::collections::hash_map::Entry;
+use std::fmt;
 
 #[derive(Clone, Default, Debug)]
 pub struct Module {
@@ -16,7 +17,7 @@ pub struct ModuleItem {
     pub item_id: ItemId,
 }
 
-#[derive(Default, Debug)]
+#[derive(Default)]
 pub struct ItemTable {
     paths: SliceArena<Symbol>,
     modules: FxHashMap<ItemId, Module>,
@@ -239,5 +240,24 @@ impl ItemTable {
         self.modules
             .iter()
             .map(|(&module_id, module)| (module_id, module))
+    }
+}
+
+struct PathArenaDebug<'a>(&'a SliceArena<Symbol>);
+
+impl fmt::Debug for PathArenaDebug<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_list()
+            .entries(self.0.iter().map(ItemPath::from))
+            .finish()
+    }
+}
+
+impl fmt::Debug for ItemTable {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ItemTable")
+            .field("paths", &PathArenaDebug(&self.paths))
+            .field("modules", &self.modules)
+            .finish()
     }
 }
