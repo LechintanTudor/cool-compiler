@@ -30,7 +30,7 @@ impl TyTable {
 
     pub fn mk_tuple<E>(&mut self, elems: E) -> TyId
     where
-        E: Iterator<Item = TyId>,
+        E: IntoIterator<Item = TyId>,
     {
         let ty_kind: TyKind = TupleTy {
             elems: SmallVec::from_iter(elems),
@@ -42,7 +42,7 @@ impl TyTable {
 
     pub fn mk_fn<P>(&mut self, params: P, ret: TyId) -> TyId
     where
-        P: Iterator<Item = TyId>,
+        P: IntoIterator<Item = TyId>,
     {
         let ty_kind: TyKind = FnTy {
             args: SmallVec::from_iter(params),
@@ -54,8 +54,19 @@ impl TyTable {
     }
 
     #[inline]
-    pub fn get(&self, ty: TyId) -> Option<&TyKind> {
-        self.tys.get(ty.0)
+    pub fn get_ty_id_by_item_id(&self, item_id: ItemId) -> Option<TyId> {
+        self.items.get(&item_id).map(|&ty_id| ty_id)
+    }
+
+    #[inline]
+    pub fn get_by_item_id(&self, item_id: ItemId) -> Option<&TyKind> {
+        let ty_id = *self.items.get(&item_id)?;
+        self.get_by_id(ty_id)
+    }
+
+    #[inline]
+    pub fn get_by_id(&self, ty_id: TyId) -> Option<&TyKind> {
+        self.tys.get(ty_id.0)
     }
 }
 

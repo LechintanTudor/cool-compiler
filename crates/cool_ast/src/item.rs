@@ -1,7 +1,6 @@
-use crate::{FnAst, ModuleAst};
+use crate::FnAst;
 
 #[derive(Clone, Debug)]
 pub enum ItemAst {
-    Module(ModuleAst),
     Fn(FnAst),
 }

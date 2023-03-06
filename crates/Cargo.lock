@@ -76,6 +76,7 @@ name = "cool_ast"
 version = "0.1.0"
 dependencies = [
  "cool_lexer",
+ "cool_parser",
  "cool_resolve",
  "cool_span",
 ]
