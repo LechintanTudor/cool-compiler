@@ -21,7 +21,7 @@ where
 {
     pub fn parse_use_decl(&mut self) -> ParseResult<UseDecl> {
         let start_token = self.bump_expect(&[tk::KW_USE])?;
-        let path = self.parse_path()?;
+        let path = self.parse_import_path()?;
 
         Ok(UseDecl {
             span: start_token.span.to(path.span()),

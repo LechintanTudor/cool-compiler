@@ -16,7 +16,7 @@ where
     pub fn parse_expr(&mut self) -> ParseResult<Expr> {
         let expr = match self.peek().kind {
             TokenKind::Literal(_) => Expr::Literal(self.parse_literal_expr()?),
-            TokenKind::Ident(_) => Expr::Path(self.parse_path()?),
+            TokenKind::Ident(_) => Expr::Path(self.parse_import_path()?),
             _ => {
                 return Err(UnexpectedToken {
                     found: self.peek(),

@@ -1,5 +1,6 @@
-use crate::symbols::Symbol;
-use cool_arena::StrArena;
+use cool_arena::{handle_newtype, StrArena, StrHandle};
+
+handle_newtype!(Symbol wraps StrHandle);
 
 #[derive(Default, Debug)]
 pub struct SymbolTable {

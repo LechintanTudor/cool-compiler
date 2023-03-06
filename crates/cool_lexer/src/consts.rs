@@ -180,5 +180,6 @@ define_symbols! {
     Extra {
         EMPTY: "" => 31,
         WILDCARD: "_" => 32,
+        GLOB: "*" => 33,
     },
 }

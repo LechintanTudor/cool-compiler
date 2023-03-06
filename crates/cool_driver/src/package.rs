@@ -18,7 +18,7 @@ pub fn compile(package_name: &str, path: &Path) -> Result<Package, CompileError>
     let root_symbol = Symbol::insert(package_name);
     let root_paths = ModulePaths::for_root(path).unwrap();
 
-    let mut items = ItemTable::default();
+    let mut items = ItemTable::with_builtins();
     let root_module_id = items.insert_root_module(root_symbol).unwrap();
 
     let mut sources = Vec::<SourceFile>::new();

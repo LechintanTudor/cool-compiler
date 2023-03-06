@@ -136,6 +136,7 @@ dependencies = [
  "cool_arena",
  "cool_collections",
  "cool_lexer",
+ "paste",
  "rustc-hash",
  "smallvec",
 ]

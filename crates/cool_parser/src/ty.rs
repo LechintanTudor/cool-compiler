@@ -39,7 +39,7 @@ where
 
         Ok(match start_token.kind {
             tk::OPEN_PAREN => Ty::Tuple(self.parse_tuple_ty()?),
-            TokenKind::Ident(_) => Ty::Path(self.parse_path()?),
+            TokenKind::Ident(_) => Ty::Path(self.parse_import_path()?),
             _ => {
                 return Err(UnexpectedToken {
                     found: start_token,

@@ -95,3 +95,46 @@ where
         f.debug_tuple("Handle").field(&self.index.get()).finish()
     }
 }
+
+#[macro_export]
+macro_rules! handle_newtype {
+    ($Wrapper:ident wraps $Inner:ty) => {
+        #[derive(Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash)]
+        pub struct $Wrapper(pub(crate) $Inner);
+
+        impl $Wrapper {
+            #[inline]
+            pub const fn new(index: u32) -> Option<Self> {
+                if index == 0 {
+                    return None;
+                }
+
+                unsafe { Some(Self(<$Inner>::new_unchecked(index))) }
+            }
+
+            #[inline]
+            pub const unsafe fn new_unchecked(index: u32) -> Self {
+                Self(<$Inner>::new_unchecked(index))
+            }
+
+            #[inline]
+            pub const fn index(&self) -> u32 {
+                self.0.index()
+            }
+
+            #[inline]
+            pub const fn as_usize(&self) -> usize {
+                self.0.as_usize()
+            }
+        }
+    };
+    ($Wrapper:ident wraps $Inner:ty; Debug) => {
+        handle_newtype!($Wrapper wraps $Inner);
+
+        impl std::fmt::Debug for $Wrapper {
+            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                f.debug_tuple(stringify!($Wrapper)).field(&self.index()).finish()
+            }
+        }
+    };
+}

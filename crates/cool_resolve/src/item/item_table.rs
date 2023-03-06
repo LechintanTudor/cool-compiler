@@ -1,18 +1,8 @@
-use crate::item::{resolver, ItemError, ItemErrorKind, ItemPath, ItemPathBuf};
-use cool_arena::{SliceArena, SliceHandle};
+use crate::item::{itm, resolver, ItemError, ItemErrorKind, ItemId, ItemPath, ItemPathBuf};
+use cool_arena::SliceArena;
 use cool_lexer::symbols::Symbol;
 use rustc_hash::FxHashMap;
 use std::collections::hash_map::Entry;
-use std::fmt;
-
-/*
-Check order
-1) Local
-2) Global
-3) Glob imports
-3) Builtins
-
-*/
 
 #[derive(Clone, Default, Debug)]
 pub struct Module {
@@ -26,15 +16,6 @@ pub struct ModuleItem {
     pub item_id: ItemId,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ItemId(SliceHandle<Symbol>);
-
-impl fmt::Debug for ItemId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("ItemId").field(&self.0.index()).finish()
-    }
-}
-
 #[derive(Default, Debug)]
 pub struct ItemTable {
     paths: SliceArena<Symbol>,
@@ -42,6 +23,12 @@ pub struct ItemTable {
 }
 
 impl ItemTable {
+    pub fn with_builtins() -> Self {
+        let mut items = Self::default();
+        itm::insert_builtins(&mut items);
+        items
+    }
+
     pub fn insert_root_module(&mut self, symbol: Symbol) -> Result<ItemId, ItemError> {
         let path = ItemPathBuf::from(symbol);
         let module_id = self.create_item(path.as_path())?;
@@ -84,6 +71,11 @@ impl ItemTable {
     ) -> Result<ItemId, ItemError> {
         self.insert_item_full(parent_module_id, is_exported, symbol)
             .map(|(id, _)| id)
+    }
+
+    pub fn insert_builtin(&mut self, item_id: ItemId, symbol: Symbol) {
+        let handle = self.paths.insert_if_not_exists(&[symbol]).unwrap();
+        assert_eq!(handle.index(), item_id.index());
     }
 
     fn insert_item_full(
@@ -175,22 +167,8 @@ impl ItemTable {
         }
     }
 
-    pub fn print_final(&self) {
-        for (item, module) in self.modules.iter() {
-            let module_path = self.get_path_by_id(*item).unwrap();
-            println!("[MODULE {}]", module_path);
-
-            for (symbol, item) in module.items.iter() {
-                let item_path = self.get_path_by_id(item.item_id).unwrap();
-                println!("{}: {}", symbol, item_path);
-            }
-
-            println!()
-        }
-    }
-
     #[inline]
-    pub fn get_item<'a, P>(&self, path: P) -> Option<ItemId>
+    pub fn get_id_by_path<'a, P>(&self, path: P) -> Option<ItemId>
     where
         P: Into<ItemPath<'a>>,
     {
@@ -204,7 +182,6 @@ impl ItemTable {
         self.paths.get(item_id.0).map(|path| path.into())
     }
 
-    #[inline]
     pub fn get_module_by_id(&self, module_id: ItemId) -> Result<Option<&Module>, ItemErrorKind> {
         match self.modules.get(&module_id) {
             Some(module) => Ok(Some(module)),
@@ -250,5 +227,17 @@ impl ItemTable {
     #[inline]
     pub fn iter_paths(&self) -> impl Iterator<Item = ItemPath> {
         self.paths.iter().map(ItemPath::from)
+    }
+
+    #[inline]
+    pub fn iter_modules(&self) -> impl Iterator<Item = &Module> {
+        self.modules.values()
+    }
+
+    #[inline]
+    pub fn enumerate_modules(&self) -> impl Iterator<Item = (ItemId, &Module)> {
+        self.modules
+            .iter()
+            .map(|(&module_id, module)| (module_id, module))
     }
 }
