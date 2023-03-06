@@ -1,5 +1,5 @@
 use crate::paths::ModulePaths;
-use crate::SourceFile;
+use crate::{CompileError, SourceFile};
 use cool_lexer::lexer::{LineOffsets, Tokenizer};
 use cool_lexer::symbols::Symbol;
 use cool_parser::item::{DeclKind, Item, ModuleContent, ModuleKind};
@@ -8,17 +8,13 @@ use cool_resolve::item::{ItemError, ItemErrorKind, ItemId, ItemPathBuf, ItemTabl
 use std::collections::VecDeque;
 use std::path::Path;
 
-// TODO:
-// Then solve imports and use's
-// The generate AST
-
 #[derive(Debug)]
 pub struct Package {
     pub items: ItemTable,
     pub sources: Vec<SourceFile>,
 }
 
-pub fn compile(package_name: &str, path: &Path) -> Package {
+pub fn compile(package_name: &str, path: &Path) -> Result<Package, CompileError> {
     let root_symbol = Symbol::insert(package_name);
     let root_paths = ModulePaths::for_root(path).unwrap();
 
@@ -121,18 +117,10 @@ pub fn compile(package_name: &str, path: &Path) -> Package {
     }
 
     if !import_errors.is_empty() {
-        println!("[{} unresolved imports]", import_errors.len());
-
-        for error in import_errors {
-            println!("{:?} in {:?}", error.symbol_path, error.module_path);
-        }
-
-        println!();
+        return Err(CompileError { import_errors });
     }
 
-    items.print_final();
-
-    Package { items, sources }
+    Ok(Package { items, sources })
 }
 
 fn parse_source_file(module_paths: ModulePaths) -> SourceFile {

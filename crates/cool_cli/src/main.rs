@@ -5,6 +5,11 @@ use clap::Parser as _;
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-    let _package = cool_driver::compile(&args.crate_name, &args.crate_root_file);
+
+    match cool_driver::compile(&args.crate_name, &args.crate_root_file) {
+        Ok(_package) => println!("Crate compiled successfully."),
+        Err(error) => println!("{}", error),
+    }
+
     Ok(())
 }
