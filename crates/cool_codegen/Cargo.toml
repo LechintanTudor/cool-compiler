@@ -1,0 +1,9 @@
+[package]
+name = "cool_codegen"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cool_ast = { path = "../cool_ast" }
+cool_resolve = { path = "../cool_resolve" }
+inkwell = { version = "0.1.1", features = ["llvm15-0"] }

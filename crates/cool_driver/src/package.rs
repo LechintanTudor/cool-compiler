@@ -1,5 +1,6 @@
 use crate::paths::ModulePaths;
 use crate::{CompileError, SourceFile};
+use cool_ast::{AstGenerator, ModuleAst};
 use cool_lexer::lexer::{LineOffsets, Tokenizer};
 use cool_lexer::symbols::Symbol;
 use cool_parser::item::{DeclKind, Item, ModuleContent, ModuleKind};
@@ -16,7 +17,7 @@ pub struct Package {
     pub sources: Vec<SourceFile>,
 }
 
-pub fn compile(package_name: &str, path: &Path) -> Result<Package, CompileError> {
+pub fn parse_crate(package_name: &str, path: &Path) -> Result<Package, CompileError> {
     let root_symbol = Symbol::insert(package_name);
     let root_paths = ModulePaths::for_root(path).unwrap();
 
@@ -129,6 +130,21 @@ pub fn compile(package_name: &str, path: &Path) -> Result<Package, CompileError>
         tys,
         sources,
     })
+}
+
+pub fn generate_ast(mut package: Package) -> Result<Vec<ModuleAst>, CompileError> {
+    let mut ast_generator = AstGenerator {
+        items: &package.items,
+        tys: &mut package.tys,
+    };
+
+    let mut module_asts = Vec::<ModuleAst>::new();
+
+    for module in package.sources.iter().map(|source| &source.module) {
+        module_asts.push(ast_generator.generate_module(module));
+    }
+
+    Ok(module_asts)
 }
 
 fn parse_source_file(module_paths: ModulePaths) -> SourceFile {

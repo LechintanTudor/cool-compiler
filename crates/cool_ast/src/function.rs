@@ -39,7 +39,7 @@ impl AstGenerator<'_> {
             });
         }
 
-        let ty = self.tys.mk_fn(arg_ty_ids, tys::USIZE);
+        let ty = self.tys.mk_fn(arg_ty_ids, tys::U32);
 
         FnAst { ty, args }
     }
