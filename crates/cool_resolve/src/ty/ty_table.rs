@@ -20,7 +20,12 @@ impl TyTable {
         tys
     }
 
-    pub fn insert_builtin(&mut self, item_id: ItemId, ty_id: TyId, ty_kind: TyKind) {
+    pub fn insert_builtin(&mut self, ty_id: TyId, ty_kind: TyKind) {
+        let ty_handle = self.tys.insert_if_not_exists(ty_kind).unwrap();
+        assert_eq!(ty_handle.index(), ty_id.index());
+    }
+
+    pub fn insert_builtin_item(&mut self, item_id: ItemId, ty_id: TyId, ty_kind: TyKind) {
         let ty_handle = self.tys.insert_if_not_exists(ty_kind).unwrap();
         assert_eq!(ty_handle.index(), ty_id.index());
 
@@ -32,10 +37,13 @@ impl TyTable {
     where
         E: IntoIterator<Item = TyId>,
     {
-        let ty_kind: TyKind = TupleTy {
-            elems: SmallVec::from_iter(elems),
+        let elems = SmallVec::from_iter(elems);
+
+        if elems.is_empty() {
+            return tys::UNIT;
         }
-        .into();
+
+        let ty_kind: TyKind = TupleTy { elems }.into();
 
         TyId(self.tys.get_or_insert(ty_kind))
     }

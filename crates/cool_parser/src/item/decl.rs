@@ -16,6 +16,16 @@ pub enum DeclKind {
     Use(UseDecl),
 }
 
+impl DeclKind {
+    #[inline]
+    pub fn as_item_decl(&self) -> Option<&ItemDecl> {
+        match self {
+            Self::Item(item_decl) => Some(item_decl),
+            _ => None,
+        }
+    }
+}
+
 impl ParseTree for DeclKind {
     fn span(&self) -> Span {
         match self {

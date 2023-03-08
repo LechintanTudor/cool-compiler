@@ -1,4 +1,5 @@
-use cool_resolve::item::{ItemPath, ItemTable};
+use cool_parser::ty::Ty;
+use cool_resolve::item::{ItemPathBuf, ItemTable};
 use cool_resolve::ty::{TyId, TyTable};
 
 pub struct AstGenerator<'a> {
@@ -12,11 +13,27 @@ impl<'a> AstGenerator<'a> {
         Self { items, tys }
     }
 
-    pub fn get_ty_id_by_path<'b, P>(&self, path: P) -> Option<TyId>
-    where
-        P: Into<ItemPath<'b>>,
-    {
-        let item_id = self.items.get_id_by_path(path)?;
-        self.tys.get_ty_id_by_item_id(item_id)
+    pub fn resolve_ty(&mut self, parsed_ty: &Ty) -> Option<TyId> {
+        match parsed_ty {
+            Ty::Path(path) => {
+                let path = path
+                    .idents
+                    .iter()
+                    .map(|ident| ident.symbol)
+                    .collect::<ItemPathBuf>();
+
+                let item_id = self.items.get_id_by_path(&path)?;
+                self.tys.get_ty_id_by_item_id(item_id)
+            }
+            Ty::Tuple(tuple_ty) => {
+                let mut elems = Vec::<TyId>::new();
+
+                for ty in tuple_ty.elements.iter() {
+                    elems.push(self.resolve_ty(ty)?);
+                }
+
+                Some(self.tys.mk_tuple(elems))
+            }
+        }
     }
 }

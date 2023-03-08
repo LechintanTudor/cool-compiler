@@ -4,12 +4,10 @@ use crate::args::Args;
 use clap::Parser as _;
 
 fn main() -> anyhow::Result<()> {
-    let _args = Args::parse();
+    let args = Args::parse();
 
-    // let package = cool_driver::parse_crate(&args.crate_name, &args.crate_root_file)?;
-    // let module_asts = cool_driver::generate_ast(package)?;
-
-    // println!("{:#?}", module_asts);
+    let package = cool_driver::parse_crate(&args.crate_name, &args.crate_root_file)?;
+    let _module_asts = cool_driver::generate_ast(package)?;
 
     cool_codegen::codegen();
     Ok(())

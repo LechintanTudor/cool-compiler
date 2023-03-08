@@ -24,11 +24,13 @@ macro_rules! builtins {
             $(
                 pub const $ident: TyId = unsafe { TyId::new_unchecked($idx) };
             )+
+            pub const UNIT: TyId = unsafe { TyId::new_unchecked(13) };
 
             pub fn insert_builtins(tys: &mut TyTable) {
                 $(
-                    tys.insert_builtin(super::itm::$ident, $ident, $value);
+                    tys.insert_builtin_item(super::itm::$ident, $ident, $value);
                 )+
+                tys.insert_builtin(UNIT, TyKind::Unit);
             }
         }
     };
