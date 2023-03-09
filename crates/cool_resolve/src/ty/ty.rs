@@ -12,31 +12,46 @@ pub enum TyKind {
     Fn(FnTy),
 }
 
+impl TyKind {
+    #[inline]
+    pub fn is_builtin(&self) -> bool {
+        matches!(
+            self,
+            Self::Unit | Self::Int(_) | Self::Uint(_) | Self::Float(_)
+        )
+    }
+}
+
 impl From<IntTy> for TyKind {
+    #[inline]
     fn from(ty: IntTy) -> Self {
         Self::Int(ty)
     }
 }
 
 impl From<UintTy> for TyKind {
+    #[inline]
     fn from(ty: UintTy) -> Self {
         Self::Uint(ty)
     }
 }
 
 impl From<FloatTy> for TyKind {
+    #[inline]
     fn from(ty: FloatTy) -> Self {
         Self::Float(ty)
     }
 }
 
 impl From<TupleTy> for TyKind {
+    #[inline]
     fn from(ty: TupleTy) -> Self {
         Self::Tuple(ty)
     }
 }
 
 impl From<FnTy> for TyKind {
+    #[inline]
     fn from(ty: FnTy) -> Self {
         Self::Fn(ty)
     }

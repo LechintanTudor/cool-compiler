@@ -14,8 +14,8 @@ impl Handle {
     }
 
     #[inline]
-    pub const fn new_unchecked(index: u32) -> Self {
-        unsafe { Self(NonZeroU32::new_unchecked(index)) }
+    pub const unsafe fn new_unchecked(index: u32) -> Self {
+        Self(NonZeroU32::new_unchecked(index))
     }
 
     #[inline]

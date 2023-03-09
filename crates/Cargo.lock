@@ -120,6 +120,7 @@ dependencies = [
  "cool_ast",
  "cool_resolve",
  "inkwell",
+ "rustc-hash",
 ]
 
 [[package]]

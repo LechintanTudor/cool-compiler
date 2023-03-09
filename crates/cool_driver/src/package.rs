@@ -132,7 +132,7 @@ pub fn parse_crate(package_name: &str, path: &Path) -> Result<Package, CompileEr
     })
 }
 
-pub fn generate_ast(mut package: Package) -> Result<Vec<ModuleAst>, CompileError> {
+pub fn generate_ast(package: &mut Package) -> Result<Vec<ModuleAst>, CompileError> {
     let mut ast_generator = AstGenerator {
         items: &package.items,
         tys: &mut package.tys,

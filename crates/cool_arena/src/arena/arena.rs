@@ -88,6 +88,21 @@ impl<T> Arena<T> {
     pub fn iter(&self) -> impl Iterator<Item = &T> {
         self.refs[1..].iter().map(InternedRef::as_ref)
     }
+
+    #[inline]
+    pub fn iter_handles(&self) -> impl Iterator<Item = Handle> {
+        (1..(self.refs.len() as u32)).map(|index| unsafe { Handle::new_unchecked(index) })
+    }
+
+    #[inline]
+    pub fn iter_with_handle(&self) -> impl Iterator<Item = (Handle, &T)> {
+        self.refs[1..]
+            .iter()
+            .enumerate()
+            .map(|(index, value)| unsafe {
+                (Handle::new_unchecked((index + 1) as u32), value.as_ref())
+            })
+    }
 }
 
 impl<T> Default for Arena<T>

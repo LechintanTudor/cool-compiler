@@ -76,6 +76,11 @@ impl TyTable {
     pub fn get_by_id(&self, ty_id: TyId) -> Option<&TyKind> {
         self.tys.get(ty_id.0)
     }
+
+    #[inline]
+    pub fn iter_ids(&self) -> impl Iterator<Item = TyId> {
+        self.tys.iter_handles().map(TyId)
+    }
 }
 
 impl fmt::Debug for TyTable {
