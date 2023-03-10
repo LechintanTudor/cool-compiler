@@ -9,25 +9,25 @@ pub enum ModulePathsError {
 
 #[derive(Clone, Debug)]
 pub struct ModulePaths {
-    pub module_path: PathBuf,
-    pub child_module_dir: PathBuf,
+    pub path: PathBuf,
+    pub child_dir: PathBuf,
 }
 
 impl ModulePaths {
-    pub fn for_root(module_path: &Path) -> Result<ModulePaths, ModulePathsError> {
-        if module_path.extension().filter(|&ext| ext == "cl").is_none() {
+    pub fn for_root(path: &Path) -> Result<ModulePaths, ModulePathsError> {
+        if path.extension().filter(|&ext| ext == "cl").is_none() {
             return Err(ModulePathsError::BadExtension);
         }
 
-        if !module_path.exists() {
+        if !path.exists() {
             return Err(ModulePathsError::NoPathFound);
         }
 
-        let child_module_dir = module_path.parent().ok_or(ModulePathsError::NoPathFound)?;
+        let child_dir = path.parent().ok_or(ModulePathsError::NoPathFound)?;
 
         Ok(Self {
-            module_path: module_path.to_path_buf(),
-            child_module_dir: child_module_dir.to_path_buf(),
+            path: path.to_path_buf(),
+            child_dir: child_dir.to_path_buf(),
         })
     }
 
@@ -43,42 +43,36 @@ impl ModulePaths {
         }
     }
 
-    fn for_child_same_dir(child_dir: &Path, module_name: &str) -> Option<ModulePaths> {
-        let mut module_path = PathBuf::new();
-        module_path.push(child_dir);
-        module_path.push(format!("{module_name}.cl"));
+    fn for_child_same_dir(parent_child_dir: &Path, module_name: &str) -> Option<ModulePaths> {
+        let mut path = PathBuf::new();
+        path.push(parent_child_dir);
+        path.push(format!("{module_name}.cl"));
 
-        if !module_path.exists() {
+        if !path.exists() {
             return None;
         }
 
-        let mut child_module_dir = PathBuf::new();
-        child_module_dir.push(child_dir);
-        child_module_dir.push(module_name);
+        let mut child_dir = PathBuf::new();
+        child_dir.push(parent_child_dir);
+        child_dir.push(module_name);
 
-        Some(ModulePaths {
-            module_path,
-            child_module_dir,
-        })
+        Some(ModulePaths { path, child_dir })
     }
 
-    fn for_child_separate_dir(child_dir: &Path, module_name: &str) -> Option<ModulePaths> {
-        let mut module_path = PathBuf::new();
-        module_path.push(child_dir);
-        module_path.push(module_name);
-        module_path.push("@module.cl");
+    fn for_child_separate_dir(parent_child_dir: &Path, module_name: &str) -> Option<ModulePaths> {
+        let mut path = PathBuf::new();
+        path.push(parent_child_dir);
+        path.push(module_name);
+        path.push("@module.cl");
 
-        if !module_path.exists() {
+        if !path.exists() {
             return None;
         }
 
-        let mut child_module_dir = PathBuf::new();
-        child_module_dir.push(child_dir);
-        child_module_dir.push(module_name);
+        let mut child_dir = PathBuf::new();
+        child_dir.push(parent_child_dir);
+        child_dir.push(module_name);
 
-        Some(ModulePaths {
-            module_path,
-            child_module_dir,
-        })
+        Some(ModulePaths { path, child_dir })
     }
 }

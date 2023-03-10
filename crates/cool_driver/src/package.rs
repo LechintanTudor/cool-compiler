@@ -5,7 +5,7 @@ use cool_lexer::lexer::{LineOffsets, Tokenizer};
 use cool_lexer::symbols::Symbol;
 use cool_parser::item::{DeclKind, Item, ModuleContent, ModuleKind};
 use cool_parser::Parser;
-use cool_resolve::item::{ItemError, ItemErrorKind, ItemId, ItemPathBuf, ItemTable};
+use cool_resolve::item::{ItemError, ItemId, ItemPathBuf, ItemTable};
 use cool_resolve::ty::TyTable;
 use std::collections::VecDeque;
 use std::path::Path;
@@ -17,119 +17,162 @@ pub struct Package {
     pub sources: Vec<SourceFile>,
 }
 
-pub fn parse_crate(package_name: &str, path: &Path) -> Result<Package, CompileError> {
-    let root_symbol = Symbol::insert(package_name);
-    let root_paths = ModulePaths::for_root(path).unwrap();
+#[derive(Clone, Debug)]
+pub struct FileModuleToProcess {
+    pub module_id: ItemId,
+    pub paths: ModulePaths,
+}
 
-    let mut items = ItemTable::with_builtins();
-    let root_module_id = items.insert_root_module(root_symbol).unwrap();
+#[derive(Clone, Debug)]
+pub struct ImportToResolve {
+    pub module_id: ItemId,
+    pub is_exported: bool,
+    pub import_path: ItemPathBuf,
+}
 
-    let tys = TyTable::with_builtins();
+pub struct Driver<'a> {
+    pub items: &'a mut ItemTable,
+    pub source_files: Vec<SourceFile>,
+    pub file_modules_to_process: VecDeque<FileModuleToProcess>,
+    pub imports_to_resolve: VecDeque<ImportToResolve>,
+}
 
-    let mut sources = Vec::<SourceFile>::new();
+impl<'a> Driver<'a> {
+    pub fn new(items: &'a mut ItemTable, crate_name: &str, crate_path: &Path) -> Self {
+        let crate_symbol = Symbol::insert(crate_name);
+        let crate_paths = ModulePaths::for_root(crate_path).unwrap();
+        let crate_id = items.insert_root_module(crate_symbol).unwrap();
 
-    let mut file_modules_to_process = VecDeque::<(ItemId, ModulePaths)>::new();
-    file_modules_to_process.push_front((root_module_id, root_paths));
+        Self {
+            items,
+            source_files: Default::default(),
+            file_modules_to_process: vec![FileModuleToProcess {
+                module_id: crate_id,
+                paths: crate_paths,
+            }]
+            .into(),
+            imports_to_resolve: Default::default(),
+        }
+    }
 
-    // Module ID of the use declaration, whether the use is exported, use path
-    let mut imports_to_resolve = VecDeque::<(ItemId, (bool, ItemPathBuf))>::new();
+    pub fn process_next_file_module(&mut self) -> bool {
+        let Some(file_module) = self.file_modules_to_process.pop_front() else {
+            return false;
+        };
 
-    while let Some((module_id, module_paths)) = file_modules_to_process.pop_front() {
-        let source = parse_source_file(module_paths.clone());
+        let source_file = parse_source_file(file_module.paths, file_module.module_id);
 
         let mut modules_to_process = VecDeque::<(ItemId, &ModuleContent)>::new();
-        modules_to_process.push_back((module_id, &source.module));
+        modules_to_process.push_back((file_module.module_id, &source_file.module));
 
-        while let Some((module_id, module_content)) = modules_to_process.pop_front() {
-            for decl in module_content.decls.iter() {
+        while let Some((module_id, module)) = modules_to_process.pop_front() {
+            for decl in module.decls.iter() {
                 let is_exported = decl.is_exported;
 
                 match &decl.kind {
                     DeclKind::Item(decl) => match &decl.item {
                         Item::Module(child_module) => {
-                            let child_module_id = items
+                            let child_id = self
+                                .items
                                 .insert_module(module_id, is_exported, decl.ident.symbol)
                                 .unwrap();
 
                             match &child_module.kind {
                                 ModuleKind::Inline(module_content) => {
-                                    modules_to_process.push_back((child_module_id, module_content));
+                                    modules_to_process.push_back((child_id, module_content));
                                 }
                                 ModuleKind::External => {
-                                    let child_module_paths = ModulePaths::for_child(
-                                        &module_paths.child_module_dir,
+                                    let child_paths = ModulePaths::for_child(
+                                        &source_file.paths.child_dir,
                                         decl.ident.symbol.as_str(),
                                     )
                                     .unwrap();
 
-                                    file_modules_to_process
-                                        .push_back((child_module_id, child_module_paths));
+                                    self.file_modules_to_process.push_back(FileModuleToProcess {
+                                        module_id: child_id,
+                                        paths: child_paths,
+                                    });
                                 }
                             }
                         }
                         Item::Fn(_) => {
-                            items
+                            self.items
                                 .insert_item(module_id, is_exported, decl.ident.symbol)
                                 .unwrap();
                         }
                     },
                     DeclKind::Use(decl) => {
-                        let item_path = decl
+                        let import_path = decl
                             .path
                             .idents
                             .iter()
                             .map(|ident| ident.symbol)
                             .collect::<ItemPathBuf>();
 
-                        imports_to_resolve.push_back((module_id, (is_exported, item_path)));
+                        self.imports_to_resolve.push_back(ImportToResolve {
+                            module_id,
+                            is_exported,
+                            import_path,
+                        })
                     }
                 }
             }
         }
 
-        sources.push(source);
+        self.source_files.push(source_file);
+        true
     }
 
-    let mut import_errors = Vec::<ItemError>::new();
+    pub fn resolve_imports(&mut self) {
+        let mut import_errors = Vec::<ItemError>::new();
 
-    while !imports_to_resolve.is_empty() {
-        let mut solved_any_import = false;
-        let initial_import_count = imports_to_resolve.len();
+        while !self.imports_to_resolve.is_empty() {
+            let mut solved_any_import = false;
+            let initial_import_count = self.imports_to_resolve.len();
 
-        for _ in 0..initial_import_count {
-            let (module_id, (is_exported, item_path)) = imports_to_resolve.pop_front().unwrap();
+            for _ in 0..initial_import_count {
+                let import = self.imports_to_resolve.pop_front().unwrap();
 
-            match items.insert_use_decl(module_id, is_exported, item_path.as_path()) {
-                Ok(true) => solved_any_import = true,
-                Ok(false) => imports_to_resolve.push_back((module_id, (is_exported, item_path))),
-                Err(error) => import_errors.push(error),
+                match self.items.insert_use_decl(
+                    import.module_id,
+                    import.is_exported,
+                    import.import_path.as_path(),
+                ) {
+                    Ok(true) => solved_any_import = true,
+                    Ok(false) => self.imports_to_resolve.push_back(import),
+                    Err(error) => import_errors.push(error),
+                }
+            }
+
+            if !solved_any_import {
+                break;
             }
         }
-
-        if !solved_any_import {
-            break;
-        }
     }
 
-    for (module_id, (_, import_path)) in imports_to_resolve {
-        let module_path = items.get_path_by_id(module_id).unwrap();
-
-        import_errors.push(ItemError {
-            kind: ItemErrorKind::SymbolNotFound,
-            module_path: module_path.to_path_buf(),
-            symbol_path: import_path,
-        });
+    #[inline]
+    pub fn into_source_files(self) -> Vec<SourceFile> {
+        self.source_files
     }
+}
 
-    if !import_errors.is_empty() {
-        return Err(CompileError { import_errors });
+fn parse_source_file(paths: ModulePaths, module_id: ItemId) -> SourceFile {
+    let source = std::fs::read_to_string(&paths.path).unwrap();
+    let mut line_offsets = LineOffsets::default();
+    let mut tokenizer = Tokenizer::new(&source, &mut line_offsets);
+
+    let token_iter =
+        std::iter::repeat_with(|| tokenizer.next_token()).filter(|token| token.kind.is_lang_part());
+    let mut parser = Parser::new(token_iter);
+    let module = parser.parse_module_file().unwrap();
+
+    SourceFile {
+        paths,
+        source,
+        line_offsets,
+        module_id,
+        module,
     }
-
-    Ok(Package {
-        items,
-        tys,
-        sources,
-    })
 }
 
 pub fn generate_ast(package: &mut Package) -> Result<Vec<ModuleAst>, CompileError> {
@@ -145,23 +188,4 @@ pub fn generate_ast(package: &mut Package) -> Result<Vec<ModuleAst>, CompileErro
     }
 
     Ok(module_asts)
-}
-
-fn parse_source_file(module_paths: ModulePaths) -> SourceFile {
-    let content = std::fs::read_to_string(&module_paths.module_path).unwrap();
-    let mut line_offsets = LineOffsets::default();
-    let mut tokenizer = Tokenizer::new(&content, &mut line_offsets);
-
-    let token_iter =
-        std::iter::repeat_with(|| tokenizer.next_token()).filter(|token| token.kind.is_lang_part());
-    let mut parser = Parser::new(token_iter);
-    let module = parser.parse_module_file().unwrap();
-
-    SourceFile {
-        module_path: module_paths.module_path,
-        child_module_dir: module_paths.child_module_dir,
-        content,
-        line_offsets,
-        module,
-    }
 }
