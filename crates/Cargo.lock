@@ -160,6 +160,7 @@ version = "0.1.0"
 dependencies = [
  "cool_lexer",
  "cool_span",
+ "paste",
  "smallvec",
 ]
 

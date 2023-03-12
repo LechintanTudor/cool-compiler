@@ -1,4 +1,4 @@
-use crate::{ParseResult, Parser, UnexpectedToken};
+use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
 use cool_lexer::tokens::{tk, Literal, Token, TokenKind};
 use cool_span::Span;
 
@@ -6,6 +6,13 @@ use cool_span::Span;
 pub struct LiteralExpr {
     pub span: Span,
     pub literal: Literal,
+}
+
+impl ParseTree for LiteralExpr {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl<T> Parser<T>

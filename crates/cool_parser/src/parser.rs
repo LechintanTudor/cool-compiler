@@ -23,6 +23,14 @@ where
         self.tokens.next().unwrap_or(self.eof_token())
     }
 
+    pub fn bump_if_eq(&mut self, kind: TokenKind) -> Option<Token> {
+        if self.peek().kind == kind {
+            Some(self.bump())
+        } else {
+            None
+        }
+    }
+
     pub fn bump_expect(&mut self, expected: &'static [TokenKind]) -> ParseResult<Token> {
         let token = self.bump();
 

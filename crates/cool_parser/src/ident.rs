@@ -6,11 +6,12 @@ use cool_span::Span;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Ident {
-    pub symbol: Symbol,
     pub span: Span,
+    pub symbol: Symbol,
 }
 
 impl ParseTree for Ident {
+    #[inline]
     fn span(&self) -> Span {
         self.span
     }
@@ -35,22 +36,22 @@ where
         })
     }
 
-    pub fn parse_ident_including_super(&mut self) -> ParseResult<Ident> {
+    pub fn parse_path_ident(&mut self) -> ParseResult<Ident> {
         let token = self.bump();
         let symbol = match token.kind {
-            tk::KW_SUPER => sym::KW_SUPER,
             TokenKind::Ident(symbol) => symbol,
-            _ => {
-                return Err(UnexpectedToken {
-                    found: token,
-                    expected: &[tk::KW_SUPER, tk::ANY_IDENT],
-                })?
-            }
+            tk::KW_CRATE => sym::KW_CRATE,
+            tk::KW_SUPER => sym::KW_SUPER,
+            tk::KW_SELF => sym::KW_SELF,
+            _ => Err(UnexpectedToken {
+                found: token,
+                expected: &[tk::ANY_IDENT, tk::KW_CRATE, tk::KW_SUPER, tk::KW_SELF],
+            })?,
         };
 
         Ok(Ident {
-            symbol,
             span: token.span,
+            symbol,
         })
     }
 }

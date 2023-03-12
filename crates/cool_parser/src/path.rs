@@ -1,6 +1,6 @@
-use crate::{Ident, ParseResult, ParseTree, Parser, UnexpectedToken};
+use crate::{Ident, ParseResult, ParseTree, Parser};
 use cool_lexer::symbols::sym;
-use cool_lexer::tokens::{tk, Token, TokenKind};
+use cool_lexer::tokens::{tk, Token};
 use cool_span::Span;
 use smallvec::SmallVec;
 
@@ -56,32 +56,5 @@ where
         }
 
         Ok(SymbolPath { idents })
-    }
-
-    fn parse_path_ident(&mut self) -> ParseResult<Ident> {
-        let token = self.bump();
-
-        let symbol = match token.kind {
-            tk::KW_CRATE => sym::KW_CRATE,
-            tk::KW_SUPER => sym::KW_SUPER,
-            tk::KW_SELF => sym::KW_SELF,
-            tk::STAR => sym::GLOB,
-            TokenKind::Ident(symbol) => symbol,
-            _ => Err(UnexpectedToken {
-                found: token,
-                expected: &[
-                    tk::KW_CRATE,
-                    tk::KW_SUPER,
-                    tk::KW_SELF,
-                    tk::GLOB,
-                    tk::ANY_IDENT,
-                ],
-            })?,
-        };
-
-        Ok(Ident {
-            symbol,
-            span: token.span,
-        })
     }
 }
