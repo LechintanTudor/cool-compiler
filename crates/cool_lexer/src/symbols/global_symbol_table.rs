@@ -1,15 +1,13 @@
 use crate::consts::sym;
 use crate::symbols::{Symbol, SymbolTable};
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use std::sync::Mutex;
 
-lazy_static! {
-    static ref SYMBOL_TABLE: Mutex<SymbolTable> = {
-        let mut symbols = SymbolTable::default();
-        sym::intern_symbols(&mut symbols);
-        Mutex::new(symbols)
-    };
-}
+static SYMBOL_TABLE: Lazy<Mutex<SymbolTable>> = Lazy::new(|| {
+    let mut symbols = SymbolTable::default();
+    sym::intern_symbols(&mut symbols);
+    Mutex::new(symbols)
+});
 
 impl Symbol {
     #[inline]

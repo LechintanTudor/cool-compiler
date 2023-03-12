@@ -149,7 +149,7 @@ version = "0.1.0"
 dependencies = [
  "cool_arena",
  "cool_span",
- "lazy_static",
+ "once_cell",
  "paste",
  "unicode-ident",
 ]
