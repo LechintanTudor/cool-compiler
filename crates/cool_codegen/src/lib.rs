@@ -1,5 +1,6 @@
 mod ty_codegen;
 
+use crate::ty_codegen::GeneratedTys;
 use cool_ast::{ItemAst, ModuleAst};
 use cool_resolve::item::ItemTable;
 use cool_resolve::ty::TyTable;
@@ -7,8 +8,6 @@ use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::targets::{CodeModel, InitializationConfig, RelocMode, Target, TargetTriple};
 use inkwell::{AddressSpace, OptimizationLevel};
-
-use crate::ty_codegen::GeneratedTys;
 
 pub struct Codegen<'ctx> {
     context: &'ctx Context,
