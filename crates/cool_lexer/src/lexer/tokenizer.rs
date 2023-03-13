@@ -32,6 +32,10 @@ impl<'a> Tokenizer<'a> {
         } else if ('0'..='9').contains(&first_char) {
             self.buffer.push(first_char);
             self.number()
+        } else if first_char == '"' {
+            self.string()
+        } else if first_char == '\'' {
+            self.character()
         } else if first_char.is_whitespace() {
             if first_char == '\n' {
                 self.line_offsets.add(self.cursor.offset());
@@ -133,6 +137,45 @@ impl<'a> Tokenizer<'a> {
             kind: LiteralKind::Int,
             symbol,
         })
+    }
+
+    fn string(&mut self) -> TokenKind {
+        self.cursor.consume_while(|char| {
+            if ['\n', '"'].contains(&char) {
+                return false;
+            }
+
+            self.buffer.push(char);
+            true
+        });
+
+        let token = match self.cursor.bump() {
+            '"' => TokenKind::Literal(Literal {
+                kind: LiteralKind::String,
+                symbol: Symbol::insert(&self.buffer),
+            }),
+            _ => TokenKind::Unknown,
+        };
+
+        self.buffer.clear();
+        token
+    }
+
+    fn character(&mut self) -> TokenKind {
+        let char = self.cursor.bump();
+
+        if char == '\'' {
+            return TokenKind::Unknown;
+        }
+
+        self.buffer.push(char);
+        let token = TokenKind::Literal(Literal {
+            kind: LiteralKind::Char,
+            symbol: Symbol::insert(&self.buffer),
+        });
+
+        self.buffer.clear();
+        token
     }
 
     fn whitespace(&mut self) -> TokenKind {
