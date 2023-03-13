@@ -25,7 +25,7 @@ use paste::paste;
 macro_rules! define_expr {
     { $($variant:ident,)+ } => {
         paste! {
-            #[derive(Clone, Debug)]
+            #[derive(Clone)]
             pub enum Expr {
                 $($variant([<$variant Expr>]),)+
             }
@@ -35,6 +35,14 @@ macro_rules! define_expr {
             fn span(&self) -> Span {
                 match self {
                     $(Self::$variant(e) => e.span(),)+
+                }
+            }
+        }
+
+        impl std::fmt::Debug for Expr {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match self {
+                    $(Self::$variant(e) => std::fmt::Debug::fmt(e, f),)+
                 }
             }
         }

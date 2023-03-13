@@ -13,7 +13,7 @@ use paste::paste;
 macro_rules! define_stmt {
     { $($variant:ident,)+ } => {
         paste! {
-            #[derive(Clone, Debug)]
+            #[derive(Clone)]
             pub enum Stmt {
                 $($variant([<$variant Stmt>]),)+
             }
@@ -22,7 +22,15 @@ macro_rules! define_stmt {
         impl ParseTree for Stmt {
             fn span(&self) -> Span {
                 match self {
-                    $(Self::$variant(e) => e.span(),)+
+                    $(Self::$variant(s) => s.span(),)+
+                }
+            }
+        }
+
+        impl std::fmt::Debug for Stmt {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match self {
+                    $(Self::$variant(s) => std::fmt::Debug::fmt(s, f),)+
                 }
             }
         }

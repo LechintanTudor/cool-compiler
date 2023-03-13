@@ -4,34 +4,42 @@ use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
 use cool_lexer::tokens::{tk, Token, TokenKind};
 use cool_span::Span;
 
-#[derive(Clone, Debug)]
-pub enum BlockElem {
-    Expr(Expr),
-    Stmt(Stmt),
-}
-
-impl ParseTree for BlockElem {
-    #[inline]
-    fn span(&self) -> Span {
-        match self {
-            Self::Expr(e) => e.span(),
-            Self::Stmt(s) => s.span(),
+macro_rules! define_block_elem {
+    { $($variant:ident,)+ } => {
+        #[derive(Clone)]
+        pub enum BlockElem {
+            $($variant($variant),)+
         }
-    }
+
+        impl ParseTree for BlockElem {
+            fn span(&self) -> Span {
+                match self {
+                    $(Self::$variant(e) => e.span(),)+
+                }
+            }
+        }
+
+        impl std::fmt::Debug for BlockElem {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match self {
+                    $(Self::$variant(s) => std::fmt::Debug::fmt(s, f),)+
+                }
+            }
+        }
+
+        $(
+            impl From<$variant> for BlockElem {
+                fn from(elem: $variant) -> Self {
+                    Self::$variant(elem)
+                }
+            }
+        )+
+    };
 }
 
-impl From<Expr> for BlockElem {
-    #[inline]
-    fn from(expr: Expr) -> Self {
-        Self::Expr(expr)
-    }
-}
-
-impl From<Stmt> for BlockElem {
-    #[inline]
-    fn from(stmt: Stmt) -> Self {
-        Self::Stmt(stmt)
-    }
+define_block_elem! {
+    Expr,
+    Stmt,
 }
 
 impl<T> Parser<T>
