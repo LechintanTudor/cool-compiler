@@ -82,7 +82,7 @@ where
             tk::OPEN_PAREN => self.parse_paren_or_tuple_expr()?.into(),
             tk::KW_RETURN => self.parse_return_expr()?.into(),
             TokenKind::Ident(_) => self.parse_ident_or_path_or_fn_call_expr()?.into(),
-            TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
+            TokenKind::Prefix(_) | TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
             _ => Err(UnexpectedToken {
                 found: self.peek(),
                 expected: &[

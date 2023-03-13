@@ -22,6 +22,6 @@ mod tests {
 
     #[test]
     fn token_size() {
-        assert!(std::mem::size_of::<Token>() <= 24);
+        assert!(std::mem::size_of::<Token>() <= 16);
     }
 }

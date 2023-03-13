@@ -26,7 +26,7 @@ impl<'a> Tokenizer<'a> {
             self.line_comment()
         } else if is_ident_start(first_char) {
             self.buffer.push(first_char);
-            self.ident_or_keyword_or_bool_literal()
+            self.ident()
         } else if let Ok(start) = Punctuation::try_from(first_char) {
             self.punctuation(start)
         } else if ('0'..='9').contains(&first_char) {
@@ -49,7 +49,7 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
-    fn ident_or_keyword_or_bool_literal(&mut self) -> TokenKind {
+    fn ident(&mut self) -> TokenKind {
         self.cursor.consume_while(|char| {
             if !is_ident_continue(char) {
                 return false;
@@ -64,14 +64,18 @@ impl<'a> Tokenizer<'a> {
         let token = if symbol.is_keyword() {
             if symbol.is_bool_literal() {
                 TokenKind::Literal(Literal {
-                    kind: LiteralKind::Boolean,
+                    kind: LiteralKind::Bool,
                     symbol,
                 })
             } else {
                 TokenKind::Keyword(symbol)
             }
         } else {
-            TokenKind::Ident(symbol)
+            if can_have_prefix(self.cursor.first()) {
+                TokenKind::Prefix(symbol)
+            } else {
+                TokenKind::Ident(symbol)
+            }
         };
 
         self.buffer.clear();
@@ -104,11 +108,8 @@ impl<'a> Tokenizer<'a> {
             true
         });
 
-        let symbol = Symbol::insert(&self.buffer);
-
-        let suffix_start = self.buffer.len();
-        self.cursor.consume_while(|char| {
-            if char.is_whitespace() || is_punctuation(char) {
+        self.cursor.consume_if(|char| {
+            if !is_ident_start(char) {
                 return false;
             }
 
@@ -116,16 +117,20 @@ impl<'a> Tokenizer<'a> {
             true
         });
 
-        let suffix = if suffix_start != self.buffer.len() {
-            Some(Symbol::insert(&self.buffer[suffix_start..]))
-        } else {
-            None
-        };
+        self.cursor.consume_while(|char| {
+            if !is_ident_continue(char) {
+                return false;
+            }
 
+            self.buffer.push(char);
+            true
+        });
+
+        let symbol = Symbol::insert(&self.buffer);
         self.buffer.clear();
 
         TokenKind::Literal(Literal {
-            kind: LiteralKind::Integer { suffix },
+            kind: LiteralKind::Int,
             symbol,
         })
     }
@@ -167,6 +172,6 @@ fn is_ident_continue(char: char) -> bool {
     unicode_ident::is_xid_continue(char) || char == '_'
 }
 
-fn is_punctuation(char: char) -> bool {
-    Punctuation::try_from(char).is_ok()
+fn can_have_prefix(char: char) -> bool {
+    ['\'', '"'].contains(&char)
 }

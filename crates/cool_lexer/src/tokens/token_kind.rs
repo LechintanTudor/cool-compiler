@@ -8,6 +8,7 @@ pub enum TokenKind {
     Keyword(Symbol),
     Ident(Symbol),
     Literal(Literal),
+    Prefix(Symbol),
     Punctuation(Punctuation),
     Whitespace,
     Comment,
@@ -29,6 +30,7 @@ impl fmt::Display for TokenKind {
             Self::Keyword(symbol) => fmt::Display::fmt(symbol, f),
             Self::Ident(symbol) => fmt::Display::fmt(symbol, f),
             Self::Literal(literal) => fmt::Display::fmt(literal, f),
+            Self::Prefix(symbol) => fmt::Display::fmt(symbol, f),
             Self::Punctuation(punctuation) => fmt::Display::fmt(punctuation, f),
             Self::Whitespace => write!(f, "<whitespace>"),
             Self::Comment => write!(f, "<comment>"),
@@ -43,7 +45,7 @@ impl From<Symbol> for TokenKind {
         if symbol.is_keyword() {
             if symbol.is_bool_literal() {
                 Self::Literal(Literal {
-                    kind: LiteralKind::Boolean,
+                    kind: LiteralKind::Bool,
                     symbol,
                 })
             } else {
