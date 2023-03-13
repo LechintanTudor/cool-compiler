@@ -16,6 +16,16 @@ impl ParseTree for Pattern {
     }
 }
 
+impl From<Ident> for Pattern {
+    fn from(ident: Ident) -> Self {
+        Self {
+            span: ident.span,
+            is_mutable: false,
+            ident,
+        }
+    }
+}
+
 impl<T> Parser<T>
 where
     T: Iterator<Item = Token>,

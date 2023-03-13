@@ -67,7 +67,7 @@ where
     pub fn parse_expr(&mut self) -> ParseResult<Expr> {
         let expr: Expr = match self.peek().kind {
             tk::OPEN_BRACKET => todo!("array"),
-            tk::OPEN_BRACE => todo!("block"),
+            tk::OPEN_BRACE => self.parse_block_expr()?.into(),
             tk::OPEN_PAREN => todo!("paren or tuple"),
             TokenKind::Ident(_) => self.parse_ident_or_path_or_fn_call_expr()?.into(),
             TokenKind::Literal(_) => self.parse_literal_expr()?.into(),

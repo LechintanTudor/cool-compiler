@@ -4,12 +4,14 @@ pub mod path;
 pub mod stmt;
 pub mod ty;
 
+mod block_elem;
 mod error;
 mod ident;
 mod parse_tree;
 mod parser;
 mod pattern;
 
+pub use self::block_elem::*;
 pub use self::error::{ParseError, ParseResult, UnexpectedToken};
 pub use self::ident::Ident;
 pub use self::parse_tree::ParseTree;

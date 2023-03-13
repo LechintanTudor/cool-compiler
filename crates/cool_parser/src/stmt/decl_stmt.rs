@@ -13,6 +13,7 @@ pub struct DeclStmt {
 }
 
 impl ParseTree for DeclStmt {
+    #[inline]
     fn span(&self) -> Span {
         self.span
     }
@@ -23,9 +24,29 @@ where
     T: Iterator<Item = Token>,
 {
     pub fn parse_decl_stmt(&mut self) -> ParseResult<DeclStmt> {
-        let _pattern = self.parse_pattern()?;
+        let pattern = self.parse_pattern()?;
+        self.continue_parse_decl_after_pattern(pattern)
+    }
+
+    pub fn continue_parse_decl_after_pattern(&mut self, pattern: Pattern) -> ParseResult<DeclStmt> {
         self.bump_expect(&[tk::COLON])?;
 
-        todo!()
+        let ty = if self.peek().kind != tk::EQ {
+            Some(self.parse_ty()?)
+        } else {
+            None
+        };
+
+        self.bump_expect(&[tk::EQ])?;
+
+        let expr = self.parse_expr()?;
+        let end_token = self.bump_expect(&[tk::SEMICOLON])?;
+
+        Ok(DeclStmt {
+            span: pattern.span().to(end_token.span),
+            pattern,
+            ty,
+            expr,
+        })
     }
 }

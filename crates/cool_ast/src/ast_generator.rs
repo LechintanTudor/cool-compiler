@@ -28,7 +28,7 @@ impl<'a> AstGenerator<'a> {
             Ty::Tuple(tuple_ty) => {
                 let mut elems = Vec::<TyId>::new();
 
-                for ty in tuple_ty.elements.iter() {
+                for ty in tuple_ty.elems.iter() {
                     elems.push(self.resolve_ty(ty)?);
                 }
 

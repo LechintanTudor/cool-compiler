@@ -21,10 +21,11 @@ impl ParseTree for Ty {
 #[derive(Clone, Debug)]
 pub struct TupleTy {
     pub span: Span,
-    pub elements: Vec<Ty>,
+    pub elems: Vec<Ty>,
 }
 
 impl ParseTree for TupleTy {
+    #[inline]
     fn span(&self) -> Span {
         self.span
     }
@@ -83,7 +84,7 @@ where
 
         Ok(TupleTy {
             span: open_paren.span.to(closed_paren.span),
-            elements,
+            elems: elements,
         })
     }
 }

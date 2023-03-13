@@ -25,6 +25,12 @@ fn main() -> anyhow::Result<()> {
         tys: TyTable::with_builtins(),
     };
 
+    for source in package.sources.iter() {
+        println!("[[[ {} ]]]", source.paths.path.display());
+        println!("{:#?}", source.module);
+        println!();
+    }
+
     let module_asts = cool_driver::generate_ast(&mut package)?;
 
     let context = cool_codegen::create_context();

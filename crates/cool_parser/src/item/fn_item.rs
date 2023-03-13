@@ -1,4 +1,4 @@
-use crate::stmt::Stmt;
+use crate::expr::BlockExpr;
 use crate::ty::Ty;
 use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
 use cool_lexer::symbols::Symbol;
@@ -10,7 +10,7 @@ pub struct FnItem {
     pub span: Span,
     pub arg_list: FnArgList,
     pub return_ty: Option<Ty>,
-    pub body: FnBody,
+    pub body: BlockExpr,
 }
 
 impl ParseTree for FnItem {
@@ -46,18 +46,6 @@ impl ParseTree for FnArg {
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct FnBody {
-    pub span: Span,
-    pub stmts: Vec<Stmt>,
-}
-
-impl ParseTree for FnBody {
-    fn span(&self) -> Span {
-        self.span
-    }
-}
-
 impl<T> Parser<T>
 where
     T: Iterator<Item = Token>,
@@ -73,7 +61,7 @@ where
             None
         };
 
-        let body = self.parse_fn_body()?;
+        let body = self.parse_block_expr()?;
 
         Ok(FnItem {
             span: start_token.span.to(body.span),
@@ -157,33 +145,6 @@ where
             is_mutable,
             ident,
             ty,
-        })
-    }
-
-    pub fn parse_fn_body(&mut self) -> ParseResult<FnBody> {
-        let start_token = self.bump();
-
-        if start_token.kind != tk::OPEN_BRACE {
-            return Err(UnexpectedToken {
-                found: start_token,
-                expected: &[tk::OPEN_BRACE],
-            })?;
-        }
-
-        let mut stmts = Vec::<Stmt>::new();
-
-        let end_token = loop {
-            if self.peek().kind == tk::CLOSE_BRACE {
-                break self.bump();
-            }
-
-            let stmt = self.parse_stmt()?;
-            stmts.push(stmt);
-        };
-
-        Ok(FnBody {
-            span: start_token.span.to(end_token.span),
-            stmts,
         })
     }
 }
