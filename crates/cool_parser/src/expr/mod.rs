@@ -5,6 +5,7 @@ mod ident_expr;
 mod literal_expr;
 mod paren_expr;
 mod path_expr;
+mod return_expr;
 mod tuple_expr;
 
 pub use self::array_expr::*;
@@ -14,6 +15,7 @@ pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::paren_expr::*;
 pub use self::path_expr::*;
+pub use self::return_expr::*;
 pub use self::tuple_expr::*;
 use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
 use cool_lexer::tokens::{tk, Token, TokenKind};
@@ -57,6 +59,7 @@ define_expr! {
     Literal,
     Paren,
     Path,
+    Return,
     Tuple,
 }
 
@@ -66,9 +69,10 @@ where
 {
     pub fn parse_expr(&mut self) -> ParseResult<Expr> {
         let expr: Expr = match self.peek().kind {
-            tk::OPEN_BRACKET => todo!("array"),
+            tk::OPEN_BRACKET => self.parse_array_expr()?.into(),
             tk::OPEN_BRACE => self.parse_block_expr()?.into(),
-            tk::OPEN_PAREN => todo!("paren or tuple"),
+            tk::OPEN_PAREN => self.parse_paren_or_tuple_expr()?.into(),
+            tk::KW_RETURN => self.parse_return_expr()?.into(),
             TokenKind::Ident(_) => self.parse_ident_or_path_or_fn_call_expr()?.into(),
             TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
             _ => Err(UnexpectedToken {
@@ -86,7 +90,50 @@ where
         Ok(expr)
     }
 
-    pub fn parse_ident_or_path_or_fn_call_expr(&mut self) -> ParseResult<Expr> {
+    fn parse_paren_or_tuple_expr(&mut self) -> ParseResult<Expr> {
+        let start_token = self.bump_expect(&[tk::OPEN_PAREN])?;
+
+        let mut exprs = Vec::<Expr>::new();
+        let (end_token, has_trailing_comma) = match self.peek().kind {
+            tk::CLOSE_BRACKET => (self.bump(), false),
+            _ => loop {
+                exprs.push(self.parse_expr()?);
+
+                if self.bump_if_eq(tk::COMMA).is_some() {
+                    if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
+                        break (end_token, true);
+                    }
+                } else if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
+                    break (end_token, false);
+                } else {
+                    Err(UnexpectedToken {
+                        found: self.peek(),
+                        expected: &[tk::COMMA, tk::CLOSE_PAREN],
+                    })?
+                }
+            },
+        };
+
+        let span = start_token.span.to(end_token.span);
+        let expr: Expr = if exprs.len() == 1 && !has_trailing_comma {
+            ParenExpr {
+                span,
+                expr: Box::new(exprs.remove(0)),
+            }
+            .into()
+        } else {
+            TupleExpr {
+                span,
+                exprs,
+                has_trailing_comma,
+            }
+            .into()
+        };
+
+        Ok(expr)
+    }
+
+    fn parse_ident_or_path_or_fn_call_expr(&mut self) -> ParseResult<Expr> {
         let ident_expr: Expr = self.parse_ident_expr()?.into();
 
         let expr: Expr = match self.peek().kind {

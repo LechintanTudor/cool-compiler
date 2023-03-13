@@ -24,7 +24,13 @@ where
 
         let mut elems = Vec::<BlockElem>::new();
         while self.peek().kind != tk::CLOSE_BRACE {
-            elems.push(self.parse_block_elem()?);
+            let elem = self.parse_block_elem()?;
+            let is_expr = matches!(elem, BlockElem::Expr(_));
+            elems.push(elem);
+
+            if is_expr {
+                break;
+            }
         }
 
         let end_token = self.bump_expect(&[tk::CLOSE_BRACE])?;

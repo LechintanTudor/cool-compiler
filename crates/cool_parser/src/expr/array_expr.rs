@@ -1,5 +1,6 @@
 use crate::expr::Expr;
-use crate::ParseTree;
+use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
+use cool_lexer::tokens::{tk, Token};
 use cool_span::Span;
 
 #[derive(Clone, Debug)]
@@ -13,5 +14,41 @@ impl ParseTree for ArrayExpr {
     #[inline]
     fn span(&self) -> Span {
         self.span
+    }
+}
+
+impl<T> Parser<T>
+where
+    T: Iterator<Item = Token>,
+{
+    pub fn parse_array_expr(&mut self) -> ParseResult<ArrayExpr> {
+        let start_token = self.bump_expect(&[tk::OPEN_BRACKET])?;
+
+        let mut exprs = Vec::<Expr>::new();
+        let (end_token, has_trailing_comma) = match self.peek().kind {
+            tk::CLOSE_BRACKET => (self.bump(), false),
+            _ => loop {
+                exprs.push(self.parse_expr()?);
+
+                if self.bump_if_eq(tk::COMMA).is_some() {
+                    if let Some(end_token) = self.bump_if_eq(tk::CLOSE_BRACKET) {
+                        break (end_token, true);
+                    }
+                } else if let Some(end_token) = self.bump_if_eq(tk::CLOSE_BRACKET) {
+                    break (end_token, false);
+                } else {
+                    Err(UnexpectedToken {
+                        found: self.peek(),
+                        expected: &[tk::COMMA, tk::CLOSE_BRACKET],
+                    })?
+                }
+            },
+        };
+
+        Ok(ArrayExpr {
+            span: start_token.span.to(end_token.span),
+            exprs,
+            has_trailing_comma,
+        })
     }
 }

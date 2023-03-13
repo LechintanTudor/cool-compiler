@@ -27,9 +27,10 @@ where
     ) -> ParseResult<AssignStmt> {
         self.bump_expect(&[tk::EQ])?;
         let expr = self.parse_expr()?;
+        let semicolon = self.bump_expect(&[tk::SEMICOLON])?;
 
         Ok(AssignStmt {
-            span: pattern.span_to(&expr),
+            span: pattern.span.to(semicolon.span),
             pattern,
             expr,
         })

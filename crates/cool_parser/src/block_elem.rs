@@ -20,6 +20,20 @@ impl ParseTree for BlockElem {
     }
 }
 
+impl From<Expr> for BlockElem {
+    #[inline]
+    fn from(expr: Expr) -> Self {
+        Self::Expr(expr)
+    }
+}
+
+impl From<Stmt> for BlockElem {
+    #[inline]
+    fn from(stmt: Stmt) -> Self {
+        Self::Stmt(stmt)
+    }
+}
+
 impl<T> Parser<T>
 where
     T: Iterator<Item = Token>,
