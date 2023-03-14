@@ -1,9 +1,10 @@
-use crate::lexer::{Cursor, LineOffsets, EOF_CHAR};
+use crate::lexer::{Cursor, LineOffsets, TokenStream, EOF_CHAR};
 use crate::symbols::Symbol;
 use crate::tokens::{Literal, LiteralKind, Punctuation, Token, TokenKind};
 use cool_span::Span;
 
 pub struct Tokenizer<'a> {
+    source: &'a str,
     cursor: Cursor<'a>,
     line_offsets: &'a mut LineOffsets,
     buffer: String,
@@ -12,10 +13,32 @@ pub struct Tokenizer<'a> {
 impl<'a> Tokenizer<'a> {
     pub fn new(source: &'a str, line_offsets: &'a mut LineOffsets) -> Self {
         Self {
+            source,
             cursor: Cursor::from(source),
             line_offsets,
             buffer: Default::default(),
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.cursor = Cursor::from(self.source);
+        self.line_offsets.clear();
+        self.buffer.clear();
+    }
+
+    #[inline]
+    pub fn iter_all_tokens(&'a mut self) -> TokenStream<'a> {
+        TokenStream::new(self, false)
+    }
+
+    #[inline]
+    pub fn iter_lang_tokens(&'a mut self) -> TokenStream<'a> {
+        TokenStream::new(self, true)
+    }
+
+    #[inline]
+    pub fn line_offsets(&self) -> &LineOffsets {
+        &self.line_offsets
     }
 
     pub fn next_token(&mut self) -> Token {

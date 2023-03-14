@@ -1,6 +1,6 @@
 use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
 use cool_lexer::symbols::Symbol;
-use cool_lexer::tokens::{tk, Literal, Token, TokenKind};
+use cool_lexer::tokens::{tk, Literal, TokenKind};
 use cool_span::Span;
 
 #[derive(Clone, Debug)]
@@ -17,10 +17,7 @@ impl ParseTree for LiteralExpr {
     }
 }
 
-impl<T> Parser<T>
-where
-    T: Iterator<Item = Token>,
-{
+impl Parser<'_> {
     pub fn parse_literal_expr(&mut self) -> ParseResult<LiteralExpr> {
         let start_token = self.bump();
 

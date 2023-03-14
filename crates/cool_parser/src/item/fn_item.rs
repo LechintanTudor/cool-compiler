@@ -2,7 +2,7 @@ use crate::expr::BlockExpr;
 use crate::ty::Ty;
 use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
 use cool_lexer::symbols::Symbol;
-use cool_lexer::tokens::{tk, Token, TokenKind};
+use cool_lexer::tokens::{tk, TokenKind};
 use cool_span::Span;
 
 #[derive(Clone, Debug)]
@@ -46,10 +46,7 @@ impl ParseTree for FnArg {
     }
 }
 
-impl<T> Parser<T>
-where
-    T: Iterator<Item = Token>,
-{
+impl Parser<'_> {
     pub fn parse_fn_item(&mut self) -> ParseResult<FnItem> {
         let start_token = self.bump_expect(&[tk::KW_FN])?;
         let arg_list = self.parse_fn_arg_list()?;

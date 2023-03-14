@@ -1,26 +1,21 @@
 use crate::{ParseResult, UnexpectedToken};
+use cool_lexer::lexer::TokenStream;
 use cool_lexer::tokens::{Token, TokenKind};
 use std::iter::Peekable;
 
-pub struct Parser<T>
-where
-    T: Iterator<Item = Token>,
-{
-    tokens: Peekable<T>,
+pub struct Parser<'a> {
+    token_stream: Peekable<TokenStream<'a>>,
 }
 
-impl<T> Parser<T>
-where
-    T: Iterator<Item = Token>,
-{
-    pub fn new(tokens: T) -> Self {
+impl<'a> Parser<'a> {
+    pub fn new(token_stream: TokenStream<'a>) -> Self {
         Self {
-            tokens: tokens.peekable(),
+            token_stream: token_stream.peekable(),
         }
     }
 
     pub fn bump(&mut self) -> Token {
-        self.tokens.next().unwrap_or(self.eof_token())
+        self.token_stream.next().unwrap_or(self.eof_token())
     }
 
     pub fn bump_if_eq(&mut self, kind: TokenKind) -> Option<Token> {
@@ -45,7 +40,10 @@ where
     }
 
     pub fn peek(&mut self) -> Token {
-        self.tokens.peek().copied().unwrap_or(self.eof_token())
+        self.token_stream
+            .peek()
+            .copied()
+            .unwrap_or(self.eof_token())
     }
 
     fn eof_token(&self) -> Token {

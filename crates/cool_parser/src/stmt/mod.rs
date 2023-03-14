@@ -6,7 +6,6 @@ pub use self::assign_stmt::*;
 pub use self::decl_stmt::*;
 pub use self::expr_stmt::*;
 use crate::{ParseResult, ParseTree, Parser};
-use cool_lexer::tokens::Token;
 use cool_span::Span;
 use paste::paste;
 
@@ -53,10 +52,7 @@ define_stmt! {
     Expr,
 }
 
-impl<T> Parser<T>
-where
-    T: Iterator<Item = Token>,
-{
+impl Parser<'_> {
     pub fn parse_stmt(&mut self) -> ParseResult<Stmt> {
         Ok(Stmt::Decl(self.parse_decl_stmt()?))
     }

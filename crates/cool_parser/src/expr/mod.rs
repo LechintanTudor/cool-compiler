@@ -18,7 +18,7 @@ pub use self::path_expr::*;
 pub use self::return_expr::*;
 pub use self::tuple_expr::*;
 use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
-use cool_lexer::tokens::{tk, Token, TokenKind};
+use cool_lexer::tokens::{tk, TokenKind};
 use cool_span::Span;
 use paste::paste;
 
@@ -71,10 +71,7 @@ define_expr! {
     Tuple,
 }
 
-impl<T> Parser<T>
-where
-    T: Iterator<Item = Token>,
-{
+impl Parser<'_> {
     pub fn parse_expr(&mut self) -> ParseResult<Expr> {
         let expr: Expr = match self.peek().kind {
             tk::OPEN_BRACKET => self.parse_array_expr()?.into(),

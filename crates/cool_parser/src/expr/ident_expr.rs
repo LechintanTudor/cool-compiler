@@ -1,5 +1,4 @@
 use crate::{Ident, ParseResult, ParseTree, Parser};
-use cool_lexer::tokens::Token;
 use cool_span::Span;
 
 #[derive(Clone, Debug)]
@@ -14,10 +13,7 @@ impl ParseTree for IdentExpr {
     }
 }
 
-impl<T> Parser<T>
-where
-    T: Iterator<Item = Token>,
-{
+impl Parser<'_> {
     pub fn parse_ident_expr(&mut self) -> ParseResult<IdentExpr> {
         let ident = self.parse_path_ident()?;
 

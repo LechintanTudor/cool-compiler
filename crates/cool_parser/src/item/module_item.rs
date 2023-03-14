@@ -1,6 +1,6 @@
 use crate::item::Decl;
 use crate::{ParseResult, ParseTree, Parser};
-use cool_lexer::tokens::{tk, Token, TokenKind};
+use cool_lexer::tokens::{tk, TokenKind};
 use cool_span::Span;
 
 #[derive(Clone, Debug)]
@@ -26,10 +26,7 @@ impl ParseTree for ModuleItem {
     }
 }
 
-impl<T> Parser<T>
-where
-    T: Iterator<Item = Token>,
-{
+impl Parser<'_> {
     pub fn parse_module_item(&mut self) -> ParseResult<ModuleItem> {
         let start_token = self.bump_expect(&[tk::KW_MODULE])?;
 

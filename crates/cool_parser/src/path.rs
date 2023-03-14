@@ -1,6 +1,6 @@
 use crate::{Ident, ParseResult, ParseTree, Parser};
 use cool_lexer::symbols::sym;
-use cool_lexer::tokens::{tk, Token};
+use cool_lexer::tokens::tk;
 use cool_span::Span;
 use smallvec::SmallVec;
 
@@ -42,10 +42,7 @@ impl ParseTree for SymbolPath {
     }
 }
 
-impl<T> Parser<T>
-where
-    T: Iterator<Item = Token>,
-{
+impl Parser<'_> {
     pub fn parse_import_path(&mut self) -> ParseResult<SymbolPath> {
         let mut idents = IdentVec::new();
         idents.push(self.parse_path_ident()?);

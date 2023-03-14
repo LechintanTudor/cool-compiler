@@ -1,6 +1,6 @@
 use crate::expr::Expr;
 use crate::{ParseResult, ParseTree, Parser, Pattern};
-use cool_lexer::tokens::{tk, Token};
+use cool_lexer::tokens::tk;
 use cool_span::Span;
 
 #[derive(Clone, Debug)]
@@ -17,10 +17,7 @@ impl ParseTree for AssignStmt {
     }
 }
 
-impl<T> Parser<T>
-where
-    T: Iterator<Item = Token>,
-{
+impl Parser<'_> {
     pub fn continue_parse_assign_after_pattern(
         &mut self,
         pattern: Pattern,

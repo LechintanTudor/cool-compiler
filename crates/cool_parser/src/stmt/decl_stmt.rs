@@ -1,7 +1,7 @@
 use crate::expr::Expr;
 use crate::ty::Ty;
 use crate::{ParseResult, ParseTree, Parser, Pattern};
-use cool_lexer::tokens::{tk, Token};
+use cool_lexer::tokens::tk;
 use cool_span::Span;
 
 #[derive(Clone, Debug)]
@@ -19,10 +19,7 @@ impl ParseTree for DeclStmt {
     }
 }
 
-impl<T> Parser<T>
-where
-    T: Iterator<Item = Token>,
-{
+impl Parser<'_> {
     pub fn parse_decl_stmt(&mut self) -> ParseResult<DeclStmt> {
         let pattern = self.parse_pattern()?;
         self.continue_parse_decl_after_pattern(pattern)

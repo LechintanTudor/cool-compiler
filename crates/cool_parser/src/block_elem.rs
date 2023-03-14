@@ -1,7 +1,7 @@
 use crate::expr::Expr;
 use crate::stmt::{ExprStmt, Stmt};
 use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
-use cool_lexer::tokens::{tk, Token, TokenKind};
+use cool_lexer::tokens::{tk, TokenKind};
 use cool_span::Span;
 
 macro_rules! define_block_elem {
@@ -42,10 +42,7 @@ define_block_elem! {
     Stmt,
 }
 
-impl<T> Parser<T>
-where
-    T: Iterator<Item = Token>,
-{
+impl Parser<'_> {
     pub fn parse_block_elem(&mut self) -> ParseResult<BlockElem> {
         match self.peek().kind {
             TokenKind::Ident(_) => Ok(self.parse_expr_or_decl_or_assign()?),

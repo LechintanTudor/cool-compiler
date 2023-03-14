@@ -1,6 +1,6 @@
 use crate::expr::Expr;
 use crate::{ParseResult, ParseTree, Parser};
-use cool_lexer::tokens::{tk, Token};
+use cool_lexer::tokens::tk;
 use cool_span::Span;
 
 #[derive(Clone, Debug)]
@@ -16,10 +16,7 @@ impl ParseTree for ReturnExpr {
     }
 }
 
-impl<T> Parser<T>
-where
-    T: Iterator<Item = Token>,
-{
+impl Parser<'_> {
     pub fn parse_return_expr(&mut self) -> ParseResult<ReturnExpr> {
         let start_token = self.bump_expect(&[tk::KW_RETURN])?;
         let expr = self.parse_expr()?;

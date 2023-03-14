@@ -1,7 +1,7 @@
 use crate::parse_tree::ParseTree;
 use crate::{ParseResult, Parser, UnexpectedToken};
 use cool_lexer::symbols::{sym, Symbol};
-use cool_lexer::tokens::{tk, Token, TokenKind};
+use cool_lexer::tokens::{tk, TokenKind};
 use cool_span::Span;
 
 #[derive(Clone, Copy, Debug)]
@@ -17,10 +17,7 @@ impl ParseTree for Ident {
     }
 }
 
-impl<T> Parser<T>
-where
-    T: Iterator<Item = Token>,
-{
+impl Parser<'_> {
     pub fn parse_ident(&mut self) -> ParseResult<Ident> {
         let token = self.bump();
         let TokenKind::Ident(symbol) = token.kind else {

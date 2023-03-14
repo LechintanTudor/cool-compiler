@@ -1,7 +1,7 @@
 use crate::expr::Expr;
 use crate::path::IdentVec;
 use crate::{ParseResult, ParseTree, Parser};
-use cool_lexer::tokens::{tk, Token};
+use cool_lexer::tokens::tk;
 use cool_span::Span;
 
 #[derive(Clone, Debug)]
@@ -23,10 +23,7 @@ impl ParseTree for PathExpr {
     }
 }
 
-impl<T> Parser<T>
-where
-    T: Iterator<Item = Token>,
-{
+impl Parser<'_> {
     pub fn continue_parse_path_expr(&mut self, root: Box<Expr>) -> ParseResult<PathExpr> {
         let mut idents = IdentVec::new();
 

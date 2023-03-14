@@ -161,15 +161,13 @@ fn parse_source_file(paths: ModulePaths, module_id: ItemId) -> SourceFile {
     let mut line_offsets = LineOffsets::default();
     let mut tokenizer = Tokenizer::new(&source, &mut line_offsets);
 
-    let token_iter =
-        std::iter::repeat_with(|| tokenizer.next_token()).filter(|token| token.kind.is_lang_part());
-    let mut parser = Parser::new(token_iter);
+    let mut parser = Parser::new(tokenizer.iter_lang_tokens());
     let module = parser.parse_module_file().unwrap();
 
     SourceFile {
         paths,
-        source,
         line_offsets,
+        source,
         module_id,
         module,
     }

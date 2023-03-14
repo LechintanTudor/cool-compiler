@@ -1,6 +1,6 @@
 use crate::path::SymbolPath;
 use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
-use cool_lexer::tokens::{tk, Token, TokenKind};
+use cool_lexer::tokens::{tk, TokenKind};
 use cool_span::Span;
 use std::fmt;
 
@@ -41,10 +41,7 @@ impl ParseTree for TupleTy {
     }
 }
 
-impl<T> Parser<T>
-where
-    T: Iterator<Item = Token>,
-{
+impl Parser<'_> {
     pub fn parse_ty(&mut self) -> ParseResult<Ty> {
         let start_token = self.peek();
 
