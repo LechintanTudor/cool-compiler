@@ -2,8 +2,9 @@ use crate::path::SymbolPath;
 use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
 use cool_lexer::tokens::{tk, Token, TokenKind};
 use cool_span::Span;
+use std::fmt;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum Ty {
     Path(SymbolPath),
     Tuple(TupleTy),
@@ -14,6 +15,15 @@ impl ParseTree for Ty {
         match self {
             Self::Path(path) => path.span(),
             Self::Tuple(tuple) => tuple.span(),
+        }
+    }
+}
+
+impl fmt::Debug for Ty {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Path(path) => fmt::Debug::fmt(path, f),
+            Self::Tuple(tuple) => fmt::Debug::fmt(tuple, f),
         }
     }
 }

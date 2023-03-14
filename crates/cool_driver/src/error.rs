@@ -1,6 +1,8 @@
+use cool_lexer::tokens::TokenKind;
 use cool_resolve::item::ItemError;
 use std::error::Error;
 use std::fmt;
+use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
 pub struct CompileError {
@@ -21,5 +23,24 @@ impl fmt::Display for CompileError {
         }
 
         Ok(())
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct ParserError {
+    pub path: PathBuf,
+    pub line: u32,
+    pub found: TokenKind,
+    pub expected: &'static [TokenKind],
+}
+
+impl Error for ParserError {}
+
+impl fmt::Display for ParserError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "Failed to parse file: \"{}\"", self.path.display())?;
+        writeln!(f, " -> Error on line {}", self.line)?;
+        writeln!(f, " -> Expected one of {:?}", self.expected)?;
+        writeln!(f, " -> Found: {}", self.found)
     }
 }
