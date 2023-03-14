@@ -7,15 +7,6 @@ pub struct Token {
     pub kind: TokenKind,
 }
 
-impl Token {
-    pub fn eof(source_len: u32) -> Self {
-        Self {
-            span: Span::new(source_len, 0),
-            kind: TokenKind::Eof,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

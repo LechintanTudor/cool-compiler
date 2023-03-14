@@ -1,4 +1,4 @@
-use crate::lexer::{LineOffsets, Tokenizer};
+use crate::lexer::Tokenizer;
 use crate::tokens::{Token, TokenKind};
 
 pub struct TokenStream<'a> {
@@ -17,8 +17,8 @@ impl<'a> TokenStream<'a> {
     }
 
     #[inline]
-    pub fn line_offsets(&self) -> &LineOffsets {
-        self.tokenizer.line_offsets()
+    pub fn tokenizer(&self) -> &Tokenizer {
+        &self.tokenizer
     }
 }
 

@@ -1,5 +1,5 @@
 use crate::symbols::Symbol;
-use crate::tokens::{Group, Literal, LiteralKind, Punctuation};
+use crate::tokens::{Group, Literal, Punctuation};
 use std::fmt;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -7,8 +7,8 @@ pub enum TokenKind {
     Unknown,
     Keyword(Symbol),
     Ident(Symbol),
-    Literal(Literal),
     Prefix(Symbol),
+    Literal(Literal),
     Punctuation(Punctuation),
     Whitespace,
     Comment,
@@ -29,8 +29,8 @@ impl fmt::Display for TokenKind {
             Self::Unknown => write!(f, "<unknown>"),
             Self::Keyword(symbol) => fmt::Display::fmt(symbol, f),
             Self::Ident(symbol) => fmt::Display::fmt(symbol, f),
-            Self::Literal(literal) => fmt::Display::fmt(literal, f),
             Self::Prefix(symbol) => fmt::Display::fmt(symbol, f),
+            Self::Literal(literal) => fmt::Display::fmt(literal, f),
             Self::Punctuation(punctuation) => fmt::Display::fmt(punctuation, f),
             Self::Whitespace => write!(f, "<whitespace>"),
             Self::Comment => write!(f, "<comment>"),
@@ -40,20 +40,10 @@ impl fmt::Display for TokenKind {
     }
 }
 
-impl From<Symbol> for TokenKind {
-    fn from(symbol: Symbol) -> Self {
-        if symbol.is_keyword() {
-            if symbol.is_bool_literal() {
-                Self::Literal(Literal {
-                    kind: LiteralKind::Bool,
-                    symbol,
-                })
-            } else {
-                Self::Keyword(symbol)
-            }
-        } else {
-            Self::Ident(symbol)
-        }
+impl From<Literal> for TokenKind {
+    #[inline]
+    fn from(literal: Literal) -> Self {
+        Self::Literal(literal)
     }
 }
 

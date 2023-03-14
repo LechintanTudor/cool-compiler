@@ -37,6 +37,11 @@ impl<'a> Tokenizer<'a> {
     }
 
     #[inline]
+    pub fn source(&self) -> &str {
+        self.source
+    }
+
+    #[inline]
     pub fn line_offsets(&self) -> &LineOffsets {
         &self.line_offsets
     }
