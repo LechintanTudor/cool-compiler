@@ -1,5 +1,5 @@
 use crate::{AstGenerator, ItemAst, ItemDeclAst};
-use cool_parser::item::{Item, ModuleContent, ModuleKind};
+use cool_parser::{Item, ModuleContent, ModuleKind};
 
 #[derive(Clone, Debug)]
 pub struct ModuleAst {

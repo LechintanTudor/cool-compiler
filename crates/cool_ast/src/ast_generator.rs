@@ -1,4 +1,4 @@
-use cool_parser::ty::Ty;
+use cool_parser::Ty;
 use cool_resolve::item::{ItemPathBuf, ItemTable};
 use cool_resolve::ty::{TyId, TyTable};
 

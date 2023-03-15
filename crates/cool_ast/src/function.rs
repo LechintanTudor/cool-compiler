@@ -1,6 +1,6 @@
 use crate::AstGenerator;
 use cool_lexer::symbols::Symbol;
-use cool_parser::item::FnItem;
+use cool_parser::FnItem;
 use cool_resolve::ty::{tys, TyId};
 
 #[derive(Clone, Debug)]

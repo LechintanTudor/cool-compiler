@@ -1,6 +1,6 @@
 use crate::ModulePaths;
 use cool_lexer::lexer::LineOffsets;
-use cool_parser::item::ModuleContent;
+use cool_parser::ModuleContent;
 use cool_resolve::item::ItemId;
 use cool_span::Span;
 
