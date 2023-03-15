@@ -1,4 +1,4 @@
-use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
+use crate::{ParseResult, ParseTree, Parser};
 use cool_lexer::symbols::Symbol;
 use cool_lexer::tokens::{tk, Literal, TokenKind};
 use cool_span::Span;
@@ -25,19 +25,13 @@ impl Parser<'_> {
             TokenKind::Prefix(symbol) => {
                 let next_token = self.bump();
                 let TokenKind::Literal(literal) = next_token.kind else {
-                    Err(UnexpectedToken {
-                        found: next_token,
-                        expected: &[tk::ANY_LITERAL],
-                    })?
+                    return self.error(next_token, &[tk::ANY_LITERAL]);
                 };
 
                 (Some(symbol), literal, next_token)
             }
             TokenKind::Literal(literal) => (None, literal, start_token),
-            _ => Err(UnexpectedToken {
-                found: start_token,
-                expected: &[tk::ANY_IDENT, tk::ANY_LITERAL],
-            })?,
+            _ => return self.error(start_token, &[tk::ANY_IDENT, tk::ANY_LITERAL]),
         };
 
         Ok(LiteralExpr {

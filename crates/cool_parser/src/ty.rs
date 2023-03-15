@@ -1,5 +1,5 @@
 use crate::path::SymbolPath;
-use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
+use crate::{ParseResult, ParseTree, Parser};
 use cool_lexer::tokens::{tk, TokenKind};
 use cool_span::Span;
 use std::fmt;
@@ -48,17 +48,12 @@ impl Parser<'_> {
         Ok(match start_token.kind {
             tk::OPEN_PAREN => Ty::Tuple(self.parse_tuple_ty()?),
             TokenKind::Ident(_) => Ty::Path(self.parse_import_path()?),
-            _ => {
-                return Err(UnexpectedToken {
-                    found: start_token,
-                    expected: &[tk::OPEN_PAREN],
-                })?;
-            }
+            _ => self.error(start_token, &[tk::OPEN_PAREN])?,
         })
     }
 
     pub fn parse_tuple_ty(&mut self) -> ParseResult<TupleTy> {
-        let open_paren = self.bump_expect(&[tk::OPEN_PAREN])?;
+        let open_paren = self.bump_expect(&tk::OPEN_PAREN)?;
         let mut elements = Vec::<Ty>::new();
 
         let closed_paren = if self.peek().kind == tk::CLOSE_PAREN {
@@ -79,12 +74,7 @@ impl Parser<'_> {
                     tk::CLOSE_PAREN => {
                         break next_token;
                     }
-                    _ => {
-                        return Err(UnexpectedToken {
-                            found: next_token,
-                            expected: &[tk::COMMA, tk::CLOSE_PAREN],
-                        })?;
-                    }
+                    _ => self.error(next_token, &[tk::COMMA, tk::CLOSE_PAREN])?,
                 }
             }
         };

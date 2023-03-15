@@ -17,7 +17,7 @@ impl ParseTree for BlockExpr {
 
 impl Parser<'_> {
     pub fn parse_block_expr(&mut self) -> ParseResult<BlockExpr> {
-        let start_token = self.bump_expect(&[tk::OPEN_BRACE])?;
+        let start_token = self.bump_expect(&tk::OPEN_BRACE)?;
 
         let mut elems = Vec::<BlockElem>::new();
         while self.peek().kind != tk::CLOSE_BRACE {
@@ -30,7 +30,7 @@ impl Parser<'_> {
             }
         }
 
-        let end_token = self.bump_expect(&[tk::CLOSE_BRACE])?;
+        let end_token = self.bump_expect(&tk::CLOSE_BRACE)?;
 
         Ok(BlockExpr {
             span: start_token.span.to(end_token.span),

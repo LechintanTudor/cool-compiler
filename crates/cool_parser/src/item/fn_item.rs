@@ -1,6 +1,6 @@
 use crate::expr::BlockExpr;
 use crate::ty::Ty;
-use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
+use crate::{ParseResult, ParseTree, Parser};
 use cool_lexer::symbols::Symbol;
 use cool_lexer::tokens::{tk, TokenKind};
 use cool_span::Span;
@@ -48,7 +48,7 @@ impl ParseTree for FnArg {
 
 impl Parser<'_> {
     pub fn parse_fn_item(&mut self) -> ParseResult<FnItem> {
-        let start_token = self.bump_expect(&[tk::KW_FN])?;
+        let start_token = self.bump_expect(&tk::KW_FN)?;
         let arg_list = self.parse_fn_arg_list()?;
 
         let return_ty = if self.peek().kind == tk::ARROW {
@@ -69,7 +69,7 @@ impl Parser<'_> {
     }
 
     pub fn parse_fn_arg_list(&mut self) -> ParseResult<FnArgList> {
-        let start_token = self.bump_expect(&[tk::OPEN_PAREN])?;
+        let start_token = self.bump_expect(&tk::OPEN_PAREN)?;
 
         let mut args = Vec::<FnArg>::new();
 
@@ -91,12 +91,7 @@ impl Parser<'_> {
                             break (self.bump().span, true);
                         }
                     }
-                    _ => {
-                        return Err(UnexpectedToken {
-                            found: next_token,
-                            expected: &[tk::CLOSE_PAREN, tk::COMMA],
-                        })?;
-                    }
+                    _ => self.error(next_token, &[tk::CLOSE_PAREN, tk::COMMA])?,
                 }
             }
         };
@@ -117,24 +112,14 @@ impl Parser<'_> {
 
                 match next_token.kind {
                     TokenKind::Ident(ident) => (true, ident),
-                    _ => {
-                        return Err(UnexpectedToken {
-                            found: next_token,
-                            expected: &[tk::ANY_IDENT],
-                        })?;
-                    }
+                    _ => self.error(next_token, &[tk::ANY_IDENT])?,
                 }
             }
             TokenKind::Ident(ident) => (false, ident),
-            _ => {
-                return Err(UnexpectedToken {
-                    found: start_token,
-                    expected: &[tk::KW_MUT],
-                })?;
-            }
+            _ => self.error(start_token, &[tk::KW_MUT])?,
         };
 
-        self.bump_expect(&[tk::COLON])?;
+        self.bump_expect(&tk::COLON)?;
         let ty = self.parse_ty()?;
 
         Ok(FnArg {

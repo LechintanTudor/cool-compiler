@@ -22,9 +22,9 @@ impl Parser<'_> {
         &mut self,
         pattern: Pattern,
     ) -> ParseResult<AssignStmt> {
-        self.bump_expect(&[tk::EQ])?;
+        self.bump_expect(&tk::EQ)?;
         let expr = self.parse_expr()?;
-        let semicolon = self.bump_expect(&[tk::SEMICOLON])?;
+        let semicolon = self.bump_expect(&tk::SEMICOLON)?;
 
         Ok(AssignStmt {
             span: pattern.span.to(semicolon.span),

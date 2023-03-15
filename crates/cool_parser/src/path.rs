@@ -48,7 +48,7 @@ impl Parser<'_> {
         idents.push(self.parse_path_ident()?);
 
         while self.peek().kind == tk::DOT {
-            self.bump_expect(&[tk::DOT])?;
+            self.bump_expect(&tk::DOT)?;
             idents.push(self.parse_path_ident()?);
         }
 

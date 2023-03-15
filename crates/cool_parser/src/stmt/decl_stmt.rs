@@ -26,7 +26,7 @@ impl Parser<'_> {
     }
 
     pub fn continue_parse_decl_after_pattern(&mut self, pattern: Pattern) -> ParseResult<DeclStmt> {
-        self.bump_expect(&[tk::COLON])?;
+        self.bump_expect(&tk::COLON)?;
 
         let ty = if self.peek().kind != tk::EQ {
             Some(self.parse_ty()?)
@@ -34,10 +34,10 @@ impl Parser<'_> {
             None
         };
 
-        self.bump_expect(&[tk::EQ])?;
+        self.bump_expect(&tk::EQ)?;
 
         let expr = self.parse_expr()?;
-        let end_token = self.bump_expect(&[tk::SEMICOLON])?;
+        let end_token = self.bump_expect(&tk::SEMICOLON)?;
 
         Ok(DeclStmt {
             span: pattern.span().to(end_token.span),

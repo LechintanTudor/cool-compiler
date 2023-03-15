@@ -1,6 +1,6 @@
 use crate::expr::Expr;
 use crate::stmt::{ExprStmt, Stmt};
-use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
+use crate::{ParseResult, ParseTree, Parser};
 use cool_lexer::tokens::{tk, TokenKind};
 use cool_span::Span;
 
@@ -83,34 +83,28 @@ impl Parser<'_> {
                     BlockElem::Stmt(stmt.into())
                 }
                 tk::SEMICOLON => {
-                    let semicolon = self.bump_expect(&[tk::SEMICOLON])?;
+                    let semicolon = self.bump_expect(&tk::SEMICOLON)?;
                     BlockElem::Stmt(Stmt::Expr(ExprStmt {
                         span: ident_expr.span().to(semicolon.span),
                         expr: ident_expr.into(),
                     }))
                 }
                 tk::CLOSE_BRACE => BlockElem::Expr(ident_expr.into()),
-                _ => Err(UnexpectedToken {
-                    found: self.peek(),
-                    expected: &[tk::COLON, tk::EQ, tk::SEMICOLON, tk::CLOSE_BRACE],
-                })?,
+                _ => self.peek_error(&[tk::COLON, tk::EQ, tk::SEMICOLON, tk::CLOSE_BRACE])?,
             },
             expr => match self.peek().kind {
                 tk::EQ => {
                     todo!("Add expression assignments and patterns");
                 }
                 tk::SEMICOLON => {
-                    let semicolon = self.bump_expect(&[tk::SEMICOLON])?;
+                    let semicolon = self.bump_expect(&tk::SEMICOLON)?;
                     BlockElem::Stmt(Stmt::Expr(ExprStmt {
                         span: expr.span().to(semicolon.span),
                         expr: expr.into(),
                     }))
                 }
                 tk::CLOSE_BRACE => BlockElem::Expr(expr.into()),
-                _ => Err(UnexpectedToken {
-                    found: self.peek(),
-                    expected: &[tk::EQ, tk::SEMICOLON, tk::CLOSE_BRACE],
-                })?,
+                _ => self.peek_error(&[tk::EQ, tk::SEMICOLON, tk::CLOSE_BRACE])?,
             },
         };
 

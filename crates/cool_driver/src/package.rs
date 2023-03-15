@@ -1,12 +1,14 @@
 use crate::paths::ModulePaths;
 use crate::{CompileError, SourceFile};
 use cool_ast::{AstGenerator, ModuleAst};
-use cool_lexer::lexer::{LineOffsets, Tokenizer};
+use cool_lexer::lexer::{LexedSourceFile, Tokenizer};
 use cool_lexer::symbols::Symbol;
-use cool_parser::{DeclKind, Item, ModuleContent, ModuleKind, Parser};
+use cool_parser::{DeclKind, Item, ModuleContent, ModuleKind, Parser, ParseResult};
 use cool_resolve::item::{ItemError, ItemId, ItemPathBuf, ItemTable};
 use cool_resolve::ty::TyTable;
 use std::collections::VecDeque;
+use std::fs::File;
+use std::io::BufReader;
 use std::path::Path;
 
 #[derive(Debug)]
@@ -59,7 +61,13 @@ impl<'a> Driver<'a> {
             return false;
         };
 
-        let source_file = parse_source_file(file_module.paths, file_module.module_id);
+        let source_file = match parse_source_file(file_module.paths, file_module.module_id) {
+            Ok(source_file) => source_file,
+            Err(error) => {
+                println!("\n{}", error);
+                return true;
+            }
+        };
 
         let mut modules_to_process = VecDeque::<(ItemId, &ModuleContent)>::new();
         modules_to_process.push_back((file_module.module_id, &source_file.module));
@@ -155,21 +163,23 @@ impl<'a> Driver<'a> {
     }
 }
 
-fn parse_source_file(paths: ModulePaths, module_id: ItemId) -> SourceFile {
-    let source = std::fs::read_to_string(&paths.path).unwrap();
-    let mut line_offsets = LineOffsets::default();
-    let mut tokenizer = Tokenizer::new(&source, &mut line_offsets);
+fn parse_source_file(paths: ModulePaths, module_id: ItemId) -> ParseResult<SourceFile> {
+    let lexed = {
+        let file = File::open(&paths.path).unwrap();
+        let mut buf_reader = BufReader::new(file);
+        LexedSourceFile::from_reader(&mut buf_reader)
+    };
 
-    let mut parser = Parser::new(tokenizer.iter_lang_tokens());
-    let module = parser.parse_module_file().unwrap();
+    let mut tokenizer = Tokenizer::new(&lexed.source);
+    let mut parser = Parser::new(&lexed, tokenizer.iter_lang_tokens());
+    let module = parser.parse_module_file()?;
 
-    SourceFile {
+    Ok(SourceFile {
         paths,
-        line_offsets,
-        source,
+        lexed,
         module_id,
         module,
-    }
+    })
 }
 
 pub fn generate_ast(package: &mut Package) -> Result<Vec<ModuleAst>, CompileError> {

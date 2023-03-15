@@ -1,4 +1,4 @@
-use crate::lexer::{Cursor, LineOffsets, TokenStream, EOF_CHAR};
+use crate::lexer::{Cursor, TokenStream, EOF_CHAR};
 use crate::symbols::Symbol;
 use crate::tokens::{Literal, LiteralKind, Punctuation, Token, TokenKind};
 use cool_span::Span;
@@ -6,23 +6,20 @@ use cool_span::Span;
 pub struct Tokenizer<'a> {
     source: &'a str,
     cursor: Cursor<'a>,
-    line_offsets: &'a mut LineOffsets,
     buffer: String,
 }
 
 impl<'a> Tokenizer<'a> {
-    pub fn new(source: &'a str, line_offsets: &'a mut LineOffsets) -> Self {
+    pub fn new(source: &'a str) -> Self {
         Self {
             source,
             cursor: Cursor::from(source),
-            line_offsets,
             buffer: Default::default(),
         }
     }
 
     pub fn reset(&mut self) {
         self.cursor = Cursor::from(self.source);
-        self.line_offsets.clear();
         self.buffer.clear();
     }
 
@@ -39,11 +36,6 @@ impl<'a> Tokenizer<'a> {
     #[inline]
     pub fn source(&self) -> &str {
         self.source
-    }
-
-    #[inline]
-    pub fn line_offsets(&self) -> &LineOffsets {
-        &self.line_offsets
     }
 
     pub fn next_token(&mut self) -> Token {
@@ -65,9 +57,6 @@ impl<'a> Tokenizer<'a> {
         } else if first_char == '\'' {
             self.character()
         } else if first_char.is_whitespace() {
-            if first_char == '\n' {
-                self.line_offsets.add(self.cursor.offset());
-            }
             self.whitespace()
         } else if first_char == EOF_CHAR {
             TokenKind::Eof
@@ -215,10 +204,6 @@ impl<'a> Tokenizer<'a> {
             }
 
             self.cursor.bump();
-
-            if char == '\n' {
-                self.line_offsets.add(self.cursor.offset());
-            }
         }
 
         TokenKind::Whitespace
@@ -226,11 +211,6 @@ impl<'a> Tokenizer<'a> {
 
     fn line_comment(&mut self) -> TokenKind {
         self.cursor.consume_while(|char| char != '\n');
-
-        if self.cursor.consume_if(|char| char == '\n') {
-            self.line_offsets.add(self.cursor.offset());
-        }
-
         TokenKind::Comment
     }
 }

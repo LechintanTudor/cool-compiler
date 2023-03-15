@@ -28,7 +28,7 @@ impl ParseTree for ModuleItem {
 
 impl Parser<'_> {
     pub fn parse_module_item(&mut self) -> ParseResult<ModuleItem> {
-        let start_token = self.bump_expect(&[tk::KW_MODULE])?;
+        let start_token = self.bump_expect(&tk::KW_MODULE)?;
 
         let (kind, end_token) = if self.peek().kind == tk::OPEN_BRACE {
             self.bump();

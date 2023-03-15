@@ -17,7 +17,7 @@ impl ParseTree for UseDecl {
 
 impl Parser<'_> {
     pub fn parse_use_decl(&mut self) -> ParseResult<UseDecl> {
-        let start_token = self.bump_expect(&[tk::KW_USE])?;
+        let start_token = self.bump_expect(&tk::KW_USE)?;
         let path = self.parse_import_path()?;
 
         Ok(UseDecl {

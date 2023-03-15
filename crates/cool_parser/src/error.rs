@@ -1,66 +1,34 @@
 use cool_lexer::tokens::{Token, TokenKind};
-use cool_span::Span;
+use cool_span::SourcePosition;
 use std::error::Error;
 use std::fmt;
 
 pub type ParseResult<T> = Result<T, ParseError>;
 
 #[derive(Clone, Debug)]
-pub enum ParseError {
-    UnexpectedToken(UnexpectedToken),
-}
-
-impl ParseError {
-    pub fn span(&self) -> Span {
-        match self {
-            Self::UnexpectedToken(error) => error.found.span,
-        }
-    }
-}
-
-impl Error for ParseError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            Self::UnexpectedToken(e) => Some(e),
-        }
-    }
-}
-
-impl fmt::Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let span = self.span();
-        write!(f, "Parer error at offset {}..{}", span.start, span.end())
-    }
-}
-
-impl From<UnexpectedToken> for ParseError {
-    fn from(error: UnexpectedToken) -> Self {
-        Self::UnexpectedToken(error)
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct UnexpectedToken {
+pub struct ParseError {
+    pub position: SourcePosition,
     pub found: Token,
     pub expected: &'static [TokenKind],
 }
 
-impl Error for UnexpectedToken {}
+impl Error for ParseError {}
 
-impl fmt::Display for UnexpectedToken {
+impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
+        writeln!(
             f,
-            "Unexpected token '{}'. Expected one of: {}.",
-            self.found.kind,
-            TokenKindListDisplayer(self.expected),
-        )
+            "Unexpected token '{}' at line {}, column {}.",
+            self.found.kind, self.position.line, self.position.column,
+        )?;
+
+        writeln!(f, " -> Expected: {}.", ExpectedTokenDisplayer(self.expected))
     }
 }
 
-struct TokenKindListDisplayer<'a>(&'a [TokenKind]);
+struct ExpectedTokenDisplayer<'a>(&'a [TokenKind]);
 
-impl fmt::Display for TokenKindListDisplayer<'_> {
+impl fmt::Display for ExpectedTokenDisplayer<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let Some((first, others)) = self.0.split_first() else {
             return Ok(())
@@ -68,10 +36,14 @@ impl fmt::Display for TokenKindListDisplayer<'_> {
 
         write!(f, "'{}'", first)?;
 
+        let Some((last, others)) = others.split_last() else {
+            return Ok(())
+        };
+
         for other in others {
             write!(f, ", '{}'", other)?;
         }
 
-        Ok(())
+        write!(f, " or '{}'", last)
     }
 }

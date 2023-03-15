@@ -1,5 +1,5 @@
 use crate::item::{ItemDecl, UseDecl};
-use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
+use crate::{ParseResult, ParseTree, Parser};
 use cool_lexer::tokens::{tk, TokenKind};
 use cool_span::Span;
 
@@ -46,15 +46,10 @@ impl Parser<'_> {
         let kind = match self.peek().kind {
             TokenKind::Ident(_) => DeclKind::Item(self.parse_item_decl()?),
             tk::KW_USE => DeclKind::Use(self.parse_use_decl()?),
-            _ => {
-                return Err(UnexpectedToken {
-                    found: self.peek(),
-                    expected: &[tk::KW_USE, tk::ANY_IDENT],
-                })?
-            }
+            _ => self.peek_error(&[tk::KW_USE, tk::ANY_IDENT])?,
         };
 
-        let end_token = self.bump_expect(&[tk::SEMICOLON])?;
+        let end_token = self.bump_expect(&tk::SEMICOLON)?;
 
         let (is_exported, span) = match export_span {
             Some(span) => (true, span.to(end_token.span)),

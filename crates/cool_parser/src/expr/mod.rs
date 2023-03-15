@@ -17,7 +17,7 @@ pub use self::paren_expr::*;
 pub use self::path_expr::*;
 pub use self::return_expr::*;
 pub use self::tuple_expr::*;
-use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
+use crate::{ParseResult, ParseTree, Parser};
 use cool_lexer::tokens::{tk, TokenKind};
 use cool_span::Span;
 use paste::paste;
@@ -80,23 +80,22 @@ impl Parser<'_> {
             tk::KW_RETURN => self.parse_return_expr()?.into(),
             TokenKind::Ident(_) => self.parse_ident_or_path_or_fn_call_expr()?.into(),
             TokenKind::Prefix(_) | TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
-            _ => Err(UnexpectedToken {
-                found: self.peek(),
-                expected: &[
+            _ => {
+                return self.peek_error(&[
                     tk::OPEN_BRACKET,
                     tk::OPEN_BRACE,
                     tk::OPEN_PAREN,
                     tk::ANY_IDENT,
                     tk::ANY_LITERAL,
-                ],
-            })?,
+                ])
+            }
         };
 
         Ok(expr)
     }
 
     fn parse_paren_or_tuple_expr(&mut self) -> ParseResult<Expr> {
-        let start_token = self.bump_expect(&[tk::OPEN_PAREN])?;
+        let start_token = self.bump_expect(&tk::OPEN_PAREN)?;
 
         let mut exprs = Vec::<Expr>::new();
         let (end_token, has_trailing_comma) = match self.peek().kind {
@@ -111,10 +110,7 @@ impl Parser<'_> {
                 } else if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
                     break (end_token, false);
                 } else {
-                    Err(UnexpectedToken {
-                        found: self.peek(),
-                        expected: &[tk::COMMA, tk::CLOSE_PAREN],
-                    })?
+                    return self.peek_error(&[tk::COMMA, tk::CLOSE_PAREN]);
                 }
             },
         };

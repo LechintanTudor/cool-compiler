@@ -18,7 +18,7 @@ impl ParseTree for ReturnExpr {
 
 impl Parser<'_> {
     pub fn parse_return_expr(&mut self) -> ParseResult<ReturnExpr> {
-        let start_token = self.bump_expect(&[tk::KW_RETURN])?;
+        let start_token = self.bump_expect(&tk::KW_RETURN)?;
         let expr = self.parse_expr()?;
 
         Ok(ReturnExpr {

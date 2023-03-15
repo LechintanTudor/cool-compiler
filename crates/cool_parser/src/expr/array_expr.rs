@@ -1,5 +1,5 @@
 use crate::expr::Expr;
-use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
+use crate::{ParseResult, ParseTree, Parser};
 use cool_lexer::tokens::tk;
 use cool_span::Span;
 
@@ -19,7 +19,7 @@ impl ParseTree for ArrayExpr {
 
 impl Parser<'_> {
     pub fn parse_array_expr(&mut self) -> ParseResult<ArrayExpr> {
-        let start_token = self.bump_expect(&[tk::OPEN_BRACKET])?;
+        let start_token = self.bump_expect(&tk::OPEN_BRACKET)?;
 
         let mut exprs = Vec::<Expr>::new();
         let (end_token, has_trailing_comma) = match self.peek().kind {
@@ -34,10 +34,7 @@ impl Parser<'_> {
                 } else if let Some(end_token) = self.bump_if_eq(tk::CLOSE_BRACKET) {
                     break (end_token, false);
                 } else {
-                    Err(UnexpectedToken {
-                        found: self.peek(),
-                        expected: &[tk::COMMA, tk::CLOSE_BRACKET],
-                    })?
+                    return self.peek_error(&[tk::COMMA, tk::CLOSE_BRACKET]);
                 }
             },
         };

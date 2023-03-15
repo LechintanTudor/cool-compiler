@@ -1,4 +1,4 @@
-use cool_span::{LineSpan, Span};
+use cool_span::{LineSpan, SourcePosition, Span};
 
 #[derive(Clone, Debug)]
 pub struct LineOffsets {
@@ -33,6 +33,18 @@ impl LineOffsets {
     pub fn to_line(&self, offset: u32) -> u32 {
         self.offsets
             .partition_point(|&line_offset| line_offset <= offset) as u32
+    }
+
+    pub fn to_source_position(&self, offset: u32) -> SourcePosition {
+        let line = self.to_line(offset);
+
+        let column = self
+            .offsets
+            .get((line - 1) as usize)
+            .map(|line_offset| offset - line_offset + 1)
+            .unwrap_or(1);
+
+        SourcePosition { line, column }
     }
 
     #[inline]

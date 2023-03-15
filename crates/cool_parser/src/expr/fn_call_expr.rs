@@ -1,5 +1,5 @@
 use crate::expr::Expr;
-use crate::{ParseResult, ParseTree, Parser, UnexpectedToken};
+use crate::{ParseResult, ParseTree, Parser};
 use cool_lexer::tokens::tk;
 use cool_span::Span;
 
@@ -20,11 +20,11 @@ impl ParseTree for FnCallExpr {
 
 impl Parser<'_> {
     pub fn continue_parse_fn_call_expr(&mut self, fn_expr: Box<Expr>) -> ParseResult<FnCallExpr> {
-        self.bump_expect(&[tk::OPEN_PAREN])?;
+        self.bump_expect(&tk::OPEN_PAREN)?;
         let mut arg_exprs = Vec::<Expr>::new();
 
         let (end_token, has_trailing_comma) = match self.peek().kind {
-            tk::CLOSE_PAREN => (self.bump_expect(&[tk::CLOSE_PAREN])?, false),
+            tk::CLOSE_PAREN => (self.bump_expect(&tk::CLOSE_PAREN)?, false),
             _ => loop {
                 arg_exprs.push(self.parse_expr()?);
 
@@ -35,10 +35,7 @@ impl Parser<'_> {
                 } else if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
                     break (end_token, false);
                 } else {
-                    Err(UnexpectedToken {
-                        found: self.peek(),
-                        expected: &[tk::COMMA, tk::CLOSE_PAREN],
-                    })?
+                    return self.peek_error(&[tk::COMMA, tk::CLOSE_PAREN]);
                 }
             },
         };

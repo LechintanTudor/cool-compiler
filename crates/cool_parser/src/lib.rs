@@ -19,7 +19,7 @@ pub use self::path::*;
 pub use self::pattern::*;
 pub use self::stmt::*;
 pub use self::ty::*;
-use cool_lexer::lexer::TokenStream;
+use cool_lexer::lexer::{LexedSourceFile, TokenStream};
 use cool_lexer::tokens::{Token, TokenKind};
 use cool_span::Span;
 use std::iter::Peekable;
@@ -30,12 +30,14 @@ const EOF_TOKEN: Token = Token {
 };
 
 pub struct Parser<'a> {
+    lexed: &'a LexedSourceFile,
     token_stream: Peekable<TokenStream<'a>>,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(token_stream: TokenStream<'a>) -> Self {
+    pub fn new(lexed: &'a LexedSourceFile, token_stream: TokenStream<'a>) -> Self {
         Self {
+            lexed,
             token_stream: token_stream.peekable(),
         }
     }
@@ -52,14 +54,11 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn bump_expect(&mut self, expected: &'static [TokenKind]) -> ParseResult<Token> {
+    pub fn bump_expect(&mut self, expected: &'static TokenKind) -> ParseResult<Token> {
         let token = self.bump();
 
-        if !expected.contains(&token.kind) {
-            return Err(UnexpectedToken {
-                found: token,
-                expected,
-            })?;
+        if &token.kind != expected {
+            return self.error(token, std::slice::from_ref(expected));
         }
 
         Ok(token)
@@ -67,5 +66,20 @@ impl<'a> Parser<'a> {
 
     pub fn peek(&mut self) -> Token {
         self.token_stream.peek().copied().unwrap_or(EOF_TOKEN)
+    }
+
+    pub fn error<T>(&self, found: Token, expected: &'static [TokenKind]) -> ParseResult<T> {
+        let position = self.lexed.line_offsets.to_source_position(found.span.start);
+
+        Err(ParseError {
+            position,
+            found,
+            expected,
+        })
+    }
+
+    pub fn peek_error<T>(&mut self, expected: &'static [TokenKind]) -> ParseResult<T> {
+        let token = self.peek();
+        self.error(token, expected)
     }
 }

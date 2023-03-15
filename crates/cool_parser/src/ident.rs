@@ -1,5 +1,5 @@
 use crate::parse_tree::ParseTree;
-use crate::{ParseResult, Parser, UnexpectedToken};
+use crate::{ParseResult, Parser};
 use cool_lexer::symbols::{sym, Symbol};
 use cool_lexer::tokens::{tk, TokenKind};
 use cool_span::Span;
@@ -21,10 +21,7 @@ impl Parser<'_> {
     pub fn parse_ident(&mut self) -> ParseResult<Ident> {
         let token = self.bump();
         let TokenKind::Ident(symbol) = token.kind else {
-            return Err(UnexpectedToken {
-                found: token,
-                expected: &[tk::ANY_IDENT],
-            })?;
+            return self.error(token, &[tk::ANY_IDENT]);
         };
 
         Ok(Ident {
@@ -40,10 +37,10 @@ impl Parser<'_> {
             tk::KW_CRATE => sym::KW_CRATE,
             tk::KW_SUPER => sym::KW_SUPER,
             tk::KW_SELF => sym::KW_SELF,
-            _ => Err(UnexpectedToken {
-                found: token,
-                expected: &[tk::ANY_IDENT, tk::KW_CRATE, tk::KW_SUPER, tk::KW_SELF],
-            })?,
+            _ => self.error(
+                token,
+                &[tk::ANY_IDENT, tk::KW_CRATE, tk::KW_SUPER, tk::KW_SELF],
+            )?,
         };
 
         Ok(Ident {
