@@ -23,6 +23,7 @@ fn main() -> anyhow::Result<()> {
         sources: driver.into_source_files(),
         items,
         tys: TyTable::with_builtins(),
+        bindings: Default::default(),
     };
 
     for source in package.sources.iter() {

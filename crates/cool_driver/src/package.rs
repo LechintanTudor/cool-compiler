@@ -3,7 +3,8 @@ use crate::{CompileError, SourceFile};
 use cool_ast::{AstGenerator, ModuleAst};
 use cool_lexer::lexer::{LexedSourceFile, Tokenizer};
 use cool_lexer::symbols::Symbol;
-use cool_parser::{DeclKind, Item, ModuleContent, ModuleKind, Parser, ParseResult};
+use cool_parser::{DeclKind, Item, ModuleContent, ModuleKind, ParseResult, Parser};
+use cool_resolve::binding::BindingTable;
 use cool_resolve::item::{ItemError, ItemId, ItemPathBuf, ItemTable};
 use cool_resolve::ty::TyTable;
 use std::collections::VecDeque;
@@ -15,6 +16,7 @@ use std::path::Path;
 pub struct Package {
     pub items: ItemTable,
     pub tys: TyTable,
+    pub bindings: BindingTable,
     pub sources: Vec<SourceFile>,
 }
 
@@ -186,6 +188,7 @@ pub fn generate_ast(package: &mut Package) -> Result<Vec<ModuleAst>, CompileErro
     let mut ast_generator = AstGenerator {
         items: &package.items,
         tys: &mut package.tys,
+        bindings: &mut package.bindings,
     };
 
     let mut module_asts = Vec::<ModuleAst>::new();

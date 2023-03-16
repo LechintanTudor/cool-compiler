@@ -74,7 +74,7 @@ impl<'ctx> GeneratedTys<'ctx> {
             return ty;
         }
 
-        let ty_kind = ty_table.get_by_id(ty_id).unwrap();
+        let ty_kind = ty_table.get_kind_by_id(ty_id).unwrap();
 
         let ty = match ty_kind {
             TyKind::Tuple(tuple_ty) => {

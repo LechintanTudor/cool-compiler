@@ -1,5 +1,5 @@
 use smallvec::SmallVec;
-use std::{fmt, ops};
+use std::fmt;
 
 #[derive(Clone)]
 pub struct SmallVecSet<T, const N: usize> {
@@ -36,6 +36,20 @@ impl<T, const N: usize> SmallVecSet<T, N> {
         true
     }
 
+    pub fn contains(&self, value: &T) -> bool
+    where
+        T: PartialEq,
+    {
+        self.inner.contains(value)
+    }
+
+    pub fn position_of(&self, value: &T) -> Option<usize>
+    where
+        T: PartialEq,
+    {
+        self.inner.iter().position(|v| v == value)
+    }
+
     pub fn clear(&mut self) {
         self.inner.clear()
     }
@@ -53,20 +67,6 @@ impl<T, const N: usize> SmallVecSet<T, N> {
     }
 
     pub fn as_mut_slice(&mut self) -> &mut [T] {
-        self.inner.as_mut_slice()
-    }
-}
-
-impl<T, const N: usize> ops::Deref for SmallVecSet<T, N> {
-    type Target = [T];
-
-    fn deref(&self) -> &Self::Target {
-        self.inner.as_slice()
-    }
-}
-
-impl<T, const N: usize> ops::DerefMut for SmallVecSet<T, N> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
         self.inner.as_mut_slice()
     }
 }

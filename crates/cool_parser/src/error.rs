@@ -22,7 +22,11 @@ impl fmt::Display for ParseError {
             self.found.kind, self.position.line, self.position.column,
         )?;
 
-        writeln!(f, " -> Expected: {}.", ExpectedTokenDisplayer(self.expected))
+        writeln!(
+            f,
+            " -> Expected: {}.",
+            ExpectedTokenDisplayer(self.expected)
+        )
     }
 }
 

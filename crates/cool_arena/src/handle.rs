@@ -1,33 +1,48 @@
-use std::num::NonZeroU32;
+#[macro_export]
+macro_rules! id_newtype {
+    ($Wrapper:ident) => {
+        #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+        pub struct $Wrapper(std::num::NonZeroU32);
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
-pub struct Handle(NonZeroU32);
+        impl $Wrapper {
+            #[inline]
+            pub const fn new(index: u32) -> Option<Self> {
+                if index == 0 {
+                    return None;
+                }
 
-impl Handle {
-    #[inline]
-    pub const fn new(index: u32) -> Option<Self> {
-        if index == 0 {
-            return None;
+                unsafe { Some(Self(std::num::NonZeroU32::new_unchecked(index))) }
+            }
+
+            #[inline]
+            pub fn new_unwrap(index: u32) -> Self {
+                Self(std::num::NonZeroU32::new(index).unwrap())
+            }
+
+            #[inline]
+            pub const unsafe fn new_unchecked(index: u32) -> Self {
+                Self(std::num::NonZeroU32::new_unchecked(index))
+            }
+
+            #[inline]
+            pub const fn dummy() -> Self {
+                unsafe { Self::new_unchecked(u32::MAX) }
+            }
+
+            #[inline]
+            pub const fn index(&self) -> u32 {
+                self.0.get()
+            }
+
+            #[inline]
+            pub const fn as_usize(&self) -> usize {
+                self.0.get() as usize
+            }
         }
-
-        unsafe { Some(Self(NonZeroU32::new_unchecked(index))) }
-    }
-
-    #[inline]
-    pub const unsafe fn new_unchecked(index: u32) -> Self {
-        Self(NonZeroU32::new_unchecked(index))
-    }
-
-    #[inline]
-    pub const fn index(&self) -> u32 {
-        self.0.get()
-    }
-
-    #[inline]
-    pub const fn as_usize(&self) -> usize {
-        self.0.get() as usize
-    }
+    };
 }
+
+id_newtype!(Handle);
 
 #[macro_export]
 macro_rules! handle_newtype {
@@ -46,8 +61,18 @@ macro_rules! handle_newtype {
             }
 
             #[inline]
+            pub fn new_unwrap(index: u32) -> Self {
+                Self($crate::Handle::new_unwrap(index))
+            }
+
+            #[inline]
             pub const unsafe fn new_unchecked(index: u32) -> Self {
                 Self($crate::Handle::new_unchecked(index))
+            }
+
+            #[inline]
+            pub const fn dummy() -> Self {
+                Self($crate::Handle::dummy())
             }
 
             #[inline]

@@ -62,18 +62,18 @@ impl TyTable {
     }
 
     #[inline]
-    pub fn get_ty_id_by_item_id(&self, item_id: ItemId) -> Option<TyId> {
+    pub fn get_id_by_item_id(&self, item_id: ItemId) -> Option<TyId> {
         self.items.get(&item_id).map(|&ty_id| ty_id)
     }
 
     #[inline]
-    pub fn get_by_item_id(&self, item_id: ItemId) -> Option<&TyKind> {
+    pub fn get_kind_by_item_id(&self, item_id: ItemId) -> Option<&TyKind> {
         let ty_id = *self.items.get(&item_id)?;
-        self.get_by_id(ty_id)
+        self.get_kind_by_id(ty_id)
     }
 
     #[inline]
-    pub fn get_by_id(&self, ty_id: TyId) -> Option<&TyKind> {
+    pub fn get_kind_by_id(&self, ty_id: TyId) -> Option<&TyKind> {
         self.tys.get(ty_id.0)
     }
 
