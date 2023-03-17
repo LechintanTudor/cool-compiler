@@ -10,8 +10,8 @@ mod punctuation;
 mod token;
 mod token_kind;
 
-pub use self::group::Group;
-pub use self::literal::{Literal, LiteralKind};
-pub use self::punctuation::Punctuation;
-pub use self::token::Token;
-pub use self::token_kind::TokenKind;
+pub use self::group::*;
+pub use self::literal::*;
+pub use self::punctuation::*;
+pub use self::token::*;
+pub use self::token_kind::*;

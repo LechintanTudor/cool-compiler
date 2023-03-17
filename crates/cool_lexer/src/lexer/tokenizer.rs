@@ -1,6 +1,6 @@
 use crate::lexer::{Cursor, TokenStream, EOF_CHAR};
 use crate::symbols::Symbol;
-use crate::tokens::{Literal, LiteralKind, Punctuation, Token, TokenKind};
+use crate::tokens::{Literal, LiteralKind, Punctuation, Radix, Token, TokenKind};
 use cool_span::Span;
 
 pub struct Tokenizer<'a> {
@@ -151,7 +151,7 @@ impl<'a> Tokenizer<'a> {
         self.buffer.clear();
 
         TokenKind::Literal(Literal {
-            kind: LiteralKind::Int,
+            kind: LiteralKind::Integer { radix: Radix::Ten },
             symbol,
         })
     }

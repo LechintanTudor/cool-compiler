@@ -58,12 +58,12 @@ builtins! {
         I128 => (5, TyKind::Int(IntTy::I128)),
         ISIZE => (6, TyKind::Int(IntTy::Isize)),
 
-        U8 => (7, TyKind::Uint(UintTy::U8)),
-        U16 => (8, TyKind::Uint(UintTy::U16)),
-        U32 => (9, TyKind::Uint(UintTy::U32)),
-        U64 => (10, TyKind::Uint(UintTy::U64)),
-        U128 => (11, TyKind::Uint(UintTy::U128)),
-        USIZE => (12, TyKind::Uint(UintTy::Usize)),
+        U8 => (7, TyKind::Int(IntTy::U8)),
+        U16 => (8, TyKind::Int(IntTy::U16)),
+        U32 => (9, TyKind::Int(IntTy::U32)),
+        U64 => (10, TyKind::Int(IntTy::U64)),
+        U128 => (11, TyKind::Int(IntTy::U128)),
+        USIZE => (12, TyKind::Int(IntTy::Usize)),
 
         F32 => (13, TyKind::Float(FloatTy::F32)),
         F64 => (14, TyKind::Float(FloatTy::F64)),

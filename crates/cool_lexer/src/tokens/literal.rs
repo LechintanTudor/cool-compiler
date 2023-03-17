@@ -2,8 +2,16 @@ use crate::symbols::Symbol;
 use std::fmt;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub enum Radix {
+    Two,
+    Eight,
+    Ten,
+    Sixteen,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum LiteralKind {
-    Int,
+    Integer { radix: Radix },
     Bool,
     Char,
     String,

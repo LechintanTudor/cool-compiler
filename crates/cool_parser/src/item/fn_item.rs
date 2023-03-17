@@ -14,6 +14,7 @@ pub struct FnItem {
 }
 
 impl ParseTree for FnItem {
+    #[inline]
     fn span(&self) -> Span {
         self.span
     }
@@ -27,6 +28,7 @@ pub struct FnArgList {
 }
 
 impl ParseTree for FnArgList {
+    #[inline]
     fn span(&self) -> Span {
         self.span
     }
@@ -41,6 +43,7 @@ pub struct FnArg {
 }
 
 impl ParseTree for FnArg {
+    #[inline]
     fn span(&self) -> Span {
         self.span
     }

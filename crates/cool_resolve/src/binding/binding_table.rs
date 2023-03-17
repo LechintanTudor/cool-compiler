@@ -17,7 +17,7 @@ pub struct Frame {
 #[derive(Clone, Copy, Debug)]
 pub struct Binding {
     pub is_mutable: bool,
-    pub ty_id: TyId,
+    pub ty_id: Option<TyId>,
 }
 
 #[derive(Clone, Debug)]
@@ -45,7 +45,7 @@ impl BindingTable {
         frame_id: FrameId,
         symbol: Symbol,
         is_mutable: bool,
-        ty_id: TyId,
+        ty_id: Option<TyId>,
     ) -> Option<BindingId> {
         let symbols = &mut self.frames[frame_id.as_usize()].symbols;
 
@@ -66,12 +66,16 @@ impl BindingTable {
         let ty_id_ref = &mut self.bindings[binding_id.as_usize()].ty_id;
 
         // TODO: Check that ty_id is unassigned
-        *ty_id_ref = ty_id;
+        *ty_id_ref = Some(ty_id);
     }
 
     pub fn get_binding(&self, frame_id: FrameId, symbol: Symbol) -> Option<&Binding> {
         let binding_id = self.frames[frame_id.as_usize()].symbols.get(&symbol)?;
         Some(&self.bindings[binding_id.as_usize()])
+    }
+
+    pub fn get_binding_by_id(&self, binding_id: BindingId) -> &Binding {
+        &self.bindings[binding_id.as_usize()]
     }
 
     #[inline]
@@ -90,7 +94,7 @@ impl Default for BindingTable {
             }],
             bindings: vec![Binding {
                 is_mutable: false,
-                ty_id: TyId::dummy(),
+                ty_id: None,
             }],
         }
     }
