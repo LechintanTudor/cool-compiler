@@ -1,20 +1,20 @@
+mod access_expr;
 mod array_expr;
 mod block_expr;
 mod fn_call_expr;
 mod ident_expr;
 mod literal_expr;
 mod paren_expr;
-mod path_expr;
 mod return_expr;
 mod tuple_expr;
 
+pub use self::access_expr::*;
 pub use self::array_expr::*;
 pub use self::block_expr::*;
 pub use self::fn_call_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::paren_expr::*;
-pub use self::path_expr::*;
 pub use self::return_expr::*;
 pub use self::tuple_expr::*;
 use crate::{ParseResult, ParseTree, Parser};
@@ -60,13 +60,13 @@ macro_rules! define_expr {
 }
 
 define_expr! {
+    Access,
     Array,
     Block,
     FnCall,
     Ident,
     Literal,
     Paren,
-    Path,
     Return,
     Tuple,
 }
@@ -78,7 +78,7 @@ impl Parser<'_> {
             tk::OPEN_BRACE => self.parse_block_expr()?.into(),
             tk::OPEN_PAREN => self.parse_paren_or_tuple_expr()?.into(),
             tk::KW_RETURN => self.parse_return_expr()?.into(),
-            TokenKind::Ident(_) => self.parse_ident_or_path_or_fn_call_expr()?.into(),
+            TokenKind::Ident(_) => self.parse_ident_or_access_or_fn_call_expr()?.into(),
             TokenKind::Prefix(_) | TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
             _ => {
                 return self.peek_error(&[
@@ -134,18 +134,20 @@ impl Parser<'_> {
         Ok(expr)
     }
 
-    fn parse_ident_or_path_or_fn_call_expr(&mut self) -> ParseResult<Expr> {
+    fn parse_ident_or_access_or_fn_call_expr(&mut self) -> ParseResult<Expr> {
         let ident_expr: Expr = self.parse_ident_expr()?.into();
 
         let expr: Expr = match self.peek().kind {
             tk::DOT => {
-                let path_expr: Expr = self.continue_parse_path_expr(Box::new(ident_expr))?.into();
+                let access_expr: Expr = self
+                    .continue_parse_access_expr(Box::new(ident_expr))?
+                    .into();
 
                 if self.peek().kind == tk::OPEN_PAREN {
-                    self.continue_parse_fn_call_expr(Box::new(path_expr))?
+                    self.continue_parse_fn_call_expr(Box::new(access_expr))?
                         .into()
                 } else {
-                    path_expr
+                    access_expr
                 }
             }
             tk::OPEN_PAREN => self
