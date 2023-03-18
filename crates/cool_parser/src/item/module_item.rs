@@ -5,6 +5,7 @@ use cool_span::Span;
 
 #[derive(Clone, Debug)]
 pub struct ModuleContent {
+    // TODO: Add item_id
     pub decls: Vec<Decl>,
 }
 

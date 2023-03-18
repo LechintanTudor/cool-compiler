@@ -119,7 +119,7 @@ impl Parser<'_> {
         let expr: Expr = if exprs.len() == 1 && !has_trailing_comma {
             ParenExpr {
                 span,
-                expr: Box::new(exprs.remove(0)),
+                inner: Box::new(exprs.remove(0)),
             }
             .into()
         } else {

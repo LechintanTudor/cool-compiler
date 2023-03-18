@@ -1,7 +1,7 @@
 mod ty_codegen;
 
 use crate::ty_codegen::GeneratedTys;
-use cool_ast::{ItemAst, ModuleAst};
+use cool_ast::{ItemAst, ModuleItemAst};
 use cool_resolve::item::ItemTable;
 use cool_resolve::ty::TyTable;
 use inkwell::context::Context;
@@ -48,7 +48,7 @@ impl<'ctx> Codegen<'ctx> {
         }
     }
 
-    pub fn run_for_module(&self, module_ast: &ModuleAst) -> Module<'ctx> {
+    pub fn run_for_module(&self, module_ast: &ModuleItemAst) -> Module<'ctx> {
         let module = self.context.create_module("todo");
         module.set_source_file_name("todo.cl");
         module.set_triple(&self.target_triple);

@@ -1,6 +1,7 @@
 use crate::expr::GenericExprAst;
-use crate::{BlockElemAst, AstGenerator};
-use cool_parser::{BlockExpr, BlockElem, Stmt};
+use crate::stmt::StmtAst;
+use crate::{AstGenerator, BlockElemAst};
+use cool_parser::{BlockElem, BlockExpr, Stmt};
 use cool_resolve::binding::{BindingTable, FrameId};
 use cool_resolve::item::ItemId;
 use cool_resolve::ty::{tys, TyId};
@@ -28,16 +29,25 @@ impl AstGenerator<'_> {
         expr: &BlockExpr,
     ) -> BlockExprAst {
         let frame_id = self.bindings.add_frame(module_id, parent_id);
+        let mut last_frame_id = frame_id;
 
         let mut elems = Vec::<BlockElemAst>::new();
-        
+
         for elem in expr.elems.iter() {
-            match elem {
+            let elem: BlockElemAst = match elem {
                 BlockElem::Stmt(Stmt::Decl(decl)) => {
-                    todo!()
+                    let decl_ast = self.generate_decl_stmt(module_id, Some(last_frame_id), decl);
+                    last_frame_id = decl_ast.frame_id;
+                    BlockElemAst::Stmt(StmtAst::Decl(decl_ast))
                 }
-                _ => todo!()
-            }
+                BlockElem::Expr(expr) => {
+                    let expr_ast = self.generate_expr(module_id, Some(last_frame_id), expr);
+                    BlockElemAst::Expr(expr_ast)
+                }
+                _ => todo!(),
+            };
+
+            elems.push(elem);
         }
 
         BlockExprAst { frame_id, elems }

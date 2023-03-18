@@ -1,6 +1,6 @@
 use crate::paths::ModulePaths;
 use crate::{CompileError, SourceFile};
-use cool_ast::{AstGenerator, ModuleAst};
+use cool_ast::{AstGenerator, ModuleItemAst};
 use cool_lexer::lexer::{LexedSourceFile, Tokenizer};
 use cool_lexer::symbols::Symbol;
 use cool_parser::{DeclKind, Item, ModuleContent, ModuleKind, ParseResult, Parser};
@@ -184,17 +184,17 @@ fn parse_source_file(paths: ModulePaths, module_id: ItemId) -> ParseResult<Sourc
     })
 }
 
-pub fn generate_ast(package: &mut Package) -> Result<Vec<ModuleAst>, CompileError> {
+pub fn generate_ast(package: &mut Package) -> Result<Vec<ModuleItemAst>, CompileError> {
     let mut ast_generator = AstGenerator {
         items: &package.items,
         tys: &mut package.tys,
         bindings: &mut package.bindings,
     };
 
-    let mut module_asts = Vec::<ModuleAst>::new();
+    let mut module_asts = Vec::<ModuleItemAst>::new();
 
-    for module in package.sources.iter().map(|source| &source.module) {
-        module_asts.push(ast_generator.generate_module(module));
+    for source in package.sources.iter() {
+        module_asts.push(ast_generator.generate_module(source.module_id, &source.module));
     }
 
     Ok(module_asts)

@@ -7,7 +7,10 @@ pub use self::block_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::paren_expr::*;
-use cool_resolve::binding::BindingTable;
+use crate::AstGenerator;
+use cool_parser::Expr;
+use cool_resolve::binding::{BindingTable, FrameId};
+use cool_resolve::item::ItemId;
 use cool_resolve::ty::TyId;
 
 pub trait GenericExprAst {
@@ -29,6 +32,23 @@ impl GenericExprAst for ExprAst {
             Self::Ident(e) => e.ty_id(bindings),
             Self::Literal(e) => e.ty_id(bindings),
             Self::Paren(e) => e.ty_id(bindings),
+        }
+    }
+}
+
+impl AstGenerator<'_> {
+    pub fn generate_expr(
+        &mut self,
+        module_id: ItemId,
+        parent_id: Option<FrameId>,
+        expr: &Expr,
+    ) -> ExprAst {
+        match expr {
+            Expr::Block(e) => ExprAst::Block(self.generate_block_expr(module_id, parent_id, e)),
+            Expr::Ident(e) => ExprAst::Ident(self.generate_ident_expr(module_id, parent_id, e)),
+            Expr::Literal(e) => ExprAst::Literal(self.generate_literal_expr(e)),
+            Expr::Paren(e) => ExprAst::Paren(self.generate_paren_expr(module_id, parent_id, e)),
+            _ => todo!(),
         }
     }
 }

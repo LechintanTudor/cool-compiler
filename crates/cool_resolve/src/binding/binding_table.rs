@@ -74,6 +74,14 @@ impl BindingTable {
         Some(&self.bindings[binding_id.as_usize()])
     }
 
+    #[inline]
+    pub fn get_binding_id(&self, frame_id: FrameId, symbol: Symbol) -> Option<BindingId> {
+        self.frames[frame_id.as_usize()]
+            .symbols
+            .get(&symbol)
+            .copied()
+    }
+
     pub fn get_binding_by_id(&self, binding_id: BindingId) -> &Binding {
         &self.bindings[binding_id.as_usize()]
     }

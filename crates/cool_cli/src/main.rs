@@ -33,6 +33,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     let module_asts = cool_driver::generate_ast(&mut package)?;
+    println!("{:#?}", package.bindings);
 
     let context = cool_codegen::create_context();
     let codegen = Codegen::new(

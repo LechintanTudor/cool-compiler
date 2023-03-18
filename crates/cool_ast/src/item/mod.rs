@@ -1,21 +1,27 @@
-use crate::{FnAst, ModuleAst};
+mod fn_item;
+mod item_decl;
+mod module_item;
+
+pub use self::fn_item::*;
+pub use self::item_decl::*;
+pub use self::module_item::*;
 
 #[derive(Clone, Debug)]
 pub enum ItemAst {
-    Fn(FnAst),
-    Module(ModuleAst),
+    Fn(FnItemAst),
+    Module(ModuleItemAst),
 }
 
-impl From<FnAst> for ItemAst {
+impl From<FnItemAst> for ItemAst {
     #[inline]
-    fn from(fn_ast: FnAst) -> Self {
+    fn from(fn_ast: FnItemAst) -> Self {
         Self::Fn(fn_ast)
     }
 }
 
-impl From<ModuleAst> for ItemAst {
+impl From<ModuleItemAst> for ItemAst {
     #[inline]
-    fn from(module_ast: ModuleAst) -> Self {
+    fn from(module_ast: ModuleItemAst) -> Self {
         Self::Module(module_ast)
     }
 }
