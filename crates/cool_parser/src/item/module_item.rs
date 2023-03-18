@@ -22,6 +22,7 @@ pub struct ModuleItem {
 }
 
 impl ParseTree for ModuleItem {
+    #[inline]
     fn span(&self) -> Span {
         self.span
     }

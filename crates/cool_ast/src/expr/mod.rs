@@ -1,9 +1,11 @@
 mod block_expr;
+mod fn_call_expr;
 mod ident_expr;
 mod literal_expr;
 mod paren_expr;
 
 pub use self::block_expr::*;
+pub use self::fn_call_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::paren_expr::*;
@@ -23,6 +25,7 @@ pub enum ExprAst {
     Ident(IdentExprAst),
     Literal(LiteralExprAst),
     Paren(ParenExprAst),
+    FnCall(FnCallExprAst),
 }
 
 impl GenericExprAst for ExprAst {
@@ -32,6 +35,7 @@ impl GenericExprAst for ExprAst {
             Self::Ident(e) => e.ty_id(bindings),
             Self::Literal(e) => e.ty_id(bindings),
             Self::Paren(e) => e.ty_id(bindings),
+            _ => todo!(),
         }
     }
 }
