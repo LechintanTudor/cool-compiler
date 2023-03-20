@@ -1,5 +1,7 @@
+mod id_indexed_vec;
 mod small_vec_map;
 mod small_vec_set;
 
+pub use self::id_indexed_vec::*;
 pub use self::small_vec_map::*;
 pub use self::small_vec_set::*;

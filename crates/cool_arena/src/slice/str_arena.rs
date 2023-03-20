@@ -1,33 +1,45 @@
 use crate::slice::SliceArena;
-use crate::Handle;
+use cool_collections::Id;
 use std::{fmt, ops};
 
 #[derive(Default)]
-pub struct StrArena {
-    inner: SliceArena<u8>,
+pub struct StrArena<I> {
+    inner: SliceArena<I, u8>,
 }
 
-impl StrArena {
+impl<I> StrArena<I> {
     #[inline]
-    pub fn insert(&mut self, str: &str) -> Handle {
+    pub fn get_or_insert(&mut self, str: &str) -> I
+    where
+        I: Id,
+    {
         self.inner.get_or_insert(str.as_bytes())
     }
 
     #[inline]
-    pub fn insert_if_not_exists(&mut self, str: &str) -> Option<Handle> {
+    pub fn insert_if_not_exists(&mut self, str: &str) -> Option<I>
+    where
+        I: Id,
+    {
         self.inner.insert_if_not_exists(str.as_bytes())
     }
 
     #[inline]
-    pub fn get(&self, handle: Handle) -> Option<&str> {
+    pub fn get(&self, id: I) -> Option<&str>
+    where
+        I: Id,
+    {
         self.inner
-            .get(handle)
+            .get(id)
             .map(|slice| unsafe { std::str::from_utf8_unchecked(slice) })
     }
 
     #[inline]
-    pub fn get_handle(&self, str: &str) -> Option<Handle> {
-        self.inner.get_handle(str.as_bytes())
+    pub fn get_id(&self, str: &str) -> Option<I>
+    where
+        I: Id,
+    {
+        self.inner.get_id(str.as_bytes())
     }
 
     #[inline]
@@ -38,16 +50,19 @@ impl StrArena {
     }
 }
 
-impl ops::Index<Handle> for StrArena {
+impl<I> ops::Index<I> for StrArena<I>
+where
+    I: Id,
+{
     type Output = str;
 
-    fn index(&self, handle: Handle) -> &Self::Output {
-        let slice = &self.inner[handle];
+    fn index(&self, id: I) -> &Self::Output {
+        let slice = &self.inner[id];
         unsafe { std::str::from_utf8_unchecked(slice) }
     }
 }
 
-impl fmt::Debug for StrArena {
+impl<I> fmt::Debug for StrArena<I> {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.iter()).finish()

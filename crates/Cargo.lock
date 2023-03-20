@@ -89,6 +89,7 @@ name = "cool_arena"
 version = "0.1.0"
 dependencies = [
  "bumpalo",
+ "cool_collections",
  "rustc-hash",
 ]
 
@@ -148,6 +149,7 @@ name = "cool_lexer"
 version = "0.1.0"
 dependencies = [
  "cool_arena",
+ "cool_collections",
  "cool_span",
  "once_cell",
  "paste",

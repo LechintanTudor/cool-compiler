@@ -1,15 +1,16 @@
 use crate::item::ItemId;
 use crate::ty::{tys, FnTy, TupleTy, TyKind};
-use cool_arena::{handle_newtype, Arena};
+use cool_arena::Arena;
+use cool_collections::id_newtype;
 use rustc_hash::FxHashMap;
 use smallvec::SmallVec;
 use std::fmt;
 
-handle_newtype!(TyId; Debug);
+id_newtype!(TyId);
 
 #[derive(Default)]
 pub struct TyTable {
-    tys: Arena<TyKind>,
+    tys: Arena<TyId, TyKind>,
     items: FxHashMap<ItemId, TyId>,
 }
 
@@ -45,7 +46,7 @@ impl TyTable {
 
         let ty_kind: TyKind = TupleTy { elems }.into();
 
-        TyId(self.tys.get_or_insert(ty_kind))
+        self.tys.get_or_insert(ty_kind)
     }
 
     pub fn mk_fn<P>(&mut self, params: P, ret: TyId) -> TyId
@@ -58,7 +59,7 @@ impl TyTable {
         }
         .into();
 
-        TyId(self.tys.get_or_insert(ty_kind))
+        self.tys.get_or_insert(ty_kind)
     }
 
     #[inline]
@@ -74,12 +75,12 @@ impl TyTable {
 
     #[inline]
     pub fn get_kind_by_id(&self, ty_id: TyId) -> Option<&TyKind> {
-        self.tys.get(ty_id.0)
+        self.tys.get(ty_id)
     }
 
     #[inline]
     pub fn iter_ids(&self) -> impl Iterator<Item = TyId> {
-        self.tys.iter_handles().map(TyId)
+        self.tys.iter_ids()
     }
 }
 

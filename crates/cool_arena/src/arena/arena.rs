@@ -1,111 +1,106 @@
 use crate::arena::InternedRef;
-use crate::handle::Handle;
 use bumpalo::Bump;
+use cool_collections::{Id, IdIndexedVec};
 use rustc_hash::FxHashMap;
 use std::hash::Hash;
+use std::num::NonZeroU32;
 use std::{fmt, ops};
 
-pub struct Arena<T> {
+pub struct Arena<I, T> {
     bump: Bump,
-    handles: FxHashMap<InternedRef<T>, Handle>,
-    refs: Vec<InternedRef<T>>,
+    ids: FxHashMap<InternedRef<T>, I>,
+    refs: IdIndexedVec<I, InternedRef<T>>,
 }
 
-impl<T> Arena<T> {
+impl<I, T> Arena<I, T> {
     pub fn new(dummy: T) -> Self {
         let bump = Bump::new();
         let interned_ref = unsafe { InternedRef::new(bump.alloc(dummy)) };
 
         Self {
             bump,
-            handles: Default::default(),
-            refs: vec![interned_ref],
+            ids: Default::default(),
+            refs: IdIndexedVec::new(interned_ref),
         }
     }
 
-    pub fn insert_if_not_exists(&mut self, value: T) -> Option<Handle>
+    pub fn insert_if_not_exists(&mut self, value: T) -> Option<I>
     where
+        I: Id,
         T: Eq + Hash,
     {
-        if self.handles.contains_key(&value) {
+        if self.ids.contains_key(&value) {
             return None;
         }
 
         Some(self.insert_new(value))
     }
 
-    pub fn get_or_insert(&mut self, value: T) -> Handle
+    pub fn get_or_insert(&mut self, value: T) -> I
     where
+        I: Id,
         T: Eq + Hash,
     {
-        if let Some(&handle) = self.handles.get(&value) {
-            return handle;
+        if let Some(&id) = self.ids.get(&value) {
+            return id;
         }
 
         self.insert_new(value)
     }
 
-    fn insert_new(&mut self, value: T) -> Handle
+    fn insert_new(&mut self, value: T) -> I
     where
+        I: Id,
         T: Eq + Hash,
     {
-        debug_assert!(self.handles.get(&value).is_none());
+        debug_assert!(self.ids.get(&value).is_none());
 
-        if self.refs.len() > u32::MAX as usize {
-            panic!("ran out of handle indexes");
-        }
-
-        let handle = Handle::new(self.refs.len() as u32).unwrap();
         let interned_ref = unsafe { InternedRef::new(self.bump.alloc(value)) };
+        let id = self.refs.push(interned_ref);
 
-        self.handles.insert(interned_ref, handle);
-        self.refs.push(interned_ref);
-
-        handle
+        self.ids.insert(interned_ref, id);
+        id
     }
 
     #[inline]
-    pub fn get(&self, handle: Handle) -> Option<&T> {
-        self.refs
-            .get(handle.index() as usize)
-            .map(InternedRef::as_ref)
-    }
-
-    #[inline]
-    pub fn get_handle(&self, value: &T) -> Option<Handle>
+    pub fn get(&self, id: I) -> Option<&T>
     where
+        I: Id,
+    {
+        self.refs.get(id).map(InternedRef::as_ref)
+    }
+
+    #[inline]
+    pub fn get_id(&self, value: &T) -> Option<I>
+    where
+        I: Id,
         T: Eq + Hash,
     {
-        self.handles.get(value).copied()
+        self.ids.get(value).copied()
     }
 
     #[inline]
-    pub fn contains_handle(&self, handle: Handle) -> bool {
-        handle.as_usize() < self.refs.len()
+    pub fn contains_id(&self, id: I) -> bool
+    where
+        I: Id,
+    {
+        self.refs.contains_id(id)
     }
 
     #[inline]
     pub fn iter(&self) -> impl Iterator<Item = &T> {
-        self.refs[1..].iter().map(InternedRef::as_ref)
+        self.refs.as_slice().iter().map(InternedRef::as_ref)
     }
 
-    #[inline]
-    pub fn iter_handles(&self) -> impl Iterator<Item = Handle> {
-        (1..(self.refs.len() as u32)).map(|index| unsafe { Handle::new_unchecked(index) })
-    }
-
-    #[inline]
-    pub fn iter_with_handle(&self) -> impl Iterator<Item = (Handle, &T)> {
-        self.refs[1..]
-            .iter()
-            .enumerate()
-            .map(|(index, value)| unsafe {
-                (Handle::new_unchecked((index + 1) as u32), value.as_ref())
-            })
+    pub fn iter_ids(&self) -> impl Iterator<Item = I>
+    where
+        I: Id,
+    {
+        (1..((self.refs.len() + 1) as u32)).map(|i| I::from(NonZeroU32::new(i).unwrap()))
     }
 }
 
-impl<T> Default for Arena<T>
+impl<I, T> Default for Arena<I, T>
 where
     T: Default,
 {
@@ -114,15 +109,18 @@ where
     }
 }
 
-impl<T> ops::Index<Handle> for Arena<T> {
+impl<I, T> ops::Index<I> for Arena<I, T>
+where
+    I: Id,
+{
     type Output = T;
 
-    fn index(&self, handle: Handle) -> &Self::Output {
-        self.get(handle).unwrap()
+    fn index(&self, id: I) -> &Self::Output {
+        self.get(id).unwrap()
     }
 }
 
-impl<T> Drop for Arena<T> {
+impl<I, T> Drop for Arena<I, T> {
     fn drop(&mut self) {
         if !std::mem::needs_drop::<T>() {
             return;
@@ -136,11 +134,11 @@ impl<T> Drop for Arena<T> {
     }
 }
 
-impl<T> fmt::Debug for Arena<T>
+impl<I, T> fmt::Debug for Arena<I, T>
 where
     T: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_list().entries(self.iter()).finish()
+        f.debug_list().entries(self.refs.iter()).finish()
     }
 }

@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 cool_arena = { path = "../cool_arena" }
+cool_collections = { path = "../cool_collections" }
 cool_span = { path = "../cool_span" }
 paste = "1.0"
 once_cell = "1.17"

@@ -1,115 +1,117 @@
-use crate::handle::Handle;
 use crate::slice::InternedSlice;
 use bumpalo::Bump;
+use cool_collections::{Id, IdIndexedVec};
 use rustc_hash::FxHashMap;
 use std::hash::Hash;
 use std::{fmt, ops};
 
-pub struct SliceArena<T> {
+pub struct SliceArena<I, T> {
     bump: Bump,
-    handles: FxHashMap<InternedSlice<T>, Handle>,
-    slices: Vec<InternedSlice<T>>,
+    ids: FxHashMap<InternedSlice<T>, I>,
+    slices: IdIndexedVec<I, InternedSlice<T>>,
 }
 
-impl<T> SliceArena<T> {
+impl<I, T> SliceArena<I, T> {
     #[must_use]
-    pub fn insert_if_not_exists(&mut self, slice: &[T]) -> Option<Handle>
+    pub fn insert_if_not_exists(&mut self, slice: &[T]) -> Option<I>
     where
+        I: Id,
         T: Copy + Eq + Hash,
     {
-        if self.handles.get(slice).is_some() {
+        if self.ids.get(slice).is_some() {
             return None;
         }
 
         Some(self.insert_new(slice))
     }
 
-    pub fn get_or_insert(&mut self, slice: &[T]) -> Handle
+    pub fn get_or_insert(&mut self, slice: &[T]) -> I
     where
+        I: Id,
         T: Copy + Eq + Hash,
     {
-        if let Some(&handle) = self.handles.get(slice) {
-            return handle;
+        if let Some(&id) = self.ids.get(slice) {
+            return id;
         }
 
         self.insert_new(slice)
     }
 
-    fn insert_new(&mut self, slice: &[T]) -> Handle
+    fn insert_new(&mut self, slice: &[T]) -> I
     where
+        I: Id,
         T: Copy + Eq + Hash,
     {
-        debug_assert!(self.handles.get(slice).is_none());
+        debug_assert!(self.ids.get(slice).is_none());
 
-        if self.slices.len() > u32::MAX as usize {
-            panic!("ran out of handle indexes");
-        }
+        let interned_slice = unsafe { InternedSlice::new(self.bump.alloc_slice_copy(slice)) };
+        let id = self.slices.push(interned_slice);
 
-        let handle = Handle::new(self.slices.len() as u32).unwrap();
-
-        let interned_slice = {
-            let slice = self.bump.alloc_slice_copy(slice);
-            unsafe { InternedSlice::new(slice) }
-        };
-
-        self.handles.insert(interned_slice, handle);
-        self.slices.push(interned_slice);
-
-        handle
+        self.ids.insert(interned_slice, id);
+        id
     }
 
     #[inline]
-    pub fn get(&self, handle: Handle) -> Option<&[T]> {
-        self.slices
-            .get(handle.as_usize())
-            .map(InternedSlice::as_slice)
-    }
-
-    #[inline]
-    pub fn get_handle(&self, slice: &[T]) -> Option<Handle>
+    pub fn get(&self, id: I) -> Option<&[T]>
     where
+        I: Id,
+    {
+        self.slices.get(id).map(InternedSlice::as_slice)
+    }
+
+    #[inline]
+    pub fn get_id(&self, slice: &[T]) -> Option<I>
+    where
+        I: Id,
         T: Copy + Eq + Hash,
     {
-        self.handles.get(slice).copied()
+        self.ids.get(slice).copied()
     }
 
     #[inline]
-    pub fn contains_handle(&self, handle: Handle) -> bool {
-        handle.as_usize() < self.slices.len()
+    pub fn contains_id(&self, id: I) -> bool
+    where
+        I: Id,
+    {
+        self.slices.contains_id(id)
     }
 
     #[inline]
     pub fn iter(&self) -> impl Iterator<Item = &[T]> {
-        self.slices[1..].iter().map(InternedSlice::as_slice)
+        self.slices.as_slice().iter().map(InternedSlice::as_slice)
     }
 }
 
-unsafe impl<T> Sync for SliceArena<T>
+unsafe impl<I, T> Sync for SliceArena<I, T>
 where
+    I: Sync,
     T: Sync,
 {
     // Empty
 }
 
-impl<T> Default for SliceArena<T> {
+impl<I, T> Default for SliceArena<I, T> {
     fn default() -> Self {
         Self {
             bump: Default::default(),
-            handles: Default::default(),
-            slices: vec![InternedSlice::empty()],
+            ids: Default::default(),
+            slices: IdIndexedVec::new(InternedSlice::empty()),
         }
     }
 }
 
-impl<T> ops::Index<Handle> for SliceArena<T> {
+impl<I, T> ops::Index<I> for SliceArena<I, T>
+where
+    I: Id,
+{
     type Output = [T];
 
-    fn index(&self, handle: Handle) -> &Self::Output {
-        self.get(handle).unwrap()
+    fn index(&self, id: I) -> &Self::Output {
+        self.get(id).unwrap()
     }
 }
 
-impl<T> Drop for SliceArena<T> {
+impl<I, T> Drop for SliceArena<I, T> {
     fn drop(&mut self) {
         if !std::mem::needs_drop::<T>() {
             return;
@@ -125,11 +127,11 @@ impl<T> Drop for SliceArena<T> {
     }
 }
 
-impl<T> fmt::Debug for SliceArena<T>
+impl<I, T> fmt::Debug for SliceArena<I, T>
 where
     T: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_list().entries(self.iter()).finish()
+        f.debug_list().entries(self.slices.iter()).finish()
     }
 }

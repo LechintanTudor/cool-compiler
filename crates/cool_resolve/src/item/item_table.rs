@@ -19,7 +19,7 @@ pub struct ModuleItem {
 
 #[derive(Default)]
 pub struct ItemTable {
-    paths: SliceArena<Symbol>,
+    paths: SliceArena<ItemId, Symbol>,
     modules: FxHashMap<ItemId, Module>,
 }
 
@@ -97,7 +97,7 @@ impl ItemTable {
         let item_id = match parent_module.items.entry(symbol) {
             Entry::Vacant(entry) => {
                 let item_id = match self.paths.insert_if_not_exists(path.as_symbol_slice()) {
-                    Some(handle) => ItemId(handle),
+                    Some(handle) => handle,
                     None => {
                         return Err(ItemError {
                             kind: ItemErrorKind::SymbolAlreadyDefined,
@@ -159,7 +159,7 @@ impl ItemTable {
 
     fn create_item(&mut self, path: ItemPath) -> Result<ItemId, ItemError> {
         match self.paths.insert_if_not_exists(path.as_symbol_slice()) {
-            Some(handle) => Ok(ItemId(handle)),
+            Some(handle) => Ok(handle),
             None => Err(ItemError {
                 kind: ItemErrorKind::SymbolAlreadyDefined,
                 module_path: path.pop().to_path_buf(),
@@ -173,21 +173,19 @@ impl ItemTable {
     where
         P: Into<ItemPath<'a>>,
     {
-        self.paths
-            .get_handle(path.into().as_symbol_slice())
-            .map(ItemId)
+        self.paths.get_id(path.into().as_symbol_slice())
     }
 
     #[inline]
     pub fn get_path_by_id(&self, item_id: ItemId) -> Option<ItemPath> {
-        self.paths.get(item_id.0).map(|path| path.into())
+        self.paths.get(item_id).map(|path| path.into())
     }
 
     pub fn get_module_by_id(&self, module_id: ItemId) -> Result<Option<&Module>, ItemErrorKind> {
         match self.modules.get(&module_id) {
             Some(module) => Ok(Some(module)),
             None => {
-                if self.paths.contains_handle(module_id.0) {
+                if self.paths.contains_id(module_id) {
                     Err(ItemErrorKind::SymbolIsNotModule)
                 } else {
                     Ok(None)
@@ -203,7 +201,7 @@ impl ItemTable {
         match self.modules.get_mut(&module_id) {
             Some(module) => Ok(Some(module)),
             None => {
-                if self.paths.contains_handle(module_id.0) {
+                if self.paths.contains_id(module_id) {
                     Err(ItemErrorKind::SymbolIsNotModule)
                 } else {
                     Ok(None)
@@ -218,7 +216,7 @@ impl ItemTable {
     {
         let Some(module_id) = self
             .paths
-            .get_handle(path.into().as_symbol_slice()).map(ItemId) else {
+            .get_id(path.into().as_symbol_slice()) else {
                 return Ok(None)
             };
 
@@ -243,7 +241,7 @@ impl ItemTable {
     }
 }
 
-struct PathArenaDebug<'a>(&'a SliceArena<Symbol>);
+struct PathArenaDebug<'a>(&'a SliceArena<ItemId, Symbol>);
 
 impl fmt::Debug for PathArenaDebug<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

@@ -1,7 +1,6 @@
 use crate::item::ItemId;
 use crate::ty::TyId;
-use cool_arena::id_newtype;
-use cool_collections::SmallVecMap;
+use cool_collections::{id_newtype, SmallVecMap};
 use cool_lexer::symbols::Symbol;
 
 id_newtype!(FrameId);

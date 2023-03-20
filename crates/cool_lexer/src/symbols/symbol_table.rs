@@ -1,22 +1,23 @@
-use cool_arena::{handle_newtype, StrArena};
+use cool_arena::StrArena;
+use cool_collections::id_newtype;
 use std::fmt;
 
-handle_newtype!(Symbol);
+id_newtype!(Symbol; nodebug);
 
 #[derive(Default)]
 pub struct SymbolTable {
-    symbols: StrArena,
+    symbols: StrArena<Symbol>,
 }
 
 impl SymbolTable {
     #[inline]
     pub fn insert(&mut self, symbol_str: &str) -> Symbol {
-        Symbol(self.symbols.insert(symbol_str))
+        self.symbols.get_or_insert(symbol_str)
     }
 
     #[inline]
     pub fn get(&self, symbol: Symbol) -> &str {
-        &self.symbols[symbol.0]
+        &self.symbols[symbol]
     }
 
     #[inline]

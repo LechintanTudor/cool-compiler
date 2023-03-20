@@ -1,11 +1,11 @@
 use crate::item::itm;
-use cool_arena::handle_newtype;
+use cool_collections::id_newtype;
 
-handle_newtype!(ItemId; Debug);
+id_newtype!(ItemId);
 
 impl ItemId {
     #[inline]
     pub const fn is_builtin(&self) -> bool {
-        self.0.index() <= itm::F64.0.index()
+        self.index() <= itm::F64.index()
     }
 }
