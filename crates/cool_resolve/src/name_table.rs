@@ -11,7 +11,12 @@ id_newtype!(BindingId);
 
 impl ModuleId {
     #[inline]
-    pub fn as_item_id(&self) -> ItemId {
+    pub fn builtin() -> Self {
+        Self::new_unwrap(1)
+    }
+
+    #[inline]
+    pub const fn as_item_id(&self) -> ItemId {
         ItemId(self.0)
     }
 }
@@ -60,11 +65,41 @@ pub struct NameTable {
 }
 
 impl NameTable {
-    pub fn add_module(&mut self, parent_id: ModuleId, is_exported: bool, symbol: Symbol) {
+    pub fn add_root_module(
+        &mut self,
+        symbol: Symbol,
+    ) -> ModuleId {
+        let module_id = self
+            .item_paths
+            .insert_if_not_exists(&[symbol])
+            .map(|id| ModuleId(id.0))
+            .expect("module already exists");
+        
+        self.modules.insert(module_id, Module {
+            path: ItemPathBuf::from(symbol),
+            types: Default::default(),
+            values: Default::default(),
+        });
+            
+        module_id 
+    }
+
+    pub fn add_item_to_module(
+        &mut self,
+        module_id: ModuleId,
+        is_exported: bool,
+        symbol: Symbol,
+    ) -> ItemId {
         todo!()
     }
 
-    pub fn add_type(&mut self, module_id: ModuleId, is_exported: bool, symbol: Symbol) -> ItemId {
+    pub fn add_value_to_module(
+        &mut self,
+        module_id: ModuleId,
+        is_exported: bool,
+        is_mutable: bool,
+        symbol: Symbol,
+    ) -> BindingId {
         todo!()
     }
 
@@ -85,11 +120,7 @@ impl NameTable {
             bindings: Default::default(),
         })
     }
-
-    pub fn add_value(&mut self, parent_id: ParentId, is_mutable: bool, symbol: Symbol) -> ItemId {
-        todo!()
-    }
-
+    
     pub fn resolve_ty(&self, frame_id: FrameId, symbol: Symbol) {
         todo!()
     }
