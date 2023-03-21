@@ -1,7 +1,7 @@
 use crate::item::item_decl::ItemDeclAst;
 use crate::{AstGenerator, ItemAst};
 use cool_parser::{Item, ModuleContent};
-use cool_resolve::item::ItemId;
+use cool_resolve::ModuleId;
 
 #[derive(Clone, Debug)]
 pub struct ModuleItemAst {
@@ -9,7 +9,11 @@ pub struct ModuleItemAst {
 }
 
 impl AstGenerator<'_> {
-    pub fn generate_module(&mut self, module_id: ItemId, module: &ModuleContent) -> ModuleItemAst {
+    pub fn generate_module(
+        &mut self,
+        module_id: ModuleId,
+        module: &ModuleContent,
+    ) -> ModuleItemAst {
         let mut decls = Vec::<ItemDeclAst>::new();
 
         for decl in module

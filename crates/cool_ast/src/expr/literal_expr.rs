@@ -1,10 +1,8 @@
-use crate::expr::GenericExprAst;
 use crate::AstGenerator;
 use cool_lexer::symbols::{sym, Symbol};
 use cool_lexer::tokens::{LiteralKind, Radix};
 use cool_parser::LiteralExpr;
-use cool_resolve::binding::BindingTable;
-use cool_resolve::ty::{FloatTy, IntTy, TyId};
+use cool_resolve::ty::{FloatTy, IntTy};
 
 #[derive(Clone, Debug)]
 pub enum LiteralExprAst {
@@ -13,16 +11,6 @@ pub enum LiteralExprAst {
     Bool(bool),
     Str(Symbol),
     CStr(Symbol),
-}
-
-impl GenericExprAst for LiteralExprAst {
-    fn ty_id(&self, _bindings: &BindingTable) -> Option<TyId> {
-        match self {
-            Self::Integer { ty, .. } => ty.map(|ty| ty.ty_id()),
-            Self::Float { ty, .. } => ty.map(|ty| ty.ty_id()),
-            _ => todo!(),
-        }
-    }
 }
 
 impl AstGenerator<'_> {

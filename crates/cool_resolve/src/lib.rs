@@ -1,8 +1,8 @@
-pub mod binding;
-pub mod item;
 pub mod ty;
 
 mod consts;
-mod name_table;
+mod item_path;
+mod resolve;
 
-pub use self::name_table::*;
+pub use self::item_path::*;
+pub use self::resolve::*;

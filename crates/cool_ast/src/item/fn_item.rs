@@ -1,9 +1,8 @@
 use crate::expr::BlockExprAst;
 use crate::AstGenerator;
 use cool_parser::FnItem;
-use cool_resolve::binding::FrameId;
-use cool_resolve::item::ItemId;
 use cool_resolve::ty::{tys, TyId};
+use cool_resolve::{FrameId, ModuleId};
 
 #[derive(Clone, Debug)]
 pub struct FnItemAst {
@@ -13,35 +12,34 @@ pub struct FnItemAst {
 }
 
 impl AstGenerator<'_> {
-    pub fn generate_fn(&mut self, module_id: ItemId, fn_item: &FnItem) -> FnItemAst {
+    pub fn generate_fn(&mut self, module_id: ModuleId, fn_item: &FnItem) -> FnItemAst {
         let args_ty_ids = fn_item
             .arg_list
             .args
             .iter()
-            .map(|arg| self.resolve_ty(&arg.ty).unwrap())
+            .map(|arg| self.resolve_ty(module_id.into(), &arg.ty).unwrap())
             .collect::<Vec<_>>();
 
         let ret_ty_id = fn_item
             .return_ty
             .as_ref()
-            .map(|ty| self.resolve_ty(&ty).unwrap())
+            .map(|ty| self.resolve_ty(module_id.into(), &ty).unwrap())
             .unwrap_or(tys::UNIT);
 
         let ty_id = self.tys.mk_fn(args_ty_ids.iter().copied(), ret_ty_id);
 
-        let frame_id = self.bindings.add_frame(module_id, None);
-        for (arg, arg_ty_id) in fn_item
+        let frame_id = self.resolve.add_frame(module_id.into());
+        for (arg, _arg_ty_id) in fn_item
             .arg_list
             .args
             .iter()
             .zip(args_ty_ids.iter().copied())
         {
-            self.bindings
-                .add_binding(frame_id, arg.ident, arg.is_mutable, Some(arg_ty_id))
-                .unwrap();
+            self.resolve
+                .add_binding_to_frame(frame_id, arg.is_mutable, arg.ident);
         }
 
-        let body = self.generate_block_expr(module_id, Some(frame_id), &fn_item.body);
+        let body = self.generate_block_expr(frame_id.into(), &fn_item.body);
 
         FnItemAst {
             ty_id,

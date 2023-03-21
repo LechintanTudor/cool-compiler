@@ -2,8 +2,8 @@ mod ty_codegen;
 
 use crate::ty_codegen::GeneratedTys;
 use cool_ast::{ItemAst, ModuleItemAst};
-use cool_resolve::item::ItemTable;
 use cool_resolve::ty::TyTable;
+use cool_resolve::ResolveTable;
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::targets::{CodeModel, InitializationConfig, RelocMode, Target, TargetTriple};
@@ -12,15 +12,15 @@ use inkwell::{AddressSpace, OptimizationLevel};
 pub struct Codegen<'ctx> {
     context: &'ctx Context,
     target_triple: TargetTriple,
+    symbols: &'ctx ResolveTable,
     tys: GeneratedTys<'ctx>,
-    item_table: &'ctx ItemTable,
 }
 
 impl<'ctx> Codegen<'ctx> {
     pub fn new(
         context: &'ctx Context,
         target_triple: &str,
-        item_table: &'ctx ItemTable,
+        symbols: &'ctx ResolveTable,
         ty_table: &TyTable,
     ) -> Self {
         let target_triple = TargetTriple::create(target_triple);
@@ -43,8 +43,8 @@ impl<'ctx> Codegen<'ctx> {
         Self {
             context,
             target_triple,
+            symbols,
             tys,
-            item_table,
         }
     }
 

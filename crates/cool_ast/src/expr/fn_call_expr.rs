@@ -1,8 +1,7 @@
 use crate::expr::ExprAst;
 use crate::AstGenerator;
 use cool_parser::FnCallExpr;
-use cool_resolve::binding::FrameId;
-use cool_resolve::item::ItemId;
+use cool_resolve::ScopeId;
 
 #[derive(Clone, Debug)]
 pub struct FnCallExprAst {
@@ -13,15 +12,14 @@ pub struct FnCallExprAst {
 impl AstGenerator<'_> {
     pub fn generate_fn_call_expr(
         &mut self,
-        module_id: ItemId,
-        parent_id: Option<FrameId>,
+        scope_id: ScopeId,
         fn_call: &FnCallExpr,
     ) -> FnCallExprAst {
-        let fn_expr = self.generate_expr(module_id, parent_id, &fn_call.fn_expr);
+        let fn_expr = self.generate_expr(scope_id, &fn_call.fn_expr);
         let arg_exprs = fn_call
             .arg_exprs
             .iter()
-            .map(|arg| self.generate_expr(module_id, parent_id, arg))
+            .map(|arg| self.generate_expr(scope_id, arg))
             .collect::<Vec<_>>();
 
         FnCallExprAst {

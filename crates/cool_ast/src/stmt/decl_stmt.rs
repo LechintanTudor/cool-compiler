@@ -1,9 +1,8 @@
 use crate::expr::ExprAst;
 use crate::AstGenerator;
 use cool_parser::DeclStmt;
-use cool_resolve::binding::FrameId;
-use cool_resolve::item::ItemId;
 use cool_resolve::ty::TyId;
+use cool_resolve::{FrameId, ScopeId};
 
 #[derive(Clone, Debug)]
 pub struct DeclStmtAst {
@@ -13,25 +12,20 @@ pub struct DeclStmtAst {
 }
 
 impl AstGenerator<'_> {
-    pub fn generate_decl_stmt(
-        &mut self,
-        module_id: ItemId,
-        parent_id: Option<FrameId>,
-        decl: &DeclStmt,
-    ) -> DeclStmtAst {
-        let frame_id = self.bindings.add_frame(module_id, parent_id);
-        let explicit_ty_id = decl.ty.as_ref().map(|ty| self.resolve_ty(ty).unwrap());
+    pub fn generate_decl_stmt(&mut self, scope_id: ScopeId, decl: &DeclStmt) -> DeclStmtAst {
+        let frame_id = self.resolve.add_frame(scope_id);
+        let explicit_ty_id = decl
+            .ty
+            .as_ref()
+            .map(|ty| self.resolve_ty(scope_id, ty).unwrap());
 
-        self.bindings
-            .add_binding(
-                frame_id,
-                decl.pattern.ident.symbol,
-                decl.pattern.is_mutable,
-                explicit_ty_id,
-            )
-            .unwrap();
+        self.resolve.add_binding_to_frame(
+            frame_id,
+            decl.pattern.is_mutable,
+            decl.pattern.ident.symbol,
+        );
 
-        let expr = self.generate_expr(module_id, parent_id, &decl.expr);
+        let expr = self.generate_expr(scope_id, &decl.expr);
 
         DeclStmtAst {
             frame_id,

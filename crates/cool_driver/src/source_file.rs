@@ -1,14 +1,14 @@
 use crate::ModulePaths;
 use cool_lexer::lexer::LexedSourceFile;
 use cool_parser::ModuleContent;
-use cool_resolve::item::ItemId;
+use cool_resolve::ModuleId;
 use cool_span::Span;
 
 #[derive(Clone, Debug)]
 pub struct SourceFile {
     pub paths: ModulePaths,
     pub lexed: LexedSourceFile,
-    pub module_id: ItemId,
+    pub module_id: ModuleId,
     pub module: ModuleContent,
 }
 

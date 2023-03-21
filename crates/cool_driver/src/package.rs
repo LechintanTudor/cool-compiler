@@ -1,12 +1,11 @@
 use crate::paths::ModulePaths;
-use crate::{CompileError, SourceFile};
+use crate::SourceFile;
 use cool_ast::{AstGenerator, ModuleItemAst};
 use cool_lexer::lexer::{LexedSourceFile, Tokenizer};
 use cool_lexer::symbols::Symbol;
 use cool_parser::{DeclKind, Item, ModuleContent, ModuleKind, ParseResult, Parser};
-use cool_resolve::binding::BindingTable;
-use cool_resolve::item::{ItemError, ItemId, ItemPathBuf, ItemTable};
 use cool_resolve::ty::TyTable;
+use cool_resolve::{ItemPathBuf, ModuleId, ResolveTable};
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::BufReader;
@@ -14,40 +13,39 @@ use std::path::Path;
 
 #[derive(Debug)]
 pub struct Package {
-    pub items: ItemTable,
+    pub resolve: ResolveTable,
     pub tys: TyTable,
-    pub bindings: BindingTable,
     pub sources: Vec<SourceFile>,
 }
 
 #[derive(Clone, Debug)]
 pub struct FileModuleToProcess {
-    pub module_id: ItemId,
+    pub module_id: ModuleId,
     pub paths: ModulePaths,
 }
 
 #[derive(Clone, Debug)]
 pub struct ImportToResolve {
-    pub module_id: ItemId,
+    pub module_id: ModuleId,
     pub is_exported: bool,
     pub import_path: ItemPathBuf,
 }
 
 pub struct Driver<'a> {
-    pub items: &'a mut ItemTable,
+    pub resolve: &'a mut ResolveTable,
     pub source_files: Vec<SourceFile>,
     pub file_modules_to_process: VecDeque<FileModuleToProcess>,
     pub imports_to_resolve: VecDeque<ImportToResolve>,
 }
 
 impl<'a> Driver<'a> {
-    pub fn new(items: &'a mut ItemTable, crate_name: &str, crate_path: &Path) -> Self {
+    pub fn new(resolve: &'a mut ResolveTable, crate_name: &str, crate_path: &Path) -> Self {
         let crate_symbol = Symbol::insert(crate_name);
         let crate_paths = ModulePaths::for_root(crate_path).unwrap();
-        let crate_id = items.insert_root_module(crate_symbol).unwrap();
+        let crate_id = resolve.add_root_module(crate_symbol);
 
         Self {
-            items,
+            resolve,
             source_files: Default::default(),
             file_modules_to_process: vec![FileModuleToProcess {
                 module_id: crate_id,
@@ -71,7 +69,7 @@ impl<'a> Driver<'a> {
             }
         };
 
-        let mut modules_to_process = VecDeque::<(ItemId, &ModuleContent)>::new();
+        let mut modules_to_process = VecDeque::<(ModuleId, &ModuleContent)>::new();
         modules_to_process.push_back((file_module.module_id, &source_file.module));
 
         while let Some((module_id, module)) = modules_to_process.pop_front() {
@@ -81,10 +79,11 @@ impl<'a> Driver<'a> {
                 match &decl.kind {
                     DeclKind::Item(decl) => match &decl.item {
                         Item::Module(child_module) => {
-                            let child_id = self
-                                .items
-                                .insert_module(module_id, is_exported, decl.ident.symbol)
-                                .unwrap();
+                            let child_id = self.resolve.add_module_to_module(
+                                module_id,
+                                is_exported,
+                                decl.ident.symbol,
+                            );
 
                             match &child_module.kind {
                                 ModuleKind::Inline(module_content) => {
@@ -105,9 +104,11 @@ impl<'a> Driver<'a> {
                             }
                         }
                         Item::Fn(_) => {
-                            self.items
-                                .insert_item(module_id, is_exported, decl.ident.symbol)
-                                .unwrap();
+                            self.resolve.add_item_to_module(
+                                module_id,
+                                is_exported,
+                                decl.ident.symbol,
+                            );
                         }
                     },
                     DeclKind::Use(decl) => {
@@ -133,30 +134,30 @@ impl<'a> Driver<'a> {
     }
 
     pub fn resolve_imports(&mut self) {
-        let mut import_errors = Vec::<ItemError>::new();
+        // let mut import_errors = Vec::<ItemError>::new();
 
-        while !self.imports_to_resolve.is_empty() {
-            let mut solved_any_import = false;
-            let initial_import_count = self.imports_to_resolve.len();
+        // while !self.imports_to_resolve.is_empty() {
+        //     let mut solved_any_import = false;
+        //     let initial_import_count = self.imports_to_resolve.len();
 
-            for _ in 0..initial_import_count {
-                let import = self.imports_to_resolve.pop_front().unwrap();
+        //     for _ in 0..initial_import_count {
+        //         let import = self.imports_to_resolve.pop_front().unwrap();
 
-                match self.items.insert_use_decl(
-                    import.module_id,
-                    import.is_exported,
-                    import.import_path.as_path(),
-                ) {
-                    Ok(true) => solved_any_import = true,
-                    Ok(false) => self.imports_to_resolve.push_back(import),
-                    Err(error) => import_errors.push(error),
-                }
-            }
+        //         match self.symbols.insert_use_decl(
+        //             import.module_id,
+        //             import.is_exported,
+        //             import.import_path.as_path(),
+        //         ) {
+        //             Ok(true) => solved_any_import = true,
+        //             Ok(false) => self.imports_to_resolve.push_back(import),
+        //             Err(error) => import_errors.push(error),
+        //         }
+        //     }
 
-            if !solved_any_import {
-                break;
-            }
-        }
+        //     if !solved_any_import {
+        //         break;
+        //     }
+        // }
     }
 
     #[inline]
@@ -165,7 +166,7 @@ impl<'a> Driver<'a> {
     }
 }
 
-fn parse_source_file(paths: ModulePaths, module_id: ItemId) -> ParseResult<SourceFile> {
+fn parse_source_file(paths: ModulePaths, module_id: ModuleId) -> ParseResult<SourceFile> {
     let lexed = {
         let file = File::open(&paths.path).unwrap();
         let mut buf_reader = BufReader::new(file);
@@ -184,11 +185,10 @@ fn parse_source_file(paths: ModulePaths, module_id: ItemId) -> ParseResult<Sourc
     })
 }
 
-pub fn generate_ast(package: &mut Package) -> Result<Vec<ModuleItemAst>, CompileError> {
+pub fn generate_ast(package: &mut Package) -> Result<Vec<ModuleItemAst>, ()> {
     let mut ast_generator = AstGenerator {
-        items: &package.items,
+        resolve: &mut package.resolve,
         tys: &mut package.tys,
-        bindings: &mut package.bindings,
     };
 
     let mut module_asts = Vec::<ModuleItemAst>::new();

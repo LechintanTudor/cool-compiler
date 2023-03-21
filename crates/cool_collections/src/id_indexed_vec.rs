@@ -26,7 +26,7 @@ macro_rules! id_newtype {
     };
     ($Wrapper:ident; nodebug) => {
         #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-        pub struct $Wrapper(std::num::NonZeroU32);
+        pub struct $Wrapper(pub(crate) std::num::NonZeroU32);
 
         impl $Wrapper {
             #[inline]

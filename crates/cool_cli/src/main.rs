@@ -4,14 +4,14 @@ use crate::args::Args;
 use clap::Parser as _;
 use cool_codegen::Codegen;
 use cool_driver::{Driver, Package};
-use cool_resolve::item::ItemTable;
 use cool_resolve::ty::TyTable;
+use cool_resolve::ResolveTable;
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    let mut items = ItemTable::with_builtins();
-    let mut driver = Driver::new(&mut items, &args.crate_name, &args.crate_root_file);
+    let mut symbols = ResolveTable::with_builtins();
+    let mut driver = Driver::new(&mut symbols, &args.crate_name, &args.crate_root_file);
 
     while driver.process_next_file_module() {
         // Empty
@@ -21,9 +21,8 @@ fn main() -> anyhow::Result<()> {
 
     let mut package = Package {
         sources: driver.into_source_files(),
-        items,
+        resolve: symbols,
         tys: TyTable::with_builtins(),
-        bindings: Default::default(),
     };
 
     for source in package.sources.iter() {
@@ -32,14 +31,14 @@ fn main() -> anyhow::Result<()> {
         println!();
     }
 
-    let module_asts = cool_driver::generate_ast(&mut package)?;
-    println!("{:#?}", package.bindings);
+    let module_asts = cool_driver::generate_ast(&mut package).unwrap();
+    println!("{:#?}", package.resolve);
 
     let context = cool_codegen::create_context();
     let codegen = Codegen::new(
         &context,
         "x86_64-unknown-linux-gnu",
-        &package.items,
+        &package.resolve,
         &package.tys,
     );
     let module = codegen.run_for_module(&module_asts[0]);
