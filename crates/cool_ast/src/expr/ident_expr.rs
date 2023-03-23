@@ -1,6 +1,6 @@
 use crate::AstGenerator;
 use cool_parser::IdentExpr;
-use cool_resolve::{BindingId, ScopeId};
+use cool_resolve::resolve::{BindingId, ScopeId};
 
 #[derive(Clone, Debug)]
 pub struct IdentExprAst {

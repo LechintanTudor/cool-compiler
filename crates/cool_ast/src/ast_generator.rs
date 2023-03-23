@@ -1,6 +1,7 @@
 use cool_parser::Ty;
+use cool_resolve::resolve::{ResolveTable, ScopeId};
 use cool_resolve::ty::{TyId, TyTable};
-use cool_resolve::{ItemPathBuf, ResolveTable, ScopeId};
+use cool_resolve::ItemPathBuf;
 
 pub struct AstGenerator<'a> {
     pub resolve: &'a mut ResolveTable,

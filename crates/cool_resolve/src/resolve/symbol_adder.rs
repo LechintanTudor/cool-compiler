@@ -1,10 +1,23 @@
 use crate::consts::itm;
-use crate::{
-    Binding, BindingId, Frame, FrameId, ItemId, ItemPath, ItemPathBuf, Module, ModuleElem,
-    ModuleId, ResolveTable, ScopeId, SymbolKind,
+use crate::resolve::{
+    Binding, BindingId, Frame, FrameId, ItemId, Module, ModuleElem, ModuleId, ResolveTable,
+    ScopeId, SymbolKind,
 };
-use cool_collections::IdIndexedVec;
+use crate::{ItemPath, ItemPathBuf};
 use cool_lexer::symbols::{sym, Symbol};
+
+/*
+Ident
+    - builtin type (f32, usize)
+    - user defined type / type alias
+    - module / container (e.g. enum)
+    - global binding
+    - local binding
+
+Path
+    - different for use (resolve use path)
+    - different in frame (resolve frame path)
+*/
 
 impl ResolveTable {
     pub fn with_builtins() -> Self {
@@ -162,20 +175,5 @@ impl ResolveTable {
 
         assert!(!exists);
         binding_id
-    }
-
-}
-
-impl Default for ResolveTable {
-    fn default() -> Self {
-        Self {
-            items: Default::default(),
-            modules: Default::default(),
-            frames: IdIndexedVec::new(Frame {
-                parent_id: ScopeId::Module(ModuleId::for_builtins()),
-                bindings: Default::default(),
-            }),
-            bindings: IdIndexedVec::new(Binding { is_mutable: false }),
-        }
     }
 }

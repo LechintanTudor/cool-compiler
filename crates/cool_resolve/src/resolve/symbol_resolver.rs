@@ -1,4 +1,5 @@
-use crate::{ItemId, ItemPath, ItemPathBuf, Module, ModuleId, ResolveTable, ScopeId, SymbolKind};
+use crate::resolve::{ItemId, Module, ModuleId, ResolveTable, ScopeId, SymbolKind};
+use crate::{ItemPath, ItemPathBuf};
 use cool_lexer::symbols::{sym, Symbol};
 
 impl ResolveTable {
@@ -25,6 +26,10 @@ impl ResolveTable {
         let path: ItemPath = path.into();
         let item_id = self.items.get_id(path.as_symbol_slice())?;
         self.modules.get(&ModuleId(item_id.0))
+    }
+
+    pub fn resolve_module_access(&self) {
+        todo!()
     }
 
     pub fn resolve_symbol(&self, mut scope_id: ScopeId, symbol: Symbol) -> SymbolKind {
@@ -116,7 +121,11 @@ impl ResolveTable {
         Some(elem.kind.as_item_id().unwrap())
     }
 
-    pub fn resolve_local_path_as_item<'a, P>(&self, scope_id: ScopeId, path: P) -> Option<ItemId> {
+    pub fn resolve_local_path_as_item<'a, P>(
+        &self,
+        _scope_id: ScopeId,
+        _path: P,
+    ) -> Option<ItemId> {
         todo!()
     }
 }

@@ -11,7 +11,7 @@ pub use self::literal_expr::*;
 pub use self::paren_expr::*;
 use crate::AstGenerator;
 use cool_parser::Expr;
-use cool_resolve::ScopeId;
+use cool_resolve::resolve::ScopeId;
 
 #[derive(Clone, Debug)]
 pub enum ExprAst {

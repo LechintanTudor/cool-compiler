@@ -1,8 +1,8 @@
 use crate::expr::ExprAst;
 use crate::AstGenerator;
 use cool_parser::DeclStmt;
+use cool_resolve::resolve::{FrameId, ScopeId};
 use cool_resolve::ty::TyId;
-use cool_resolve::{FrameId, ScopeId};
 
 #[derive(Clone, Debug)]
 pub struct DeclStmtAst {

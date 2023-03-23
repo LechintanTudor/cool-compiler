@@ -1,5 +1,5 @@
+use crate::resolve::ItemId;
 use crate::ty::{tys, FnTy, TupleTy, TyKind};
-use crate::ItemId;
 use cool_arena::Arena;
 use cool_collections::id_newtype;
 use rustc_hash::FxHashMap;

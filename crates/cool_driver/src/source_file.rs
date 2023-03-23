@@ -1,7 +1,7 @@
 use crate::ModulePaths;
 use cool_lexer::lexer::LexedSourceFile;
 use cool_parser::ModuleContent;
-use cool_resolve::ModuleId;
+use cool_resolve::resolve::ModuleId;
 use cool_span::Span;
 
 #[derive(Clone, Debug)]

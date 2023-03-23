@@ -1,7 +1,7 @@
 use crate::stmt::StmtAst;
 use crate::{AstGenerator, BlockElemAst};
 use cool_parser::{BlockElem, BlockExpr, Stmt};
-use cool_resolve::{FrameId, ScopeId};
+use cool_resolve::resolve::{FrameId, ScopeId};
 
 #[derive(Clone, Debug)]
 pub struct BlockExprAst {

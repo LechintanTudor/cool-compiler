@@ -2,8 +2,8 @@ mod ty_codegen;
 
 use crate::ty_codegen::GeneratedTys;
 use cool_ast::{ItemAst, ModuleItemAst};
+use cool_resolve::resolve::ResolveTable;
 use cool_resolve::ty::TyTable;
-use cool_resolve::ResolveTable;
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::targets::{CodeModel, InitializationConfig, RelocMode, Target, TargetTriple};

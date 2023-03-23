@@ -9,7 +9,7 @@ macro_rules! builtins {
     } => {
         #[allow(dead_code)]
         pub mod itm {
-            use crate::{ItemId, ResolveTable};
+            use crate::resolve::{ItemId, ResolveTable};
 
             $(
                 pub const $item_ident: ItemId = unsafe { ItemId::new_unchecked($item_idx) };

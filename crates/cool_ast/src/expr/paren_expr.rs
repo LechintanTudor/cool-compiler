@@ -1,7 +1,7 @@
 use crate::expr::ExprAst;
 use crate::AstGenerator;
 use cool_parser::ParenExpr;
-use cool_resolve::ScopeId;
+use cool_resolve::resolve::ScopeId;
 
 #[derive(Clone, Debug)]
 pub struct ParenExprAst {

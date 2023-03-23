@@ -1,8 +1,8 @@
 use crate::expr::BlockExprAst;
 use crate::AstGenerator;
 use cool_parser::FnItem;
+use cool_resolve::resolve::{FrameId, ModuleId};
 use cool_resolve::ty::{tys, TyId};
-use cool_resolve::{FrameId, ModuleId};
 
 #[derive(Clone, Debug)]
 pub struct FnItemAst {

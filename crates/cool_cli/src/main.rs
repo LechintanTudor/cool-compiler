@@ -4,8 +4,8 @@ use crate::args::Args;
 use clap::Parser as _;
 use cool_codegen::Codegen;
 use cool_driver::{Driver, Package};
+use cool_resolve::resolve::ResolveTable;
 use cool_resolve::ty::TyTable;
-use cool_resolve::ResolveTable;
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
