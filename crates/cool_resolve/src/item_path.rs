@@ -19,6 +19,13 @@ impl ItemPathBuf {
     }
 
     #[must_use]
+    pub fn try_pop(&self) -> Option<Self> {
+        let remaining_len = self.0.len().checked_sub(1)?;
+        let remaining_symbols = &self.0[..remaining_len];
+        Some(Self(SmallVec::from_slice(remaining_symbols)))
+    }
+
+    #[must_use]
     pub fn append(&self, symbol: Symbol) -> Self {
         let mut symbols = self.0.clone();
         symbols.push(symbol);

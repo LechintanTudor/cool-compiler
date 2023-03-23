@@ -53,6 +53,18 @@ pub struct Module {
     pub elems: FxHashMap<Symbol, ModuleElem>,
 }
 
+impl Module {
+    pub fn from_path<P>(path: P) -> Self
+    where
+        P: Into<ItemPathBuf>,
+    {
+        Self {
+            path: path.into(),
+            elems: Default::default(),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct ModuleElem {
     pub is_exported: bool,
@@ -74,6 +86,20 @@ pub struct Binding {
 pub enum SymbolKind {
     Item(ItemId),
     Binding(BindingId),
+}
+
+impl From<ItemId> for SymbolKind {
+    #[inline]
+    fn from(item_id: ItemId) -> Self {
+        Self::Item(item_id)
+    }
+}
+
+impl From<BindingId> for SymbolKind {
+    #[inline]
+    fn from(binding_id: BindingId) -> Self {
+        Self::Binding(binding_id)
+    }
 }
 
 impl SymbolKind {

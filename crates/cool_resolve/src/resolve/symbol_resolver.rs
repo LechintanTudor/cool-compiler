@@ -15,11 +15,11 @@ impl ResolveTable {
     }
 
     #[inline]
-    pub fn get_module_by_id(&self, item_id: ItemId) -> Option<&Module> {
+    pub fn get_module_by_id2(&self, item_id: ItemId) -> Option<&Module> {
         self.modules.get(&ModuleId(item_id.0))
     }
 
-    pub fn get_module_by_path<'a, P>(&self, path: P) -> Option<&Module>
+    pub fn get_module_by_path2<'a, P>(&self, path: P) -> Option<&Module>
     where
         P: Into<ItemPath<'a>>,
     {
@@ -88,7 +88,7 @@ impl ResolveTable {
             panic!("resolved path is empty");
         };
 
-        let mut current_module = match self.get_module_by_path(&module_symbols[..1]) {
+        let mut current_module = match self.get_module_by_path2(&module_symbols[..1]) {
             Some(module) => module,
             None => return None,
         };
@@ -102,7 +102,7 @@ impl ResolveTable {
                 panic!("tried to import private symbol");
             };
 
-            let next_module = match self.get_module_by_id(module_elem.kind.as_item_id().unwrap()) {
+            let next_module = match self.get_module_by_id2(module_elem.kind.as_item_id().unwrap()) {
                 Some(module) => module,
                 None => return None,
             };

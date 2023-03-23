@@ -1,9 +1,13 @@
 mod resolve_error;
+mod resolve_global;
+mod resolve_local;
 mod resolve_types;
 mod symbol_adder;
 mod symbol_resolver;
 
 pub use self::resolve_error::*;
+pub use self::resolve_global::*;
+pub use self::resolve_local::*;
 pub use self::resolve_types::*;
 pub use self::symbol_adder::*;
 pub use self::symbol_resolver::*;
@@ -18,7 +22,6 @@ pub struct ResolveTable {
     modules: FxHashMap<ModuleId, Module>,
     frames: IdIndexedVec<FrameId, Frame>,
     bindings: IdIndexedVec<BindingId, Binding>,
-    global_bindings: FxHashMap<ItemId, BindingId>,
 }
 
 impl Default for ResolveTable {
@@ -27,11 +30,10 @@ impl Default for ResolveTable {
             items: Default::default(),
             modules: Default::default(),
             frames: IdIndexedVec::new(Frame {
-                parent_id: ScopeId::Module(ModuleId::for_builtins()),
+                parent_id: ScopeId::Module(ModuleId::dummy()),
                 bindings: Default::default(),
             }),
             bindings: Default::default(),
-            global_bindings: Default::default(),
         }
     }
 }
