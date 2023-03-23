@@ -15,11 +15,11 @@ macro_rules! builtins {
                 pub const $item_ident: ItemId = unsafe { ItemId::new_unchecked($item_idx) };
             )+
 
-            pub fn add_builtins(symbols: &mut ResolveTable) {
+            pub fn insert_builtins(resolve: &mut ResolveTable) {
                 use cool_lexer::symbols::sym;
 
                 $(
-                    symbols.add_builtin_item($item_ident, sym::$item_ident);
+                    resolve.insert_builtin_item($item_ident, sym::$item_ident);
                 )+
             }
         }

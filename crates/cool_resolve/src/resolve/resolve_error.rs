@@ -36,10 +36,26 @@ impl ResolveError {
     }
 
     #[inline]
+    pub fn not_item(symbol: Symbol) -> Self {
+        Self {
+            symbol,
+            kind: ResolveErrorKind::SymbolNotItem,
+        }
+    }
+
+    #[inline]
     pub fn not_module(symbol: Symbol) -> Self {
         Self {
             symbol,
             kind: ResolveErrorKind::SymbolNotModule,
+        }
+    }
+
+    #[inline]
+    pub fn not_ty(symbol: Symbol) -> Self {
+        Self {
+            symbol,
+            kind: ResolveErrorKind::SymbolNotTy,
         }
     }
 }
@@ -61,8 +77,14 @@ impl fmt::Display for ResolveError {
             ResolveErrorKind::TooManySuperKeywords => {
                 write!(f, "use path contains too many super keywords")
             }
+            ResolveErrorKind::SymbolNotItem => {
+                write!(f, "symbol \"{}\" does not refer to an item", self.symbol)
+            }
             ResolveErrorKind::SymbolNotModule => {
                 write!(f, "symbol \"{}\" does not refer to a module", self.symbol)
+            }
+            ResolveErrorKind::SymbolNotTy => {
+                write!(f, "symbol \"{}\" does not refer to a type", self.symbol)
             }
         }
     }
@@ -74,5 +96,7 @@ pub enum ResolveErrorKind {
     SymbolNotFound,
     SymbolIsPrivate,
     TooManySuperKeywords,
+    SymbolNotItem,
     SymbolNotModule,
+    SymbolNotTy,
 }

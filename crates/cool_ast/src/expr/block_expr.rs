@@ -11,7 +11,7 @@ pub struct BlockExprAst {
 
 impl AstGenerator<'_> {
     pub fn generate_block_expr(&mut self, scope_id: ScopeId, expr: &BlockExpr) -> BlockExprAst {
-        let frame_id = self.resolve.add_frame(scope_id);
+        let frame_id = self.resolve.insert_frame(scope_id);
         let mut last_frame_id = frame_id;
 
         let mut elems = Vec::<BlockElemAst>::new();

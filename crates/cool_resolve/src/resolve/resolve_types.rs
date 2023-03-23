@@ -77,9 +77,26 @@ pub struct Frame {
     pub bindings: SmallVecMap<Symbol, BindingId, 2>,
 }
 
+impl Frame {
+    #[inline]
+    pub fn new(parent_id: ScopeId) -> Self {
+        Self {
+            parent_id,
+            bindings: Default::default(),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Default, Debug)]
 pub struct Binding {
     pub is_mutable: bool,
+}
+
+impl Binding {
+    #[inline]
+    pub fn new(is_mutable: bool) -> Self {
+        Self { is_mutable }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]

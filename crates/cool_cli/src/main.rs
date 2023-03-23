@@ -17,7 +17,7 @@ fn main() -> anyhow::Result<()> {
         // Empty
     }
 
-    driver.resolve_imports();
+    driver.resolve_imports().unwrap();
 
     let mut package = Package {
         sources: driver.into_source_files(),
@@ -32,7 +32,6 @@ fn main() -> anyhow::Result<()> {
     }
 
     let module_asts = cool_driver::generate_ast(&mut package).unwrap();
-    println!("{:#?}", package.resolve);
 
     let context = cool_codegen::create_context();
     let codegen = Codegen::new(

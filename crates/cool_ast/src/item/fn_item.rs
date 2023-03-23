@@ -28,7 +28,7 @@ impl AstGenerator<'_> {
 
         let ty_id = self.tys.mk_fn(args_ty_ids.iter().copied(), ret_ty_id);
 
-        let frame_id = self.resolve.add_frame(module_id.into());
+        let frame_id = self.resolve.insert_frame(module_id.into());
         for (arg, _arg_ty_id) in fn_item
             .arg_list
             .args
@@ -36,7 +36,8 @@ impl AstGenerator<'_> {
             .zip(args_ty_ids.iter().copied())
         {
             self.resolve
-                .add_binding_to_frame(frame_id, arg.is_mutable, arg.ident);
+                .insert_local_binding(frame_id, arg.is_mutable, arg.ident)
+                .unwrap();
         }
 
         let body = self.generate_block_expr(frame_id.into(), &fn_item.body);

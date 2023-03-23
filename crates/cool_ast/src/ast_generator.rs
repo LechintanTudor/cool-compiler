@@ -1,5 +1,5 @@
 use cool_parser::Ty;
-use cool_resolve::resolve::{ResolveTable, ScopeId};
+use cool_resolve::resolve::{ResolveError, ResolveResult, ResolveTable, ScopeId};
 use cool_resolve::ty::{TyId, TyTable};
 use cool_resolve::ItemPathBuf;
 
@@ -14,7 +14,7 @@ impl<'a> AstGenerator<'a> {
         Self { resolve, tys }
     }
 
-    pub fn resolve_ty(&mut self, scope_id: ScopeId, parsed_ty: &Ty) -> Option<TyId> {
+    pub fn resolve_ty(&mut self, scope_id: ScopeId, parsed_ty: &Ty) -> ResolveResult<TyId> {
         match parsed_ty {
             Ty::Path(path) => {
                 let path = path
@@ -23,8 +23,10 @@ impl<'a> AstGenerator<'a> {
                     .map(|ident| ident.symbol)
                     .collect::<ItemPathBuf>();
 
-                let item_id = self.resolve.resolve_path_as_item(scope_id, &path)?;
-                self.tys.get_id_by_item_id(item_id)
+                let item_id = self.resolve.resolve_global(scope_id, &path)?;
+                self.tys
+                    .get_id_by_item_id(item_id)
+                    .ok_or(ResolveError::not_ty(path.last()))
             }
             Ty::Tuple(tuple_ty) => {
                 let mut elems = Vec::<TyId>::new();
@@ -33,7 +35,7 @@ impl<'a> AstGenerator<'a> {
                     elems.push(self.resolve_ty(scope_id, ty)?);
                 }
 
-                Some(self.tys.mk_tuple(elems))
+                Ok(self.tys.mk_tuple(elems))
             }
         }
     }

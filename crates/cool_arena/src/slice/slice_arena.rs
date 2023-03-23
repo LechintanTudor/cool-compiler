@@ -52,6 +52,7 @@ impl<I, T> SliceArena<I, T> {
     }
 
     #[inline]
+    #[must_use]
     pub fn get(&self, id: I) -> Option<&[T]>
     where
         I: Id,
@@ -60,6 +61,7 @@ impl<I, T> SliceArena<I, T> {
     }
 
     #[inline]
+    #[must_use]
     pub fn get_id(&self, slice: &[T]) -> Option<I>
     where
         I: Id,
@@ -69,6 +71,16 @@ impl<I, T> SliceArena<I, T> {
     }
 
     #[inline]
+    #[must_use]
+    pub fn contains(&self, slice: &[T]) -> bool
+    where
+        T: Eq + Hash,
+    {
+        unsafe { self.ids.contains_key(&InternedSlice::new(slice)) }
+    }
+
+    #[inline]
+    #[must_use]
     pub fn contains_id(&self, id: I) -> bool
     where
         I: Id,

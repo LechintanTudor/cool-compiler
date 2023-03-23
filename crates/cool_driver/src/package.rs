@@ -4,7 +4,7 @@ use cool_ast::{AstGenerator, ModuleItemAst};
 use cool_lexer::lexer::{LexedSourceFile, Tokenizer};
 use cool_lexer::symbols::Symbol;
 use cool_parser::{DeclKind, Item, ModuleContent, ModuleKind, ParseResult, Parser};
-use cool_resolve::resolve::{ModuleId, ResolveTable};
+use cool_resolve::resolve::{ModuleId, ResolveError, ResolveErrorKind, ResolveTable};
 use cool_resolve::ty::TyTable;
 use cool_resolve::ItemPathBuf;
 use std::collections::VecDeque;
@@ -43,7 +43,7 @@ impl<'a> Driver<'a> {
     pub fn new(resolve: &'a mut ResolveTable, crate_name: &str, crate_path: &Path) -> Self {
         let crate_symbol = Symbol::insert(crate_name);
         let crate_paths = ModulePaths::for_root(crate_path).unwrap();
-        let crate_id = resolve.add_root_module(crate_symbol);
+        let crate_id = resolve.insert_root_module(crate_symbol).unwrap();
 
         Self {
             resolve,
@@ -80,11 +80,10 @@ impl<'a> Driver<'a> {
                 match &decl.kind {
                     DeclKind::Item(decl) => match &decl.item {
                         Item::Module(child_module) => {
-                            let child_id = self.resolve.add_module_to_module(
-                                module_id,
-                                is_exported,
-                                decl.ident.symbol,
-                            );
+                            let child_id = self
+                                .resolve
+                                .insert_module(module_id, is_exported, decl.ident.symbol)
+                                .unwrap();
 
                             match &child_module.kind {
                                 ModuleKind::Inline(module_content) => {
@@ -105,11 +104,9 @@ impl<'a> Driver<'a> {
                             }
                         }
                         Item::Fn(_) => {
-                            self.resolve.add_item_to_module(
-                                module_id,
-                                is_exported,
-                                decl.ident.symbol,
-                            );
+                            self.resolve
+                                .insert_item(module_id, is_exported, decl.ident.symbol)
+                                .unwrap();
                         }
                     },
                     DeclKind::Use(decl) => {
@@ -134,31 +131,49 @@ impl<'a> Driver<'a> {
         true
     }
 
-    pub fn resolve_imports(&mut self) {
-        // let mut import_errors = Vec::<ItemError>::new();
+    pub fn resolve_imports(&mut self) -> Result<(), Vec<ResolveError>> {
+        let mut import_errors = Vec::<ResolveError>::new();
 
-        // while !self.imports_to_resolve.is_empty() {
-        //     let mut solved_any_import = false;
-        //     let initial_import_count = self.imports_to_resolve.len();
+        while !self.imports_to_resolve.is_empty() {
+            let mut solved_any_import = false;
+            let initial_import_count = self.imports_to_resolve.len();
 
-        //     for _ in 0..initial_import_count {
-        //         let import = self.imports_to_resolve.pop_front().unwrap();
+            for _ in 0..initial_import_count {
+                let import = self.imports_to_resolve.pop_front().unwrap();
 
-        //         match self.symbols.insert_use_decl(
-        //             import.module_id,
-        //             import.is_exported,
-        //             import.import_path.as_path(),
-        //         ) {
-        //             Ok(true) => solved_any_import = true,
-        //             Ok(false) => self.imports_to_resolve.push_back(import),
-        //             Err(error) => import_errors.push(error),
-        //         }
-        //     }
+                let resolve_result = self.resolve.insert_use(
+                    import.module_id,
+                    import.is_exported,
+                    import.import_path.as_path(),
+                    None,
+                );
 
-        //     if !solved_any_import {
-        //         break;
-        //     }
-        // }
+                match resolve_result {
+                    Ok(_) => solved_any_import = true,
+                    Err(error) => {
+                        if error.kind == ResolveErrorKind::SymbolNotFound {
+                            self.imports_to_resolve.push_back(import);
+                        } else {
+                            import_errors.push(error);
+                        }
+                    }
+                }
+            }
+
+            if !solved_any_import {
+                break;
+            }
+        }
+
+        for import in self.imports_to_resolve.drain(..) {
+            import_errors.push(ResolveError::not_found(import.import_path.last()));
+        }
+
+        if !import_errors.is_empty() {
+            return Err(import_errors);
+        }
+
+        Ok(())
     }
 
     #[inline]

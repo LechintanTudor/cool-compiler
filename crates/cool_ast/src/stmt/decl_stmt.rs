@@ -13,17 +13,15 @@ pub struct DeclStmtAst {
 
 impl AstGenerator<'_> {
     pub fn generate_decl_stmt(&mut self, scope_id: ScopeId, decl: &DeclStmt) -> DeclStmtAst {
-        let frame_id = self.resolve.add_frame(scope_id);
+        let frame_id = self.resolve.insert_frame(scope_id);
         let explicit_ty_id = decl
             .ty
             .as_ref()
             .map(|ty| self.resolve_ty(scope_id, ty).unwrap());
 
-        self.resolve.add_binding_to_frame(
-            frame_id,
-            decl.pattern.is_mutable,
-            decl.pattern.ident.symbol,
-        );
+        self.resolve
+            .insert_local_binding(frame_id, decl.pattern.is_mutable, decl.pattern.ident.symbol)
+            .unwrap();
 
         let expr = self.generate_expr(scope_id, &decl.expr);
 

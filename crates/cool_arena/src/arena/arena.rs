@@ -63,6 +63,7 @@ impl<I, T> Arena<I, T> {
     }
 
     #[inline]
+    #[must_use]
     pub fn get(&self, id: I) -> Option<&T>
     where
         I: Id,
@@ -71,6 +72,7 @@ impl<I, T> Arena<I, T> {
     }
 
     #[inline]
+    #[must_use]
     pub fn get_id(&self, value: &T) -> Option<I>
     where
         I: Id,
@@ -80,6 +82,16 @@ impl<I, T> Arena<I, T> {
     }
 
     #[inline]
+    #[must_use]
+    pub fn contains(&self, value: &T) -> bool
+    where
+        T: Eq + Hash,
+    {
+        self.ids.contains_key(value)
+    }
+
+    #[inline]
+    #[must_use]
     pub fn contains_id(&self, id: I) -> bool
     where
         I: Id,

@@ -67,6 +67,13 @@ impl ItemPath<'_> {
         Self(remaining_symbols)
     }
 
+    #[must_use]
+    pub fn try_pop(&self) -> Option<Self> {
+        let remaining_len = self.0.len().checked_sub(1)?;
+        let remaining_symbols = &self.0[..remaining_len];
+        Some(Self(remaining_symbols))
+    }
+
     #[inline]
     #[must_use]
     pub fn to_path_buf(&self) -> ItemPathBuf {

@@ -74,20 +74,30 @@ impl ResolveTable {
     pub fn insert_use<'a, P>(
         &mut self,
         parent_id: ModuleId,
-        _is_exported: bool,
+        is_exported: bool,
         path: P,
-        _symbol: Option<Symbol>,
+        symbol: Option<Symbol>,
     ) -> ResolveResult<ItemId>
     where
         P: Into<ItemPath<'a>>,
     {
-        let _parent_path = self.modules[&parent_id].path.as_path();
+        let path: ItemPath = path.into();
+        let item_id = self.resolve_global(parent_id.into(), path)?;
+        let module = self.modules.get_mut(&parent_id).unwrap();
+        let symbol = symbol.unwrap_or(path.last());
 
-        let Some((_last, _others)) = path.into().as_symbol_slice().split_last() else {
-            panic!("use path is empty");
-        };
+        if module.elems.contains_key(&symbol) {
+            return Err(ResolveError::already_defined(symbol));
+        }
 
-        todo!()
+        module.elems.insert(
+            symbol,
+            ModuleElem {
+                is_exported,
+                kind: item_id.into(),
+            },
+        );
+        Ok(item_id)
     }
 
     pub fn resolve_parent_module(&self, mut scope_id: ScopeId) -> ModuleId {
@@ -106,25 +116,39 @@ impl ResolveTable {
         P: Into<ItemPath<'a>>,
     {
         let module_id = self.resolve_parent_module(scope_id);
-        let module_path = self.modules[&module_id].path.as_path();
+        let module = &self.modules[&module_id];
 
         let path: ItemPath = path.into();
-        let mut path_iter = path.as_symbol_slice().iter().peekable();
-        let mut resolved_path = ItemPathBuf::default();
+        let mut path_iter = path.as_symbol_slice().iter();
 
-        while let Some(symbol) = path_iter.peek() {
-            resolved_path = match **symbol {
-                sym::KW_CRATE => module_path.first().into(),
-                sym::KW_SUPER => resolved_path.try_pop().ok_or(ResolveError {
-                    symbol: path.last(),
-                    kind: ResolveErrorKind::TooManySuperKeywords,
-                })?,
-                sym::KW_SELF => module_path.to_path_buf(),
-                _ => break,
-            };
-
-            path_iter.next();
-        }
+        let mut resolved_path: ItemPathBuf = match *path_iter.next().unwrap() {
+            sym::KW_CRATE => module.path.first().into(),
+            sym::KW_SUPER => {
+                module
+                    .path
+                    .try_pop()
+                    .map(|path| path.clone())
+                    .ok_or(ResolveError {
+                        symbol: path.last(),
+                        kind: ResolveErrorKind::TooManySuperKeywords,
+                    })?
+            }
+            sym::KW_SELF => module.path.clone(),
+            symbol => {
+                if module.elems.contains_key(&symbol) {
+                    // Check local module
+                    module.path.append(symbol)
+                } else if self.items.contains(&[symbol]) {
+                    // Check other crates
+                    ItemPathBuf::from(symbol)
+                } else if self.items.contains(&[sym::EMPTY, symbol]) {
+                    // Check builtins
+                    ItemPathBuf::from([sym::EMPTY, symbol].as_slice())
+                } else {
+                    return Err(ResolveError::not_found(symbol));
+                }
+            }
+        };
 
         for &symbol in path_iter {
             let current_module = self.get_module_by_path(&resolved_path)?;
@@ -134,7 +158,7 @@ impl ResolveTable {
                 .get(&symbol)
                 .ok_or(ResolveError::not_found(symbol))?;
 
-            if !current_item.is_exported && !module_path.starts_with(&current_module.path) {
+            if !current_item.is_exported && !module.path.starts_with(&current_module.path) {
                 return Err(ResolveError::private(symbol));
             }
 
@@ -143,11 +167,6 @@ impl ResolveTable {
 
         self.get_item_id_by_path(&resolved_path)
             .ok_or(ResolveError::not_found(resolved_path.last()))
-    }
-
-    #[inline]
-    fn get_item_path(&self, item_id: ItemId) -> Option<ItemPath> {
-        self.items.get(item_id).map(|path| path.into())
     }
 
     #[inline]

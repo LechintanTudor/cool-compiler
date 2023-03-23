@@ -12,7 +12,7 @@ use inkwell::{AddressSpace, OptimizationLevel};
 pub struct Codegen<'ctx> {
     context: &'ctx Context,
     target_triple: TargetTriple,
-    symbols: &'ctx ResolveTable,
+    resolve: &'ctx ResolveTable,
     tys: GeneratedTys<'ctx>,
 }
 
@@ -20,7 +20,7 @@ impl<'ctx> Codegen<'ctx> {
     pub fn new(
         context: &'ctx Context,
         target_triple: &str,
-        symbols: &'ctx ResolveTable,
+        resolve: &'ctx ResolveTable,
         ty_table: &TyTable,
     ) -> Self {
         let target_triple = TargetTriple::create(target_triple);
@@ -43,7 +43,7 @@ impl<'ctx> Codegen<'ctx> {
         Self {
             context,
             target_triple,
-            symbols,
+            resolve,
             tys,
         }
     }
