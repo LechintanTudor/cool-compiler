@@ -1,30 +1,15 @@
-use crate::{FnExternDecl, Ident, ParseResult, ParseTree, Parser, Ty};
-use cool_lexer::tokens::{tk, TokenKind};
+use crate::{FnExternDecl, ParseResult, ParseTree, Parser, Ty};
+use cool_lexer::tokens::tk;
 use cool_span::Span;
 
 #[derive(Clone, Debug)]
-pub struct FnParam {
+pub struct FnTyParamList {
     pub span: Span,
-    pub is_mutable: bool,
-    pub ident: Ident,
-    pub ty: Option<Ty>,
-}
-
-impl ParseTree for FnParam {
-    #[inline]
-    fn span(&self) -> Span {
-        self.span
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct FnParamList {
-    pub span: Span,
-    pub params: Vec<FnParam>,
+    pub params: Vec<Ty>,
     pub has_trailing_comma: bool,
 }
 
-impl ParseTree for FnParamList {
+impl ParseTree for FnTyParamList {
     #[inline]
     fn span(&self) -> Span {
         self.span
@@ -32,14 +17,14 @@ impl ParseTree for FnParamList {
 }
 
 #[derive(Clone, Debug)]
-pub struct FnPrototype {
+pub struct FnTy {
     pub span: Span,
     pub extern_decl: Option<FnExternDecl>,
-    pub param_list: FnParamList,
-    pub return_ty: Option<Ty>,
+    pub param_list: FnTyParamList,
+    pub return_ty: Option<Box<Ty>>,
 }
 
-impl ParseTree for FnPrototype {
+impl ParseTree for FnTy {
     #[inline]
     fn span(&self) -> Span {
         self.span
@@ -47,48 +32,15 @@ impl ParseTree for FnPrototype {
 }
 
 impl Parser<'_> {
-    fn parse_fn_param(&mut self) -> ParseResult<FnParam> {
-        let start_token = self.bump();
-
-        let (is_mutable, ident) = match start_token.kind {
-            tk::KW_MUT => (true, self.parse_ident()?),
-            TokenKind::Ident(symbol) => (
-                false,
-                Ident {
-                    span: start_token.span,
-                    symbol,
-                },
-            ),
-            _ => self.error(start_token, &[tk::KW_MUT, tk::ANY_IDENT])?,
-        };
-
-        let ty = if self.bump_if_eq(tk::COLON).is_some() {
-            Some(self.parse_ty()?)
-        } else {
-            None
-        };
-
-        let span = start_token
-            .span
-            .to(ty.as_ref().map(|ty| ty.span()).unwrap_or(ident.span));
-
-        Ok(FnParam {
-            span,
-            is_mutable,
-            ident,
-            ty,
-        })
-    }
-
-    fn parse_fn_param_list(&mut self) -> ParseResult<FnParamList> {
+    fn parse_fn_ty_param_list(&mut self) -> ParseResult<FnTyParamList> {
         let start_token = self.bump_expect(&tk::OPEN_PAREN)?;
 
-        let mut params = Vec::<FnParam>::new();
+        let mut params = Vec::<Ty>::new();
         let (end_span, has_trailing_comma) = if self.peek().kind == tk::CLOSE_PAREN {
             (self.bump().span, false)
         } else {
             loop {
-                params.push(self.parse_fn_param()?);
+                params.push(self.parse_ty()?);
 
                 let next_token = self.bump();
 
@@ -106,14 +58,14 @@ impl Parser<'_> {
             }
         };
 
-        Ok(FnParamList {
+        Ok(FnTyParamList {
             span: start_token.span.to(end_span),
             params,
             has_trailing_comma,
         })
     }
 
-    pub fn parse_fn_prototype(&mut self) -> ParseResult<FnPrototype> {
+    pub fn parse_fn_ty(&mut self) -> ParseResult<FnTy> {
         let extern_decl = if self.peek().kind == tk::KW_EXTERN {
             Some(self.parse_fn_extern_decl()?)
         } else {
@@ -121,10 +73,10 @@ impl Parser<'_> {
         };
 
         let fn_kw = self.bump_expect(&tk::KW_FN)?;
-        let param_list = self.parse_fn_param_list()?;
+        let param_list = self.parse_fn_ty_param_list()?;
 
         let return_ty = if self.bump_if_eq(tk::ARROW).is_some() {
-            Some(self.parse_ty()?)
+            Some(Box::new(self.parse_ty()?))
         } else {
             None
         };
@@ -143,7 +95,7 @@ impl Parser<'_> {
             start_span.to(end_span)
         };
 
-        Ok(FnPrototype {
+        Ok(FnTy {
             span,
             extern_decl,
             param_list,

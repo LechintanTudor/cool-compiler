@@ -7,11 +7,11 @@ use smallvec::SmallVec;
 pub type IdentVec = SmallVec<[Ident; 2]>;
 
 #[derive(Clone, Debug)]
-pub struct SymbolPath {
+pub struct IdentPath {
     pub idents: IdentVec,
 }
 
-impl SymbolPath {
+impl IdentPath {
     pub fn ends_with_glob(&self) -> bool {
         self.idents
             .last()
@@ -33,7 +33,7 @@ impl SymbolPath {
     }
 }
 
-impl ParseTree for SymbolPath {
+impl ParseTree for IdentPath {
     fn span(&self) -> Span {
         match (self.idents.first(), self.idents.last()) {
             (Some(first), Some(last)) => first.span_to(last),
@@ -43,7 +43,7 @@ impl ParseTree for SymbolPath {
 }
 
 impl Parser<'_> {
-    pub fn parse_import_path(&mut self) -> ParseResult<SymbolPath> {
+    pub fn parse_import_path(&mut self) -> ParseResult<IdentPath> {
         let mut idents = IdentVec::new();
         idents.push(self.parse_path_ident()?);
 
@@ -52,6 +52,6 @@ impl Parser<'_> {
             idents.push(self.parse_path_ident()?);
         }
 
-        Ok(SymbolPath { idents })
+        Ok(IdentPath { idents })
     }
 }

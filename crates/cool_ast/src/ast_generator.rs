@@ -37,6 +37,7 @@ impl<'a> AstGenerator<'a> {
 
                 Ok(self.tys.mk_tuple(elems))
             }
+            _ => todo!(),
         }
     }
 }

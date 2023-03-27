@@ -1,4 +1,4 @@
-use crate::path::SymbolPath;
+use crate::path::IdentPath;
 use crate::{ParseResult, ParseTree, Parser};
 use cool_lexer::tokens::tk;
 use cool_span::Span;
@@ -6,7 +6,7 @@ use cool_span::Span;
 #[derive(Clone, Debug)]
 pub struct UseDecl {
     pub span: Span,
-    pub path: SymbolPath,
+    pub path: IdentPath,
 }
 
 impl ParseTree for UseDecl {
