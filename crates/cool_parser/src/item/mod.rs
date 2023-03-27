@@ -1,11 +1,15 @@
 mod decl;
+mod extern_fn_item;
 mod fn_item;
+mod fn_prototype;
 mod item_decl;
 mod module_item;
 mod use_decl;
 
 pub use self::decl::*;
+pub use self::extern_fn_item::*;
 pub use self::fn_item::*;
+pub use self::fn_prototype::*;
 pub use self::item_decl::*;
 pub use self::module_item::*;
 pub use self::use_decl::*;
@@ -52,5 +56,6 @@ macro_rules! define_item {
 
 define_item! {
     Fn,
+    ExternFn,
     Module,
 }

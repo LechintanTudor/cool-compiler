@@ -103,7 +103,7 @@ impl<'a> Driver<'a> {
                                 }
                             }
                         }
-                        Item::Fn(_) => {
+                        Item::Fn(_) | Item::ExternFn(_) => {
                             self.resolve
                                 .insert_item(module_id, is_exported, decl.ident.symbol)
                                 .unwrap();

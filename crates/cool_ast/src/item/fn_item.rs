@@ -12,31 +12,38 @@ pub struct FnItemAst {
 }
 
 impl AstGenerator<'_> {
+    // TODO: Use item type to infer types
     pub fn generate_fn(&mut self, module_id: ModuleId, fn_item: &FnItem) -> FnItemAst {
-        let args_ty_ids = fn_item
-            .arg_list
-            .args
+        let param_ty_ids = fn_item
+            .prototype
+            .param_list
+            .params
             .iter()
-            .map(|arg| self.resolve_ty(module_id.into(), &arg.ty).unwrap())
+            .map(|param| {
+                self.resolve_ty(module_id.into(), param.ty.as_ref().unwrap())
+                    .unwrap()
+            })
             .collect::<Vec<_>>();
 
-        let ret_ty_id = fn_item
+        let return_ty_id = fn_item
+            .prototype
             .return_ty
             .as_ref()
-            .map(|ty| self.resolve_ty(module_id.into(), &ty).unwrap())
+            .map(|ty| self.resolve_ty(module_id.into(), ty).unwrap())
             .unwrap_or(tys::UNIT);
 
-        let ty_id = self.tys.mk_fn(args_ty_ids.iter().copied(), ret_ty_id);
+        let ty_id = self.tys.mk_fn(param_ty_ids.iter().copied(), return_ty_id);
 
         let frame_id = self.resolve.insert_frame(module_id.into());
-        for (arg, _arg_ty_id) in fn_item
-            .arg_list
-            .args
+        for (param, _param_ty_id) in fn_item
+            .prototype
+            .param_list
+            .params
             .iter()
-            .zip(args_ty_ids.iter().copied())
+            .zip(param_ty_ids.iter().copied())
         {
             self.resolve
-                .insert_local_binding(frame_id, arg.is_mutable, arg.ident)
+                .insert_local_binding(frame_id, param.is_mutable, param.ident.symbol)
                 .unwrap();
         }
 

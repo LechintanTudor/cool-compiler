@@ -51,13 +51,13 @@ impl fmt::Debug for Symbol {
 macro_rules! define_symbols {
     {
         Keywords {
-            $($kw:ident => $kw_idx:literal,)+
+            $($kw_idx:literal: $kw:ident,)+
         },
         Primitives {
-            $($primitive:ident => $primitive_idx:literal,)+
+            $($primitive_idx:literal: $primitive:ident,)+
         },
         Extra {
-            $($extra:ident: $extra_repr:literal => $extra_idx:literal,)+
+            $($extra_idx:literal: $extra_repr:literal as $extra:ident,)+
         },
     } => {
         #[allow(dead_code)]
@@ -141,47 +141,50 @@ macro_rules! define_symbols {
 
 define_symbols! {
     Keywords {
-        break => 1,
-        continue => 2,
-        crate => 3,
-        defer => 4,
-        else => 5,
-        enum => 6,
-        export => 7,
-        false => 8,
-        fn => 9,
-        if => 10,
-        module => 11,
-        mut => 12,
-        return => 13,
-        self => 14,
-        struct => 15,
-        super => 16,
-        true => 17,
-        use => 18,
-        while => 19,
+         1: as,
+         2: break,
+         3: continue,
+         4: crate,
+         5: defer,
+         6: else,
+         7: enum,
+         8: export,
+         9: extern,
+        10: false,
+        11: fn,
+        12: if,
+        13: module,
+        14: mut,
+        15: return,
+        16: self,
+        17: struct,
+        18: super,
+        19: true,
+        20: use,
+        21: while,
     },
     Primitives {
-        i8 => 20,
-        i16 => 21,
-        i32 => 22,
-        i64 => 23,
-        i128 => 24,
-        isize => 25,
+        22: i8,
+        23: i16,
+        24: i32,
+        25: i64,
+        26: i128,
+        27: isize,
 
-        u8 => 26,
-        u16 => 27,
-        u32 => 28,
-        u64 => 29,
-        u128 => 30,
-        usize => 31,
+        28: u8,
+        29: u16,
+        30: u32,
+        31: u64,
+        32: u128,
+        33: usize,
 
-        f32 => 32,
-        f64 => 33,
+        34: f32,
+        35: f64,
     },
     Extra {
-        EMPTY: "" => 34,
-        WILDCARD: "_" => 35,
-        GLOB: "*" => 36,
+        36: "" as EMPTY,
+        37: "_" as WILDCARD,
+        38: "*" as GLOB,
+        39: "C" as C,
     },
 }

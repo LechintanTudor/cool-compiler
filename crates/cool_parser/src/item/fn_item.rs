@@ -1,135 +1,40 @@
 use crate::expr::BlockExpr;
-use crate::ty::Ty;
-use crate::{ParseResult, ParseTree, Parser};
-use cool_lexer::symbols::Symbol;
-use cool_lexer::tokens::{tk, TokenKind};
+use crate::{ExternFnItem, FnPrototype, Item, ParseResult, ParseTree, Parser};
+use cool_lexer::tokens::tk;
 use cool_span::Span;
 
 #[derive(Clone, Debug)]
 pub struct FnItem {
-    pub span: Span,
-    pub arg_list: FnArgList,
-    pub return_ty: Option<Ty>,
+    pub prototype: FnPrototype,
     pub body: BlockExpr,
 }
 
 impl ParseTree for FnItem {
     #[inline]
     fn span(&self) -> Span {
-        self.span
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct FnArgList {
-    pub span: Span,
-    pub args: Vec<FnArg>,
-    pub has_trailing_comma: bool,
-}
-
-impl ParseTree for FnArgList {
-    #[inline]
-    fn span(&self) -> Span {
-        self.span
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct FnArg {
-    pub span: Span,
-    pub is_mutable: bool,
-    pub ident: Symbol,
-    pub ty: Ty,
-}
-
-impl ParseTree for FnArg {
-    #[inline]
-    fn span(&self) -> Span {
-        self.span
+        self.prototype.span_to(&self.body)
     }
 }
 
 impl Parser<'_> {
-    pub fn parse_fn_item(&mut self) -> ParseResult<FnItem> {
-        let start_token = self.bump_expect(&tk::KW_FN)?;
-        let arg_list = self.parse_fn_arg_list()?;
+    pub fn parse_fn_or_extern_fn_item(&mut self) -> ParseResult<Item> {
+        let prototype = self.parse_fn_prototype()?;
 
-        let return_ty = if self.peek().kind == tk::ARROW {
-            self.bump();
-            Some(self.parse_ty()?)
-        } else {
-            None
-        };
-
-        let body = self.parse_block_expr()?;
-
-        Ok(FnItem {
-            span: start_token.span.to(body.span),
-            arg_list,
-            return_ty,
-            body,
-        })
-    }
-
-    pub fn parse_fn_arg_list(&mut self) -> ParseResult<FnArgList> {
-        let start_token = self.bump_expect(&tk::OPEN_PAREN)?;
-
-        let mut args = Vec::<FnArg>::new();
-
-        let (end_span, has_trailing_comma) = if self.peek().kind == tk::CLOSE_PAREN {
-            (self.bump().span, false)
-        } else {
-            loop {
-                let arg = self.parse_fn_arg()?;
-                args.push(arg);
-
-                let next_token = self.bump();
-
-                match next_token.kind {
-                    tk::CLOSE_PAREN => {
-                        break (next_token.span, false);
-                    }
-                    tk::COMMA => {
-                        if self.peek().kind == tk::CLOSE_PAREN {
-                            break (self.bump().span, true);
-                        }
-                    }
-                    _ => self.error(next_token, &[tk::CLOSE_PAREN, tk::COMMA])?,
-                }
+        let body = if prototype.extern_decl.is_some() {
+            if self.peek().kind == tk::OPEN_BRACE {
+                Some(self.parse_block_expr()?)
+            } else {
+                None
             }
+        } else {
+            Some(self.parse_block_expr()?)
         };
 
-        Ok(FnArgList {
-            span: start_token.span.to(end_span),
-            args,
-            has_trailing_comma,
-        })
-    }
-
-    pub fn parse_fn_arg(&mut self) -> ParseResult<FnArg> {
-        let start_token = self.bump();
-
-        let (is_mutable, ident) = match start_token.kind {
-            tk::KW_MUT => {
-                let next_token = self.bump();
-
-                match next_token.kind {
-                    TokenKind::Ident(ident) => (true, ident),
-                    _ => self.error(next_token, &[tk::ANY_IDENT])?,
-                }
-            }
-            TokenKind::Ident(ident) => (false, ident),
-            _ => self.error(start_token, &[tk::KW_MUT])?,
+        let item: Item = match body {
+            Some(body) => FnItem { prototype, body }.into(),
+            None => ExternFnItem { prototype }.into(),
         };
 
-        self.bump_expect(&tk::COLON)?;
-        let ty = self.parse_ty()?;
-
-        Ok(FnArg {
-            span: start_token.span.to(ty.span()),
-            is_mutable,
-            ident,
-            ty,
-        })
+        Ok(item)
     }
 }

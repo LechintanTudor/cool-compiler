@@ -22,10 +22,10 @@ impl Parser<'_> {
         self.bump_expect(&tk::COLON)?;
         self.bump_expect(&tk::COLON)?;
 
-        let item = match self.peek().kind {
-            tk::KW_MODULE => Item::Module(self.parse_module_item()?),
-            tk::KW_FN => Item::Fn(self.parse_fn_item()?),
-            _ => self.peek_error(&[tk::KW_MODULE, tk::KW_FN])?,
+        let item: Item = match self.peek().kind {
+            tk::KW_MODULE => self.parse_module_item()?.into(),
+            tk::KW_FN | tk::KW_EXTERN => self.parse_fn_or_extern_fn_item()?,
+            _ => self.peek_error(&[tk::KW_MODULE, tk::KW_FN, tk::KW_EXTERN])?,
         };
 
         Ok(ItemDecl { ident, item })
