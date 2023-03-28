@@ -2,11 +2,11 @@ use crate::{ParseResult, ParseTree, Parser, Ty};
 use cool_lexer::tokens::tk;
 use cool_span::Span;
 
-// TODO: Check for trailing comma
 #[derive(Clone, Debug)]
 pub struct TupleTy {
     pub span: Span,
     pub elems: Vec<Ty>,
+    pub has_trailing_comma: bool,
 }
 
 impl ParseTree for TupleTy {
@@ -18,35 +18,39 @@ impl ParseTree for TupleTy {
 
 impl Parser<'_> {
     pub fn parse_tuple_ty(&mut self) -> ParseResult<TupleTy> {
-        let open_paren = self.bump_expect(&tk::OPEN_PAREN)?;
+        let start_token = self.bump_expect(&tk::OPEN_PAREN)?;
+
         let mut elems = Vec::<Ty>::new();
 
-        let closed_paren = if self.peek().kind == tk::CLOSE_PAREN {
-            self.bump()
-        } else {
-            loop {
-                let element = self.parse_ty()?;
-                elems.push(element);
+        let (end_token, has_trailing_comma) = match self.bump_if_eq(tk::CLOSE_PAREN) {
+            Some(end_token) => (end_token, false),
+            None => loop {
+                elems.push(self.parse_ty()?);
 
                 let next_token = self.bump();
 
                 match next_token.kind {
                     tk::COMMA => {
-                        if self.peek().kind == tk::CLOSE_PAREN {
-                            break self.bump();
+                        if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
+                            break (end_token, true);
                         }
                     }
                     tk::CLOSE_PAREN => {
-                        break next_token;
+                        if elems.len() == 1 {
+                            return self.error(next_token, &[tk::COMMA]);
+                        }
+
+                        break (next_token, false);
                     }
-                    _ => self.error(next_token, &[tk::COMMA, tk::CLOSE_PAREN])?,
+                    _ => return self.error(next_token, &[tk::COMMA, tk::CLOSE_PAREN]),
                 }
-            }
+            },
         };
 
         Ok(TupleTy {
-            span: open_paren.span.to(closed_paren.span),
+            span: start_token.span.to(end_token.span),
             elems,
+            has_trailing_comma,
         })
     }
 }
