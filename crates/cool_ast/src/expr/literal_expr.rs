@@ -6,26 +6,20 @@ use cool_resolve::ty::{FloatTy, IntTy, TyId};
 
 #[derive(Clone, Debug)]
 pub enum LiteralExprAst {
-    Int { value: u128, ty: Option<IntTy> },
-    Float { value: f64, ty: Option<FloatTy> },
+    Int { value: u128, ty: IntTy },
+    Float { value: f64, ty: FloatTy },
     Bool(bool),
     Str(Symbol),
     CStr(Symbol),
 }
 
 impl LiteralExprAst {
-    pub fn ty_id(&self) -> Option<TyId> {
-        let ty: TyId = match self {
-            Self::Int {
-                ty: Some(int_ty), ..
-            } => int_ty.ty_id(),
-            Self::Float {
-                ty: Some(float_ty), ..
-            } => float_ty.ty_id(),
-            _ => return None,
-        };
-
-        Some(ty)
+    pub fn ty_id(&self) -> TyId {
+        match self {
+            Self::Int { ty, .. } => ty.ty_id(),
+            Self::Float { ty, .. } => ty.ty_id(),
+            _ => todo!(),
+        }
     }
 }
 
@@ -33,7 +27,7 @@ impl AstGenerator<'_> {
     pub fn gen_literal_expr(&mut self, expr: &LiteralExpr) -> LiteralExprAst {
         match expr.literal.kind {
             LiteralKind::Int { radix: Radix::Ten } => {
-                self.generate_base_10_integer(expr.literal.symbol.as_str())
+                self.gen_base_10_int(expr.literal.symbol.as_str())
             }
             LiteralKind::Bool => {
                 if expr.literal.symbol == sym::KW_TRUE {
@@ -46,7 +40,7 @@ impl AstGenerator<'_> {
         }
     }
 
-    pub fn generate_base_10_integer(&self, number_str: &str) -> LiteralExprAst {
+    pub fn gen_base_10_int(&self, number_str: &str) -> LiteralExprAst {
         let mut value = 0;
         let mut suffix = String::new();
         let mut char_iter = number_str.chars();
@@ -70,9 +64,9 @@ impl AstGenerator<'_> {
     }
 }
 
-pub fn int_ty_from_suffix(suffix: &str) -> Option<IntTy> {
-    let ty = match suffix {
-        "" => return None,
+pub fn int_ty_from_suffix(suffix: &str) -> IntTy {
+    match suffix {
+        "" => IntTy::Inferred,
         "i8" => IntTy::I8,
         "i16" => IntTy::I16,
         "i32" => IntTy::I32,
@@ -86,7 +80,5 @@ pub fn int_ty_from_suffix(suffix: &str) -> Option<IntTy> {
         "u128" => IntTy::U128,
         "usize" => IntTy::Usize,
         _ => todo!("handle unknown suffix"),
-    };
-
-    Some(ty)
+    }
 }

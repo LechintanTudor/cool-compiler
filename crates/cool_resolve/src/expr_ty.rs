@@ -22,7 +22,7 @@ impl ExprTyTable {
     pub fn add_binding(&mut self, binding_id: BindingId, ty_id: TyId) {
         match self.bindings.entry(binding_id) {
             Entry::Vacant(entry) => entry.insert(ty_id),
-            _ => todo!("handle redefinition error"),
+            _ => todo!("handle incompatible types error"),
         };
     }
 

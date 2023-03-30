@@ -1,5 +1,5 @@
-use crate::expr::ExprAst;
 use cool_parser::Ty;
+use cool_resolve::expr_ty::ExprTyTable;
 use cool_resolve::resolve::{ResolveError, ResolveResult, ResolveTable, ScopeId};
 use cool_resolve::ty::{TyId, TyTable};
 use cool_resolve::ItemPathBuf;
@@ -7,12 +7,17 @@ use cool_resolve::ItemPathBuf;
 pub struct AstGenerator<'a> {
     pub resolve: &'a mut ResolveTable,
     pub tys: &'a mut TyTable,
+    pub expr_tys: ExprTyTable,
 }
 
 impl<'a> AstGenerator<'a> {
     #[inline]
     pub fn new(resolve: &'a mut ResolveTable, tys: &'a mut TyTable) -> Self {
-        Self { resolve, tys }
+        Self {
+            resolve,
+            tys,
+            expr_tys: Default::default(),
+        }
     }
 
     pub fn resolve_ty(&mut self, scope_id: ScopeId, parsed_ty: &Ty) -> ResolveResult<TyId> {
@@ -42,7 +47,12 @@ impl<'a> AstGenerator<'a> {
         }
     }
 
-    pub fn resolve_expr_ty(&self, expr: &ExprAst) -> ResolveResult<Option<TyId>> {
-        todo!()
-    }
+    // pub fn resolve_expr_ty(&self, expr: &ExprAst) -> ResolveResult<TyId>> {
+    //     let ty_id = match expr {
+    //         ExprAst::Literal(literal) => literal.ty_id(),
+    //         _ => todo!(),
+    //     };
+
+    //     Ok(ty_id)
+    // }
 }

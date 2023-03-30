@@ -48,6 +48,7 @@ impl From<FnTy> for TyKind {
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum IntTy {
+    Inferred,
     I8,
     I16,
     I32,
@@ -65,6 +66,7 @@ pub enum IntTy {
 impl IntTy {
     pub fn ty_id(&self) -> TyId {
         match self {
+            Self::Inferred => tys::INFERRED_INT,
             Self::I8 => tys::I8,
             Self::I16 => tys::I16,
             Self::I32 => tys::I32,
@@ -83,6 +85,7 @@ impl IntTy {
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum FloatTy {
+    Inferred,
     F32,
     F64,
 }
@@ -91,6 +94,7 @@ impl FloatTy {
     #[inline]
     pub fn ty_id(&self) -> TyId {
         match self {
+            Self::Inferred => tys::F64,
             Self::F32 => tys::F32,
             Self::F64 => tys::F64,
         }

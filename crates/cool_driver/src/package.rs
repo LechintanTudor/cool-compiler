@@ -202,10 +202,7 @@ fn parse_source_file(paths: ModulePaths, module_id: ModuleId) -> ParseResult<Sou
 }
 
 pub fn generate_ast(package: &mut Package) -> Result<Vec<ModuleItemAst>, ()> {
-    let mut ast_generator = AstGenerator {
-        resolve: &mut package.resolve,
-        tys: &mut package.tys,
-    };
+    let mut ast_generator = AstGenerator::new(&mut package.resolve, &mut package.tys);
 
     let mut module_asts = Vec::<ModuleItemAst>::new();
 
