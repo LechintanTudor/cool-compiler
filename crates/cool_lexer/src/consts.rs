@@ -27,13 +27,6 @@ impl Symbol {
     }
 }
 
-impl Default for Symbol {
-    #[inline]
-    fn default() -> Self {
-        sym::EMPTY
-    }
-}
-
 impl fmt::Display for Symbol {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

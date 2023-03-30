@@ -23,12 +23,13 @@ pub enum ExprAst {
 }
 
 impl AstGenerator<'_> {
-    pub fn generate_expr(&mut self, scope_id: ScopeId, expr: &Expr) -> ExprAst {
+    pub fn gen_expr(&mut self, scope_id: ScopeId, expr: &Expr) -> ExprAst {
         match expr {
-            Expr::Block(e) => ExprAst::Block(self.generate_block_expr(scope_id, e)),
-            Expr::Ident(e) => ExprAst::Ident(self.generate_ident_expr(scope_id, e)),
-            Expr::Literal(e) => ExprAst::Literal(self.generate_literal_expr(e)),
-            Expr::Paren(e) => ExprAst::Paren(self.generate_paren_expr(scope_id, e)),
+            Expr::Block(e) => ExprAst::Block(self.gen_block_expr(scope_id, e)),
+            Expr::Ident(e) => ExprAst::Ident(self.gen_ident_expr(scope_id, e)),
+            Expr::Literal(e) => ExprAst::Literal(self.gen_literal_expr(e)),
+            Expr::Paren(e) => ExprAst::Paren(self.gen_paren_expr(scope_id, e)),
+            Expr::FnCall(e) => ExprAst::FnCall(self.gen_fn_call_expr(scope_id, e)),
             _ => todo!(),
         }
     }

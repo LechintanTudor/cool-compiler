@@ -22,7 +22,7 @@ impl Parser<'_> {
 
         let (end_span, abi) = match self.peek().kind {
             TokenKind::Literal(Literal {
-                kind: LiteralKind::String,
+                kind: LiteralKind::Str,
                 symbol,
             }) => (self.bump().span, Some(symbol)),
             _ => (start_token.span, None),

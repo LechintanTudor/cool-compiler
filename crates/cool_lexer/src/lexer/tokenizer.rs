@@ -151,7 +151,7 @@ impl<'a> Tokenizer<'a> {
         self.buffer.clear();
 
         TokenKind::Literal(Literal {
-            kind: LiteralKind::Integer { radix: Radix::Ten },
+            kind: LiteralKind::Int { radix: Radix::Ten },
             symbol,
         })
     }
@@ -168,7 +168,7 @@ impl<'a> Tokenizer<'a> {
 
         let token = match self.cursor.bump() {
             '"' => TokenKind::Literal(Literal {
-                kind: LiteralKind::String,
+                kind: LiteralKind::Str,
                 symbol: Symbol::insert(&self.buffer),
             }),
             _ => TokenKind::Unknown,

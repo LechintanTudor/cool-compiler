@@ -47,7 +47,7 @@ impl AstGenerator<'_> {
                 .unwrap();
         }
 
-        let body = self.generate_block_expr(frame_id.into(), &fn_item.body);
+        let body = self.gen_block_expr(frame_id.into(), &fn_item.body);
 
         FnItemAst {
             ty_id,

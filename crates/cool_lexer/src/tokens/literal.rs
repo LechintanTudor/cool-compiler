@@ -24,10 +24,10 @@ impl fmt::Debug for Radix {
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum LiteralKind {
-    Integer { radix: Radix },
+    Int { radix: Radix },
     Bool,
     Char,
-    String,
+    Str,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -39,7 +39,7 @@ pub struct Literal {
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.kind {
-            LiteralKind::String => write!(f, "\"{}\"", self.symbol),
+            LiteralKind::Str => write!(f, "\"{}\"", self.symbol),
             LiteralKind::Char => write!(f, "'{}'", self.symbol),
             _ => write!(f, "{}", self.symbol),
         }

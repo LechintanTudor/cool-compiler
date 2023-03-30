@@ -1,3 +1,4 @@
+use crate::expr::ExprAst;
 use cool_parser::Ty;
 use cool_resolve::resolve::{ResolveError, ResolveResult, ResolveTable, ScopeId};
 use cool_resolve::ty::{TyId, TyTable};
@@ -39,5 +40,9 @@ impl<'a> AstGenerator<'a> {
             }
             _ => todo!(),
         }
+    }
+
+    pub fn resolve_expr_ty(&self, expr: &ExprAst) -> ResolveResult<Option<TyId>> {
+        todo!()
     }
 }

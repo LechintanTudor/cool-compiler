@@ -1,3 +1,4 @@
+mod assign_pattern;
 mod block_elem;
 mod error;
 mod expr;
@@ -10,6 +11,7 @@ mod pattern;
 mod stmt;
 mod ty;
 
+pub use self::assign_pattern::*;
 pub use self::block_elem::*;
 pub use self::error::*;
 pub use self::expr::*;

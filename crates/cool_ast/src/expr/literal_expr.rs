@@ -2,21 +2,37 @@ use crate::AstGenerator;
 use cool_lexer::symbols::{sym, Symbol};
 use cool_lexer::tokens::{LiteralKind, Radix};
 use cool_parser::LiteralExpr;
-use cool_resolve::ty::{FloatTy, IntTy};
+use cool_resolve::ty::{FloatTy, IntTy, TyId};
 
 #[derive(Clone, Debug)]
 pub enum LiteralExprAst {
-    Integer { value: u128, ty: Option<IntTy> },
+    Int { value: u128, ty: Option<IntTy> },
     Float { value: f64, ty: Option<FloatTy> },
     Bool(bool),
     Str(Symbol),
     CStr(Symbol),
 }
 
+impl LiteralExprAst {
+    pub fn ty_id(&self) -> Option<TyId> {
+        let ty: TyId = match self {
+            Self::Int {
+                ty: Some(int_ty), ..
+            } => int_ty.ty_id(),
+            Self::Float {
+                ty: Some(float_ty), ..
+            } => float_ty.ty_id(),
+            _ => return None,
+        };
+
+        Some(ty)
+    }
+}
+
 impl AstGenerator<'_> {
-    pub fn generate_literal_expr(&mut self, expr: &LiteralExpr) -> LiteralExprAst {
+    pub fn gen_literal_expr(&mut self, expr: &LiteralExpr) -> LiteralExprAst {
         match expr.literal.kind {
-            LiteralKind::Integer { radix: Radix::Ten } => {
+            LiteralKind::Int { radix: Radix::Ten } => {
                 self.generate_base_10_integer(expr.literal.symbol.as_str())
             }
             LiteralKind::Bool => {
@@ -47,7 +63,7 @@ impl AstGenerator<'_> {
 
         suffix.extend(char_iter);
 
-        LiteralExprAst::Integer {
+        LiteralExprAst::Int {
             value,
             ty: int_ty_from_suffix(&suffix),
         }

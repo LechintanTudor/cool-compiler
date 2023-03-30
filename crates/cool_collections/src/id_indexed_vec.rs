@@ -64,6 +64,13 @@ macro_rules! id_newtype {
             }
         }
 
+        impl Default for $Wrapper {
+            #[inline]
+            fn default() -> Self {
+                Self::dummy()
+            }
+        }
+
         impl $crate::Id for $Wrapper {
             #[inline]
             fn inner(&self) -> std::num::NonZeroU32 {

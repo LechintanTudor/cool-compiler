@@ -88,6 +88,7 @@ pub enum FloatTy {
 }
 
 impl FloatTy {
+    #[inline]
     pub fn ty_id(&self) -> TyId {
         match self {
             Self::F32 => tys::F32,

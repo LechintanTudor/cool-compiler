@@ -9,9 +9,9 @@ pub struct ParenExprAst {
 }
 
 impl AstGenerator<'_> {
-    pub fn generate_paren_expr(&mut self, scope_id: ScopeId, expr: &ParenExpr) -> ParenExprAst {
+    pub fn gen_paren_expr(&mut self, scope_id: ScopeId, expr: &ParenExpr) -> ParenExprAst {
         ParenExprAst {
-            inner: Box::new(self.generate_expr(scope_id, &expr.inner)),
+            inner: Box::new(self.gen_expr(scope_id, &expr.inner)),
         }
     }
 }

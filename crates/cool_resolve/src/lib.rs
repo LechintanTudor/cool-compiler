@@ -1,3 +1,4 @@
+pub mod expr;
 pub mod resolve;
 pub mod ty;
 

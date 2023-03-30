@@ -10,16 +10,12 @@ pub struct FnCallExprAst {
 }
 
 impl AstGenerator<'_> {
-    pub fn generate_fn_call_expr(
-        &mut self,
-        scope_id: ScopeId,
-        fn_call: &FnCallExpr,
-    ) -> FnCallExprAst {
-        let fn_expr = self.generate_expr(scope_id, &fn_call.fn_expr);
+    pub fn gen_fn_call_expr(&mut self, scope_id: ScopeId, fn_call: &FnCallExpr) -> FnCallExprAst {
+        let fn_expr = self.gen_expr(scope_id, &fn_call.fn_expr);
         let arg_exprs = fn_call
             .arg_exprs
             .iter()
-            .map(|arg| self.generate_expr(scope_id, arg))
+            .map(|arg| self.gen_expr(scope_id, arg))
             .collect::<Vec<_>>();
 
         FnCallExprAst {
