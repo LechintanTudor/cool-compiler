@@ -1,6 +1,6 @@
-use crate::expr::ExprAst;
+use crate::expr::ExprKindAst;
 
 #[derive(Clone, Debug)]
 pub struct ExprStmtAst {
-    pub expr: ExprAst,
+    pub expr: ExprKindAst,
 }

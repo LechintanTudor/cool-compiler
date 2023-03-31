@@ -46,13 +46,4 @@ impl<'a> AstGenerator<'a> {
             _ => todo!(),
         }
     }
-
-    // pub fn resolve_expr_ty(&self, expr: &ExprAst) -> ResolveResult<TyId>> {
-    //     let ty_id = match expr {
-    //         ExprAst::Literal(literal) => literal.ty_id(),
-    //         _ => todo!(),
-    //     };
-
-    //     Ok(ty_id)
-    // }
 }

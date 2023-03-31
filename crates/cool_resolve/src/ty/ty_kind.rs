@@ -16,6 +16,14 @@ impl TyKind {
     pub fn is_builtin(&self) -> bool {
         matches!(self, Self::Unit | Self::Int(_) | Self::Float(_))
     }
+
+    #[inline]
+    pub fn as_fn_ty(&self) -> Option<&FnTy> {
+        match self {
+            Self::Fn(fn_ty) => Some(fn_ty),
+            _ => None,
+        }
+    }
 }
 
 impl From<IntTy> for TyKind {
@@ -108,6 +116,6 @@ pub struct TupleTy {
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct FnTy {
-    pub args: SmallVec<[TyId; 4]>,
+    pub params: SmallVec<[TyId; 4]>,
     pub ret: TyId,
 }

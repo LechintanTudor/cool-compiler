@@ -9,11 +9,7 @@ pub struct ModuleItemAst {
 }
 
 impl AstGenerator<'_> {
-    pub fn generate_module(
-        &mut self,
-        module_id: ModuleId,
-        module: &ModuleContent,
-    ) -> ModuleItemAst {
+    pub fn gen_module(&mut self, module_id: ModuleId, module: &ModuleContent) -> ModuleItemAst {
         let mut decls = Vec::<ItemDeclAst>::new();
 
         for decl in module
@@ -22,7 +18,7 @@ impl AstGenerator<'_> {
             .flat_map(|decl| decl.kind.as_item_decl())
         {
             let item: ItemAst = match &decl.item {
-                Item::Fn(fn_item) => self.generate_fn(module_id, fn_item).into(),
+                Item::Fn(fn_item) => self.gen_fn(module_id, fn_item).into(),
                 _ => todo!(),
             };
 

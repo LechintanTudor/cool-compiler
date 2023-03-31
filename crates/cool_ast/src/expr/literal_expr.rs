@@ -2,7 +2,7 @@ use crate::AstGenerator;
 use cool_lexer::symbols::{sym, Symbol};
 use cool_lexer::tokens::{LiteralKind, Radix};
 use cool_parser::LiteralExpr;
-use cool_resolve::ty::{FloatTy, IntTy, TyId};
+use cool_resolve::ty::{FloatTy, IntTy};
 
 #[derive(Clone, Debug)]
 pub enum LiteralExprAst {
@@ -11,16 +11,6 @@ pub enum LiteralExprAst {
     Bool(bool),
     Str(Symbol),
     CStr(Symbol),
-}
-
-impl LiteralExprAst {
-    pub fn ty_id(&self) -> TyId {
-        match self {
-            Self::Int { ty, .. } => ty.ty_id(),
-            Self::Float { ty, .. } => ty.ty_id(),
-            _ => todo!(),
-        }
-    }
 }
 
 impl AstGenerator<'_> {
@@ -52,6 +42,7 @@ impl AstGenerator<'_> {
                 continue;
             } else {
                 suffix.push(char);
+                break;
             }
         }
 
@@ -64,7 +55,7 @@ impl AstGenerator<'_> {
     }
 }
 
-pub fn int_ty_from_suffix(suffix: &str) -> IntTy {
+fn int_ty_from_suffix(suffix: &str) -> IntTy {
     match suffix {
         "" => IntTy::Inferred,
         "i8" => IntTy::I8,
@@ -79,6 +70,6 @@ pub fn int_ty_from_suffix(suffix: &str) -> IntTy {
         "u64" => IntTy::U64,
         "u128" => IntTy::U128,
         "usize" => IntTy::Usize,
-        _ => todo!("handle unknown suffix"),
+        _ => todo!("handle unknown suffix: {}", suffix),
     }
 }

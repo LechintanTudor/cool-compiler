@@ -74,7 +74,7 @@ impl<'ctx> GeneratedTys<'ctx> {
             return ty;
         }
 
-        let ty_kind = ty_table.get_kind_by_id(ty_id).unwrap();
+        let ty_kind = ty_table.get_kind_by_id(ty_id);
 
         let ty = match ty_kind {
             TyKind::Tuple(tuple_ty) => {
@@ -89,7 +89,7 @@ impl<'ctx> GeneratedTys<'ctx> {
             }
             TyKind::Fn(fn_ty) => {
                 let args = fn_ty
-                    .args
+                    .params
                     .iter()
                     .map(|&ty| Self::insert_ty(tys, context, ty_table, ty))
                     .flat_map(|ty| ty.try_into())

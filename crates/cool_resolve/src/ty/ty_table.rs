@@ -54,7 +54,7 @@ impl TyTable {
         P: IntoIterator<Item = TyId>,
     {
         let ty_kind: TyKind = FnTy {
-            args: SmallVec::from_iter(params),
+            params: SmallVec::from_iter(params),
             ret,
         }
         .into();
@@ -70,12 +70,12 @@ impl TyTable {
     #[inline]
     pub fn get_kind_by_item_id(&self, item_id: ItemId) -> Option<&TyKind> {
         let ty_id = *self.items.get(&item_id)?;
-        self.get_kind_by_id(ty_id)
+        Some(self.get_kind_by_id(ty_id))
     }
 
     #[inline]
-    pub fn get_kind_by_id(&self, ty_id: TyId) -> Option<&TyKind> {
-        self.tys.get(ty_id)
+    pub fn get_kind_by_id(&self, ty_id: TyId) -> &TyKind {
+        self.tys.get(ty_id).unwrap()
     }
 
     #[inline]

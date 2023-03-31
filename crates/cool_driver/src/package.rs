@@ -207,7 +207,7 @@ pub fn generate_ast(package: &mut Package) -> Result<Vec<ModuleItemAst>, ()> {
     let mut module_asts = Vec::<ModuleItemAst>::new();
 
     for source in package.sources.iter() {
-        module_asts.push(ast_generator.generate_module(source.module_id, &source.module));
+        module_asts.push(ast_generator.gen_module(source.module_id, &source.module));
     }
 
     Ok(module_asts)

@@ -13,7 +13,7 @@ pub struct FnItemAst {
 
 impl AstGenerator<'_> {
     // TODO: Use item type to infer types
-    pub fn generate_fn(&mut self, module_id: ModuleId, fn_item: &FnItem) -> FnItemAst {
+    pub fn gen_fn(&mut self, module_id: ModuleId, fn_item: &FnItem) -> FnItemAst {
         let param_ty_ids = fn_item
             .prototype
             .param_list
