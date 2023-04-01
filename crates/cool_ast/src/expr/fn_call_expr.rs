@@ -1,12 +1,27 @@
-use crate::expr::ExprAst;
-use crate::AstGenerator;
+use crate::expr::{ExprAst, GenericExprAst};
+use crate::{AstGenerator, Unify};
 use cool_parser::FnCallExpr;
+use cool_resolve::expr_ty::ExprId;
 use cool_resolve::resolve::ScopeId;
 
 #[derive(Clone, Debug)]
 pub struct FnCallExprAst {
+    pub id: ExprId,
     pub fn_expr: Box<ExprAst>,
     pub arg_exprs: Vec<ExprAst>,
+}
+
+impl Unify for FnCallExprAst {
+    fn unify(&self, _gen: &mut AstGenerator) {
+        todo!()
+    }
+}
+
+impl GenericExprAst for FnCallExprAst {
+    #[inline]
+    fn id(&self) -> ExprId {
+        self.id
+    }
 }
 
 impl AstGenerator<'_> {
@@ -19,6 +34,7 @@ impl AstGenerator<'_> {
             .collect::<Vec<_>>();
 
         FnCallExprAst {
+            id: self.unification.gen_expr(),
             fn_expr: Box::new(fn_expr),
             arg_exprs,
         }

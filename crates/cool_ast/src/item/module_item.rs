@@ -1,5 +1,5 @@
 use crate::item::item_decl::ItemDeclAst;
-use crate::{AstGenerator, ItemAst};
+use crate::{AstGenerator, ItemAst, Unify};
 use cool_parser::{Item, ModuleContent};
 use cool_resolve::resolve::ModuleId;
 
@@ -18,7 +18,15 @@ impl AstGenerator<'_> {
             .flat_map(|decl| decl.kind.as_item_decl())
         {
             let item: ItemAst = match &decl.item {
-                Item::Fn(fn_item) => self.gen_fn(module_id, fn_item).into(),
+                Item::Fn(fn_item) => {
+                    let fn_ast = self.gen_fn(module_id, fn_item);
+
+                    fn_ast.unify(self);
+
+                    println!("\n\n\n\n{:#?}", self.unification.unify());
+
+                    fn_ast.into()
+                }
                 _ => todo!(),
             };
 

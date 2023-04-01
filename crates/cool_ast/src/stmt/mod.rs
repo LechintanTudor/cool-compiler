@@ -3,7 +3,7 @@ mod expr_stmt;
 
 pub use self::decl_stmt::*;
 pub use self::expr_stmt::*;
-use crate::AstGenerator;
+use crate::{AstGenerator, Unify};
 use cool_parser::Stmt;
 use cool_resolve::resolve::ScopeId;
 
@@ -11,6 +11,15 @@ use cool_resolve::resolve::ScopeId;
 pub enum StmtAst {
     Decl(DeclStmtAst),
     Expr(ExprStmtAst),
+}
+
+impl Unify for StmtAst {
+    fn unify(&self, gen: &mut AstGenerator) {
+        match self {
+            Self::Decl(stmt) => stmt.unify(gen),
+            Self::Expr(expr) => expr.unify(gen),
+        }
+    }
 }
 
 impl From<DeclStmtAst> for StmtAst {

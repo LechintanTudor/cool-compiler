@@ -1,11 +1,39 @@
-use crate::AstGenerator;
+use crate::expr::GenericExprAst;
+use crate::{AstGenerator, Unify};
 use cool_lexer::symbols::{sym, Symbol};
 use cool_lexer::tokens::{LiteralKind, Radix};
 use cool_parser::LiteralExpr;
+use cool_resolve::expr_ty::{Constraint, ExprId};
 use cool_resolve::ty::{FloatTy, IntTy};
 
-#[derive(Clone, Debug)]
-pub enum LiteralExprAst {
+#[derive(Clone, Copy, Debug)]
+pub struct LiteralExprAst {
+    pub id: ExprId,
+    pub kind: LiteralExprKindAst,
+}
+
+impl Unify for LiteralExprAst {
+    fn unify(&self, gen: &mut AstGenerator) {
+        let ty_id = match self.kind {
+            LiteralExprKindAst::Int { ty, .. } => ty.ty_id(),
+            LiteralExprKindAst::Float { ty, .. } => ty.ty_id(),
+            _ => todo!(),
+        };
+
+        gen.unification
+            .add_constraint(Constraint::Expr(self.id), Constraint::Ty(ty_id));
+    }
+}
+
+impl GenericExprAst for LiteralExprAst {
+    #[inline]
+    fn id(&self) -> ExprId {
+        self.id
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum LiteralExprKindAst {
     Int { value: u128, ty: IntTy },
     Float { value: f64, ty: FloatTy },
     Bool(bool),
@@ -15,22 +43,27 @@ pub enum LiteralExprAst {
 
 impl AstGenerator<'_> {
     pub fn gen_literal_expr(&mut self, expr: &LiteralExpr) -> LiteralExprAst {
-        match expr.literal.kind {
+        let kind = match expr.literal.kind {
             LiteralKind::Int { radix: Radix::Ten } => {
                 self.gen_base_10_int(expr.literal.symbol.as_str())
             }
             LiteralKind::Bool => {
                 if expr.literal.symbol == sym::KW_TRUE {
-                    LiteralExprAst::Bool(true)
+                    LiteralExprKindAst::Bool(true)
                 } else {
-                    LiteralExprAst::Bool(false)
+                    LiteralExprKindAst::Bool(false)
                 }
             }
             _ => todo!(),
+        };
+
+        LiteralExprAst {
+            id: self.unification.gen_expr(),
+            kind,
         }
     }
 
-    pub fn gen_base_10_int(&self, number_str: &str) -> LiteralExprAst {
+    pub fn gen_base_10_int(&self, number_str: &str) -> LiteralExprKindAst {
         let mut value = 0;
         let mut suffix = String::new();
         let mut char_iter = number_str.chars();
@@ -48,7 +81,7 @@ impl AstGenerator<'_> {
 
         suffix.extend(char_iter);
 
-        LiteralExprAst::Int {
+        LiteralExprKindAst::Int {
             value,
             ty: int_ty_from_suffix(&suffix),
         }

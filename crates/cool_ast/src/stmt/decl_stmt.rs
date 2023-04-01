@@ -1,15 +1,45 @@
-use crate::expr::ExprAst;
-use crate::AstGenerator;
+use crate::expr::{ExprAst, GenericExprAst};
+use crate::{AstGenerator, Unify};
 use cool_parser::{DeclStmt, Pattern};
-use cool_resolve::resolve::{FrameId, ScopeId};
+use cool_resolve::expr_ty::Constraint;
+use cool_resolve::resolve::{BindingId, FrameId, ScopeId};
 use cool_resolve::ty::TyId;
 
 #[derive(Clone, Debug)]
 pub struct DeclStmtAst {
     pub frame_id: FrameId,
+    pub binding_id: BindingId,
     pub pattern: Pattern,
     pub explicit_ty_id: Option<TyId>,
     pub expr: ExprAst,
+}
+
+impl Unify for DeclStmtAst {
+    fn unify(&self, gen: &mut AstGenerator) {
+        self.expr.unify(gen);
+
+        match self.explicit_ty_id {
+            Some(explicit_ty_id) => {
+                gen.unification.add_constraint(
+                    Constraint::Binding(self.binding_id),
+                    Constraint::Ty(explicit_ty_id),
+                );
+            }
+            None => {
+                let ty_var_id = gen.unification.gen_ty_var();
+
+                gen.unification.add_constraint(
+                    Constraint::Binding(self.binding_id),
+                    Constraint::TyVar(ty_var_id),
+                )
+            }
+        }
+
+        gen.unification.add_constraint(
+            Constraint::Binding(self.binding_id),
+            Constraint::Expr(self.expr.id()),
+        );
+    }
 }
 
 impl AstGenerator<'_> {
@@ -28,16 +58,9 @@ impl AstGenerator<'_> {
 
         let expr = self.gen_expr(scope_id, &decl.expr);
 
-        if let Some(explicit_ty_id) = explicit_ty_id {
-            self.expr_tys.add_binding(binding_id, explicit_ty_id);
-            assert_eq!(explicit_ty_id, self.expr_tys.get_expr_ty_id(expr.id));
-        } else {
-            let expr_ty = self.expr_tys.get_expr_ty_id(expr.id);
-            self.expr_tys.add_binding(binding_id, expr_ty);
-        }
-
         DeclStmtAst {
             frame_id,
+            binding_id,
             pattern: decl.pattern.clone(),
             explicit_ty_id,
             expr,

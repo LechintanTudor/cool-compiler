@@ -1,14 +1,29 @@
 use crate::expr::BlockExprAst;
-use crate::AstGenerator;
+use crate::{AstGenerator, Unify};
 use cool_parser::FnItem;
-use cool_resolve::resolve::{FrameId, ModuleId};
+use cool_resolve::expr_ty::Constraint;
+use cool_resolve::resolve::{BindingId, FrameId, ModuleId};
 use cool_resolve::ty::{tys, TyId};
 
 #[derive(Clone, Debug)]
 pub struct FnItemAst {
     pub ty_id: TyId,
     pub frame_id: FrameId,
+    pub bindings: Vec<BindingId>,
     pub body: BlockExprAst,
+}
+
+impl Unify for FnItemAst {
+    fn unify(&self, gen: &mut AstGenerator) {
+        let fn_ty = gen.tys.get_kind_by_id(self.ty_id).as_fn_ty().unwrap();
+
+        for (&binding_id, &ty_id) in self.bindings.iter().zip(fn_ty.params.iter()) {
+            gen.unification
+                .add_constraint(Constraint::Binding(binding_id), Constraint::Ty(ty_id));
+        }
+
+        self.body.unify(gen);
+    }
 }
 
 impl AstGenerator<'_> {
@@ -35,16 +50,15 @@ impl AstGenerator<'_> {
         let ty_id = self.tys.mk_fn(param_ty_ids.iter().copied(), return_ty_id);
 
         let frame_id = self.resolve.insert_frame(module_id.into());
-        for (param, _param_ty_id) in fn_item
-            .prototype
-            .param_list
-            .params
-            .iter()
-            .zip(param_ty_ids.iter().copied())
-        {
-            self.resolve
+        let mut bindings = Vec::new();
+
+        for param in fn_item.prototype.param_list.params.iter() {
+            let binding = self
+                .resolve
                 .insert_local_binding(frame_id, param.is_mutable, param.ident.symbol)
                 .unwrap();
+
+            bindings.push(binding);
         }
 
         let body = self.gen_block_expr(frame_id.into(), &fn_item.body);
@@ -52,6 +66,7 @@ impl AstGenerator<'_> {
         FnItemAst {
             ty_id,
             frame_id,
+            bindings,
             body,
         }
     }

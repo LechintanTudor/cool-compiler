@@ -1,8 +1,6 @@
 use crate::expr::ExprAst;
 use crate::stmt::StmtAst;
-use crate::AstGenerator;
-use cool_parser::BlockElem;
-use cool_resolve::resolve::ScopeId;
+use crate::{AstGenerator, Unify};
 
 #[derive(Clone, Debug)]
 pub enum BlockElemAst {
@@ -10,8 +8,11 @@ pub enum BlockElemAst {
     Stmt(StmtAst),
 }
 
-impl AstGenerator<'_> {
-    pub fn gen_block_elem(&mut self, _scope_id: ScopeId, _block_elem: &BlockElem) -> BlockElemAst {
-        todo!()
+impl Unify for BlockElemAst {
+    fn unify(&self, gen: &mut AstGenerator) {
+        match self {
+            Self::Expr(expr) => expr.unify(gen),
+            Self::Stmt(stmt) => stmt.unify(gen),
+        }
     }
 }
