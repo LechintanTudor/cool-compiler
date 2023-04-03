@@ -21,9 +21,11 @@ impl AstGenerator<'_> {
                 Item::Fn(fn_item) => {
                     let fn_ast = self.gen_fn(module_id, fn_item);
 
-                    fn_ast.unify(self);
+                    let mut unifier = self.unification.unifier();
+                    fn_ast.unify(&mut unifier, &mut self.tys);
 
-                    println!("\n\n\n\n{:#?}", self.unification.unify());
+                    unifier.solve_constraints();
+                    unifier.finish();
 
                     fn_ast.into()
                 }

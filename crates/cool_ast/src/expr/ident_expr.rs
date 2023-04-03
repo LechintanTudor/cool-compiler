@@ -1,8 +1,9 @@
 use crate::expr::GenericExprAst;
 use crate::{AstGenerator, Unify};
 use cool_parser::IdentExpr;
-use cool_resolve::expr_ty::{Constraint, ExprId};
+use cool_resolve::expr_ty::{ExprId, ExprTyUnifier};
 use cool_resolve::resolve::{BindingId, ScopeId, SymbolKind};
+use cool_resolve::ty::TyTable;
 
 #[derive(Clone, Debug)]
 pub struct IdentExprAst {
@@ -11,11 +12,8 @@ pub struct IdentExprAst {
 }
 
 impl Unify for IdentExprAst {
-    fn unify(&self, gen: &mut AstGenerator) {
-        gen.unification.add_constraint(
-            Constraint::Expr(self.id),
-            Constraint::Binding(self.binding_id),
-        );
+    fn unify(&self, unifier: &mut ExprTyUnifier, _tys: &mut TyTable) {
+        unifier.add_constraint(self.id, self.binding_id);
     }
 }
 
@@ -40,7 +38,7 @@ impl AstGenerator<'_> {
 
         match resolved {
             SymbolKind::Binding(binding_id) => IdentExprAst {
-                id: self.unification.gen_expr(),
+                id: self.unification.add_expr(),
                 binding_id,
             },
             _ => todo!("return error"),

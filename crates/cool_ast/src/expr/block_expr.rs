@@ -2,9 +2,9 @@ use crate::expr::GenericExprAst;
 use crate::stmt::StmtAst;
 use crate::{AstGenerator, BlockElemAst, Unify};
 use cool_parser::{BlockElem, BlockExpr, Stmt};
-use cool_resolve::expr_ty::{Constraint, ExprId};
+use cool_resolve::expr_ty::{Constraint, ExprId, ExprTyUnifier};
 use cool_resolve::resolve::{FrameId, ScopeId};
-use cool_resolve::ty::tys;
+use cool_resolve::ty::{tys, TyTable};
 
 #[derive(Clone, Debug)]
 pub struct BlockExprAst {
@@ -21,9 +21,9 @@ impl GenericExprAst for BlockExprAst {
 }
 
 impl Unify for BlockExprAst {
-    fn unify(&self, gen: &mut AstGenerator) {
+    fn unify(&self, unifier: &mut ExprTyUnifier, tys: &mut TyTable) {
         for elem in self.elems.iter() {
-            elem.unify(gen);
+            elem.unify(unifier, tys);
         }
 
         let rhs_constraint = match self.elems.last() {
@@ -31,14 +31,13 @@ impl Unify for BlockExprAst {
             _ => Constraint::Ty(tys::UNIT),
         };
 
-        gen.unification
-            .add_constraint(Constraint::Expr(self.id), rhs_constraint);
+        unifier.add_constraint(self.id, rhs_constraint);
     }
 }
 
 impl AstGenerator<'_> {
     pub fn gen_block_expr(&mut self, scope_id: ScopeId, expr: &BlockExpr) -> BlockExprAst {
-        let id = self.unification.gen_expr();
+        let id = self.unification.add_expr();
 
         let frame_id = self.resolve.insert_frame(scope_id);
         let mut current_frame_id = frame_id;

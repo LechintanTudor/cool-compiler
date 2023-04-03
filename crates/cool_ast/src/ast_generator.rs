@@ -1,5 +1,5 @@
 use cool_parser::Ty;
-use cool_resolve::expr_ty::UnificationTable;
+use cool_resolve::expr_ty::ExprTyTable;
 use cool_resolve::resolve::{ResolveError, ResolveResult, ResolveTable, ScopeId};
 use cool_resolve::ty::{TyId, TyTable};
 use cool_resolve::ItemPathBuf;
@@ -7,7 +7,7 @@ use cool_resolve::ItemPathBuf;
 pub struct AstGenerator<'a> {
     pub resolve: &'a mut ResolveTable,
     pub tys: &'a mut TyTable,
-    pub unification: UnificationTable,
+    pub unification: ExprTyTable,
 }
 
 impl<'a> AstGenerator<'a> {

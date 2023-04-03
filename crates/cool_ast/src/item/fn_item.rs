@@ -1,9 +1,9 @@
 use crate::expr::BlockExprAst;
 use crate::{AstGenerator, Unify};
 use cool_parser::FnItem;
-use cool_resolve::expr_ty::Constraint;
+use cool_resolve::expr_ty::{Constraint, ExprTyUnifier};
 use cool_resolve::resolve::{BindingId, FrameId, ModuleId};
-use cool_resolve::ty::{tys, TyId};
+use cool_resolve::ty::{tys, TyId, TyTable};
 
 #[derive(Clone, Debug)]
 pub struct FnItemAst {
@@ -14,15 +14,14 @@ pub struct FnItemAst {
 }
 
 impl Unify for FnItemAst {
-    fn unify(&self, gen: &mut AstGenerator) {
-        let fn_ty = gen.tys.get_kind_by_id(self.ty_id).as_fn_ty().unwrap();
+    fn unify(&self, unifier: &mut ExprTyUnifier, tys: &mut TyTable) {
+        let fn_ty = tys.get_kind_by_id(self.ty_id).as_fn_ty().unwrap();
 
         for (&binding_id, &ty_id) in self.bindings.iter().zip(fn_ty.params.iter()) {
-            gen.unification
-                .add_constraint(Constraint::Binding(binding_id), Constraint::Ty(ty_id));
+            unifier.add_constraint(Constraint::Binding(binding_id), Constraint::Ty(ty_id));
         }
 
-        self.body.unify(gen);
+        self.body.unify(unifier, tys);
     }
 }
 

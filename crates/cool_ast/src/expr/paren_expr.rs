@@ -1,8 +1,9 @@
 use crate::expr::{ExprAst, GenericExprAst};
 use crate::{AstGenerator, Unify};
 use cool_parser::ParenExpr;
-use cool_resolve::expr_ty::{Constraint, ExprId};
+use cool_resolve::expr_ty::{Constraint, ExprId, ExprTyUnifier};
 use cool_resolve::resolve::ScopeId;
+use cool_resolve::ty::TyTable;
 
 #[derive(Clone, Debug)]
 pub struct ParenExprAst {
@@ -11,11 +12,10 @@ pub struct ParenExprAst {
 }
 
 impl Unify for ParenExprAst {
-    fn unify(&self, gen: &mut AstGenerator) {
-        self.inner.unify(gen);
+    fn unify(&self, unifier: &mut ExprTyUnifier, tys: &mut TyTable) {
+        self.inner.unify(unifier, tys);
 
-        gen.unification
-            .add_constraint(Constraint::Expr(self.id), Constraint::Expr(self.inner.id()));
+        unifier.add_constraint(Constraint::Expr(self.id), Constraint::Expr(self.inner.id()));
     }
 }
 
@@ -29,7 +29,7 @@ impl GenericExprAst for ParenExprAst {
 impl AstGenerator<'_> {
     pub fn gen_paren_expr(&mut self, scope_id: ScopeId, expr: &ParenExpr) -> ParenExprAst {
         ParenExprAst {
-            id: self.unification.gen_expr(),
+            id: self.unification.add_expr(),
             inner: Box::new(self.gen_expr(scope_id, &expr.inner)),
         }
     }

@@ -3,8 +3,8 @@ use crate::{AstGenerator, Unify};
 use cool_lexer::symbols::{sym, Symbol};
 use cool_lexer::tokens::{LiteralKind, Radix};
 use cool_parser::LiteralExpr;
-use cool_resolve::expr_ty::{Constraint, ExprId};
-use cool_resolve::ty::{FloatTy, IntTy};
+use cool_resolve::expr_ty::{Constraint, ExprId, ExprTyUnifier};
+use cool_resolve::ty::{FloatTy, IntTy, TyTable};
 
 #[derive(Clone, Copy, Debug)]
 pub struct LiteralExprAst {
@@ -13,15 +13,14 @@ pub struct LiteralExprAst {
 }
 
 impl Unify for LiteralExprAst {
-    fn unify(&self, gen: &mut AstGenerator) {
+    fn unify(&self, unifier: &mut ExprTyUnifier, _tys: &mut TyTable) {
         let ty_id = match self.kind {
             LiteralExprKindAst::Int { ty, .. } => ty.ty_id(),
             LiteralExprKindAst::Float { ty, .. } => ty.ty_id(),
             _ => todo!(),
         };
 
-        gen.unification
-            .add_constraint(Constraint::Expr(self.id), Constraint::Ty(ty_id));
+        unifier.add_constraint(Constraint::Expr(self.id), Constraint::Ty(ty_id));
     }
 }
 
@@ -58,7 +57,7 @@ impl AstGenerator<'_> {
         };
 
         LiteralExprAst {
-            id: self.unification.gen_expr(),
+            id: self.unification.add_expr(),
             kind,
         }
     }

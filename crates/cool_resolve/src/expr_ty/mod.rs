@@ -1,65 +1,75 @@
+mod constraint;
+
+pub use self::constraint::*;
 use crate::resolve::BindingId;
-use crate::ty::TyId;
-use cool_collections::id_newtype;
+use crate::ty::{tys, TyId};
+use cool_collections::{id_newtype, IdIndexedVec};
+use rustc_hash::FxHashMap;
+use std::collections::VecDeque;
 
 id_newtype!(TyVarId);
 id_newtype!(ExprId);
 
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum Constraint {
-    TyVar(TyVarId),
-    Binding(BindingId),
-    Expr(ExprId),
-    Ty(TyId),
+#[derive(Default, Debug)]
+pub struct ExprTyTable {
+    expr_tys: IdIndexedVec<ExprId, TyId>,
+    binding_tys: FxHashMap<BindingId, TyId>,
 }
 
-impl Constraint {
+impl ExprTyTable {
     #[inline]
-    pub fn is_ty(&self) -> bool {
-        matches!(self, Self::Ty(_))
+    pub fn add_expr(&mut self) -> ExprId {
+        self.expr_tys.push(tys::INFERRED_INT)
     }
 
     #[inline]
-    pub fn replace_if_eq(&mut self, compared: &Self, replacement: &Self) {
-        if self == compared {
-            *self = replacement.clone();
+    pub fn get_expr_ty(&self, expr_id: ExprId) -> TyId {
+        self.expr_tys[expr_id]
+    }
+
+    #[inline]
+    pub fn get_binding_ty(&self, binding_id: BindingId) -> Option<TyId> {
+        self.binding_tys.get(&binding_id).copied()
+    }
+
+    pub fn unifier(&mut self) -> ExprTyUnifier {
+        ExprTyUnifier {
+            expr_ty_table: self,
+            ty_vars: Default::default(),
+            substitutions: Default::default(),
+            constraints: Default::default(),
         }
     }
 }
 
-#[derive(Default, Debug)]
-pub struct UnificationTable {
-    last_ty_var_id: u32,
-    last_expr_id: u32,
-    constraints: Vec<(Constraint, Constraint)>,
+#[derive(Debug)]
+pub struct ExprTyUnifier<'a> {
+    expr_ty_table: &'a mut ExprTyTable,
+    ty_vars: IdIndexedVec<TyVarId, TyId>,
+    substitutions: VecDeque<(Constraint, Constraint)>,
+    constraints: VecDeque<(Constraint, Constraint)>,
 }
 
-impl UnificationTable {
+impl<'a> ExprTyUnifier<'a> {
     #[inline]
-    pub fn add_constraint(&mut self, lhs: Constraint, rhs: Constraint) {
-        self.constraints.push((lhs, rhs));
+    pub fn add_ty_var(&mut self) -> TyVarId {
+        self.ty_vars.push(tys::INFERRED_INT)
     }
 
-    #[inline]
-    pub fn gen_ty_var(&mut self) -> TyVarId {
-        self.last_ty_var_id += 1;
-        TyVarId::new_unwrap(self.last_ty_var_id)
+    pub fn add_constraint<C1, C2>(&mut self, lhs: C1, rhs: C2)
+    where
+        C1: Into<Constraint>,
+        C2: Into<Constraint>,
+    {
+        self.constraints.push_back((lhs.into(), rhs.into()));
     }
 
-    #[inline]
-    pub fn gen_expr(&mut self) -> ExprId {
-        self.last_expr_id += 1;
-        ExprId::new_unwrap(self.last_expr_id)
-    }
-
-    pub fn unify(&mut self) -> Vec<(Constraint, Constraint)> {
-        let mut substitutions = Vec::<(Constraint, Constraint)>::new();
-
-        while let Some((lhs, rhs)) = self.constraints.pop() {
+    pub fn solve_constraints(&mut self) {
+        while let Some((lhs, rhs)) = self.constraints.pop_front() {
             if lhs == rhs {
                 continue;
             } else if !lhs.is_ty() {
-                for (slhs, srhs) in substitutions.iter_mut() {
+                for (slhs, srhs) in self.substitutions.iter_mut() {
                     slhs.replace_if_eq(&lhs, &rhs);
                     srhs.replace_if_eq(&lhs, &rhs);
                 }
@@ -69,9 +79,9 @@ impl UnificationTable {
                     crhs.replace_if_eq(&lhs, &rhs);
                 }
 
-                substitutions.push((lhs, rhs));
+                self.substitutions.push_back((lhs, rhs));
             } else if !rhs.is_ty() {
-                for (slhs, srhs) in substitutions.iter_mut() {
+                for (slhs, srhs) in self.substitutions.iter_mut() {
                     slhs.replace_if_eq(&rhs, &lhs);
                     srhs.replace_if_eq(&rhs, &lhs);
                 }
@@ -81,263 +91,41 @@ impl UnificationTable {
                     crhs.replace_if_eq(&rhs, &lhs);
                 }
 
-                substitutions.push((rhs, lhs));
+                self.substitutions.push_back((rhs, lhs));
             } else {
                 panic!("Type error");
             }
-        }
 
-        for (lhs, rhs) in substitutions.iter() {
-            match (lhs, rhs) {
-                (Constraint::Ty(a), Constraint::Ty(b)) => {
-                    if a != b {
-                        panic!("type error");
+            let mut substitutions = VecDeque::new();
+
+            while let Some(substitution) = self.substitutions.pop_front() {
+                match substitution {
+                    (Constraint::Ty(a), Constraint::Ty(b)) => {
+                        if a != b {
+                            panic!("Type error");
+                        }
                     }
+                    (Constraint::Binding(binding_id), Constraint::Ty(ty_id)) => {
+                        self.expr_ty_table.binding_tys.insert(binding_id, ty_id);
+                    }
+                    (Constraint::Expr(expr_id), Constraint::Ty(ty_id)) => {
+                        self.expr_ty_table.expr_tys[expr_id] = ty_id;
+                    }
+                    _ => substitutions.push_back(substitution),
                 }
-                _ => (),
             }
-        }
 
-        self.last_ty_var_id = 0;
-        self.constraints.clear();
-        substitutions
+            self.substitutions = substitutions;
+        }
+    }
+
+    pub fn finish(&mut self) {
+        self.solve_constraints();
+        // TODO: Check the all types are resovled
+    }
+
+    #[inline]
+    pub fn expr_ty_table(&self) -> &ExprTyTable {
+        self.expr_ty_table
     }
 }
-
-/*
-    a := 1_i32 (1);
-    b := (a (2) + 2 (3)) (4);
-
-    a = ?A
-    a = (1)
-    (1) = i32
-
-    b = ?B
-    b = (4)
-    (4) = (2)
-    (4) = (3)
-    (2) = a
-    (3) = 2
-    (2) = (3)
-    a = ?C
-    2 = number
-
-    ====================================
-
-    subst = [
-        a -> ?A
-    ]
-
-    ?A = (1)
-    (1) = i32
-
-    b = ?B
-    b = (4)
-    (4) = (2)
-    (4) = (3)
-    (2) = ?A
-    (3) = 2
-    (2) = (3)
-    ?A = ?C
-    2 = number
-
-    ====================================
-
-    subst = [
-        a -> ?A
-    ]
-
-    ?A = (1)
-    (1) = i32
-
-    b = ?B
-    b = (4)
-    (4) = (2)
-    (4) = (3)
-    (2) = ?A
-    (3) = 2
-    (2) = (3)
-    ?A = ?C
-    2 = number
-
-    ====================================
-
-    subst = [
-        a -> (1)
-        ?A -> (1)
-    ]
-
-    (1) = i32
-
-    b = ?B
-    b = (4)
-    (4) = (2)
-    (4) = (3)
-    (2) = (1)
-    (3) = 2
-    (2) = (3)
-    (1) = ?C
-    2 = number
-
-    ====================================
-
-    subst = [
-        a -> i32
-        ?A -> i32
-        (1) = i32
-    ]
-
-    b = ?B
-    b = (4)
-    (4) = (2)
-    (4) = (3)
-    (2) = i32
-    (3) = 2
-    (2) = (3)
-    i32 = ?C
-    2 = number
-
-    ====================================
-
-    subst = [
-        a -> i32
-        ?A -> i32
-        (1) = i32
-        b = ?B
-    ]
-
-    ?B = (4)
-    (4) = (2)
-    (4) = (3)
-    (2) = i32
-    (3) = 2
-    (2) = (3)
-    i32 = ?C
-    2 = number
-
-    ====================================
-
-    subst = [
-        a -> i32
-        ?A -> i32
-        (1) = i32
-        b = (4)
-        ?B = (4)
-    ]
-
-    (4) = (2)
-    (4) = (3)
-    (2) = i32
-    (3) = 2
-    (2) = (3)
-    i32 = ?C
-    2 = number
-
-    ====================================
-
-    subst = [
-        a -> i32
-        ?A -> i32
-        (1) = i32
-        b = (2)
-        ?B = (2)
-        (4) = (2)
-    ]
-
-    (4) = (2)
-    (2) = i32
-    (3) = 2
-    (2) = (3)
-    i32 = ?C
-    2 = number
-
-    ====================================
-
-    subst = [
-        a -> i32
-        ?A -> i32
-        (1) = i32
-        b = (2)
-        ?B = (2)
-        (2) = (2)
-        (4) = (2)
-    ]
-
-    (2) = i32
-    (3) = 2
-    (2) = (3)
-    i32 = ?C
-    2 = number
-
-    ====================================
-
-    subst = [
-        a -> i32
-        ?A -> i32
-        (1) = i32
-        b = i32
-        ?B = i32
-        i32 = i32
-        (4) = i32
-        (2) = i32
-    ]
-
-    (3) = 2
-    (i32) = (3)
-    i32 = ?C
-    2 = number
-
-    ====================================
-
-    subst = [
-        a -> i32
-        ?A -> i32
-        (1) = i32
-        b = i32
-        ?B = i32
-        i32 = i32
-        (4) = i32
-        (2) = i32
-        (3) = 2
-    ]
-
-    (i32) = 2
-    i32 = ?C
-    2 = number
-
-    ====================================
-
-    subst = [
-        a -> i32
-        ?A -> i32
-        (1) = i32
-        b = i32
-        ?B = i32
-        i32 = i32
-        (4) = i32
-        (2) = i32
-        (3) = i32
-        2 = i32
-    ]
-
-    i32 = ?C
-    2 = number
-
-    ====================================
-
-    subst = [
-        a -> i32
-        ?A -> i32
-        (1) = i32
-        b = i32
-        ?B = i32
-        i32 = i32
-        (4) = i32
-        (2) = i32
-        (3) = i32
-        2 = i32
-        ?C = i32
-    ]
-
-    2 = number
-*/
