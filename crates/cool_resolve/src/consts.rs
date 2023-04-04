@@ -72,7 +72,8 @@ builtins! {
     }
 
     Nonitems {
-        16: (INFERRED_INT, TyKind::Int(IntTy::Inferred)),
-        17: (INFERRED_FLOAT, TyKind::Float(FloatTy::Inferred)),
+        16: (INFERRED, TyKind::Inferred),
+        17: (INFERRED_INT, TyKind::Int(IntTy::Inferred)),
+        18: (INFERRED_FLOAT, TyKind::Float(FloatTy::Inferred)),
     }
 }

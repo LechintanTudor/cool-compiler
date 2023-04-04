@@ -4,6 +4,7 @@ use smallvec::SmallVec;
 #[derive(Clone, PartialEq, Eq, Hash, Default, Debug)]
 pub enum TyKind {
     #[default]
+    Inferred,
     Unit,
     Int(IntTy),
     Float(FloatTy),

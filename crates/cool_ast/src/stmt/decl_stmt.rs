@@ -1,9 +1,9 @@
 use crate::expr::{ExprAst, GenericExprAst};
-use crate::{AstGenerator, Unify};
+use crate::{AstGenerator, ResolveAst, SemanticResult, TyMismatch, Unify};
 use cool_parser::{DeclStmt, Pattern};
 use cool_resolve::expr_ty::{Constraint, ExprTyUnifier};
 use cool_resolve::resolve::{BindingId, FrameId, ScopeId};
-use cool_resolve::ty::{TyId, TyTable};
+use cool_resolve::ty::{tys, TyId, TyTable};
 
 #[derive(Clone, Debug)]
 pub struct DeclStmtAst {
@@ -42,6 +42,22 @@ impl Unify for DeclStmtAst {
     }
 }
 
+impl ResolveAst for DeclStmtAst {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: Option<TyId>) -> SemanticResult<TyId> {
+        let expr_ty = self.expr.resolve(ast, self.explicit_ty_id)?;
+        ast.expr_tys.set_binding_ty(self.binding_id, expr_ty);
+
+        let resolved_ty = tys::UNIT
+            .resolve_non_inferred(expected_ty)
+            .ok_or(TyMismatch {
+                found_ty: tys::UNIT,
+                expected_ty,
+            })?;
+
+        Ok(resolved_ty)
+    }
+}
+
 impl AstGenerator<'_> {
     pub fn gen_decl_stmt(&mut self, scope_id: ScopeId, decl: &DeclStmt) -> DeclStmtAst {
         let frame_id = self.resolve.insert_frame(scope_id);
@@ -49,7 +65,7 @@ impl AstGenerator<'_> {
         let explicit_ty_id = decl
             .ty
             .as_ref()
-            .map(|ty| self.resolve_ty(scope_id, ty).unwrap());
+            .map(|ty| self.resolve_parsed_ty(scope_id, ty).unwrap());
 
         let binding_id = self
             .resolve

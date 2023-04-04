@@ -3,17 +3,18 @@ mod fn_call_expr;
 mod ident_expr;
 mod literal_expr;
 mod paren_expr;
+mod tuple_expr;
 
 pub use self::block_expr::*;
 pub use self::fn_call_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::paren_expr::*;
-use crate::{AstGenerator, Unify};
+use crate::{AstGenerator, ResolveAst, SemanticResult, Unify};
 use cool_parser::Expr;
 use cool_resolve::expr_ty::{ExprId, ExprTyUnifier};
 use cool_resolve::resolve::ScopeId;
-use cool_resolve::ty::TyTable;
+use cool_resolve::ty::{TyId, TyTable};
 
 pub trait GenericExprAst: Unify {
     fn id(&self) -> ExprId;
@@ -48,6 +49,18 @@ impl GenericExprAst for ExprAst {
             Self::Literal(e) => e.id(),
             Self::Paren(e) => e.id(),
             Self::FnCall(e) => e.id(),
+        }
+    }
+}
+
+impl ResolveAst for ExprAst {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: Option<TyId>) -> SemanticResult<TyId> {
+        match self {
+            Self::Block(e) => e.resolve(ast, expected_ty),
+            Self::Ident(e) => e.resolve(ast, expected_ty),
+            Self::Literal(e) => e.resolve(ast, expected_ty),
+            Self::Paren(e) => e.resolve(ast, expected_ty),
+            Self::FnCall(e) => e.resolve(ast, expected_ty),
         }
     }
 }

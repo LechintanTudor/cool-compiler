@@ -1,9 +1,9 @@
 use crate::expr::GenericExprAst;
-use crate::{AstGenerator, Unify};
+use crate::{AstGenerator, ResolveAst, SemanticResult, TyMismatch, Unify};
 use cool_parser::IdentExpr;
 use cool_resolve::expr_ty::{ExprId, ExprTyUnifier};
 use cool_resolve::resolve::{BindingId, ScopeId, SymbolKind};
-use cool_resolve::ty::TyTable;
+use cool_resolve::ty::{TyId, TyTable};
 
 #[derive(Clone, Debug)]
 pub struct IdentExprAst {
@@ -24,6 +24,26 @@ impl GenericExprAst for IdentExprAst {
     }
 }
 
+impl ResolveAst for IdentExprAst {
+    fn resolve(
+        &self,
+        ast: &mut AstGenerator,
+        expected_ty_id: Option<TyId>,
+    ) -> SemanticResult<TyId> {
+        let binding_ty = ast.expr_tys.get_binding_ty(self.binding_id);
+
+        let expr_ty = binding_ty
+            .resolve_non_inferred(expected_ty_id)
+            .ok_or(TyMismatch {
+                found_ty: binding_ty,
+                expected_ty: expected_ty_id,
+            })?;
+
+        ast.expr_tys.set_expr_ty(self.id, expr_ty);
+        Ok(expr_ty)
+    }
+}
+
 impl AstGenerator<'_> {
     pub fn gen_ident_expr(&mut self, scope_id: ScopeId, expr: &IdentExpr) -> IdentExprAst {
         let frame_id = match scope_id {
@@ -38,7 +58,7 @@ impl AstGenerator<'_> {
 
         match resolved {
             SymbolKind::Binding(binding_id) => IdentExprAst {
-                id: self.unification.add_expr(),
+                id: self.expr_tys.add_expr(),
                 binding_id,
             },
             _ => todo!("return error"),

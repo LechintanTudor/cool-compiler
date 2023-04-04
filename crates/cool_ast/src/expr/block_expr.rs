@@ -1,10 +1,10 @@
 use crate::expr::GenericExprAst;
 use crate::stmt::StmtAst;
-use crate::{AstGenerator, BlockElemAst, Unify};
+use crate::{AstGenerator, BlockElemAst, ResolveAst, SemanticResult, TyMismatch, Unify};
 use cool_parser::{BlockElem, BlockExpr, Stmt};
 use cool_resolve::expr_ty::{Constraint, ExprId, ExprTyUnifier};
 use cool_resolve::resolve::{FrameId, ScopeId};
-use cool_resolve::ty::{tys, TyTable};
+use cool_resolve::ty::{tys, TyId, TyTable};
 
 #[derive(Clone, Debug)]
 pub struct BlockExprAst {
@@ -35,9 +35,32 @@ impl Unify for BlockExprAst {
     }
 }
 
+impl ResolveAst for BlockExprAst {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: Option<TyId>) -> SemanticResult<TyId> {
+        let expr_ty = match self.elems.split_last() {
+            Some((last, others)) => {
+                for other in others {
+                    other.resolve(ast, None)?;
+                }
+
+                last.resolve(ast, expected_ty)?
+            }
+            None => tys::UNIT
+                .resolve_non_inferred(expected_ty)
+                .ok_or(TyMismatch {
+                    found_ty: tys::UNIT,
+                    expected_ty,
+                })?,
+        };
+
+        ast.expr_tys.set_expr_ty(self.id, expr_ty);
+        Ok(expr_ty)
+    }
+}
+
 impl AstGenerator<'_> {
     pub fn gen_block_expr(&mut self, scope_id: ScopeId, expr: &BlockExpr) -> BlockExprAst {
-        let id = self.unification.add_expr();
+        let id = self.expr_tys.add_expr();
 
         let frame_id = self.resolve.insert_frame(scope_id);
         let mut current_frame_id = frame_id;

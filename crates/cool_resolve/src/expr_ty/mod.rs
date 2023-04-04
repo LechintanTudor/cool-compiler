@@ -19,7 +19,16 @@ pub struct ExprTyTable {
 impl ExprTyTable {
     #[inline]
     pub fn add_expr(&mut self) -> ExprId {
-        self.expr_tys.push(tys::INFERRED_INT)
+        self.expr_tys.push(tys::INFERRED)
+    }
+
+    pub fn set_expr_ty(&mut self, expr_id: ExprId, ty_id: TyId) {
+        let expr_ty_id = &mut self.expr_tys[expr_id];
+        *expr_ty_id = expr_ty_id.resolve_non_inferred(Some(ty_id)).unwrap();
+    }
+
+    pub fn set_binding_ty(&mut self, binding_id: BindingId, ty_id: TyId) {
+        assert!(self.binding_tys.insert(binding_id, ty_id).is_none())
     }
 
     #[inline]
@@ -28,8 +37,8 @@ impl ExprTyTable {
     }
 
     #[inline]
-    pub fn get_binding_ty(&self, binding_id: BindingId) -> Option<TyId> {
-        self.binding_tys.get(&binding_id).copied()
+    pub fn get_binding_ty(&self, binding_id: BindingId) -> TyId {
+        self.binding_tys[&binding_id]
     }
 
     pub fn unifier(&mut self) -> ExprTyUnifier {

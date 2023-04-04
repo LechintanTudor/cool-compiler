@@ -3,11 +3,11 @@ mod expr_stmt;
 
 pub use self::decl_stmt::*;
 pub use self::expr_stmt::*;
-use crate::{AstGenerator, Unify};
+use crate::{AstGenerator, ResolveAst, SemanticResult, Unify};
 use cool_parser::Stmt;
 use cool_resolve::expr_ty::ExprTyUnifier;
 use cool_resolve::resolve::ScopeId;
-use cool_resolve::ty::TyTable;
+use cool_resolve::ty::{TyId, TyTable};
 
 #[derive(Clone, Debug)]
 pub enum StmtAst {
@@ -20,6 +20,15 @@ impl Unify for StmtAst {
         match self {
             Self::Decl(stmt) => stmt.unify(unifier, tys),
             Self::Expr(expr) => expr.unify(unifier, tys),
+        }
+    }
+}
+
+impl ResolveAst for StmtAst {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: Option<TyId>) -> SemanticResult<TyId> {
+        match self {
+            Self::Decl(decl) => decl.resolve(ast, expected_ty),
+            Self::Expr(expr) => expr.resolve(ast, expected_ty),
         }
     }
 }

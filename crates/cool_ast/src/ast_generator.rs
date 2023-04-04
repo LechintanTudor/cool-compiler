@@ -7,7 +7,7 @@ use cool_resolve::ItemPathBuf;
 pub struct AstGenerator<'a> {
     pub resolve: &'a mut ResolveTable,
     pub tys: &'a mut TyTable,
-    pub unification: ExprTyTable,
+    pub expr_tys: ExprTyTable,
 }
 
 impl<'a> AstGenerator<'a> {
@@ -16,11 +16,11 @@ impl<'a> AstGenerator<'a> {
         Self {
             resolve,
             tys,
-            unification: Default::default(),
+            expr_tys: Default::default(),
         }
     }
 
-    pub fn resolve_ty(&mut self, scope_id: ScopeId, parsed_ty: &Ty) -> ResolveResult<TyId> {
+    pub fn resolve_parsed_ty(&mut self, scope_id: ScopeId, parsed_ty: &Ty) -> ResolveResult<TyId> {
         match parsed_ty {
             Ty::Path(path) => {
                 let path = path
@@ -38,7 +38,7 @@ impl<'a> AstGenerator<'a> {
                 let mut elems = Vec::<TyId>::new();
 
                 for ty in tuple_ty.elems.iter() {
-                    elems.push(self.resolve_ty(scope_id, ty)?);
+                    elems.push(self.resolve_parsed_ty(scope_id, ty)?);
                 }
 
                 Ok(self.tys.mk_tuple(elems))

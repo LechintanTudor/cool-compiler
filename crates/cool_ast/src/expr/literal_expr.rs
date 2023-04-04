@@ -1,10 +1,10 @@
 use crate::expr::GenericExprAst;
-use crate::{AstGenerator, Unify};
+use crate::{AstGenerator, ResolveAst, SemanticResult, TyMismatch, Unify};
 use cool_lexer::symbols::{sym, Symbol};
 use cool_lexer::tokens::{LiteralKind, Radix};
 use cool_parser::LiteralExpr;
 use cool_resolve::expr_ty::{Constraint, ExprId, ExprTyUnifier};
-use cool_resolve::ty::{FloatTy, IntTy, TyTable};
+use cool_resolve::ty::{FloatTy, IntTy, TyId, TyTable};
 
 #[derive(Clone, Copy, Debug)]
 pub struct LiteralExprAst {
@@ -31,6 +31,21 @@ impl GenericExprAst for LiteralExprAst {
     }
 }
 
+impl ResolveAst for LiteralExprAst {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: Option<TyId>) -> SemanticResult<TyId> {
+        let literal_ty = self.kind.ty_id();
+        let resolved_ty = literal_ty
+            .resolve_non_inferred(expected_ty)
+            .ok_or(TyMismatch {
+                found_ty: literal_ty,
+                expected_ty,
+            })?;
+
+        ast.expr_tys.set_expr_ty(self.id, resolved_ty);
+        Ok(resolved_ty)
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum LiteralExprKindAst {
     Int { value: u128, ty: IntTy },
@@ -38,6 +53,16 @@ pub enum LiteralExprKindAst {
     Bool(bool),
     Str(Symbol),
     CStr(Symbol),
+}
+
+impl LiteralExprKindAst {
+    pub fn ty_id(&self) -> TyId {
+        match self {
+            Self::Int { ty, .. } => ty.ty_id(),
+            Self::Float { ty, .. } => ty.ty_id(),
+            _ => todo!(),
+        }
+    }
 }
 
 impl AstGenerator<'_> {
@@ -57,7 +82,7 @@ impl AstGenerator<'_> {
         };
 
         LiteralExprAst {
-            id: self.unification.add_expr(),
+            id: self.expr_tys.add_expr(),
             kind,
         }
     }

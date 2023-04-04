@@ -1,5 +1,5 @@
 use crate::expr::BlockExprAst;
-use crate::{AstGenerator, Unify};
+use crate::{AstGenerator, ResolveAst, SemanticResult, Unify};
 use cool_parser::FnItem;
 use cool_resolve::expr_ty::{Constraint, ExprTyUnifier};
 use cool_resolve::resolve::{BindingId, FrameId, ModuleId};
@@ -25,6 +25,13 @@ impl Unify for FnItemAst {
     }
 }
 
+impl ResolveAst for FnItemAst {
+    fn resolve(&self, ast: &mut AstGenerator, _expected_ty: Option<TyId>) -> SemanticResult<TyId> {
+        self.body.resolve(ast, None)?;
+        Ok(self.ty_id)
+    }
+}
+
 impl AstGenerator<'_> {
     // TODO: Use item type to infer types
     pub fn gen_fn(&mut self, module_id: ModuleId, fn_item: &FnItem) -> FnItemAst {
@@ -34,7 +41,7 @@ impl AstGenerator<'_> {
             .params
             .iter()
             .map(|param| {
-                self.resolve_ty(module_id.into(), param.ty.as_ref().unwrap())
+                self.resolve_parsed_ty(module_id.into(), param.ty.as_ref().unwrap())
                     .unwrap()
             })
             .collect::<Vec<_>>();
@@ -43,7 +50,7 @@ impl AstGenerator<'_> {
             .prototype
             .return_ty
             .as_ref()
-            .map(|ty| self.resolve_ty(module_id.into(), ty).unwrap())
+            .map(|ty| self.resolve_parsed_ty(module_id.into(), ty).unwrap())
             .unwrap_or(tys::UNIT);
 
         let ty_id = self.tys.mk_fn(param_ty_ids.iter().copied(), return_ty_id);
