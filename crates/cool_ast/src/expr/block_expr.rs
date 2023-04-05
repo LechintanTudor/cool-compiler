@@ -1,10 +1,10 @@
 use crate::expr::GenericExprAst;
 use crate::stmt::StmtAst;
-use crate::{AstGenerator, BlockElemAst, ResolveAst, SemanticResult, TyMismatch, Unify};
+use crate::{AstGenerator, BlockElemAst, ResolveAst, SemanticResult, TyMismatch};
 use cool_parser::{BlockElem, BlockExpr, Stmt};
-use cool_resolve::expr_ty::{Constraint, ExprId, ExprTyUnifier};
+use cool_resolve::expr_ty::ExprId;
 use cool_resolve::resolve::{FrameId, ScopeId};
-use cool_resolve::ty::{tys, TyId, TyTable};
+use cool_resolve::ty::{tys, TyId};
 
 #[derive(Clone, Debug)]
 pub struct BlockExprAst {
@@ -17,21 +17,6 @@ impl GenericExprAst for BlockExprAst {
     #[inline]
     fn id(&self) -> ExprId {
         self.id
-    }
-}
-
-impl Unify for BlockExprAst {
-    fn unify(&self, unifier: &mut ExprTyUnifier, tys: &mut TyTable) {
-        for elem in self.elems.iter() {
-            elem.unify(unifier, tys);
-        }
-
-        let rhs_constraint = match self.elems.last() {
-            Some(BlockElemAst::Expr(expr)) => Constraint::Expr(expr.id()),
-            _ => Constraint::Ty(tys::UNIT),
-        };
-
-        unifier.add_constraint(self.id, rhs_constraint);
     }
 }
 

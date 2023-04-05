@@ -1,9 +1,8 @@
-use crate::expr::{ExprAst, GenericExprAst};
-use crate::{AstGenerator, ResolveAst, SemanticResult, TyMismatch, Unify};
+use crate::expr::ExprAst;
+use crate::{AstGenerator, ResolveAst, SemanticResult, TyMismatch};
 use cool_parser::{DeclStmt, Pattern};
-use cool_resolve::expr_ty::{Constraint, ExprTyUnifier};
 use cool_resolve::resolve::{BindingId, FrameId, ScopeId};
-use cool_resolve::ty::{tys, TyId, TyTable};
+use cool_resolve::ty::{tys, TyId};
 
 #[derive(Clone, Debug)]
 pub struct DeclStmtAst {
@@ -12,34 +11,6 @@ pub struct DeclStmtAst {
     pub pattern: Pattern,
     pub explicit_ty_id: Option<TyId>,
     pub expr: ExprAst,
-}
-
-impl Unify for DeclStmtAst {
-    fn unify(&self, unifier: &mut ExprTyUnifier, tys: &mut TyTable) {
-        self.expr.unify(unifier, tys);
-
-        match self.explicit_ty_id {
-            Some(explicit_ty_id) => {
-                unifier.add_constraint(
-                    Constraint::Binding(self.binding_id),
-                    Constraint::Ty(explicit_ty_id),
-                );
-            }
-            None => {
-                let ty_var_id = unifier.add_ty_var();
-
-                unifier.add_constraint(
-                    Constraint::Binding(self.binding_id),
-                    Constraint::TyVar(ty_var_id),
-                )
-            }
-        }
-
-        unifier.add_constraint(
-            Constraint::Binding(self.binding_id),
-            Constraint::Expr(self.expr.id()),
-        );
-    }
 }
 
 impl ResolveAst for DeclStmtAst {

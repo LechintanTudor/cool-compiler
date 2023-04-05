@@ -1,22 +1,14 @@
 use crate::expr::{ExprAst, GenericExprAst};
-use crate::{AstGenerator, ResolveAst, SemanticResult, Unify};
+use crate::{AstGenerator, ResolveAst, SemanticResult};
 use cool_parser::ParenExpr;
-use cool_resolve::expr_ty::{Constraint, ExprId, ExprTyUnifier};
+use cool_resolve::expr_ty::ExprId;
 use cool_resolve::resolve::ScopeId;
-use cool_resolve::ty::{TyId, TyTable};
+use cool_resolve::ty::TyId;
 
 #[derive(Clone, Debug)]
 pub struct ParenExprAst {
     pub id: ExprId,
     pub inner: Box<ExprAst>,
-}
-
-impl Unify for ParenExprAst {
-    fn unify(&self, unifier: &mut ExprTyUnifier, tys: &mut TyTable) {
-        self.inner.unify(unifier, tys);
-
-        unifier.add_constraint(Constraint::Expr(self.id), Constraint::Expr(self.inner.id()));
-    }
 }
 
 impl GenericExprAst for ParenExprAst {

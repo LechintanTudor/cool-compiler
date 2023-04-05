@@ -1,20 +1,14 @@
 use crate::expr::GenericExprAst;
-use crate::{AstGenerator, ResolveAst, SemanticResult, TyMismatch, Unify};
+use crate::{AstGenerator, ResolveAst, SemanticResult, TyMismatch};
 use cool_parser::IdentExpr;
-use cool_resolve::expr_ty::{ExprId, ExprTyUnifier};
+use cool_resolve::expr_ty::ExprId;
 use cool_resolve::resolve::{BindingId, ScopeId, SymbolKind};
-use cool_resolve::ty::{TyId, TyTable};
+use cool_resolve::ty::TyId;
 
 #[derive(Clone, Debug)]
 pub struct IdentExprAst {
     pub id: ExprId,
     pub binding_id: BindingId,
-}
-
-impl Unify for IdentExprAst {
-    fn unify(&self, unifier: &mut ExprTyUnifier, _tys: &mut TyTable) {
-        unifier.add_constraint(self.id, self.binding_id);
-    }
 }
 
 impl GenericExprAst for IdentExprAst {

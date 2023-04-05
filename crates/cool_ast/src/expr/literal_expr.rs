@@ -1,27 +1,15 @@
 use crate::expr::GenericExprAst;
-use crate::{AstGenerator, ResolveAst, SemanticResult, TyMismatch, Unify};
+use crate::{AstGenerator, ResolveAst, SemanticResult, TyMismatch};
 use cool_lexer::symbols::{sym, Symbol};
 use cool_lexer::tokens::{LiteralKind, Radix};
 use cool_parser::LiteralExpr;
-use cool_resolve::expr_ty::{Constraint, ExprId, ExprTyUnifier};
-use cool_resolve::ty::{FloatTy, IntTy, TyId, TyTable};
+use cool_resolve::expr_ty::ExprId;
+use cool_resolve::ty::{FloatTy, IntTy, TyId};
 
 #[derive(Clone, Copy, Debug)]
 pub struct LiteralExprAst {
     pub id: ExprId,
     pub kind: LiteralExprKindAst,
-}
-
-impl Unify for LiteralExprAst {
-    fn unify(&self, unifier: &mut ExprTyUnifier, _tys: &mut TyTable) {
-        let ty_id = match self.kind {
-            LiteralExprKindAst::Int { ty, .. } => ty.ty_id(),
-            LiteralExprKindAst::Float { ty, .. } => ty.ty_id(),
-            _ => todo!(),
-        };
-
-        unifier.add_constraint(Constraint::Expr(self.id), Constraint::Ty(ty_id));
-    }
 }
 
 impl GenericExprAst for LiteralExprAst {

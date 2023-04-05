@@ -10,13 +10,13 @@ pub use self::fn_call_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::paren_expr::*;
-use crate::{AstGenerator, ResolveAst, SemanticResult, Unify};
+use crate::{AstGenerator, ResolveAst, SemanticResult};
 use cool_parser::Expr;
-use cool_resolve::expr_ty::{ExprId, ExprTyUnifier};
+use cool_resolve::expr_ty::ExprId;
 use cool_resolve::resolve::ScopeId;
-use cool_resolve::ty::{TyId, TyTable};
+use cool_resolve::ty::TyId;
 
-pub trait GenericExprAst: Unify {
+pub trait GenericExprAst {
     fn id(&self) -> ExprId;
 }
 
@@ -27,18 +27,6 @@ pub enum ExprAst {
     Literal(LiteralExprAst),
     Paren(ParenExprAst),
     FnCall(FnCallExprAst),
-}
-
-impl Unify for ExprAst {
-    fn unify(&self, unifier: &mut ExprTyUnifier, tys: &mut TyTable) {
-        match self {
-            Self::Block(e) => e.unify(unifier, tys),
-            Self::Ident(e) => e.unify(unifier, tys),
-            Self::Literal(e) => e.unify(unifier, tys),
-            Self::Paren(e) => e.unify(unifier, tys),
-            Self::FnCall(e) => e.unify(unifier, tys),
-        }
-    }
 }
 
 impl GenericExprAst for ExprAst {

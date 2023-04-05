@@ -1,23 +1,15 @@
 use crate::expr::{ExprAst, GenericExprAst};
-use crate::{
-    AstGenerator, InvalidArgCount, ResolveAst, SemanticResult, TyMismatch, TyNotFn, Unify,
-};
+use crate::{AstGenerator, InvalidArgCount, ResolveAst, SemanticResult, TyMismatch, TyNotFn};
 use cool_parser::FnCallExpr;
-use cool_resolve::expr_ty::{ExprId, ExprTyUnifier};
+use cool_resolve::expr_ty::ExprId;
 use cool_resolve::resolve::ScopeId;
-use cool_resolve::ty::{TyId, TyTable};
+use cool_resolve::ty::TyId;
 
 #[derive(Clone, Debug)]
 pub struct FnCallExprAst {
     pub id: ExprId,
     pub fn_expr: Box<ExprAst>,
     pub arg_exprs: Vec<ExprAst>,
-}
-
-impl Unify for FnCallExprAst {
-    fn unify(&self, _unififer: &mut ExprTyUnifier, _tys: &mut TyTable) {
-        todo!()
-    }
 }
 
 impl ResolveAst for FnCallExprAst {
