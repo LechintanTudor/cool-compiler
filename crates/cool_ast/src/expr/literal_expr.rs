@@ -20,7 +20,7 @@ impl GenericExprAst for LiteralExprAst {
 }
 
 impl ResolveAst for LiteralExprAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: Option<TyId>) -> SemanticResult<TyId> {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
         let literal_ty = self.kind.ty_id();
         let resolved_ty = literal_ty
             .resolve_non_inferred(expected_ty)

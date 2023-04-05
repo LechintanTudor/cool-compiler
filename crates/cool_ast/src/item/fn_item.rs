@@ -13,8 +13,8 @@ pub struct FnItemAst {
 }
 
 impl ResolveAst for FnItemAst {
-    fn resolve(&self, ast: &mut AstGenerator, _expected_ty: Option<TyId>) -> SemanticResult<TyId> {
-        self.body.resolve(ast, None)?;
+    fn resolve(&self, ast: &mut AstGenerator, _expected_ty: TyId) -> SemanticResult<TyId> {
+        self.body.resolve(ast, tys::INFERRED)?;
         Ok(self.ty_id)
     }
 }

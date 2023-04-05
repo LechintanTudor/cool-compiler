@@ -55,7 +55,7 @@ impl From<InvalidArgCount> for SemanticError {
 #[derive(Clone, Debug)]
 pub struct TyMismatch {
     pub found_ty: TyId,
-    pub expected_ty: Option<TyId>,
+    pub expected_ty: TyId,
 }
 
 impl Error for TyMismatch {

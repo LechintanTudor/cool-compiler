@@ -14,11 +14,6 @@ pub enum TyKind {
 
 impl TyKind {
     #[inline]
-    pub fn is_builtin(&self) -> bool {
-        matches!(self, Self::Unit | Self::Int(_) | Self::Float(_))
-    }
-
-    #[inline]
     pub fn as_fn_ty(&self) -> Option<&FnTy> {
         match self {
             Self::Fn(fn_ty) => Some(fn_ty),

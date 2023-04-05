@@ -42,7 +42,7 @@ impl GenericExprAst for ExprAst {
 }
 
 impl ResolveAst for ExprAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: Option<TyId>) -> SemanticResult<TyId> {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
         match self {
             Self::Block(e) => e.resolve(ast, expected_ty),
             Self::Ident(e) => e.resolve(ast, expected_ty),

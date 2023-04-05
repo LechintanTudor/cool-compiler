@@ -2,6 +2,7 @@ use crate::item::item_decl::ItemDeclAst;
 use crate::{AstGenerator, ItemAst, ResolveAst};
 use cool_parser::{Item, ModuleContent};
 use cool_resolve::resolve::ModuleId;
+use cool_resolve::ty::tys;
 
 #[derive(Clone, Debug)]
 pub struct ModuleItemAst {
@@ -20,7 +21,7 @@ impl AstGenerator<'_> {
             let item: ItemAst = match &decl.item {
                 Item::Fn(fn_item) => {
                     let fn_ast = self.gen_fn(module_id, fn_item);
-                    fn_ast.resolve(self, None).unwrap();
+                    fn_ast.resolve(self, tys::INFERRED).unwrap();
                     fn_ast.into()
                 }
                 _ => todo!(),

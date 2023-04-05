@@ -8,7 +8,7 @@ pub struct ExprStmtAst {
 }
 
 impl ResolveAst for ExprStmtAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: Option<TyId>) -> SemanticResult<TyId> {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
         self.expr.resolve(ast, expected_ty)?;
         Ok(tys::UNIT)
     }

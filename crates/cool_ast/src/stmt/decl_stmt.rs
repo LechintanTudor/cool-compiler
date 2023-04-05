@@ -9,12 +9,12 @@ pub struct DeclStmtAst {
     pub frame_id: FrameId,
     pub binding_id: BindingId,
     pub pattern: Pattern,
-    pub explicit_ty_id: Option<TyId>,
+    pub explicit_ty_id: TyId,
     pub expr: ExprAst,
 }
 
 impl ResolveAst for DeclStmtAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: Option<TyId>) -> SemanticResult<TyId> {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
         let expr_ty = self.expr.resolve(ast, self.explicit_ty_id)?;
         ast.expr_tys.set_binding_ty(self.binding_id, expr_ty);
 
@@ -36,7 +36,8 @@ impl AstGenerator<'_> {
         let explicit_ty_id = decl
             .ty
             .as_ref()
-            .map(|ty| self.resolve_parsed_ty(scope_id, ty).unwrap());
+            .map(|ty| self.resolve_parsed_ty(scope_id, ty).unwrap())
+            .unwrap_or(tys::INFERRED);
 
         let binding_id = self
             .resolve

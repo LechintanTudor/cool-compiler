@@ -19,7 +19,7 @@ impl GenericExprAst for ParenExprAst {
 }
 
 impl ResolveAst for ParenExprAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: Option<TyId>) -> SemanticResult<TyId> {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
         let inner_ty = self.inner.resolve(ast, expected_ty)?;
         ast.expr_tys.set_expr_ty(self.id, inner_ty);
         Ok(inner_ty)

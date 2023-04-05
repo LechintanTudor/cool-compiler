@@ -25,23 +25,17 @@ impl TyId {
     }
 
     #[inline]
-    pub fn resolve_non_inferred(self, expected: Option<Self>) -> Option<Self> {
-        let Some(expected) = expected else {
-            return if !self.is_inferred() {
-                Some(self)
-            } else {
-                None
-            };
-        };
-
-        if self == tys::INFERRED_INT && expected.is_int() {
-            Some(expected)
-        } else if self == tys::INFERRED_FLOAT && expected.is_float() {
-            Some(expected)
-        } else if self == tys::INFERRED {
-            Some(expected)
-        } else if self == expected {
+    pub fn resolve_non_inferred(self, expected: Self) -> Option<Self> {
+        if expected == tys::INFERRED && !self.is_inferred() {
             Some(self)
+        } else if expected == tys::INFERRED_INT && self.is_int() {
+            Some(self)
+        } else if expected == tys::INFERRED_FLOAT && self.is_float() {
+            Some(self)
+        } else if self.is_inferred() {
+            Some(expected)
+        } else if expected == self {
+            Some(expected)
         } else {
             None
         }

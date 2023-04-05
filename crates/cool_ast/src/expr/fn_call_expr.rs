@@ -3,7 +3,7 @@ use crate::{AstGenerator, InvalidArgCount, ResolveAst, SemanticResult, TyMismatc
 use cool_parser::FnCallExpr;
 use cool_resolve::expr_ty::ExprId;
 use cool_resolve::resolve::ScopeId;
-use cool_resolve::ty::TyId;
+use cool_resolve::ty::{tys, TyId};
 
 #[derive(Clone, Debug)]
 pub struct FnCallExprAst {
@@ -13,8 +13,8 @@ pub struct FnCallExprAst {
 }
 
 impl ResolveAst for FnCallExprAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: Option<TyId>) -> SemanticResult<TyId> {
-        let fn_expr_ty = self.fn_expr.resolve(ast, None)?;
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
+        let fn_expr_ty = self.fn_expr.resolve(ast, tys::INFERRED)?;
         let fn_expr_ty_kind = ast
             .tys
             .get_kind_by_id(fn_expr_ty)
@@ -32,7 +32,7 @@ impl ResolveAst for FnCallExprAst {
         }
 
         for (arg_expr, &param_ty) in self.arg_exprs.iter().zip(fn_expr_ty_kind.params.iter()) {
-            arg_expr.resolve(ast, Some(param_ty))?;
+            arg_expr.resolve(ast, param_ty)?;
         }
 
         let expr_ty = fn_expr_ty_kind

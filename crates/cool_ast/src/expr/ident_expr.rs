@@ -19,18 +19,14 @@ impl GenericExprAst for IdentExprAst {
 }
 
 impl ResolveAst for IdentExprAst {
-    fn resolve(
-        &self,
-        ast: &mut AstGenerator,
-        expected_ty_id: Option<TyId>,
-    ) -> SemanticResult<TyId> {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
         let binding_ty = ast.expr_tys.get_binding_ty(self.binding_id);
 
         let expr_ty = binding_ty
-            .resolve_non_inferred(expected_ty_id)
+            .resolve_non_inferred(expected_ty)
             .ok_or(TyMismatch {
                 found_ty: binding_ty,
-                expected_ty: expected_ty_id,
+                expected_ty,
             })?;
 
         ast.expr_tys.set_expr_ty(self.id, expr_ty);

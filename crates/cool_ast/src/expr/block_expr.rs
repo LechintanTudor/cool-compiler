@@ -21,11 +21,11 @@ impl GenericExprAst for BlockExprAst {
 }
 
 impl ResolveAst for BlockExprAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: Option<TyId>) -> SemanticResult<TyId> {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
         let expr_ty = match self.elems.split_last() {
             Some((last, others)) => {
                 for other in others {
-                    other.resolve(ast, None)?;
+                    other.resolve(ast, tys::INFERRED)?;
                 }
 
                 last.resolve(ast, expected_ty)?
