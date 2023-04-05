@@ -1,7 +1,7 @@
 use crate::expr::GenericExprAst;
 use crate::{AstGenerator, ResolveAst, SemanticResult, TyMismatch};
 use cool_lexer::symbols::{sym, Symbol};
-use cool_lexer::tokens::{LiteralKind, Radix};
+use cool_lexer::tokens::LiteralKind;
 use cool_parser::LiteralExpr;
 use cool_resolve::expr_ty::ExprId;
 use cool_resolve::ty::{FloatTy, IntTy, TyId};
@@ -56,9 +56,7 @@ impl LiteralExprKindAst {
 impl AstGenerator<'_> {
     pub fn gen_literal_expr(&mut self, expr: &LiteralExpr) -> LiteralExprAst {
         let kind = match expr.literal.kind {
-            LiteralKind::Int { radix: Radix::Ten } => {
-                self.gen_base_10_int(expr.literal.symbol.as_str())
-            }
+            LiteralKind::Number => self.gen_base_10_int(expr.literal.symbol.as_str()),
             LiteralKind::Bool => {
                 if expr.literal.symbol == sym::KW_TRUE {
                     LiteralExprKindAst::Bool(true)

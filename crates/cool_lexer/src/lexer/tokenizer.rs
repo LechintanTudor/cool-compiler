@@ -1,6 +1,6 @@
 use crate::lexer::{Cursor, TokenStream, EOF_CHAR};
 use crate::symbols::Symbol;
-use crate::tokens::{Literal, LiteralKind, Punctuation, Radix, Token, TokenKind};
+use crate::tokens::{Literal, LiteralKind, Punctuation, Token, TokenKind};
 use cool_span::Span;
 
 pub struct Tokenizer<'a> {
@@ -51,7 +51,22 @@ impl<'a> Tokenizer<'a> {
             self.punctuation(start)
         } else if ('0'..='9').contains(&first_char) {
             self.buffer.push(first_char);
-            self.number()
+
+            match self.cursor.first() {
+                'b' => {
+                    self.buffer.push(self.cursor.bump());
+                    self.binary_number()
+                }
+                'o' => {
+                    self.buffer.push(self.cursor.bump());
+                    self.octal_number()
+                }
+                'x' => {
+                    self.buffer.push(self.cursor.bump());
+                    self.hexadecimal_number()
+                }
+                _ => self.decimal_number(),
+            }
         } else if first_char == '"' {
             self.string()
         } else if first_char == '\'' {
@@ -119,9 +134,27 @@ impl<'a> Tokenizer<'a> {
         TokenKind::Punctuation(punctuation)
     }
 
-    fn number(&mut self) -> TokenKind {
+    fn binary_number(&mut self) -> TokenKind {
+        self.number_literal(|c| ('0'..'1').contains(&c))
+    }
+
+    fn octal_number(&mut self) -> TokenKind {
+        self.number_literal(|c| ('0'..'7').contains(&c))
+    }
+
+    fn decimal_number(&mut self) -> TokenKind {
+        self.number_literal(|c| ('0'..'9').contains(&c))
+    }
+
+    fn hexadecimal_number(&mut self) -> TokenKind {
+        self.number_literal(|c| {
+            ('0'..'9').contains(&c) || ('a'..'f').contains(&c) || ('A'..'F').contains(&c)
+        })
+    }
+
+    fn number_literal(&mut self, is_digit_allowed: impl Fn(char) -> bool) -> TokenKind {
         self.cursor.consume_while(|char| {
-            if !(('0'..='9').contains(&char) || char == '_') {
+            if !(is_digit_allowed(char) || char == '_') {
                 return false;
             }
 
@@ -151,7 +184,7 @@ impl<'a> Tokenizer<'a> {
         self.buffer.clear();
 
         TokenKind::Literal(Literal {
-            kind: LiteralKind::Int { radix: Radix::Ten },
+            kind: LiteralKind::Number,
             symbol,
         })
     }
