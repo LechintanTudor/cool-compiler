@@ -8,3 +8,5 @@ cool_lexer = { path = "../cool_lexer" }
 cool_parser = { path = "../cool_parser" }
 cool_resolve = { path = "../cool_resolve" }
 cool_span = { path = "../cool_span" }
+paste = "1.0"
+smallvec = { workspace = true }

@@ -1,8 +1,10 @@
+mod abstract_fn;
 mod assign_pattern;
 mod block_elem;
 mod error;
 mod expr;
 mod fn_extern_decl;
+mod fn_prototype;
 mod ident;
 mod item;
 mod parse_tree;
@@ -11,11 +13,13 @@ mod pattern;
 mod stmt;
 mod ty;
 
+pub use self::abstract_fn::*;
 pub use self::assign_pattern::*;
 pub use self::block_elem::*;
 pub use self::error::*;
 pub use self::expr::*;
 pub use self::fn_extern_decl::*;
+pub use self::fn_prototype::*;
 pub use self::ident::*;
 pub use self::item::*;
 pub use self::parse_tree::*;

@@ -2,6 +2,7 @@ mod access_expr;
 mod array_expr;
 mod block_expr;
 mod fn_call_expr;
+mod fn_expr;
 mod ident_expr;
 mod literal_expr;
 mod paren_expr;
@@ -12,6 +13,7 @@ pub use self::access_expr::*;
 pub use self::array_expr::*;
 pub use self::block_expr::*;
 pub use self::fn_call_expr::*;
+pub use self::fn_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::paren_expr::*;
@@ -63,6 +65,7 @@ define_expr! {
     Access,
     Array,
     Block,
+    Fn,
     FnCall,
     Ident,
     Literal,

@@ -1,27 +1,38 @@
-mod fn_item;
+mod const_item;
 mod item_decl;
 mod module_item;
 
-pub use self::fn_item::*;
+pub use self::const_item::*;
 pub use self::item_decl::*;
 pub use self::module_item::*;
+use crate::{AstGenerator, ResolveAst, SemanticResult};
+use cool_resolve::ty::TyId;
 
 #[derive(Clone, Debug)]
 pub enum ItemAst {
-    Fn(FnItemAst),
     Module(ModuleItemAst),
+    Const(ConstItemAst),
 }
 
-impl From<FnItemAst> for ItemAst {
-    #[inline]
-    fn from(fn_ast: FnItemAst) -> Self {
-        Self::Fn(fn_ast)
+impl ResolveAst for ItemAst {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
+        match self {
+            Self::Module(item) => item.resolve(ast, expected_ty),
+            Self::Const(item) => item.resolve(ast, expected_ty),
+        }
     }
 }
 
 impl From<ModuleItemAst> for ItemAst {
     #[inline]
-    fn from(module_ast: ModuleItemAst) -> Self {
-        Self::Module(module_ast)
+    fn from(module_item: ModuleItemAst) -> Self {
+        Self::Module(module_item)
+    }
+}
+
+impl From<ConstItemAst> for ItemAst {
+    #[inline]
+    fn from(const_item: ConstItemAst) -> Self {
+        Self::Const(const_item)
     }
 }

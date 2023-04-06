@@ -9,6 +9,7 @@ pub enum SemanticError {
     TyMismatch(TyMismatch),
     TyNotFn(TyNotFn),
     InvalidArgCount(InvalidArgCount),
+    TyHintMissing(TyHintMissing),
 }
 
 impl Error for SemanticError {
@@ -17,6 +18,7 @@ impl Error for SemanticError {
             Self::TyMismatch(e) => Some(e),
             Self::TyNotFn(e) => Some(e),
             Self::InvalidArgCount(e) => Some(e),
+            Self::TyHintMissing(e) => Some(e),
         }
     }
 }
@@ -27,6 +29,7 @@ impl fmt::Display for SemanticError {
             Self::TyMismatch(e) => fmt::Display::fmt(e, f),
             Self::TyNotFn(e) => fmt::Display::fmt(e, f),
             Self::InvalidArgCount(e) => fmt::Display::fmt(e, f),
+            Self::TyHintMissing(e) => fmt::Display::fmt(e, f),
         }
     }
 }
@@ -49,6 +52,13 @@ impl From<InvalidArgCount> for SemanticError {
     #[inline]
     fn from(error: InvalidArgCount) -> Self {
         Self::InvalidArgCount(error)
+    }
+}
+
+impl From<TyHintMissing> for SemanticError {
+    #[inline]
+    fn from(error: TyHintMissing) -> Self {
+        Self::TyHintMissing(error)
     }
 }
 
@@ -100,5 +110,18 @@ impl fmt::Display for InvalidArgCount {
             "invalid argument count: found {}, expected {}",
             self.found, self.expected
         )
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct TyHintMissing;
+
+impl Error for TyHintMissing {
+    // Empty
+}
+
+impl fmt::Display for TyHintMissing {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "missing type hint")
     }
 }

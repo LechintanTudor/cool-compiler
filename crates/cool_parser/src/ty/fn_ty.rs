@@ -21,7 +21,7 @@ pub struct FnTy {
     pub span: Span,
     pub extern_decl: Option<FnExternDecl>,
     pub param_list: FnTyParamList,
-    pub return_ty: Option<Box<Ty>>,
+    pub ret_ty: Option<Box<Ty>>,
 }
 
 impl ParseTree for FnTy {
@@ -99,7 +99,7 @@ impl Parser<'_> {
             span,
             extern_decl,
             param_list,
-            return_ty,
+            ret_ty: return_ty,
         })
     }
 }

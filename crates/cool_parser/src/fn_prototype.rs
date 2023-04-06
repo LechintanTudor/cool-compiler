@@ -36,7 +36,7 @@ pub struct FnPrototype {
     pub span: Span,
     pub extern_decl: Option<FnExternDecl>,
     pub param_list: FnParamList,
-    pub return_ty: Option<Ty>,
+    pub ret_ty: Option<Ty>,
 }
 
 impl ParseTree for FnPrototype {
@@ -147,7 +147,7 @@ impl Parser<'_> {
             span,
             extern_decl,
             param_list,
-            return_ty,
+            ret_ty: return_ty,
         })
     }
 }

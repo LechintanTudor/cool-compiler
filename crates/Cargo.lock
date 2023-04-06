@@ -161,6 +161,8 @@ dependencies = [
  "cool_parser",
  "cool_resolve",
  "cool_span",
+ "paste",
+ "smallvec",
 ]
 
 [[package]]

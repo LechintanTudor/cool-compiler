@@ -1,5 +1,6 @@
 mod block_expr;
 mod fn_call_expr;
+mod fn_expr;
 mod ident_expr;
 mod literal_expr;
 mod paren_expr;
@@ -7,6 +8,7 @@ mod tuple_expr;
 
 pub use self::block_expr::*;
 pub use self::fn_call_expr::*;
+pub use self::fn_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::paren_expr::*;
@@ -15,42 +17,57 @@ use cool_parser::Expr;
 use cool_resolve::expr_ty::ExprId;
 use cool_resolve::resolve::ScopeId;
 use cool_resolve::ty::TyId;
+use paste::paste;
 
 pub trait GenericExprAst {
     fn id(&self) -> ExprId;
 }
 
-#[derive(Clone, Debug)]
-pub enum ExprAst {
-    Block(BlockExprAst),
-    Ident(IdentExprAst),
-    Literal(LiteralExprAst),
-    Paren(ParenExprAst),
-    FnCall(FnCallExprAst),
+macro_rules! define_expr_ast {
+    { $($Variant:ident,)+ } => {
+        paste! {
+            #[derive(Clone, Debug)]
+            pub enum ExprAst {
+                $($Variant([<$Variant ExprAst>]),)+
+            }
+        }
+
+        impl GenericExprAst for ExprAst {
+            fn id(&self) -> ExprId {
+                match self {
+                    $(Self::$Variant(e) => e.id(),)+
+                }
+            }
+        }
+
+        impl ResolveAst for ExprAst {
+            fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
+                match self {
+                    $(Self::$Variant(e) => e.resolve(ast, expected_ty),)+
+                }
+            }
+        }
+
+        paste! {
+            $(
+                impl From<[<$Variant ExprAst>]> for ExprAst {
+                    #[inline]
+                    fn from(expr: [<$Variant ExprAst>]) -> Self {
+                        Self::$Variant(expr)
+                    }
+                }
+            )+
+        }
+    };
 }
 
-impl GenericExprAst for ExprAst {
-    fn id(&self) -> ExprId {
-        match self {
-            Self::Block(e) => e.id(),
-            Self::Ident(e) => e.id(),
-            Self::Literal(e) => e.id(),
-            Self::Paren(e) => e.id(),
-            Self::FnCall(e) => e.id(),
-        }
-    }
-}
-
-impl ResolveAst for ExprAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
-        match self {
-            Self::Block(e) => e.resolve(ast, expected_ty),
-            Self::Ident(e) => e.resolve(ast, expected_ty),
-            Self::Literal(e) => e.resolve(ast, expected_ty),
-            Self::Paren(e) => e.resolve(ast, expected_ty),
-            Self::FnCall(e) => e.resolve(ast, expected_ty),
-        }
-    }
+define_expr_ast! {
+    Block,
+    Fn,
+    FnCall,
+    Ident,
+    Literal,
+    Paren,
 }
 
 impl AstGenerator<'_> {

@@ -75,5 +75,6 @@ builtins! {
         16: (INFERRED, TyKind::Inferred),
         17: (INFERRED_INT, TyKind::Int(IntTy::Inferred)),
         18: (INFERRED_FLOAT, TyKind::Float(FloatTy::Inferred)),
+        19: (MODULE, TyKind::Module),
     }
 }

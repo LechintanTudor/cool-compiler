@@ -1,11 +1,11 @@
 use crate::paths::ModulePaths;
 use crate::SourceFile;
-use cool_ast::{AstGenerator, ModuleItemAst};
+use cool_ast::{AstGenerator, ModuleItemAst, ResolveAst};
 use cool_lexer::lexer::{LexedSourceFile, Tokenizer};
 use cool_lexer::symbols::Symbol;
 use cool_parser::{DeclKind, Item, ModuleContent, ModuleKind, ParseResult, Parser};
 use cool_resolve::resolve::{ModuleId, ResolveError, ResolveErrorKind, ResolveTable};
-use cool_resolve::ty::TyTable;
+use cool_resolve::ty::{tys, TyTable};
 use cool_resolve::ItemPathBuf;
 use std::collections::VecDeque;
 use std::fs::File;
@@ -103,7 +103,7 @@ impl<'a> Driver<'a> {
                                 }
                             }
                         }
-                        Item::Fn(_) | Item::ExternFn(_) => {
+                        Item::Const(_) | Item::ExternFn(_) => {
                             self.resolve
                                 .insert_item(module_id, is_exported, decl.ident.symbol)
                                 .unwrap();
@@ -203,11 +203,14 @@ fn parse_source_file(paths: ModulePaths, module_id: ModuleId) -> ParseResult<Sou
 
 pub fn generate_ast(package: &mut Package) -> Result<Vec<ModuleItemAst>, ()> {
     let mut ast_generator = AstGenerator::new(&mut package.resolve, &mut package.tys);
-
     let mut module_asts = Vec::<ModuleItemAst>::new();
 
     for source in package.sources.iter() {
         module_asts.push(ast_generator.gen_module(source.module_id, &source.module));
+    }
+
+    for module_ast in module_asts.iter() {
+        module_ast.resolve(&mut ast_generator, tys::MODULE).unwrap();
     }
 
     Ok(module_asts)
