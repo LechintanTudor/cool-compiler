@@ -1,3 +1,8 @@
+use crate::resolve::ResolveTable;
+use crate::ty::{FloatTy, IntTy, TyKind};
+use crate::ModuleTy;
+use cool_lexer::symbols::sym;
+
 macro_rules! builtins {
     {
         Items {
@@ -9,19 +14,12 @@ macro_rules! builtins {
     } => {
         #[allow(dead_code)]
         pub mod itm {
-            use crate::resolve::{ItemId, ResolveTable};
+            use crate::resolve::{ItemId};
+
 
             $(
                 pub const $item_ident: ItemId = unsafe { ItemId::new_unchecked($item_idx) };
             )+
-
-            pub fn insert_builtins(resolve: &mut ResolveTable) {
-                use cool_lexer::symbols::sym;
-
-                $(
-                    resolve.insert_builtin_item($item_ident, sym::$item_ident);
-                )+
-            }
         }
 
         #[allow(dead_code)]
@@ -35,17 +33,28 @@ macro_rules! builtins {
             $(
                 pub const $nonitem_ident: TyId = unsafe { TyId::new_unchecked($nonitem_idx) };
             )+
+        }
 
-            pub fn insert_builtins(tys: &mut TyTable) {
-                use super::itm;
+        impl ResolveTable {
+            pub fn with_builtins() -> Self {
+                let mut resolve = ResolveTable::default();
+                resolve.insert_root_module(sym::EMPTY).unwrap();
+                resolve.insert_builtin_ty(tys::UNIT, TyKind::Unit);
 
-                tys.insert_builtin(UNIT, TyKind::Unit);
                 $(
-                    tys.insert_builtin_item(itm::$item_ident, $item_ident, $item_value);
+                    resolve.insert_builtin_ty_item(
+                        sym::$item_ident,
+                        itm::$item_ident,
+                        tys::$item_ident,
+                        $item_value,
+                    );
                 )+
+
                 $(
-                    tys.insert_builtin($nonitem_ident, $nonitem_value);
+                    resolve.insert_builtin_ty(tys::$nonitem_ident, $nonitem_value);
                 )+
+
+                resolve
             }
         }
     };
@@ -75,6 +84,6 @@ builtins! {
         16: (INFERRED, TyKind::Inferred),
         17: (INFERRED_INT, TyKind::Int(IntTy::Inferred)),
         18: (INFERRED_FLOAT, TyKind::Float(FloatTy::Inferred)),
-        19: (MODULE, TyKind::Module),
+        19: (MODULE, TyKind::Module(ModuleTy::Inferred)),
     }
 }

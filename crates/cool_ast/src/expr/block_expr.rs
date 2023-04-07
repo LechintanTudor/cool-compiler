@@ -47,7 +47,7 @@ impl AstGenerator<'_> {
     pub fn gen_block_expr(&mut self, scope_id: ScopeId, expr: &BlockExpr) -> BlockExprAst {
         let id = self.expr_tys.add_expr();
 
-        let frame_id = self.resolve.insert_frame(scope_id);
+        let frame_id = self.resolve.add_frame(scope_id);
         let mut current_frame_id = frame_id;
 
         let mut elems = Vec::<BlockElemAst>::new();

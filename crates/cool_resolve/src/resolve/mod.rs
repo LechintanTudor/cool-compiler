@@ -1,37 +1,36 @@
+mod resolve_binding;
 mod resolve_error;
+mod resolve_expr;
 mod resolve_global;
+mod resolve_item;
 mod resolve_local;
-mod resolve_types;
+mod resolve_scope;
+mod resolve_ty;
 
+pub use self::resolve_binding::*;
 pub use self::resolve_error::*;
+pub use self::resolve_expr::*;
 pub use self::resolve_global::*;
+pub use self::resolve_item::*;
 pub use self::resolve_local::*;
-pub use self::resolve_types::*;
-use crate::expr_ty::ExprId;
-use crate::ty::{tys, TyId, TyKind};
-use cool_arena::{Arena, SliceArena};
+pub use self::resolve_scope::*;
+pub use self::resolve_ty::*;
+use crate::ty::{tys, TyId};
+use crate::TyTable;
+use cool_arena::SliceArena;
 use cool_collections::IdIndexedVec;
 use cool_lexer::symbols::Symbol;
+use std::ops;
 
 #[derive(Debug)]
 pub struct ResolveTable {
     paths: SliceArena<ItemId, Symbol>,
-    tys: Arena<TyId, TyKind>,
+    tys: TyTable,
     items: IdIndexedVec<ItemId, ItemKind>,
     modules: IdIndexedVec<ModuleId, Module>,
     bindings: IdIndexedVec<BindingId, Binding>,
     frames: IdIndexedVec<FrameId, Frame>,
     exprs: IdIndexedVec<ExprId, TyId>,
-}
-
-impl ResolveTable {
-    pub fn with_builtins() -> Self {
-        Self::default()
-    }
-
-    pub fn insert_builtin_item(&mut self, _item_id: ItemId, _symbol: Symbol) {
-        todo!()
-    }
 }
 
 impl Default for ResolveTable {
@@ -54,5 +53,14 @@ impl Default for ResolveTable {
             }),
             exprs: Default::default(),
         }
+    }
+}
+
+impl ops::Index<ItemId> for ResolveTable {
+    type Output = ItemKind;
+
+    #[inline]
+    fn index(&self, item_id: ItemId) -> &Self::Output {
+        &self.items[item_id]
     }
 }

@@ -31,7 +31,7 @@ impl ResolveAst for DeclStmtAst {
 
 impl AstGenerator<'_> {
     pub fn gen_decl_stmt(&mut self, scope_id: ScopeId, decl: &DeclStmt) -> DeclStmtAst {
-        let frame_id = self.resolve.insert_frame(scope_id);
+        let frame_id = self.resolve.add_frame(scope_id);
 
         let explicit_ty_id = decl
             .ty

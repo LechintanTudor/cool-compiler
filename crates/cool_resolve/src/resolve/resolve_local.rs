@@ -1,37 +1,9 @@
 use crate::resolve::{
-    Binding, BindingId, Frame, FrameId, ItemKind, ModuleId, Mutability, ResolveError,
-    ResolveResult, ResolveTable, ScopeId,
+    FrameId, ItemKind, ModuleId, ResolveError, ResolveResult, ResolveTable, ScopeId,
 };
-use crate::ty::tys;
 use cool_lexer::symbols::Symbol;
 
 impl ResolveTable {
-    #[inline]
-    pub fn insert_frame(&mut self, parent_id: ScopeId) -> FrameId {
-        self.frames.push(Frame::new(parent_id))
-    }
-
-    pub fn insert_local_binding(
-        &mut self,
-        frame_id: FrameId,
-        is_mutable: bool,
-        symbol: Symbol,
-    ) -> ResolveResult<BindingId> {
-        let binding_id = self.bindings.push(Binding {
-            mutability: Mutability::local(is_mutable),
-            ty_id: tys::INFERRED,
-        });
-
-        if !self.frames[frame_id]
-            .bindings
-            .insert_if_not_exists(symbol, binding_id)
-        {
-            return Err(ResolveError::already_defined(symbol));
-        }
-
-        Ok(binding_id)
-    }
-
     pub fn resolve_local(&self, frame_id: FrameId, symbol: Symbol) -> ResolveResult<ItemKind> {
         let mut scope_id = ScopeId::Frame(frame_id);
 

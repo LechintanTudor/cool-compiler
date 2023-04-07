@@ -4,7 +4,7 @@ use cool_ast::{AstGenerator, ModuleItemAst, ResolveAst};
 use cool_lexer::lexer::{LexedSourceFile, Tokenizer};
 use cool_lexer::symbols::Symbol;
 use cool_parser::{DeclKind, Item, ModuleContent, ModuleKind, ParseResult, Parser};
-use cool_resolve::resolve::{ModuleId, ResolveError, ResolveErrorKind, ResolveTable};
+use cool_resolve::resolve::{ModuleId, Mutability, ResolveError, ResolveErrorKind, ResolveTable};
 use cool_resolve::ty::{tys, TyTable};
 use cool_resolve::ItemPathBuf;
 use std::collections::VecDeque;
@@ -43,13 +43,13 @@ impl<'a> Driver<'a> {
     pub fn new(resolve: &'a mut ResolveTable, crate_name: &str, crate_path: &Path) -> Self {
         let crate_symbol = Symbol::insert(crate_name);
         let crate_paths = ModulePaths::for_root(crate_path).unwrap();
-        let crate_id = resolve.insert_root_module(crate_symbol).unwrap();
+        let (_, crate_module_id) = resolve.insert_root_module(crate_symbol).unwrap();
 
         Self {
             resolve,
             source_files: Default::default(),
             file_modules_to_process: vec![FileModuleToProcess {
-                module_id: crate_id,
+                module_id: crate_module_id,
                 paths: crate_paths,
             }]
             .into(),
@@ -80,32 +80,38 @@ impl<'a> Driver<'a> {
                 match &decl.kind {
                     DeclKind::Item(decl) => match &decl.item {
                         Item::Module(child_module) => {
-                            let child_id = self
+                            let (_, child_module_id) = self
                                 .resolve
                                 .insert_module(module_id, is_exported, decl.ident.symbol)
                                 .unwrap();
 
                             match &child_module.kind {
                                 ModuleKind::Inline(module_content) => {
-                                    modules_to_process.push_back((child_id, module_content));
+                                    modules_to_process.push_back((child_module_id, module_content));
                                 }
                                 ModuleKind::External => {
-                                    let child_paths = ModulePaths::for_child(
-                                        &source_file.paths.child_dir,
-                                        decl.ident.symbol.as_str(),
-                                    )
-                                    .unwrap();
+                                    todo!()
+                                    // let child_paths = ModulePaths::for_child(
+                                    //     &source_file.paths.child_dir,
+                                    //     decl.ident.symbol.as_str(),
+                                    // )
+                                    // .unwrap();
 
-                                    self.file_modules_to_process.push_back(FileModuleToProcess {
-                                        module_id: child_id,
-                                        paths: child_paths,
-                                    });
+                                    // self.file_modules_to_process.push_back(FileModuleToProcess {
+                                    //     module_id: child_id,
+                                    //     paths: child_paths,
+                                    // });
                                 }
                             }
                         }
                         Item::Const(_) | Item::ExternFn(_) => {
                             self.resolve
-                                .insert_item(module_id, is_exported, decl.ident.symbol)
+                                .insert_global_binding(
+                                    module_id,
+                                    is_exported,
+                                    Mutability::Const,
+                                    decl.ident.symbol,
+                                )
                                 .unwrap();
                         }
                     },

@@ -121,7 +121,7 @@ impl<I, T> IdIndexedVec<I, T> {
         self.inner.push(value);
         id
     }
-    
+
     pub fn push_checked<I2>(&mut self, expected_id: I2, value: T)
     where
         I: Id,

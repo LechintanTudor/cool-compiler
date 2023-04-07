@@ -97,7 +97,7 @@ impl ResolveAst for FnExprAst {
 
 impl AstGenerator<'_> {
     pub fn gen_fn(&mut self, module_id: ModuleId, fn_expr: &FnExpr) -> FnExprAst {
-        let frame_id = self.resolve.insert_frame(module_id.into());
+        let frame_id = self.resolve.add_frame(module_id.into());
         let mut params = SmallVec::new();
 
         for param in fn_expr.prototype.param_list.params.iter() {

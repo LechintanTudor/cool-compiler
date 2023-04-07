@@ -2,7 +2,7 @@ use crate::expr::GenericExprAst;
 use crate::{AstGenerator, ResolveAst, SemanticResult, TyMismatch};
 use cool_parser::IdentExpr;
 use cool_resolve::expr_ty::ExprId;
-use cool_resolve::resolve::{BindingId, ScopeId, ItemKind};
+use cool_resolve::resolve::{BindingId, ItemKind, ScopeId};
 use cool_resolve::ty::TyId;
 
 #[derive(Clone, Debug)]

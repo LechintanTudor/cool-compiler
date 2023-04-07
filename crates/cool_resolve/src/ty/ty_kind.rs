@@ -11,8 +11,7 @@ pub enum TyKind {
     Float(FloatTy),
     Tuple(TupleTy),
     Fn(FnTy),
-    Module,
-    Module2(ModuleId),
+    Module(ModuleTy),
 }
 
 impl TyKind {
@@ -117,4 +116,10 @@ pub struct TupleTy {
 pub struct FnTy {
     pub params: SmallVec<[TyId; 4]>,
     pub ret: TyId,
+}
+
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+pub enum ModuleTy {
+    Inferred,
+    Id(ModuleId),
 }
