@@ -2,7 +2,7 @@ use crate::expr::GenericExprAst;
 use crate::{AstGenerator, ResolveAst, SemanticResult, TyMismatch};
 use cool_parser::IdentExpr;
 use cool_resolve::expr_ty::ExprId;
-use cool_resolve::resolve::{BindingId, ScopeId, SymbolKind};
+use cool_resolve::resolve::{BindingId, ScopeId, ItemKind};
 use cool_resolve::ty::TyId;
 
 #[derive(Clone, Debug)]
@@ -47,7 +47,7 @@ impl AstGenerator<'_> {
             .unwrap();
 
         match resolved {
-            SymbolKind::Binding(binding_id) => IdentExprAst {
+            ItemKind::Binding(binding_id) => IdentExprAst {
                 id: self.expr_tys.add_expr(),
                 binding_id,
             },

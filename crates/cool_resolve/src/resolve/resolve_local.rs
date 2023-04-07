@@ -1,7 +1,8 @@
 use crate::resolve::{
-    Binding, BindingId, Frame, FrameId, ModuleId, ResolveError, ResolveResult, ResolveTable,
-    ScopeId, SymbolKind,
+    Binding, BindingId, Frame, FrameId, ItemKind, ModuleId, Mutability, ResolveError,
+    ResolveResult, ResolveTable, ScopeId,
 };
+use crate::ty::tys;
 use cool_lexer::symbols::Symbol;
 
 impl ResolveTable {
@@ -16,7 +17,10 @@ impl ResolveTable {
         is_mutable: bool,
         symbol: Symbol,
     ) -> ResolveResult<BindingId> {
-        let binding_id = self.bindings.push(Binding::new(is_mutable));
+        let binding_id = self.bindings.push(Binding {
+            mutability: Mutability::local(is_mutable),
+            ty_id: tys::INFERRED,
+        });
 
         if !self.frames[frame_id]
             .bindings
@@ -28,7 +32,7 @@ impl ResolveTable {
         Ok(binding_id)
     }
 
-    pub fn resolve_local(&self, frame_id: FrameId, symbol: Symbol) -> ResolveResult<SymbolKind> {
+    pub fn resolve_local(&self, frame_id: FrameId, symbol: Symbol) -> ResolveResult<ItemKind> {
         let mut scope_id = ScopeId::Frame(frame_id);
 
         loop {
@@ -38,7 +42,7 @@ impl ResolveTable {
                     let resolved_symbol = frame
                         .bindings
                         .get(&symbol)
-                        .map(|&binding_id| SymbolKind::Binding(binding_id));
+                        .map(|&binding_id| ItemKind::Binding(binding_id));
 
                     match resolved_symbol {
                         Some(resolved_symbol) => return Ok(resolved_symbol),
@@ -46,10 +50,10 @@ impl ResolveTable {
                     }
                 }
                 ScopeId::Module(module_id) => {
-                    let resolved_elem = self.modules[&module_id].elems.get(&symbol);
+                    let resolved_elem = self.modules[module_id].elems.get(&symbol);
 
                     match resolved_elem {
-                        Some(resolved_elem) => return Ok(resolved_elem.kind),
+                        Some(resolved_elem) => return Ok(self.items[resolved_elem.item_id]),
                         None => return Err(ResolveError::not_found(symbol)),
                     }
                 }
@@ -62,9 +66,9 @@ impl ResolveTable {
         parent_id: ModuleId,
         source_id: ModuleId,
         symbol: Symbol,
-    ) -> ResolveResult<SymbolKind> {
-        let parent_module = &self.modules[&parent_id];
-        let source_module = &self.modules[&source_id];
+    ) -> ResolveResult<ItemKind> {
+        let parent_module = &self.modules[parent_id];
+        let source_module = &self.modules[source_id];
 
         let resolved_elem = source_module
             .elems
@@ -75,6 +79,6 @@ impl ResolveTable {
             return Err(ResolveError::private(symbol));
         }
 
-        Ok(resolved_elem.kind)
+        Ok(self.items[resolved_elem.item_id])
     }
 }

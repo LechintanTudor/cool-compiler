@@ -1,3 +1,4 @@
+use crate::resolve::ModuleId;
 use crate::ty::{tys, TyId};
 use smallvec::SmallVec;
 
@@ -11,6 +12,7 @@ pub enum TyKind {
     Tuple(TupleTy),
     Fn(FnTy),
     Module,
+    Module2(ModuleId),
 }
 
 impl TyKind {

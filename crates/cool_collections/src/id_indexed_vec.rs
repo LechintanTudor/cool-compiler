@@ -121,6 +121,16 @@ impl<I, T> IdIndexedVec<I, T> {
         self.inner.push(value);
         id
     }
+    
+    pub fn push_checked<I2>(&mut self, expected_id: I2, value: T)
+    where
+        I: Id,
+        I2: Id,
+    {
+        let id = I::from(NonZeroU32::new(self.inner.len() as u32).unwrap());
+        self.inner.push(value);
+        assert_eq!(id.as_usize(), expected_id.as_usize());
+    }
 
     pub fn as_slice(&self) -> &[T] {
         &self.inner[1..]

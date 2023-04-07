@@ -1,20 +1,24 @@
 use crate::resolve::{
-    ItemId, Module, ModuleElem, ModuleId, ResolveError, ResolveErrorKind, ResolveResult,
-    ResolveTable, ScopeId, SymbolKind,
+    Binding, ItemId, ItemKind, Module, ModuleElem, ModuleId, Mutability, ResolveError,
+    ResolveErrorKind, ResolveResult, ResolveTable, ScopeId,
 };
+use crate::ty::tys;
 use crate::{ItemPath, ItemPathBuf};
 use cool_lexer::symbols::{sym, Symbol};
 
 impl ResolveTable {
-    pub fn insert_root_module(&mut self, symbol: Symbol) -> ResolveResult<ModuleId> {
-        let module_id = self
-            .items
+    pub fn insert_root_module(&mut self, symbol: Symbol) -> ResolveResult<ItemId> {
+        let item_id = self
+            .paths
             .insert_if_not_exists(&[symbol])
-            .map(|id| ModuleId(id.0))
             .ok_or(ResolveError::already_defined(symbol))?;
 
-        self.modules.insert(module_id, Module::from_path(symbol));
-        Ok(module_id)
+        let module_id = self.modules.push(Module::from_path(symbol));
+
+        self.items
+            .push_checked(item_id, ItemKind::Module(module_id));
+
+        Ok(item_id)
     }
 
     pub fn insert_module(
@@ -22,49 +26,62 @@ impl ResolveTable {
         parent_id: ModuleId,
         is_exported: bool,
         symbol: Symbol,
-    ) -> ResolveResult<ModuleId> {
-        let parent_module = self.modules.get_mut(&parent_id).unwrap();
-        let module_path = parent_module.path.append(symbol);
+    ) -> ResolveResult<ItemId> {
+        let module_path = {
+            let parent_module = &self.modules[parent_id];
+            parent_module.path.append(symbol)
+        };
 
-        let module_id = self
-            .items
+        let item_id = self
+            .paths
             .insert_if_not_exists(module_path.as_symbol_slice())
-            .map(|id| ModuleId(id.0))
             .ok_or(ResolveError::already_defined(symbol))?;
 
+        let module_id = self.modules.push(Module::from_path(module_path));
+
+        self.items
+            .push_checked(item_id, ItemKind::Module(module_id));
+
+        let parent_module = &mut self.modules[parent_id];
         parent_module.elems.insert(
             symbol,
             ModuleElem {
                 is_exported,
-                kind: SymbolKind::Item(module_id.as_item_id()),
+                item_id,
             },
         );
 
-        self.modules
-            .insert(module_id, Module::from_path(module_path));
-
-        Ok(module_id)
+        Ok(item_id)
     }
 
-    pub fn insert_item(
+    pub fn insert_global_binding(
         &mut self,
         parent_id: ModuleId,
         is_exported: bool,
+        mutability: Mutability,
         symbol: Symbol,
     ) -> ResolveResult<ItemId> {
-        let parent_module = self.modules.get_mut(&parent_id).unwrap();
-        let module_path = parent_module.path.append(symbol);
+        let parent_module = &mut self.modules[parent_id];
+        let item_path = parent_module.path.append(symbol);
 
         let item_id = self
-            .items
-            .insert_if_not_exists(module_path.as_symbol_slice())
+            .paths
+            .insert_if_not_exists(item_path.as_symbol_slice())
             .ok_or(ResolveError::already_defined(symbol))?;
+
+        let binding_id = self.bindings.push(Binding {
+            mutability,
+            ty_id: tys::INFERRED,
+        });
+
+        self.items
+            .push_checked(item_id, ItemKind::Binding(binding_id));
 
         parent_module.elems.insert(
             symbol,
             ModuleElem {
                 is_exported,
-                kind: SymbolKind::Item(item_id),
+                item_id,
             },
         );
 
@@ -83,7 +100,7 @@ impl ResolveTable {
     {
         let path: ItemPath = path.into();
         let item_id = self.resolve_global(parent_id.into(), path)?;
-        let module = self.modules.get_mut(&parent_id).unwrap();
+        let module = &mut self.modules[parent_id];
         let symbol = symbol.unwrap_or(path.last());
 
         if module.elems.contains_key(&symbol) {
@@ -94,9 +111,10 @@ impl ResolveTable {
             symbol,
             ModuleElem {
                 is_exported,
-                kind: item_id.into(),
+                item_id,
             },
         );
+
         Ok(item_id)
     }
 
@@ -116,7 +134,7 @@ impl ResolveTable {
         P: Into<ItemPath<'a>>,
     {
         let module_id = self.resolve_parent_module(scope_id);
-        let module = &self.modules[&module_id];
+        let module = &self.modules[module_id];
 
         let path: ItemPath = path.into();
         let mut path_iter = path.as_symbol_slice().iter();
@@ -138,10 +156,10 @@ impl ResolveTable {
                 if module.elems.contains_key(&symbol) {
                     // Check local module
                     module.path.append(symbol)
-                } else if self.items.contains(&[symbol]) {
+                } else if self.paths.contains(&[symbol]) {
                     // Check other crates
                     ItemPathBuf::from(symbol)
-                } else if self.items.contains(&[sym::EMPTY, symbol]) {
+                } else if self.paths.contains(&[sym::EMPTY, symbol]) {
                     // Check builtins
                     ItemPathBuf::from([sym::EMPTY, symbol].as_slice())
                 } else {
@@ -174,7 +192,7 @@ impl ResolveTable {
     where
         P: Into<ItemPath<'a>>,
     {
-        self.items.get_id(path.into().as_symbol_slice())
+        self.paths.get_id(path.into().as_symbol_slice())
     }
 
     fn get_module_by_path<'a, P>(&self, path: P) -> ResolveResult<&Module>
@@ -184,12 +202,12 @@ impl ResolveTable {
         let path: ItemPath = path.into();
 
         let item_id = self
-            .items
+            .paths
             .get_id(path.as_symbol_slice())
             .ok_or(ResolveError::not_found(path.last()))?;
 
         self.modules
-            .get(&ModuleId(item_id.0))
+            .get(ModuleId(item_id.0))
             .ok_or(ResolveError::not_module(path.last()))
     }
 }

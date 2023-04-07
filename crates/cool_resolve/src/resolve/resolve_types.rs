@@ -1,3 +1,4 @@
+use crate::ty::TyId;
 use crate::ItemPathBuf;
 use cool_collections::{id_newtype, SmallVecMap};
 use cool_lexer::symbols::Symbol;
@@ -68,7 +69,7 @@ impl Module {
 #[derive(Clone, Copy, Debug)]
 pub struct ModuleElem {
     pub is_exported: bool,
-    pub kind: SymbolKind,
+    pub item_id: ItemId,
 }
 
 #[derive(Clone, Debug)]
@@ -87,43 +88,47 @@ impl Frame {
     }
 }
 
-#[derive(Clone, Copy, Default, Debug)]
-pub struct Binding {
-    pub is_mutable: bool,
-}
-
-impl Binding {
-    #[inline]
-    pub fn new(is_mutable: bool) -> Self {
-        Self { is_mutable }
-    }
-}
-
 #[derive(Clone, Copy, Debug)]
-pub enum SymbolKind {
-    Item(ItemId),
+pub enum ItemKind {
+    Module(ModuleId),
+    Ty(TyId),
     Binding(BindingId),
 }
 
-impl From<ItemId> for SymbolKind {
+impl From<ModuleId> for ItemKind {
     #[inline]
-    fn from(item_id: ItemId) -> Self {
-        Self::Item(item_id)
+    fn from(module_id: ModuleId) -> Self {
+        Self::Module(module_id)
     }
 }
 
-impl From<BindingId> for SymbolKind {
+impl From<TyId> for ItemKind {
+    #[inline]
+    fn from(ty_id: TyId) -> Self {
+        Self::Ty(ty_id)
+    }
+}
+
+impl From<BindingId> for ItemKind {
     #[inline]
     fn from(binding_id: BindingId) -> Self {
         Self::Binding(binding_id)
     }
 }
 
-impl SymbolKind {
+impl ItemKind {
     #[inline]
-    pub fn as_item_id(&self) -> Option<ItemId> {
+    pub fn as_module_id(&self) -> Option<ModuleId> {
         match self {
-            Self::Item(item_id) => Some(*item_id),
+            Self::Module(module_id) => Some(*module_id),
+            _ => None,
+        }
+    }
+
+    #[inline]
+    pub fn as_ty_id(&self) -> Option<TyId> {
+        match self {
+            Self::Ty(ty_id) => Some(*ty_id),
             _ => None,
         }
     }
@@ -135,4 +140,40 @@ impl SymbolKind {
             _ => None,
         }
     }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub enum Mutability {
+    Const,
+    Immutable,
+    Mutable,
+}
+
+impl Mutability {
+    #[inline]
+    pub fn local(is_mutable: bool) -> Self {
+        if is_mutable {
+            Self::Mutable
+        } else {
+            Self::Immutable
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum ExprKind {
+    Lvalue,
+    Rvalue,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Expr {
+    pub kind: ExprKind,
+    pub ty_id: TyId,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Binding {
+    pub mutability: Mutability,
+    pub ty_id: TyId,
 }
