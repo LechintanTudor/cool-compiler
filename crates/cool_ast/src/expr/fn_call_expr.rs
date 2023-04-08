@@ -1,5 +1,5 @@
 use crate::expr::{ExprAst, GenericExprAst};
-use crate::{AstGenerator, InvalidArgCount, ResolveAst, SemanticResult, TyMismatch, TyNotFn};
+use crate::{AstGenerator, AstResult, InvalidArgCount, ResolveAst, TyMismatch, TyNotFn};
 use cool_parser::FnCallExpr;
 use cool_resolve::{tys, ExprId, ScopeId, TyId};
 
@@ -11,7 +11,7 @@ pub struct FnCallExprAst {
 }
 
 impl ResolveAst for FnCallExprAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         let fn_expr_ty = self.fn_expr.resolve(ast, tys::INFERRED)?;
         let fn_expr_ty_kind = ast.resolve[fn_expr_ty]
             .as_fn_ty()

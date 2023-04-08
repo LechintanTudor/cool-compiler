@@ -1,6 +1,6 @@
-use crate::{AstGenerator, SemanticResult};
+use crate::{AstGenerator, AstResult};
 use cool_resolve::TyId;
 
 pub trait ResolveAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId>;
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId>;
 }

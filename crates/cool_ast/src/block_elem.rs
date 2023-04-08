@@ -1,6 +1,6 @@
 use crate::expr::ExprAst;
 use crate::stmt::StmtAst;
-use crate::{AstGenerator, ResolveAst, SemanticResult};
+use crate::{AstGenerator, AstResult, ResolveAst};
 use cool_resolve::TyId;
 
 #[derive(Clone, Debug)]
@@ -10,7 +10,7 @@ pub enum BlockElemAst {
 }
 
 impl ResolveAst for BlockElemAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         match self {
             Self::Expr(expr) => expr.resolve(ast, expected_ty),
             Self::Stmt(stmt) => stmt.resolve(ast, expected_ty),

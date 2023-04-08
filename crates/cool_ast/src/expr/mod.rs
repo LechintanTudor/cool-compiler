@@ -12,7 +12,7 @@ pub use self::fn_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::paren_expr::*;
-use crate::{AstGenerator, ResolveAst, SemanticResult};
+use crate::{AstGenerator, AstResult, ResolveAst};
 use cool_parser::Expr;
 use cool_resolve::{ExprId, ScopeId, TyId};
 use paste::paste;
@@ -39,7 +39,7 @@ macro_rules! define_expr_ast {
         }
 
         impl ResolveAst for ExprAst {
-            fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
+            fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
                 match self {
                     $(Self::$Variant(e) => e.resolve(ast, expected_ty),)+
                 }

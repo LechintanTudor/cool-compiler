@@ -2,17 +2,17 @@ use cool_resolve::TyId;
 use std::error::Error;
 use std::fmt;
 
-pub type SemanticResult<T> = Result<T, SemanticError>;
+pub type AstResult<T> = Result<T, AstError>;
 
 #[derive(Clone, Debug)]
-pub enum SemanticError {
+pub enum AstError {
     TyMismatch(TyMismatch),
     TyNotFn(TyNotFn),
     InvalidArgCount(InvalidArgCount),
     TyHintMissing(TyHintMissing),
 }
 
-impl Error for SemanticError {
+impl Error for AstError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::TyMismatch(e) => Some(e),
@@ -23,7 +23,7 @@ impl Error for SemanticError {
     }
 }
 
-impl fmt::Display for SemanticError {
+impl fmt::Display for AstError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::TyMismatch(e) => fmt::Display::fmt(e, f),
@@ -34,28 +34,28 @@ impl fmt::Display for SemanticError {
     }
 }
 
-impl From<TyMismatch> for SemanticError {
+impl From<TyMismatch> for AstError {
     #[inline]
     fn from(error: TyMismatch) -> Self {
         Self::TyMismatch(error)
     }
 }
 
-impl From<TyNotFn> for SemanticError {
+impl From<TyNotFn> for AstError {
     #[inline]
     fn from(error: TyNotFn) -> Self {
         Self::TyNotFn(error)
     }
 }
 
-impl From<InvalidArgCount> for SemanticError {
+impl From<InvalidArgCount> for AstError {
     #[inline]
     fn from(error: InvalidArgCount) -> Self {
         Self::InvalidArgCount(error)
     }
 }
 
-impl From<TyHintMissing> for SemanticError {
+impl From<TyHintMissing> for AstError {
     #[inline]
     fn from(error: TyHintMissing) -> Self {
         Self::TyHintMissing(error)

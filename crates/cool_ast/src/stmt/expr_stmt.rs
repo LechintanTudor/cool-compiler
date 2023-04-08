@@ -1,5 +1,5 @@
 use crate::expr::ExprAst;
-use crate::{AstGenerator, ResolveAst, SemanticResult, TyMismatch};
+use crate::{AstGenerator, AstResult, ResolveAst, TyMismatch};
 use cool_parser::ExprStmt;
 use cool_resolve::{tys, ScopeId, TyId};
 
@@ -9,7 +9,7 @@ pub struct ExprStmtAst {
 }
 
 impl ResolveAst for ExprStmtAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         self.expr.resolve(ast, tys::INFERRED)?;
 
         if expected_ty != tys::UNIT {

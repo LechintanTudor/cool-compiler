@@ -1,5 +1,5 @@
 use crate::item::item_decl::ItemDeclAst;
-use crate::{AstGenerator, ConstItemAst, ItemAst, ResolveAst, SemanticResult, TyMismatch};
+use crate::{AstGenerator, AstResult, ConstItemAst, ItemAst, ResolveAst, TyMismatch};
 use cool_parser::{ConstItem, Expr, Item, ModuleContent};
 use cool_resolve::{tys, ModuleId, TyId};
 
@@ -9,7 +9,7 @@ pub struct ModuleItemAst {
 }
 
 impl ResolveAst for ModuleItemAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         tys::MODULE
             .resolve_non_inferred(expected_ty)
             .ok_or(TyMismatch {

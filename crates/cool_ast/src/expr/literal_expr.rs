@@ -1,5 +1,5 @@
 use crate::expr::GenericExprAst;
-use crate::{AstGenerator, ResolveAst, SemanticResult, TyMismatch};
+use crate::{AstGenerator, AstResult, ResolveAst, TyMismatch};
 use cool_lexer::symbols::{sym, Symbol};
 use cool_lexer::tokens::LiteralKind;
 use cool_parser::LiteralExpr;
@@ -19,7 +19,7 @@ impl GenericExprAst for LiteralExprAst {
 }
 
 impl ResolveAst for LiteralExprAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         let literal_ty = self.kind.ty_id();
         let resolved_ty = literal_ty
             .resolve_non_inferred(expected_ty)

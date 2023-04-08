@@ -1,6 +1,6 @@
 use crate::expr::GenericExprAst;
 use crate::stmt::StmtAst;
-use crate::{AstGenerator, BlockElemAst, ResolveAst, SemanticResult, TyMismatch};
+use crate::{AstGenerator, AstResult, BlockElemAst, ResolveAst, TyMismatch};
 use cool_parser::{BlockElem, BlockExpr, Stmt};
 use cool_resolve::{tys, ExprId, FrameId, ScopeId, TyId};
 
@@ -19,7 +19,7 @@ impl GenericExprAst for BlockExprAst {
 }
 
 impl ResolveAst for BlockExprAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         let expr_ty = match self.elems.split_last() {
             Some((last, others)) => {
                 for other in others {
@@ -68,7 +68,6 @@ impl AstGenerator<'_> {
                     let expr_ast = self.gen_expr(current_frame_id.into(), expr);
                     BlockElemAst::Expr(expr_ast)
                 }
-                _ => todo!(),
             };
 
             elems.push(elem);

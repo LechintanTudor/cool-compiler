@@ -1,6 +1,6 @@
 use crate::expr::{BlockExprAst, GenericExprAst};
 use crate::{
-    AstGenerator, FnParamAst, FnPrototypeAst, InvalidArgCount, ResolveAst, SemanticResult,
+    AstGenerator, AstResult, FnParamAst, FnPrototypeAst, InvalidArgCount, ResolveAst,
     TyHintMissing, TyMismatch,
 };
 use cool_parser::FnExpr;
@@ -23,7 +23,7 @@ impl GenericExprAst for FnExprAst {
 }
 
 impl ResolveAst for FnExprAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         let (param_ty_ids, ret_ty_id) = match ast.resolve[expected_ty].clone() {
             TyKind::Inferred => {
                 let mut param_ty_ids = SmallVec::<[TyId; 6]>::new();

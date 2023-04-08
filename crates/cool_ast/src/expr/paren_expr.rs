@@ -1,5 +1,5 @@
 use crate::expr::{ExprAst, GenericExprAst};
-use crate::{AstGenerator, ResolveAst, SemanticResult};
+use crate::{AstGenerator, AstResult, ResolveAst};
 use cool_parser::ParenExpr;
 use cool_resolve::{ExprId, ScopeId, TyId};
 
@@ -17,7 +17,7 @@ impl GenericExprAst for ParenExprAst {
 }
 
 impl ResolveAst for ParenExprAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
+    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         let inner_ty = self.inner.resolve(ast, expected_ty)?;
         ast.resolve.set_expr_ty(self.id, inner_ty);
         Ok(inner_ty)
