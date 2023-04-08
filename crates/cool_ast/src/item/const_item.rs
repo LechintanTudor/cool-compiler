@@ -8,7 +8,7 @@ pub struct ConstItemAst {
 }
 
 impl ResolveAst for ConstItemAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
-        self.expr.resolve(ast, expected_ty)
+    fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
+        self.expr.resolve_exprs(ast, expected_ty)
     }
 }

@@ -9,8 +9,8 @@ pub struct ExprStmtAst {
 }
 
 impl ResolveAst for ExprStmtAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
-        self.expr.resolve(ast, tys::INFERRED)?;
+    fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
+        self.expr.resolve_exprs(ast, tys::INFERRED)?;
 
         if expected_ty != tys::UNIT {
             Err(TyMismatch {

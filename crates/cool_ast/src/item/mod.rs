@@ -15,10 +15,10 @@ pub enum ItemAst {
 }
 
 impl ResolveAst for ItemAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
+    fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         match self {
-            Self::Module(item) => item.resolve(ast, expected_ty),
-            Self::Const(item) => item.resolve(ast, expected_ty),
+            Self::Module(item) => item.resolve_exprs(ast, expected_ty),
+            Self::Const(item) => item.resolve_exprs(ast, expected_ty),
         }
     }
 }

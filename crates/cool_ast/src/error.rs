@@ -2,7 +2,7 @@ use cool_resolve::TyId;
 use std::error::Error;
 use std::fmt;
 
-pub type AstResult<T> = Result<T, AstError>;
+pub type AstResult<T = ()> = Result<T, AstError>;
 
 #[derive(Clone, Debug)]
 pub enum AstError {

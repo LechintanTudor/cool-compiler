@@ -11,8 +11,8 @@ pub struct FnCallExprAst {
 }
 
 impl ResolveAst for FnCallExprAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
-        let fn_expr_ty = self.fn_expr.resolve(ast, tys::INFERRED)?;
+    fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
+        let fn_expr_ty = self.fn_expr.resolve_exprs(ast, tys::INFERRED)?;
         let fn_expr_ty_kind = ast.resolve[fn_expr_ty]
             .as_fn_ty()
             .ok_or(TyNotFn {
@@ -28,7 +28,7 @@ impl ResolveAst for FnCallExprAst {
         }
 
         for (arg_expr, &param_ty) in self.arg_exprs.iter().zip(fn_expr_ty_kind.params.iter()) {
-            arg_expr.resolve(ast, param_ty)?;
+            arg_expr.resolve_exprs(ast, param_ty)?;
         }
 
         let expr_ty = fn_expr_ty_kind

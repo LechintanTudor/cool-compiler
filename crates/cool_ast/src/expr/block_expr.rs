@@ -19,14 +19,14 @@ impl GenericExprAst for BlockExprAst {
 }
 
 impl ResolveAst for BlockExprAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
+    fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         let expr_ty = match self.elems.split_last() {
             Some((last, others)) => {
                 for other in others {
-                    other.resolve(ast, tys::INFERRED)?;
+                    other.resolve_exprs(ast, tys::INFERRED)?;
                 }
 
-                last.resolve(ast, expected_ty)?
+                last.resolve_exprs(ast, expected_ty)?
             }
             None => tys::UNIT
                 .resolve_non_inferred(expected_ty)

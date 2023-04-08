@@ -14,10 +14,10 @@ pub enum StmtAst {
 }
 
 impl ResolveAst for StmtAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
+    fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         match self {
-            Self::Decl(decl) => decl.resolve(ast, expected_ty),
-            Self::Expr(expr) => expr.resolve(ast, expected_ty),
+            Self::Decl(decl) => decl.resolve_exprs(ast, expected_ty),
+            Self::Expr(expr) => expr.resolve_exprs(ast, expected_ty),
         }
     }
 }

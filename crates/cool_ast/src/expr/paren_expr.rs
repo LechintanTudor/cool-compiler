@@ -17,8 +17,8 @@ impl GenericExprAst for ParenExprAst {
 }
 
 impl ResolveAst for ParenExprAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
-        let inner_ty = self.inner.resolve(ast, expected_ty)?;
+    fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
+        let inner_ty = self.inner.resolve_exprs(ast, expected_ty)?;
         ast.resolve.set_expr_ty(self.id, inner_ty);
         Ok(inner_ty)
     }

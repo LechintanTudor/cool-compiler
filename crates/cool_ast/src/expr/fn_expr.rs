@@ -23,7 +23,7 @@ impl GenericExprAst for FnExprAst {
 }
 
 impl ResolveAst for FnExprAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
+    fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         let (param_ty_ids, ret_ty_id) = match ast.resolve[expected_ty].clone() {
             TyKind::Inferred => {
                 let mut param_ty_ids = SmallVec::<[TyId; 6]>::new();
@@ -88,7 +88,7 @@ impl ResolveAst for FnExprAst {
 
         let fn_ty_id = ast.resolve.mk_fn(param_ty_ids, ret_ty_id);
         ast.resolve.set_expr_ty(self.id, fn_ty_id);
-        self.body.resolve(ast, ret_ty_id)?;
+        self.body.resolve_exprs(ast, ret_ty_id)?;
         Ok(fn_ty_id)
     }
 }

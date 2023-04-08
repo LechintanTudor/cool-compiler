@@ -10,8 +10,8 @@ pub struct ItemDeclAst {
 }
 
 impl ResolveAst for ItemDeclAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
+    fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         debug_assert!(expected_ty == tys::INFERRED);
-        self.item.resolve(ast, self.explicit_ty_id)
+        self.item.resolve_exprs(ast, self.explicit_ty_id)
     }
 }

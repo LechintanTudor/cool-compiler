@@ -10,10 +10,10 @@ pub enum BlockElemAst {
 }
 
 impl ResolveAst for BlockElemAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
+    fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         match self {
-            Self::Expr(expr) => expr.resolve(ast, expected_ty),
-            Self::Stmt(stmt) => stmt.resolve(ast, expected_ty),
+            Self::Expr(expr) => expr.resolve_exprs(ast, expected_ty),
+            Self::Stmt(stmt) => stmt.resolve_exprs(ast, expected_ty),
         }
     }
 }

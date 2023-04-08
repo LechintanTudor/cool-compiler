@@ -13,8 +13,8 @@ pub struct DeclStmtAst {
 }
 
 impl ResolveAst for DeclStmtAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
-        let expr_ty = self.expr.resolve(ast, self.explicit_ty_id)?;
+    fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
+        let expr_ty = self.expr.resolve_exprs(ast, self.explicit_ty_id)?;
         ast.resolve.set_binding_ty(self.binding_id, expr_ty);
 
         if expected_ty != tys::UNIT {

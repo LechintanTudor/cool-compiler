@@ -215,7 +215,7 @@ pub fn generate_ast(package: &mut Package) -> Result<Vec<ModuleItemAst>, ()> {
     }
 
     for module_ast in module_asts.iter() {
-        module_ast.resolve(&mut ast_generator, tys::MODULE).unwrap();
+        module_ast.resolve_exprs(&mut ast_generator, tys::MODULE).unwrap();
     }
 
     Ok(module_asts)

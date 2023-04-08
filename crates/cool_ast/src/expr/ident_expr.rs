@@ -17,7 +17,7 @@ impl GenericExprAst for IdentExprAst {
 }
 
 impl ResolveAst for IdentExprAst {
-    fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
+    fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         let binding_ty = ast.resolve[self.binding_id].ty_id;
 
         let expr_ty = binding_ty

@@ -39,9 +39,9 @@ macro_rules! define_expr_ast {
         }
 
         impl ResolveAst for ExprAst {
-            fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
+            fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
                 match self {
-                    $(Self::$Variant(e) => e.resolve(ast, expected_ty),)+
+                    $(Self::$Variant(e) => e.resolve_exprs(ast, expected_ty),)+
                 }
             }
         }
