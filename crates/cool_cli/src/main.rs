@@ -3,8 +3,7 @@ mod args;
 use crate::args::Args;
 use clap::Parser as _;
 use cool_driver::{Driver, Package};
-use cool_resolve::resolve::ResolveTable;
-use cool_resolve::ty::TyTable;
+use cool_resolve::ResolveTable;
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
@@ -21,7 +20,6 @@ fn main() -> anyhow::Result<()> {
     let mut package = Package {
         sources: driver.into_source_files(),
         resolve: symbols,
-        tys: TyTable::with_builtins(),
     };
 
     for source in package.sources.iter() {

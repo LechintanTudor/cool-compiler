@@ -1,5 +1,4 @@
-use cool_resolve::resolve::BindingId;
-use cool_resolve::ty::TyId;
+use cool_resolve::{BindingId, TyId};
 use smallvec::SmallVec;
 
 #[derive(Clone, Debug)]

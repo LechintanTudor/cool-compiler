@@ -1,8 +1,7 @@
 use crate::expr::ExprAst;
 use crate::{AstGenerator, ResolveAst, SemanticResult, TyMismatch};
 use cool_parser::{DeclStmt, Pattern};
-use cool_resolve::resolve::{BindingId, FrameId, ScopeId};
-use cool_resolve::ty::{tys, TyId};
+use cool_resolve::{tys, BindingId, FrameId, ScopeId, TyId};
 
 #[derive(Clone, Debug)]
 pub struct DeclStmtAst {
@@ -16,16 +15,16 @@ pub struct DeclStmtAst {
 impl ResolveAst for DeclStmtAst {
     fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
         let expr_ty = self.expr.resolve(ast, self.explicit_ty_id)?;
-        ast.expr_tys.set_binding_ty(self.binding_id, expr_ty);
+        ast.resolve.set_binding_ty(self.binding_id, expr_ty);
 
-        let resolved_ty = tys::UNIT
-            .resolve_non_inferred(expected_ty)
-            .ok_or(TyMismatch {
-                found_ty: tys::UNIT,
+        if expected_ty != tys::UNIT {
+            Err(TyMismatch {
                 expected_ty,
-            })?;
+                found_ty: tys::UNIT,
+            })?
+        }
 
-        Ok(resolved_ty)
+        Ok(tys::UNIT)
     }
 }
 

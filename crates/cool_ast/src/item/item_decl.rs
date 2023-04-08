@@ -1,6 +1,6 @@
 use crate::{AstGenerator, ItemAst, ResolveAst, SemanticResult};
 use cool_lexer::symbols::Symbol;
-use cool_resolve::ty::{tys, TyId};
+use cool_resolve::{tys, TyId};
 
 #[derive(Clone, Debug)]
 pub struct ItemDeclAst {

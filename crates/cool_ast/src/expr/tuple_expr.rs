@@ -1,5 +1,5 @@
 use crate::expr::{ExprAst, GenericExprAst};
-use cool_resolve::expr_ty::ExprId;
+use cool_resolve::ExprId;
 
 pub struct TupleExprAst {
     pub id: ExprId,

@@ -1,8 +1,7 @@
 use crate::item::item_decl::ItemDeclAst;
 use crate::{AstGenerator, ConstItemAst, ItemAst, ResolveAst, SemanticResult, TyMismatch};
 use cool_parser::{ConstItem, Expr, Item, ModuleContent};
-use cool_resolve::resolve::ModuleId;
-use cool_resolve::ty::{tys, TyId};
+use cool_resolve::{tys, ModuleId, TyId};
 
 #[derive(Clone, Debug)]
 pub struct ModuleItemAst {

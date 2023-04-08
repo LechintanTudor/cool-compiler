@@ -5,8 +5,7 @@ pub use self::decl_stmt::*;
 pub use self::expr_stmt::*;
 use crate::{AstGenerator, ResolveAst, SemanticResult};
 use cool_parser::Stmt;
-use cool_resolve::resolve::ScopeId;
-use cool_resolve::ty::TyId;
+use cool_resolve::{ScopeId, TyId};
 
 #[derive(Clone, Debug)]
 pub enum StmtAst {

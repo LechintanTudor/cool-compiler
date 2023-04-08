@@ -3,8 +3,7 @@ use crate::{AstGenerator, ResolveAst, SemanticResult, TyMismatch};
 use cool_lexer::symbols::{sym, Symbol};
 use cool_lexer::tokens::LiteralKind;
 use cool_parser::LiteralExpr;
-use cool_resolve::expr_ty::ExprId;
-use cool_resolve::ty::{FloatTy, IntTy, TyId};
+use cool_resolve::{ExprId, FloatTy, IntTy, TyId};
 
 #[derive(Clone, Copy, Debug)]
 pub struct LiteralExprAst {
@@ -29,7 +28,7 @@ impl ResolveAst for LiteralExprAst {
                 expected_ty,
             })?;
 
-        ast.expr_tys.set_expr_ty(self.id, resolved_ty);
+        ast.resolve.set_expr_ty(self.id, resolved_ty);
         Ok(resolved_ty)
     }
 }
@@ -68,7 +67,7 @@ impl AstGenerator<'_> {
         };
 
         LiteralExprAst {
-            id: self.expr_tys.add_expr(),
+            id: self.resolve.add_expr(),
             kind,
         }
     }

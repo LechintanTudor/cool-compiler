@@ -1,6 +1,7 @@
 use crate::expr::ExprAst;
-use crate::{AstGenerator, ResolveAst, SemanticResult};
-use cool_resolve::ty::{tys, TyId};
+use crate::{AstGenerator, ResolveAst, SemanticResult, TyMismatch};
+use cool_parser::ExprStmt;
+use cool_resolve::{tys, ScopeId, TyId};
 
 #[derive(Clone, Debug)]
 pub struct ExprStmtAst {
@@ -9,7 +10,23 @@ pub struct ExprStmtAst {
 
 impl ResolveAst for ExprStmtAst {
     fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
-        self.expr.resolve(ast, expected_ty)?;
+        self.expr.resolve(ast, tys::INFERRED)?;
+
+        if expected_ty != tys::UNIT {
+            Err(TyMismatch {
+                expected_ty,
+                found_ty: tys::UNIT,
+            })?
+        }
+
         Ok(tys::UNIT)
+    }
+}
+
+impl AstGenerator<'_> {
+    pub fn gen_expr_stmt(&mut self, scope_id: ScopeId, stmt: &ExprStmt) -> ExprStmtAst {
+        ExprStmtAst {
+            expr: self.gen_expr(scope_id, &stmt.expr),
+        }
     }
 }

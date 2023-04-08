@@ -4,9 +4,9 @@ use cool_ast::{AstGenerator, ModuleItemAst, ResolveAst};
 use cool_lexer::lexer::{LexedSourceFile, Tokenizer};
 use cool_lexer::symbols::Symbol;
 use cool_parser::{DeclKind, Item, ModuleContent, ModuleKind, ParseResult, Parser};
-use cool_resolve::resolve::{ModuleId, Mutability, ResolveError, ResolveErrorKind, ResolveTable};
-use cool_resolve::ty::{tys, TyTable};
-use cool_resolve::ItemPathBuf;
+use cool_resolve::{
+    tys, ItemPathBuf, ModuleId, Mutability, ResolveError, ResolveErrorKind, ResolveTable,
+};
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::BufReader;
@@ -15,7 +15,6 @@ use std::path::Path;
 #[derive(Debug)]
 pub struct Package {
     pub resolve: ResolveTable,
-    pub tys: TyTable,
     pub sources: Vec<SourceFile>,
 }
 
@@ -208,7 +207,7 @@ fn parse_source_file(paths: ModulePaths, module_id: ModuleId) -> ParseResult<Sou
 }
 
 pub fn generate_ast(package: &mut Package) -> Result<Vec<ModuleItemAst>, ()> {
-    let mut ast_generator = AstGenerator::new(&mut package.resolve, &mut package.tys);
+    let mut ast_generator = AstGenerator::new(&mut package.resolve);
     let mut module_asts = Vec::<ModuleItemAst>::new();
 
     for source in package.sources.iter() {

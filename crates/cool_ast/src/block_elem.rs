@@ -1,7 +1,7 @@
 use crate::expr::ExprAst;
 use crate::stmt::StmtAst;
 use crate::{AstGenerator, ResolveAst, SemanticResult};
-use cool_resolve::ty::TyId;
+use cool_resolve::TyId;
 
 #[derive(Clone, Debug)]
 pub enum BlockElemAst {

@@ -6,7 +6,7 @@ pub use self::const_item::*;
 pub use self::item_decl::*;
 pub use self::module_item::*;
 use crate::{AstGenerator, ResolveAst, SemanticResult};
-use cool_resolve::ty::TyId;
+use cool_resolve::TyId;
 
 #[derive(Clone, Debug)]
 pub enum ItemAst {

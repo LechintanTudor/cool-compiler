@@ -1,4 +1,4 @@
-use cool_resolve::ty::TyId;
+use cool_resolve::TyId;
 use std::error::Error;
 use std::fmt;
 

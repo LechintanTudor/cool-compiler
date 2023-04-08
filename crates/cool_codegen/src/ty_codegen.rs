@@ -1,4 +1,4 @@
-use cool_resolve::ty::{tys, TyId, TyKind, TyTable};
+use cool_resolve::{tys, TyId};
 use inkwell::context::Context;
 use inkwell::targets::TargetData;
 use inkwell::types::{AnyTypeEnum, BasicMetadataTypeEnum, FunctionType};
@@ -11,10 +11,10 @@ pub struct GeneratedTys<'ctx> {
 }
 
 impl<'ctx> GeneratedTys<'ctx> {
-    pub fn new(context: &'ctx Context, target_data: &TargetData, ty_table: &TyTable) -> Self {
+    pub fn new(context: &'ctx Context, target_data: &TargetData) -> Self {
         let mut tys = TyMap::default();
         Self::insert_builtin_tys(&mut tys, context, target_data);
-        Self::insert_derived_tys(&mut tys, context, ty_table);
+        Self::insert_derived_tys(&mut tys, context);
         Self { tys }
     }
 
@@ -58,51 +58,52 @@ impl<'ctx> GeneratedTys<'ctx> {
         tys.extend(ty_mappings);
     }
 
-    fn insert_derived_tys(tys: &mut TyMap<'ctx>, context: &'ctx Context, ty_table: &TyTable) {
-        for ty_id in ty_table.iter_ids() {
-            Self::insert_ty(tys, context, ty_table, ty_id);
-        }
+    fn insert_derived_tys(_tys: &mut TyMap<'ctx>, _context: &'ctx Context) {
+        // for ty_id in ty_table.iter_ids() {
+        //     Self::insert_ty(tys, context, ty_table, ty_id);
+        // }
+        todo!()
     }
 
     fn insert_ty(
-        tys: &mut TyMap<'ctx>,
-        context: &'ctx Context,
-        ty_table: &TyTable,
-        ty_id: TyId,
+        _tys: &mut TyMap<'ctx>,
+        _context: &'ctx Context,
+        _ty_id: TyId,
     ) -> AnyTypeEnum<'ctx> {
-        if let Some(&ty) = tys.get(&ty_id) {
-            return ty;
-        }
+        todo!()
+        // if let Some(&ty) = tys.get(&ty_id) {
+        //     return ty;
+        // }
 
-        let ty_kind = ty_table.get_kind_by_id(ty_id);
+        // let ty_kind = ty_table.get_kind_by_id(ty_id);
 
-        let ty = match ty_kind {
-            TyKind::Tuple(tuple_ty) => {
-                let elems = tuple_ty
-                    .elems
-                    .iter()
-                    .map(|&ty| Self::insert_ty(tys, context, ty_table, ty))
-                    .flat_map(|ty| ty.try_into())
-                    .collect::<Vec<_>>();
+        // let ty = match ty_kind {
+        //     TyKind::Tuple(tuple_ty) => {
+        //         let elems = tuple_ty
+        //             .elems
+        //             .iter()
+        //             .map(|&ty| Self::insert_ty(tys, context, ty_table, ty))
+        //             .flat_map(|ty| ty.try_into())
+        //             .collect::<Vec<_>>();
 
-                context.struct_type(&elems, false).into()
-            }
-            TyKind::Fn(fn_ty) => {
-                let args = fn_ty
-                    .params
-                    .iter()
-                    .map(|&ty| Self::insert_ty(tys, context, ty_table, ty))
-                    .flat_map(|ty| ty.try_into())
-                    .collect::<Vec<_>>();
-                let ret = Self::insert_ty(tys, context, ty_table, fn_ty.ret);
+        //         context.struct_type(&elems, false).into()
+        //     }
+        //     TyKind::Fn(fn_ty) => {
+        //         let args = fn_ty
+        //             .params
+        //             .iter()
+        //             .map(|&ty| Self::insert_ty(tys, context, ty_table, ty))
+        //             .flat_map(|ty| ty.try_into())
+        //             .collect::<Vec<_>>();
+        //         let ret = Self::insert_ty(tys, context, ty_table, fn_ty.ret);
 
-                fn_type_from_any_type_enum(ret, &args, false).into()
-            }
-            _ => unreachable!(),
-        };
+        //         fn_type_from_any_type_enum(ret, &args, false).into()
+        //     }
+        //     _ => unreachable!(),
+        // };
 
-        tys.insert(ty_id, ty);
-        ty
+        // tys.insert(ty_id, ty);
+        // ty
     }
 }
 

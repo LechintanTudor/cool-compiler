@@ -2,9 +2,7 @@ use crate::expr::GenericExprAst;
 use crate::stmt::StmtAst;
 use crate::{AstGenerator, BlockElemAst, ResolveAst, SemanticResult, TyMismatch};
 use cool_parser::{BlockElem, BlockExpr, Stmt};
-use cool_resolve::expr_ty::ExprId;
-use cool_resolve::resolve::{FrameId, ScopeId};
-use cool_resolve::ty::{tys, TyId};
+use cool_resolve::{tys, ExprId, FrameId, ScopeId, TyId};
 
 #[derive(Clone, Debug)]
 pub struct BlockExprAst {
@@ -38,14 +36,14 @@ impl ResolveAst for BlockExprAst {
                 })?,
         };
 
-        ast.expr_tys.set_expr_ty(self.id, expr_ty);
+        ast.resolve.set_expr_ty(self.id, expr_ty);
         Ok(expr_ty)
     }
 }
 
 impl AstGenerator<'_> {
     pub fn gen_block_expr(&mut self, scope_id: ScopeId, expr: &BlockExpr) -> BlockExprAst {
-        let id = self.expr_tys.add_expr();
+        let id = self.resolve.add_expr();
 
         let frame_id = self.resolve.add_frame(scope_id);
         let mut current_frame_id = frame_id;
@@ -54,11 +52,18 @@ impl AstGenerator<'_> {
 
         for elem in expr.elems.iter() {
             let elem: BlockElemAst = match elem {
-                BlockElem::Stmt(Stmt::Decl(decl)) => {
-                    let decl_ast = self.gen_decl_stmt(current_frame_id.into(), decl);
-                    current_frame_id = decl_ast.frame_id;
-                    BlockElemAst::Stmt(StmtAst::Decl(decl_ast))
-                }
+                BlockElem::Stmt(stmt) => match stmt {
+                    Stmt::Decl(decl) => {
+                        let decl_ast = self.gen_decl_stmt(current_frame_id.into(), decl);
+                        current_frame_id = decl_ast.frame_id;
+                        BlockElemAst::Stmt(StmtAst::Decl(decl_ast))
+                    }
+                    Stmt::Expr(expr) => {
+                        let expr_stmt_ast = self.gen_expr_stmt(current_frame_id.into(), expr);
+                        BlockElemAst::Stmt(StmtAst::Expr(expr_stmt_ast))
+                    }
+                    _ => todo!(),
+                },
                 BlockElem::Expr(expr) => {
                     let expr_ast = self.gen_expr(current_frame_id.into(), expr);
                     BlockElemAst::Expr(expr_ast)

@@ -1,9 +1,7 @@
 use crate::expr::GenericExprAst;
 use crate::{AstGenerator, ResolveAst, SemanticResult, TyMismatch};
 use cool_parser::IdentExpr;
-use cool_resolve::expr_ty::ExprId;
-use cool_resolve::resolve::{BindingId, ItemKind, ScopeId};
-use cool_resolve::ty::TyId;
+use cool_resolve::{BindingId, ExprId, ItemKind, ScopeId, TyId};
 
 #[derive(Clone, Debug)]
 pub struct IdentExprAst {
@@ -20,7 +18,7 @@ impl GenericExprAst for IdentExprAst {
 
 impl ResolveAst for IdentExprAst {
     fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
-        let binding_ty = ast.expr_tys.get_binding_ty(self.binding_id);
+        let binding_ty = ast.resolve[self.binding_id].ty_id;
 
         let expr_ty = binding_ty
             .resolve_non_inferred(expected_ty)
@@ -29,7 +27,7 @@ impl ResolveAst for IdentExprAst {
                 expected_ty,
             })?;
 
-        ast.expr_tys.set_expr_ty(self.id, expr_ty);
+        ast.resolve.set_expr_ty(self.id, expr_ty);
         Ok(expr_ty)
     }
 }
@@ -48,7 +46,7 @@ impl AstGenerator<'_> {
 
         match resolved {
             ItemKind::Binding(binding_id) => IdentExprAst {
-                id: self.expr_tys.add_expr(),
+                id: self.resolve.add_expr(),
                 binding_id,
             },
             _ => todo!("return error"),

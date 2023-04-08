@@ -14,9 +14,7 @@ pub use self::literal_expr::*;
 pub use self::paren_expr::*;
 use crate::{AstGenerator, ResolveAst, SemanticResult};
 use cool_parser::Expr;
-use cool_resolve::expr_ty::ExprId;
-use cool_resolve::resolve::ScopeId;
-use cool_resolve::ty::TyId;
+use cool_resolve::{ExprId, ScopeId, TyId};
 use paste::paste;
 
 pub trait GenericExprAst {

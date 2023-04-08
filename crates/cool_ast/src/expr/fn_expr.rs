@@ -4,9 +4,7 @@ use crate::{
     TyHintMissing, TyMismatch,
 };
 use cool_parser::FnExpr;
-use cool_resolve::expr_ty::ExprId;
-use cool_resolve::resolve::{FrameId, ModuleId};
-use cool_resolve::ty::{tys, TyId, TyKind};
+use cool_resolve::{tys, ExprId, FrameId, ModuleId, TyId, TyKind};
 use smallvec::SmallVec;
 
 #[derive(Clone, Debug)]
@@ -26,7 +24,7 @@ impl GenericExprAst for FnExprAst {
 
 impl ResolveAst for FnExprAst {
     fn resolve(&self, ast: &mut AstGenerator, expected_ty: TyId) -> SemanticResult<TyId> {
-        let (param_ty_ids, ret_ty_id) = match ast.tys.get_kind_by_id(expected_ty) {
+        let (param_ty_ids, ret_ty_id) = match ast.resolve[expected_ty].clone() {
             TyKind::Inferred => {
                 let mut param_ty_ids = SmallVec::<[TyId; 6]>::new();
 
@@ -37,7 +35,7 @@ impl ResolveAst for FnExprAst {
                         .ok_or(TyHintMissing)?;
 
                     param_ty_ids.push(param_ty_id);
-                    ast.expr_tys.set_binding_ty(param.binding_id, param_ty_id);
+                    ast.resolve.set_binding_ty(param.binding_id, param_ty_id);
                 }
 
                 (param_ty_ids, self.prototype.ret_ty_id.unwrap_or(tys::UNIT))
@@ -69,7 +67,7 @@ impl ResolveAst for FnExprAst {
                             })?;
 
                     param_ty_ids.push(param_ty_id);
-                    ast.expr_tys.set_binding_ty(param.binding_id, param_ty_id);
+                    ast.resolve.set_binding_ty(param.binding_id, param_ty_id);
                 }
 
                 let ret_ty_id = {
@@ -88,8 +86,8 @@ impl ResolveAst for FnExprAst {
             _ => panic!("hint type is not a function"),
         };
 
-        let fn_ty_id = ast.tys.mk_fn(param_ty_ids, ret_ty_id);
-        ast.expr_tys.set_expr_ty(self.id, fn_ty_id);
+        let fn_ty_id = ast.resolve.mk_fn(param_ty_ids, ret_ty_id);
+        ast.resolve.set_expr_ty(self.id, fn_ty_id);
         self.body.resolve(ast, ret_ty_id)?;
         Ok(fn_ty_id)
     }
@@ -122,7 +120,7 @@ impl AstGenerator<'_> {
         let body = self.gen_block_expr(frame_id.into(), &fn_expr.body);
 
         FnExprAst {
-            id: self.expr_tys.add_expr(),
+            id: self.resolve.add_expr(),
             frame_id,
             prototype: FnPrototypeAst { params, ret_ty_id },
             body,
