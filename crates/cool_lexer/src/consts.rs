@@ -45,13 +45,13 @@ macro_rules! define_symbols {
     {
         Keywords {
             $($kw_idx:literal: $kw:ident,)+
-        },
+        }
         Primitives {
             $($primitive_idx:literal: $primitive:ident,)+
-        },
+        }
         Extra {
             $($extra_idx:literal: $extra_repr:literal as $extra:ident,)+
-        },
+        }
     } => {
         #[allow(dead_code)]
         pub mod sym {
@@ -134,50 +134,53 @@ macro_rules! define_symbols {
 
 define_symbols! {
     Keywords {
-         1: as,
-         2: break,
-         3: continue,
-         4: crate,
-         5: defer,
-         6: else,
-         7: enum,
-         8: export,
-         9: extern,
-        10: false,
-        11: fn,
-        12: if,
-        13: module,
-        14: mut,
-        15: return,
-        16: self,
-        17: struct,
-        18: super,
-        19: true,
-        20: use,
-        21: while,
-    },
+         1: alias,
+         2: as,
+         3: break,
+         4: continue,
+         5: crate,
+         6: defer,
+         7: else,
+         8: enum,
+         9: export,
+        10: extern,
+        11: false,
+        12: fn,
+        13: if,
+        14: module,
+        15: mut,
+        16: return,
+        17: self,
+        18: struct,
+        19: super,
+        20: true,
+        21: use,
+        22: while,
+    }
+
     Primitives {
-        22: i8,
-        23: i16,
-        24: i32,
-        25: i64,
-        26: i128,
-        27: isize,
+        23: i8,
+        24: i16,
+        25: i32,
+        26: i64,
+        27: i128,
+        28: isize,
 
-        28: u8,
-        29: u16,
-        30: u32,
-        31: u64,
-        32: u128,
-        33: usize,
+        29: u8,
+        30: u16,
+        31: u32,
+        32: u64,
+        33: u128,
+        34: usize,
 
-        34: f32,
-        35: f64,
-    },
+        35: f32,
+        36: f64,
+    }
+
     Extra {
-        36: "" as EMPTY,
-        37: "_" as WILDCARD,
-        38: "*" as GLOB,
-        39: "C" as C,
-    },
+        37: "" as EMPTY,
+        38: "_" as WILDCARD,
+        39: "*" as GLOB,
+        40: "C" as C,
+    }
 }

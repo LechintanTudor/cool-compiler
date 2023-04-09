@@ -103,6 +103,9 @@ impl<'a> Driver<'a> {
                                 }
                             }
                         }
+                        Item::Struct(_struct_item) => {
+                            // TODO: Add new type
+                        }
                         Item::Const(_) | Item::ExternFn(_) => {
                             let (item_id, _) = self
                                 .resolve

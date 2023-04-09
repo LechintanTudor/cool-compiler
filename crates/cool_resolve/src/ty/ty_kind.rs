@@ -10,6 +10,7 @@ pub enum TyKind {
     Float(FloatTy),
     Tuple(TupleTy),
     Fn(FnTy),
+    Type,
     Module,
 }
 

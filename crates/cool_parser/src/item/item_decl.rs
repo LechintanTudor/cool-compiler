@@ -38,6 +38,7 @@ impl Parser<'_> {
                 AbstractFn::ExternFn(f) => f.into(),
                 AbstractFn::Fn(f) => ConstItem { expr: f.into() }.into(),
             },
+            tk::KW_STRUCT => self.parse_struct_item()?.into(),
             _ => self.peek_error(&[tk::KW_MODULE, tk::KW_FN, tk::KW_EXTERN])?,
         };
 
