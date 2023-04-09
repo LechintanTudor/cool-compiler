@@ -30,6 +30,19 @@ macro_rules! define_expr_ast {
             }
         }
 
+        impl ExprAst {
+            paste! {
+                $(
+                    pub fn [<as_ $Variant:snake:lower>](&self) -> Option<&[<$Variant ExprAst>]> {
+                        match self {
+                            Self::$Variant(e) => Some(e),
+                            _ => None,
+                        }
+                    }
+                )+
+            }
+        }
+
         impl GenericExprAst for ExprAst {
             fn id(&self) -> ExprId {
                 match self {
@@ -39,6 +52,12 @@ macro_rules! define_expr_ast {
         }
 
         impl ResolveAst for ExprAst {
+            fn resolve_consts(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
+                match self {
+                    $(Self::$Variant(e) => e.resolve_consts(ast, expected_ty),)+
+                }
+            }
+
             fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
                 match self {
                     $(Self::$Variant(e) => e.resolve_exprs(ast, expected_ty),)+

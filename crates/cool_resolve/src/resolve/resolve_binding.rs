@@ -58,7 +58,8 @@ impl ResolveTable {
 
     #[inline]
     pub fn set_binding_ty(&mut self, binding_id: BindingId, ty_id: TyId) {
-        self.bindings[binding_id].ty_id = ty_id;
+        let old_ty_id = &mut self.bindings[binding_id].ty_id;
+        *old_ty_id = old_ty_id.resolve_non_inferred(ty_id).unwrap();
     }
 }
 

@@ -61,7 +61,7 @@ impl<'a> Driver<'a> {
             return false;
         };
 
-        let source_file = match parse_source_file(file_module.paths, file_module.module_id) {
+        let mut source_file = match parse_source_file(file_module.paths, file_module.module_id) {
             Ok(source_file) => source_file,
             Err(error) => {
                 println!("\n{}", error);
@@ -69,22 +69,22 @@ impl<'a> Driver<'a> {
             }
         };
 
-        let mut modules_to_process = VecDeque::<(ModuleId, &ModuleContent)>::new();
-        modules_to_process.push_back((file_module.module_id, &source_file.module));
+        let mut modules_to_process = VecDeque::<(ModuleId, &mut ModuleContent)>::new();
+        modules_to_process.push_back((file_module.module_id, &mut source_file.module));
 
         while let Some((module_id, module)) = modules_to_process.pop_front() {
-            for decl in module.decls.iter() {
+            for decl in module.decls.iter_mut() {
                 let is_exported = decl.is_exported;
 
-                match &decl.kind {
-                    DeclKind::Item(decl) => match &decl.item {
+                match &mut decl.kind {
+                    DeclKind::Item(decl) => match &mut decl.item {
                         Item::Module(child_module) => {
                             let (_, child_module_id) = self
                                 .resolve
                                 .insert_module(module_id, is_exported, decl.ident.symbol)
                                 .unwrap();
 
-                            match &child_module.kind {
+                            match &mut child_module.kind {
                                 ModuleKind::Inline(module_content) => {
                                     modules_to_process.push_back((child_module_id, module_content));
                                 }
@@ -104,7 +104,8 @@ impl<'a> Driver<'a> {
                             }
                         }
                         Item::Const(_) | Item::ExternFn(_) => {
-                            self.resolve
+                            let (item_id, _) = self
+                                .resolve
                                 .insert_global_binding(
                                     module_id,
                                     is_exported,
@@ -112,6 +113,8 @@ impl<'a> Driver<'a> {
                                     decl.ident.symbol,
                                 )
                                 .unwrap();
+
+                            decl.item_id = item_id;
                         }
                     },
                     DeclKind::Use(decl) => {
@@ -215,7 +218,15 @@ pub fn generate_ast(package: &mut Package) -> Result<Vec<ModuleItemAst>, ()> {
     }
 
     for module_ast in module_asts.iter() {
-        module_ast.resolve_exprs(&mut ast_generator, tys::MODULE).unwrap();
+        module_ast
+            .resolve_consts(&mut ast_generator, tys::MODULE)
+            .unwrap();
+    }
+
+    for module_ast in module_asts.iter() {
+        module_ast
+            .resolve_exprs(&mut ast_generator, tys::MODULE)
+            .unwrap();
     }
 
     Ok(module_asts)

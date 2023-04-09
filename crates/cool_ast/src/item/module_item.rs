@@ -9,13 +9,23 @@ pub struct ModuleItemAst {
 }
 
 impl ResolveAst for ModuleItemAst {
-    fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
+    fn resolve_consts(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         tys::MODULE
             .resolve_non_inferred(expected_ty)
             .ok_or(TyMismatch {
                 found_ty: tys::MODULE,
                 expected_ty,
             })?;
+
+        for decl in self.decls.iter() {
+            decl.resolve_consts(ast, tys::INFERRED)?;
+        }
+
+        Ok(tys::MODULE)
+    }
+
+    fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
+        debug_assert_eq!(tys::MODULE, expected_ty);
 
         for decl in self.decls.iter() {
             decl.resolve_exprs(ast, tys::INFERRED)?;
@@ -50,8 +60,8 @@ impl AstGenerator<'_> {
             };
 
             decls.push(ItemDeclAst {
-                symbol: decl.ident.symbol,
                 explicit_ty_id,
+                item_id: decl.item_id,
                 item,
             });
         }

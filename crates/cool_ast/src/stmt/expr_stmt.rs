@@ -12,12 +12,12 @@ impl ResolveAst for ExprStmtAst {
     fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         self.expr.resolve_exprs(ast, tys::INFERRED)?;
 
-        if expected_ty != tys::UNIT {
-            Err(TyMismatch {
+        tys::UNIT
+            .resolve_non_inferred(expected_ty)
+            .ok_or(TyMismatch {
                 expected_ty,
                 found_ty: tys::UNIT,
-            })?
-        }
+            })?;
 
         Ok(tys::UNIT)
     }

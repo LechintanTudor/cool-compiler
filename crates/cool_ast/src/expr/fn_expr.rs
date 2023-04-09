@@ -23,6 +23,72 @@ impl GenericExprAst for FnExprAst {
 }
 
 impl ResolveAst for FnExprAst {
+    fn resolve_consts(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
+        let (param_ty_ids, ret_ty_id) = match ast.resolve[expected_ty].clone() {
+            TyKind::Inferred => {
+                let mut param_ty_ids = SmallVec::<[TyId; 6]>::new();
+
+                for param in self.prototype.params.iter() {
+                    let param_ty_id = param
+                        .ty_id
+                        .resolve_non_inferred(tys::INFERRED)
+                        .ok_or(TyHintMissing)?;
+
+                    param_ty_ids.push(param_ty_id);
+                }
+
+                (param_ty_ids, self.prototype.ret_ty_id.unwrap_or(tys::UNIT))
+            }
+            TyKind::Fn(fn_ty) => {
+                if self.prototype.params.len() != fn_ty.params.len() {
+                    Err(InvalidArgCount {
+                        found: self.prototype.params.len() as _,
+                        expected: fn_ty.params.len() as _,
+                    })?
+                }
+
+                let mut param_ty_ids = SmallVec::<[TyId; 6]>::new();
+
+                let param_iter = {
+                    let params = self.prototype.params.iter();
+                    let hint_ty_ids = fn_ty.params.iter();
+                    params.zip(hint_ty_ids)
+                };
+
+                for (param, &hint_ty_id) in param_iter {
+                    let param_ty_id =
+                        param
+                            .ty_id
+                            .resolve_non_inferred(hint_ty_id)
+                            .ok_or(TyMismatch {
+                                found_ty: param.ty_id,
+                                expected_ty: hint_ty_id,
+                            })?;
+
+                    param_ty_ids.push(param_ty_id);
+                }
+
+                let ret_ty_id = {
+                    let ret_ty_id = self.prototype.ret_ty_id.unwrap_or(tys::INFERRED);
+
+                    ret_ty_id
+                        .resolve_non_inferred(fn_ty.ret)
+                        .ok_or(TyMismatch {
+                            found_ty: ret_ty_id,
+                            expected_ty: fn_ty.ret,
+                        })?
+                };
+
+                (param_ty_ids, ret_ty_id)
+            }
+            _ => panic!("hint type is not a function"),
+        };
+
+        let fn_ty_id = ast.resolve.mk_fn(param_ty_ids, ret_ty_id);
+        ast.resolve.set_expr_ty(self.id, fn_ty_id);
+        Ok(fn_ty_id)
+    }
+
     fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         let (param_ty_ids, ret_ty_id) = match ast.resolve[expected_ty].clone() {
             TyKind::Inferred => {

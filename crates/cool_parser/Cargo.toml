@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 cool_lexer = { path = "../cool_lexer" }
+cool_resolve = { path = "../cool_resolve" }
 cool_span = { path = "../cool_span" }
 paste = "1.0"
 smallvec = { workspace = true }

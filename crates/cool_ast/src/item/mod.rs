@@ -14,6 +14,16 @@ pub enum ItemAst {
     Const(ConstItemAst),
 }
 
+impl ItemAst {
+    #[inline]
+    pub fn as_const(&self) -> Option<&ConstItemAst> {
+        match self {
+            Self::Const(c) => Some(c),
+            _ => None,
+        }
+    }
+}
+
 impl ResolveAst for ItemAst {
     fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         match self {

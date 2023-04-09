@@ -19,6 +19,10 @@ impl GenericExprAst for LiteralExprAst {
 }
 
 impl ResolveAst for LiteralExprAst {
+    fn resolve_consts(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
+        self.resolve_exprs(ast, expected_ty)
+    }
+
     fn resolve_exprs(&self, ast: &mut AstGenerator, expected_ty: TyId) -> AstResult<TyId> {
         let literal_ty = self.kind.ty_id();
         let resolved_ty = literal_ty
