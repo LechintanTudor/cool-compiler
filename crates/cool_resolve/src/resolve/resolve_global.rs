@@ -93,7 +93,7 @@ impl ResolveTable {
         parent_id: ModuleId,
         is_exported: bool,
         path: P,
-        symbol: Option<Symbol>,
+        alias: Option<Symbol>,
     ) -> ResolveResult<ItemId>
     where
         P: Into<ItemPath<'a>>,
@@ -101,7 +101,7 @@ impl ResolveTable {
         let path: ItemPath = path.into();
         let item_id = self.resolve_global(parent_id.into(), path)?;
         let module = &mut self.modules[parent_id];
-        let symbol = symbol.unwrap_or(path.last());
+        let symbol = alias.unwrap_or(path.last());
 
         if module.elems.contains_key(&symbol) {
             return Err(ResolveError::already_defined(symbol));
@@ -206,8 +206,10 @@ impl ResolveTable {
             .get_id(path.as_symbol_slice())
             .ok_or(ResolveError::not_found(path.last()))?;
 
-        self.modules
-            .get(ModuleId(item_id.0))
-            .ok_or(ResolveError::not_module(path.last()))
+        let module_id = self.items[item_id]
+            .as_module_id()
+            .ok_or(ResolveError::not_module(path.last()))?;
+
+        Ok(&self.modules[module_id])
     }
 }

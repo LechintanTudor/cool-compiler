@@ -28,6 +28,7 @@ impl<'a> AstGenerator<'a> {
 
                 Ok(self.resolve.mk_fn(param_ty_ids, ret_ty_id))
             }
+            Ty::Module(_) => Ok(tys::MODULE),
             Ty::Path(path) => {
                 let path = path
                     .idents

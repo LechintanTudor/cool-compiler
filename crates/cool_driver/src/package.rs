@@ -28,7 +28,8 @@ pub struct FileModuleToProcess {
 pub struct ImportToResolve {
     pub module_id: ModuleId,
     pub is_exported: bool,
-    pub import_path: ItemPathBuf,
+    pub path: ItemPathBuf,
+    pub alias: Option<Symbol>,
 }
 
 pub struct Driver<'a> {
@@ -120,18 +121,21 @@ impl<'a> Driver<'a> {
                             decl.item_id = item_id;
                         }
                     },
-                    DeclKind::Use(decl) => {
-                        let import_path = decl
+                    DeclKind::Use(use_decl) => {
+                        let path = use_decl
                             .path
                             .idents
                             .iter()
                             .map(|ident| ident.symbol)
                             .collect::<ItemPathBuf>();
 
+                        let alias = use_decl.alias.map(|alias| alias.symbol);
+
                         self.imports_to_resolve.push_back(ImportToResolve {
                             module_id,
                             is_exported,
-                            import_path,
+                            path,
+                            alias,
                         })
                     }
                 }
@@ -155,8 +159,8 @@ impl<'a> Driver<'a> {
                 let resolve_result = self.resolve.insert_use(
                     import.module_id,
                     import.is_exported,
-                    import.import_path.as_path(),
-                    None,
+                    import.path.as_path(),
+                    import.alias,
                 );
 
                 match resolve_result {
@@ -177,7 +181,7 @@ impl<'a> Driver<'a> {
         }
 
         for import in self.imports_to_resolve.drain(..) {
-            import_errors.push(ResolveError::not_found(import.import_path.last()));
+            import_errors.push(ResolveError::not_found(import.path.last()));
         }
 
         if !import_errors.is_empty() {

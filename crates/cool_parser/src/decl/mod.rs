@@ -1,4 +1,8 @@
-use crate::item::{ItemDecl, UseDecl};
+mod item_decl;
+mod use_decl;
+
+pub use self::item_decl::*;
+pub use self::use_decl::*;
 use crate::{ParseResult, ParseTree, Parser};
 use cool_lexer::tokens::{tk, TokenKind};
 use cool_span::Span;

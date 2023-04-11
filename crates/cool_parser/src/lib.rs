@@ -1,6 +1,7 @@
 mod abstract_fn;
 mod assign_pattern;
 mod block_elem;
+mod decl;
 mod error;
 mod expr;
 mod fn_extern_decl;
@@ -16,6 +17,7 @@ mod ty;
 pub use self::abstract_fn::*;
 pub use self::assign_pattern::*;
 pub use self::block_elem::*;
+pub use self::decl::*;
 pub use self::error::*;
 pub use self::expr::*;
 pub use self::fn_extern_decl::*;

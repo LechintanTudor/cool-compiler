@@ -1,5 +1,4 @@
-use crate::item::Decl;
-use crate::{ParseResult, ParseTree, Parser};
+use crate::{Decl, ParseResult, ParseTree, Parser};
 use cool_lexer::tokens::{tk, TokenKind};
 use cool_span::Span;
 

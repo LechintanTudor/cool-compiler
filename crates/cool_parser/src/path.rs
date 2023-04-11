@@ -18,19 +18,6 @@ impl IdentPath {
             .filter(|ident| ident.symbol == sym::GLOB)
             .is_some()
     }
-
-    pub fn is_valid_import(&self) -> bool {
-        // TODO: Implement the function
-        // enum SymbolPathParseState {
-        //     Initial,
-        //     Crate,
-        //     SelfOrSuper,
-        //     Ident,
-        //     Final,
-        // }
-
-        true
-    }
 }
 
 impl ParseTree for IdentPath {
