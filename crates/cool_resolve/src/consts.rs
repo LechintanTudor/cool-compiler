@@ -1,5 +1,6 @@
 use crate::resolve::ResolveTable;
 use crate::ty::{FloatTy, IntTy, TyKind};
+use crate::InferredTy;
 use cool_lexer::symbols::sym;
 
 macro_rules! builtins {
@@ -76,13 +77,15 @@ builtins! {
 
         14: (F32, TyKind::Float(FloatTy::F32)),
         15: (F64, TyKind::Float(FloatTy::F64)),
+
+        16: (BOOL, TyKind::Bool),
+        17: (CHAR, TyKind::Char),
     }
 
     Nonitems {
-        16: (INFERRED, TyKind::Inferred),
-        17: (INFERRED_INT, TyKind::Int(IntTy::Inferred)),
-        18: (INFERRED_FLOAT, TyKind::Float(FloatTy::Inferred)),
-        19: (TYPE, TyKind::Type),
-        20: (MODULE, TyKind::Module),
+        18: (INFERRED, TyKind::Inferred(InferredTy::Any)),
+        19: (INFERRED_INT, TyKind::Inferred(InferredTy::Int)),
+        20: (INFERRED_FLOAT, TyKind::Inferred(InferredTy::Float)),
+        21: (MODULE, TyKind::Module),
     }
 }

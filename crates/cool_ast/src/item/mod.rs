@@ -1,9 +1,7 @@
 mod const_item;
-mod item_decl;
 mod module_item;
 
 pub use self::const_item::*;
-pub use self::item_decl::*;
 pub use self::module_item::*;
 use crate::{AstGenerator, AstResult, ResolveAst};
 use cool_resolve::TyId;

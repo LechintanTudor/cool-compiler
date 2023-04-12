@@ -88,17 +88,17 @@ macro_rules! define_symbols {
                 paste! {
                     // Keywords
                     $(
-                        assert_eq!(symbols.insert(stringify!($kw)), [<KW_ $kw:upper>]);
+                        symbols.insert_known([<KW_ $kw:upper>], stringify!($kw));
                     )+
 
                     // Primitives
                     $(
-                        assert_eq!(symbols.insert(stringify!($primitive)), [<$primitive:upper>]);
+                        symbols.insert_known([<$primitive:upper>], stringify!($primitive));
                     )+
 
                     // Extra
                     $(
-                        assert_eq!(symbols.insert($extra_repr), $extra);
+                        symbols.insert_known($extra, $extra_repr);
                     )+
                 }
             }
@@ -175,12 +175,16 @@ define_symbols! {
 
         35: f32,
         36: f64,
+
+        37: char,
+        38: bool,
     }
 
     Extra {
-        37: "" as EMPTY,
-        38: "_" as WILDCARD,
-        39: "*" as GLOB,
-        40: "C" as C,
+        39: "" as EMPTY,
+        40: "_" as WILDCARD,
+
+        41: "C" as ABI_C,
+        42: "Cool" as ABI_COOL,
     }
 }

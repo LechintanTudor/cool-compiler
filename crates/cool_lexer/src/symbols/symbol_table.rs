@@ -11,6 +11,13 @@ pub struct SymbolTable {
 
 impl SymbolTable {
     #[inline]
+    pub(crate) fn insert_known(&mut self, expected_symbol: Symbol, symbol_str: &str) {
+        let symbol = self.symbols.insert_if_not_exists(symbol_str).unwrap();
+
+        assert_eq!(symbol, expected_symbol);
+    }
+
+    #[inline]
     pub fn insert(&mut self, symbol_str: &str) -> Symbol {
         self.symbols.get_or_insert(symbol_str)
     }

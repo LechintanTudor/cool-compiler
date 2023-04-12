@@ -1,3 +1,4 @@
+use cool_lexer::symbols::Symbol;
 use cool_resolve::{BindingId, TyId};
 use smallvec::SmallVec;
 
@@ -9,6 +10,7 @@ pub struct FnParamAst {
 
 #[derive(Clone, Debug)]
 pub struct FnPrototypeAst {
+    pub abi: Option<Symbol>,
     pub params: SmallVec<[FnParamAst; 3]>,
     pub ret_ty_id: Option<TyId>,
 }

@@ -43,11 +43,11 @@ impl ResolveTable {
         self.tys.mk_tuple(elems)
     }
 
-    pub fn mk_fn<P>(&mut self, params: P, ret: TyId) -> TyId
+    pub fn mk_fn<P>(&mut self, abi: Symbol, params: P, ret: TyId) -> TyId
     where
         P: IntoIterator<Item = TyId>,
     {
-        self.tys.mk_fn(params, ret)
+        self.tys.mk_fn(abi, params, ret)
     }
 
     pub fn resolve_ty_from_path<'a, P>(&self, scope_id: ScopeId, path: P) -> ResolveResult<TyId>

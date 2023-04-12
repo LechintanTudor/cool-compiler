@@ -3,7 +3,7 @@ use crate::{AstGenerator, AstResult, ResolveAst, TyMismatch};
 use cool_lexer::symbols::{sym, Symbol};
 use cool_lexer::tokens::LiteralKind;
 use cool_parser::LiteralExpr;
-use cool_resolve::{ExprId, FloatTy, IntTy, TyId};
+use cool_resolve::{tys, ExprId, TyId};
 
 #[derive(Clone, Copy, Debug)]
 pub struct LiteralExprAst {
@@ -39,9 +39,10 @@ impl ResolveAst for LiteralExprAst {
 
 #[derive(Clone, Copy, Debug)]
 pub enum LiteralExprKindAst {
-    Int { value: u128, ty: IntTy },
-    Float { value: f64, ty: FloatTy },
+    Int { value: u128, ty_id: TyId },
+    Float { value: f64, ty_id: TyId },
     Bool(bool),
+    Char(char),
     Str(Symbol),
     CStr(Symbol),
 }
@@ -49,8 +50,10 @@ pub enum LiteralExprKindAst {
 impl LiteralExprKindAst {
     pub fn ty_id(&self) -> TyId {
         match self {
-            Self::Int { ty, .. } => ty.ty_id(),
-            Self::Float { ty, .. } => ty.ty_id(),
+            Self::Int { ty_id, .. } => *ty_id,
+            Self::Float { ty_id, .. } => *ty_id,
+            Self::Bool(_) => tys::BOOL,
+            Self::Char(_) => tys::CHAR,
             _ => todo!(),
         }
     }
@@ -96,26 +99,26 @@ impl AstGenerator<'_> {
 
         LiteralExprKindAst::Int {
             value,
-            ty: int_ty_from_suffix(&suffix),
+            ty_id: int_ty_id_from_suffix(&suffix),
         }
     }
 }
 
-fn int_ty_from_suffix(suffix: &str) -> IntTy {
+fn int_ty_id_from_suffix(suffix: &str) -> TyId {
     match suffix {
-        "" => IntTy::Inferred,
-        "i8" => IntTy::I8,
-        "i16" => IntTy::I16,
-        "i32" => IntTy::I32,
-        "i64" => IntTy::I64,
-        "i128" => IntTy::I128,
-        "isize" => IntTy::Isize,
-        "u8" => IntTy::U8,
-        "u16" => IntTy::U16,
-        "u32" => IntTy::U32,
-        "u64" => IntTy::U64,
-        "u128" => IntTy::U128,
-        "usize" => IntTy::Usize,
+        "" => tys::INFERRED_INT,
+        "i8" => tys::I8,
+        "i16" => tys::I16,
+        "i32" => tys::I32,
+        "i64" => tys::I64,
+        "i128" => tys::I128,
+        "isize" => tys::ISIZE,
+        "u8" => tys::U8,
+        "u16" => tys::U16,
+        "u32" => tys::U32,
+        "u64" => tys::U64,
+        "u128" => tys::U128,
+        "usize" => tys::USIZE,
         _ => todo!("handle unknown suffix: {}", suffix),
     }
 }

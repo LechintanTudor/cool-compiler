@@ -1,17 +1,25 @@
-use crate::ty::{tys, TyId};
+use crate::ty::TyId;
+use cool_lexer::symbols::Symbol;
 use smallvec::SmallVec;
 
-#[derive(Clone, PartialEq, Eq, Hash, Default, Debug)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum TyKind {
-    #[default]
-    Inferred,
+    Inferred(InferredTy),
     Unit,
     Int(IntTy),
     Float(FloatTy),
+    Bool,
+    Char,
     Tuple(TupleTy),
     Fn(FnTy),
-    Type,
     Module,
+}
+
+impl Default for TyKind {
+    #[inline]
+    fn default() -> Self {
+        Self::Inferred(InferredTy::Any)
+    }
 }
 
 impl TyKind {
@@ -21,6 +29,13 @@ impl TyKind {
             Self::Fn(fn_ty) => Some(fn_ty),
             _ => None,
         }
+    }
+}
+
+impl From<InferredTy> for TyKind {
+    #[inline]
+    fn from(ty: InferredTy) -> Self {
+        Self::Inferred(ty)
     }
 }
 
@@ -53,8 +68,14 @@ impl From<FnTy> for TyKind {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub enum InferredTy {
+    Any,
+    Int,
+    Float,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum IntTy {
-    Inferred,
     I8,
     I16,
     I32,
@@ -69,42 +90,10 @@ pub enum IntTy {
     Usize,
 }
 
-impl IntTy {
-    pub fn ty_id(&self) -> TyId {
-        match self {
-            Self::Inferred => tys::INFERRED_INT,
-            Self::I8 => tys::I8,
-            Self::I16 => tys::I16,
-            Self::I32 => tys::I32,
-            Self::I64 => tys::I64,
-            Self::I128 => tys::I128,
-            Self::Isize => tys::ISIZE,
-            Self::U8 => tys::U8,
-            Self::U16 => tys::U16,
-            Self::U32 => tys::U32,
-            Self::U64 => tys::U64,
-            Self::U128 => tys::U128,
-            Self::Usize => tys::USIZE,
-        }
-    }
-}
-
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum FloatTy {
-    Inferred,
     F32,
     F64,
-}
-
-impl FloatTy {
-    #[inline]
-    pub fn ty_id(&self) -> TyId {
-        match self {
-            Self::Inferred => tys::F64,
-            Self::F32 => tys::F32,
-            Self::F64 => tys::F64,
-        }
-    }
 }
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
@@ -114,6 +103,7 @@ pub struct TupleTy {
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct FnTy {
+    pub abi: Symbol,
     pub params: SmallVec<[TyId; 4]>,
     pub ret: TyId,
 }

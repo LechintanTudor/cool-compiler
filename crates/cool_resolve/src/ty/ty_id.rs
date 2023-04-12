@@ -5,6 +5,11 @@ id_newtype!(TyId);
 
 impl TyId {
     #[inline]
+    pub fn is_inferred(&self) -> bool {
+        tys::INFERRED.index() <= self.index() && self.index() <= tys::INFERRED_FLOAT.index()
+    }
+
+    #[inline]
     pub fn is_int(&self) -> bool {
         tys::I8.index() <= self.index() && self.index() <= tys::USIZE.index()
     }
@@ -12,11 +17,6 @@ impl TyId {
     #[inline]
     pub fn is_float(&self) -> bool {
         self.index() == tys::F32.index() || self.index() == tys::F64.index()
-    }
-
-    #[inline]
-    pub fn is_inferred(&self) -> bool {
-        tys::INFERRED.index() <= self.index() && self.index() <= tys::INFERRED_FLOAT.index()
     }
 
     #[inline]

@@ -1,5 +1,4 @@
 use crate::{Ident, ParseResult, ParseTree, Parser};
-use cool_lexer::symbols::sym;
 use cool_lexer::tokens::tk;
 use cool_span::Span;
 use smallvec::SmallVec;
@@ -9,15 +8,6 @@ pub type IdentVec = SmallVec<[Ident; 2]>;
 #[derive(Clone, Debug)]
 pub struct IdentPath {
     pub idents: IdentVec,
-}
-
-impl IdentPath {
-    pub fn ends_with_glob(&self) -> bool {
-        self.idents
-            .last()
-            .filter(|ident| ident.symbol == sym::GLOB)
-            .is_some()
-    }
 }
 
 impl ParseTree for IdentPath {

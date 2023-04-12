@@ -1,5 +1,4 @@
-use crate::item::item_decl::ItemDeclAst;
-use crate::{AstGenerator, AstResult, ConstItemAst, ItemAst, ResolveAst, TyMismatch};
+use crate::{AstGenerator, AstResult, ConstItemAst, ItemAst, ItemDeclAst, ResolveAst, TyMismatch};
 use cool_parser::{ConstItem, Expr, Item, ModuleContent};
 use cool_resolve::{tys, ModuleId, TyId};
 

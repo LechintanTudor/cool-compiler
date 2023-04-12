@@ -4,6 +4,7 @@ mod ty_kind;
 pub use self::ty_id::*;
 pub use self::ty_kind::*;
 use cool_arena::Arena;
+use cool_lexer::symbols::Symbol;
 use smallvec::SmallVec;
 use std::{fmt, ops};
 
@@ -37,11 +38,12 @@ impl TyTable {
         self.tys.get_or_insert(ty_kind)
     }
 
-    pub fn mk_fn<P>(&mut self, params: P, ret: TyId) -> TyId
+    pub fn mk_fn<P>(&mut self, abi: Symbol, params: P, ret: TyId) -> TyId
     where
         P: IntoIterator<Item = TyId>,
     {
         let ty_kind: TyKind = FnTy {
+            abi,
             params: SmallVec::from_iter(params),
             ret,
         }

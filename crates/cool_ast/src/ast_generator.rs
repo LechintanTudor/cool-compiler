@@ -1,3 +1,4 @@
+use cool_lexer::symbols::sym;
 use cool_parser::Ty;
 use cool_resolve::{tys, ItemPathBuf, ResolveError, ResolveResult, ResolveTable, ScopeId, TyId};
 use smallvec::SmallVec;
@@ -17,6 +18,12 @@ impl<'a> AstGenerator<'a> {
             Ty::Fn(fn_ty) => {
                 let mut param_ty_ids = SmallVec::<[TyId; 6]>::new();
 
+                let abi = fn_ty
+                    .extern_decl
+                    .as_ref()
+                    .map(|decl| decl.abi.unwrap_or(sym::ABI_C))
+                    .unwrap_or(sym::ABI_COOL);
+
                 for param in fn_ty.param_list.params.iter() {
                     param_ty_ids.push(self.resolve_parsed_ty(scope_id, param)?);
                 }
@@ -26,7 +33,7 @@ impl<'a> AstGenerator<'a> {
                     None => tys::UNIT,
                 };
 
-                Ok(self.resolve.mk_fn(param_ty_ids, ret_ty_id))
+                Ok(self.resolve.mk_fn(abi, param_ty_ids, ret_ty_id))
             }
             Ty::Module(_) => Ok(tys::MODULE),
             Ty::Path(path) => {
