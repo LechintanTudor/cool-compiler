@@ -31,29 +31,30 @@ pub use self::stmt::*;
 pub use self::ty::*;
 use cool_lexer::lexer::{LexedSourceFile, TokenStream};
 use cool_lexer::tokens::{Token, TokenKind};
-use cool_span::Span;
-use std::iter::Peekable;
-
-const EOF_TOKEN: Token = Token {
-    span: Span::empty(),
-    kind: TokenKind::Eof,
-};
 
 pub struct Parser<'a> {
     lexed: &'a LexedSourceFile,
-    token_stream: Peekable<TokenStream<'a>>,
+    token_stream: TokenStream<'a>,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(lexed: &'a LexedSourceFile, token_stream: TokenStream<'a>) -> Self {
         Self {
             lexed,
-            token_stream: token_stream.peekable(),
+            token_stream,
         }
     }
 
     pub fn bump(&mut self) -> Token {
-        self.token_stream.next().unwrap_or(EOF_TOKEN)
+        self.token_stream.next_lang()
+    }
+
+    pub fn peek(&mut self) -> Token {
+        self.token_stream.peek_lang()
+    }
+
+    pub fn peek_any(&mut self) -> Token {
+        self.token_stream.peek_any()
     }
 
     pub fn bump_if_eq(&mut self, kind: TokenKind) -> Option<Token> {
@@ -72,10 +73,6 @@ impl<'a> Parser<'a> {
         }
 
         Ok(token)
-    }
-
-    pub fn peek(&mut self) -> Token {
-        self.token_stream.peek().copied().unwrap_or(EOF_TOKEN)
     }
 
     pub fn error<T>(&self, found: Token, expected: &'static [TokenKind]) -> ParseResult<T> {

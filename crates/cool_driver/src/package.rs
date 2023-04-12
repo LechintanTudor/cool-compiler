@@ -205,7 +205,7 @@ fn parse_source_file(paths: ModulePaths, module_id: ModuleId) -> ParseResult<Sou
     };
 
     let mut tokenizer = Tokenizer::new(&lexed.source);
-    let mut parser = Parser::new(&lexed, tokenizer.iter_lang_tokens());
+    let mut parser = Parser::new(&lexed, tokenizer.stream());
     let module = parser.parse_module_file()?;
 
     Ok(SourceFile {

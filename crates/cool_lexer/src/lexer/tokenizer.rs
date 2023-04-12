@@ -10,6 +10,7 @@ pub struct Tokenizer<'a> {
 }
 
 impl<'a> Tokenizer<'a> {
+    #[inline]
     pub fn new(source: &'a str) -> Self {
         Self {
             source,
@@ -18,19 +19,15 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
+    #[inline]
     pub fn reset(&mut self) {
         self.cursor = Cursor::from(self.source);
         self.buffer.clear();
     }
 
     #[inline]
-    pub fn iter_all_tokens(&'a mut self) -> TokenStream<'a> {
-        TokenStream::new(self, false)
-    }
-
-    #[inline]
-    pub fn iter_lang_tokens(&'a mut self) -> TokenStream<'a> {
-        TokenStream::new(self, true)
+    pub fn stream(&'a mut self) -> TokenStream<'a> {
+        TokenStream::new(self)
     }
 
     #[inline]

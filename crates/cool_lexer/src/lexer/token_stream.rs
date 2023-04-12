@@ -1,51 +1,68 @@
 use crate::lexer::Tokenizer;
-use crate::tokens::{Token, TokenKind};
+use crate::tokens::Token;
 
 pub struct TokenStream<'a> {
     tokenizer: &'a mut Tokenizer<'a>,
-    only_lang_tokens: bool,
-    emitted_eof: bool,
+    peeked: Option<Token>,
 }
 
 impl<'a> TokenStream<'a> {
-    pub fn new(tokenizer: &'a mut Tokenizer<'a>, only_lang_tokens: bool) -> Self {
+    #[inline]
+    pub(crate) fn new(tokenizer: &'a mut Tokenizer<'a>) -> Self {
         Self {
             tokenizer,
-            only_lang_tokens,
-            emitted_eof: false,
+            peeked: None,
         }
     }
 
-    #[inline]
-    pub fn tokenizer(&self) -> &Tokenizer {
-        &self.tokenizer
-    }
-}
-
-impl Iterator for TokenStream<'_> {
-    type Item = Token;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.emitted_eof {
-            return None;
+    pub fn next_lang(&mut self) -> Token {
+        if let Some(token) = self.peeked.take() {
+            if token.kind.is_lang_part() {
+                return token;
+            }
         }
 
-        let token = loop {
+        loop {
             let token = self.tokenizer.next_token();
 
-            if token.kind == TokenKind::Eof {
-                self.emitted_eof = true;
+            if token.kind.is_lang_part() {
+                return token;
             }
+        }
+    }
 
-            if self.only_lang_tokens {
-                if token.kind.is_lang_part() {
-                    break token;
-                }
-            } else {
-                break token;
+    pub fn next_any(&mut self) -> Token {
+        if let Some(token) = self.peeked.take() {
+            return token;
+        }
+
+        self.tokenizer.next_token()
+    }
+
+    pub fn peek_lang(&mut self) -> Token {
+        if let Some(token) = self.peeked {
+            if token.kind.is_lang_part() {
+                return token;
             }
-        };
+        }
 
-        Some(token)
+        loop {
+            let token = self.tokenizer.next_token();
+
+            if token.kind.is_lang_part() {
+                self.peeked = Some(token);
+                return token;
+            }
+        }
+    }
+
+    pub fn peek_any(&mut self) -> Token {
+        if let Some(token) = self.peeked {
+            return token;
+        }
+
+        let token = self.tokenizer.next_token();
+        self.peeked = Some(token);
+        token
     }
 }
