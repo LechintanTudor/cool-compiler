@@ -79,6 +79,9 @@ impl<'a> Driver<'a> {
 
                 match &mut decl.kind {
                     DeclKind::Item(decl) => match &mut decl.item {
+                        Item::Alias(_) => {
+                            // TODO
+                        }
                         Item::Module(child_module) => {
                             let (_, child_module_id) = self
                                 .resolve

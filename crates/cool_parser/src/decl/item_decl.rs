@@ -1,5 +1,5 @@
 use crate::item::Item;
-use crate::{AbstractFn, ConstItem, Ident, ParseResult, ParseTree, Parser, Ty};
+use crate::{Ident, ParseResult, ParseTree, Parser, Ty};
 use cool_lexer::tokens::tk;
 use cool_resolve::ItemId;
 use cool_span::Span;
@@ -31,16 +31,7 @@ impl Parser<'_> {
         };
 
         self.bump_expect(&tk::COLON)?;
-
-        let item: Item = match self.peek().kind {
-            tk::KW_MODULE => self.parse_module_item()?.into(),
-            tk::KW_FN | tk::KW_EXTERN => match self.parse_fn_or_extern_fn_item()? {
-                AbstractFn::ExternFn(f) => f.into(),
-                AbstractFn::Fn(f) => ConstItem { expr: f.into() }.into(),
-            },
-            tk::KW_STRUCT => self.parse_struct_item()?.into(),
-            _ => self.peek_error(&[tk::KW_MODULE, tk::KW_FN, tk::KW_EXTERN])?,
-        };
+        let item = self.parse_item()?;
 
         Ok(ItemDecl {
             ident,
