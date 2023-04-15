@@ -99,8 +99,6 @@ impl<'a> From<&'a ItemPathBuf> for ItemPath<'a> {
 macro_rules! impl_path {
     ($ty:ty) => {
         impl $ty {
-            // pub fn parent_module()
-
             #[inline]
             pub fn starts_with_self_or_super(&self) -> bool {
                 let first = self.first();

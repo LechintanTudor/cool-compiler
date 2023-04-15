@@ -1,5 +1,9 @@
 use crate::ty::TyId;
-use crate::{BindingId, ModuleId};
+use crate::{BindingId, ModuleId, ResolveTable};
+use cool_collections::id_newtype;
+use std::ops;
+
+id_newtype!(ItemId);
 
 #[derive(Clone, Copy, Debug)]
 pub enum ItemKind {
@@ -52,5 +56,14 @@ impl ItemKind {
             Self::Binding(binding_id) => Some(*binding_id),
             _ => None,
         }
+    }
+}
+
+impl ops::Index<ItemId> for ResolveTable {
+    type Output = ItemKind;
+
+    #[inline]
+    fn index(&self, item_id: ItemId) -> &Self::Output {
+        &self.items[item_id]
     }
 }

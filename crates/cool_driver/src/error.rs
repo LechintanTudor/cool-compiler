@@ -1,40 +1,61 @@
-// #[derive(Clone, Debug)]
-// pub struct CompileError {
-//     pub import_errors: Vec<ItemError>,
-// }
+use crate::{ModulePathsError, Package};
+use cool_parser::ParseError;
+use cool_resolve::{ItemPathBuf, ResolveError};
+use std::fmt;
+use std::path::PathBuf;
+use thiserror::Error;
 
-// impl Error for CompileError {}
+pub type CompileResult<T> = Result<T, CompileErrorBundle>;
 
-// impl fmt::Display for CompileError {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         write!(f, "Failed to compile crate.\n\n")?;
+#[derive(Error, Debug)]
+pub struct CompileErrorBundle {
+    pub package: Package,
+    pub errors: Vec<CompileError>,
+}
 
-//         if !self.import_errors.is_empty() {
-//             writeln!(f, "Import errors:")?;
-//             for error in self.import_errors.iter() {
-//                 writeln!(f, "  - {:?} in {:?}", error.symbol_path, error.module_path)?;
-//             }
-//         }
+impl fmt::Display for CompileErrorBundle {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "failed to compile package")?;
 
-//         Ok(())
-//     }
-// }
+        for error in self.errors.iter() {
+            writeln!(f, "{}", error)?;
+        }
 
-// #[derive(Clone, Debug)]
-// pub struct ParserError {
-//     pub path: PathBuf,
-//     pub line: u32,
-//     pub found: TokenKind,
-//     pub expected: &'static [TokenKind],
-// }
+        Ok(())
+    }
+}
 
-// impl Error for ParserError {}
+#[derive(Clone, Error, Debug)]
+pub struct CompileError {
+    pub path: PathBuf,
+    pub kind: CompileErrorKind,
+}
 
-// impl fmt::Display for ParserError {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         writeln!(f, "Failed to parse file: \"{}\"", self.path.display())?;
-//         writeln!(f, " -> Error on line {}", self.line)?;
-//         writeln!(f, " -> Expected one of {:?}", self.expected)?;
-//         writeln!(f, " -> Found: {}", self.found)
-//     }
-// }
+impl fmt::Display for CompileError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "error in file {}:", self.path.display())?;
+        write!(f, " -> {}", self.kind)
+    }
+}
+
+#[derive(Clone, Error, Debug)]
+pub enum CompileErrorKind {
+    #[error(transparent)]
+    Path(#[from] ModulePathsError),
+
+    #[error(transparent)]
+    Parse(#[from] ParseError),
+
+    #[error(transparent)]
+    Import(#[from] ImportError),
+
+    #[error(transparent)]
+    Resolve(#[from] ResolveError),
+}
+
+#[derive(Clone, Error, Debug)]
+#[error("failed to import {import_path:?} in module {module_path:?}")]
+pub struct ImportError {
+    pub module_path: ItemPathBuf,
+    pub import_path: ItemPathBuf,
+}

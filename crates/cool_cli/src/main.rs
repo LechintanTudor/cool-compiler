@@ -2,25 +2,19 @@ mod args;
 
 use crate::args::Args;
 use clap::Parser as _;
-use cool_driver::{Driver, Package};
+use cool_driver::CompileOptions;
 use cool_resolve::ResolveTable;
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    let mut symbols = ResolveTable::with_builtins();
-    let mut driver = Driver::new(&mut symbols, &args.crate_name, &args.crate_root_file);
-
-    while driver.process_next_file_module() {
-        // Empty
-    }
-
-    driver.resolve_imports().unwrap();
-
-    let mut package = Package {
-        sources: driver.into_source_files(),
-        resolve: symbols,
+    let options = CompileOptions {
+        crate_name: args.crate_name,
+        crate_root_file: args.crate_root_file,
     };
+
+    let mut resolve = ResolveTable::with_builtins();
+    let package = cool_driver::parse(&mut resolve, &options)?;
 
     for source in package.sources.iter() {
         println!("[[[ {} ]]]", source.paths.path.display());
@@ -28,8 +22,8 @@ fn main() -> anyhow::Result<()> {
         println!();
     }
 
-    let _module_asts = cool_driver::generate_ast(&mut package).unwrap();
-    println!("Ast generation success!");
+    // let _module_asts = cool_driver::generate_ast(&mut package).unwrap();
+    // println!("Ast generation success!");
 
     // let context = cool_codegen::create_context();
     // let codegen = Codegen::new(

@@ -1,3 +1,3 @@
 #!/bin/sh
 
-cargo run -- --crate-name test ../programs/p1.cl
+cargo run -- --crate-name test ../programs/main.cl

@@ -3,6 +3,7 @@ mod ty_kind;
 
 pub use self::ty_id::*;
 pub use self::ty_kind::*;
+use crate::StructId;
 use cool_arena::Arena;
 use cool_lexer::symbols::Symbol;
 use smallvec::SmallVec;
@@ -50,6 +51,11 @@ impl TyTable {
         .into();
 
         self.tys.get_or_insert(ty_kind)
+    }
+
+    #[inline]
+    pub fn mk_struct(&mut self, struct_id: StructId) -> TyId {
+        self.tys.get_or_insert(TyKind::Struct(struct_id))
     }
 }
 

@@ -1,5 +1,5 @@
 use crate::resolve::{
-    Binding, BindingId, ItemId, ItemKind, Module, ModuleElem, ModuleId, Mutability, ResolveError,
+    Binding, ItemId, ItemKind, Module, ModuleElem, ModuleId, Mutability, ResolveError,
     ResolveErrorKind, ResolveResult, ResolveTable, ScopeId,
 };
 use crate::ty::tys;
@@ -7,7 +7,7 @@ use crate::{ItemPath, ItemPathBuf};
 use cool_lexer::symbols::{sym, Symbol};
 
 impl ResolveTable {
-    pub fn insert_root_module(&mut self, symbol: Symbol) -> ResolveResult<(ItemId, ModuleId)> {
+    pub fn insert_root_module(&mut self, symbol: Symbol) -> ResolveResult<ModuleId> {
         let item_id = self
             .paths
             .insert_if_not_exists(&[symbol])
@@ -18,7 +18,7 @@ impl ResolveTable {
         self.items
             .push_checked(item_id, ItemKind::Module(module_id));
 
-        Ok((item_id, module_id))
+        Ok(module_id)
     }
 
     pub fn insert_module(
@@ -26,7 +26,7 @@ impl ResolveTable {
         parent_id: ModuleId,
         is_exported: bool,
         symbol: Symbol,
-    ) -> ResolveResult<(ItemId, ModuleId)> {
+    ) -> ResolveResult<ModuleId> {
         let module_path = {
             let parent_module = &self.modules[parent_id];
             parent_module.path.append(symbol)
@@ -51,7 +51,7 @@ impl ResolveTable {
             },
         );
 
-        Ok((item_id, module_id))
+        Ok(module_id)
     }
 
     pub fn insert_global_binding(
@@ -60,7 +60,7 @@ impl ResolveTable {
         is_exported: bool,
         mutability: Mutability,
         symbol: Symbol,
-    ) -> ResolveResult<(ItemId, BindingId)> {
+    ) -> ResolveResult<ItemId> {
         let parent_module = &mut self.modules[parent_id];
         let item_path = parent_module.path.append(symbol);
 
@@ -85,7 +85,7 @@ impl ResolveTable {
             },
         );
 
-        Ok((item_id, binding_id))
+        Ok(item_id)
     }
 
     pub fn insert_use<'a, P>(

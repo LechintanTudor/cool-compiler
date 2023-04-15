@@ -1,128 +1,164 @@
 use crate::paths::ModulePaths;
-use crate::SourceFile;
-use cool_ast::{AstGenerator, ModuleItemAst, ResolveAst};
+use crate::{CompileError, CompileErrorBundle, CompileOptions, CompileResult, SourceFile};
 use cool_lexer::lexer::{LexedSourceFile, Tokenizer};
 use cool_lexer::symbols::Symbol;
 use cool_parser::{DeclKind, Item, ModuleContent, ModuleKind, ParseResult, Parser};
 use cool_resolve::{
-    tys, ItemPathBuf, ModuleId, Mutability, ResolveError, ResolveErrorKind, ResolveTable,
+    ItemPathBuf, ModuleId, Mutability, ResolveError, ResolveErrorKind, ResolveTable,
 };
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::BufReader;
-use std::path::Path;
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct Package {
-    pub resolve: ResolveTable,
+    pub root_file: PathBuf,
     pub sources: Vec<SourceFile>,
 }
 
 #[derive(Clone, Debug)]
-pub struct FileModuleToProcess {
-    pub module_id: ModuleId,
-    pub paths: ModulePaths,
-}
-
-#[derive(Clone, Debug)]
-pub struct ImportToResolve {
+pub struct Import {
+    pub source_path: PathBuf,
     pub module_id: ModuleId,
     pub is_exported: bool,
     pub path: ItemPathBuf,
     pub alias: Option<Symbol>,
 }
 
-pub struct Driver<'a> {
-    pub resolve: &'a mut ResolveTable,
-    pub source_files: Vec<SourceFile>,
-    pub file_modules_to_process: VecDeque<FileModuleToProcess>,
-    pub imports_to_resolve: VecDeque<ImportToResolve>,
-}
+pub fn parse(resove: &mut ResolveTable, options: &CompileOptions) -> CompileResult<Package> {
+    let mut package = Package {
+        root_file: options.crate_root_file.clone(),
+        sources: Default::default(),
+    };
 
-impl<'a> Driver<'a> {
-    pub fn new(resolve: &'a mut ResolveTable, crate_name: &str, crate_path: &Path) -> Self {
-        let crate_symbol = Symbol::insert(crate_name);
-        let crate_paths = ModulePaths::for_root(crate_path).unwrap();
-        let (_, crate_module_id) = resolve.insert_root_module(crate_symbol).unwrap();
+    let mut errors = Vec::<CompileError>::new();
 
-        Self {
-            resolve,
-            source_files: Default::default(),
-            file_modules_to_process: vec![FileModuleToProcess {
-                module_id: crate_module_id,
-                paths: crate_paths,
-            }]
-            .into(),
-            imports_to_resolve: Default::default(),
+    let crate_paths = match ModulePaths::for_root(&options.crate_root_file) {
+        Ok(crate_paths) => Some(crate_paths),
+        Err(error) => {
+            errors.push(CompileError {
+                path: options.crate_root_file.clone(),
+                kind: error.into(),
+            });
+            None
         }
-    }
+    };
 
-    pub fn process_next_file_module(&mut self) -> bool {
-        let Some(file_module) = self.file_modules_to_process.pop_front() else {
-            return false;
-        };
+    let crate_symbol = Symbol::insert(&options.crate_name);
+    let crate_module_id = match resove.insert_root_module(crate_symbol) {
+        Ok(crate_module_id) => Some(crate_module_id),
+        Err(error) => {
+            errors.push(CompileError {
+                path: options.crate_root_file.clone(),
+                kind: error.into(),
+            });
+            None
+        }
+    };
 
-        let mut source_file = match parse_source_file(file_module.paths, file_module.module_id) {
+    let (crate_paths, crate_module_id) = match (crate_paths, crate_module_id) {
+        (Some(crate_paths), Some(crate_module_id)) => (crate_paths, crate_module_id),
+        _ => return Err(CompileErrorBundle { package, errors }),
+    };
+
+    let mut file_modules = VecDeque::<(ModuleId, ModulePaths)>::new();
+    file_modules.push_back((crate_module_id, crate_paths));
+
+    let mut imports = VecDeque::<Import>::new();
+
+    while let Some((module_id, module_paths)) = file_modules.pop_front() {
+        let mut source_file = match parse_source_file(module_id, &module_paths) {
             Ok(source_file) => source_file,
             Err(error) => {
-                println!("\n{}", error);
-                return true;
+                errors.push(CompileError {
+                    path: module_paths.path,
+                    kind: error.into(),
+                });
+                continue;
             }
         };
 
-        let mut modules_to_process = VecDeque::<(ModuleId, &mut ModuleContent)>::new();
-        modules_to_process.push_back((file_module.module_id, &mut source_file.module));
+        let mut modules = VecDeque::<(ModuleId, &mut ModuleContent)>::new();
+        modules.push_back((module_id, &mut source_file.module));
 
-        while let Some((module_id, module)) = modules_to_process.pop_front() {
+        while let Some((module_id, module)) = modules.pop_front() {
             for decl in module.decls.iter_mut() {
-                let is_exported = decl.is_exported;
-
                 match &mut decl.kind {
-                    DeclKind::Item(decl) => match &mut decl.item {
-                        Item::Alias(_) => {
-                            // TODO
-                        }
+                    DeclKind::Item(item_decl) => match &mut item_decl.item {
                         Item::Module(child_module) => {
-                            let (_, child_module_id) = self
-                                .resolve
-                                .insert_module(module_id, is_exported, decl.ident.symbol)
-                                .unwrap();
+                            let child_module_id = match resove.insert_module(
+                                module_id,
+                                decl.is_exported,
+                                item_decl.ident.symbol,
+                            ) {
+                                Ok(child_module_id) => child_module_id,
+                                Err(error) => {
+                                    errors.push(CompileError {
+                                        path: module_paths.path.clone(),
+                                        kind: error.into(),
+                                    });
+                                    continue;
+                                }
+                            };
 
                             match &mut child_module.kind {
-                                ModuleKind::Inline(module_content) => {
-                                    modules_to_process.push_back((child_module_id, module_content));
+                                ModuleKind::Inline(child_module_content) => {
+                                    modules.push_back((child_module_id, child_module_content));
                                 }
                                 ModuleKind::External => {
-                                    todo!()
-                                    // let child_paths = ModulePaths::for_child(
-                                    //     &source_file.paths.child_dir,
-                                    //     decl.ident.symbol.as_str(),
-                                    // )
-                                    // .unwrap();
+                                    let child_module_paths = match ModulePaths::for_child(
+                                        &source_file.paths.child_dir,
+                                        item_decl.ident.symbol.as_str(),
+                                    ) {
+                                        Ok(child_module_paths) => child_module_paths,
+                                        Err(error) => {
+                                            errors.push(CompileError {
+                                                path: module_paths.path.clone(),
+                                                kind: error.into(),
+                                            });
+                                            continue;
+                                        }
+                                    };
 
-                                    // self.file_modules_to_process.push_back(FileModuleToProcess {
-                                    //     module_id: child_id,
-                                    //     paths: child_paths,
-                                    // });
+                                    file_modules.push_back((child_module_id, child_module_paths));
                                 }
                             }
                         }
-                        Item::Struct(_struct_item) => {
-                            // TODO: Add new type
+                        Item::Struct(_) => {
+                            item_decl.item_id = match resove.declare_struct(
+                                module_id,
+                                decl.is_exported,
+                                item_decl.ident.symbol,
+                            ) {
+                                Ok(item_id) => item_id,
+                                Err(error) => {
+                                    errors.push(CompileError {
+                                        path: module_paths.path.clone(),
+                                        kind: error.into(),
+                                    });
+                                    continue;
+                                }
+                            };
                         }
-                        Item::Const(_) | Item::ExternFn(_) => {
-                            let (item_id, _) = self
-                                .resolve
-                                .insert_global_binding(
-                                    module_id,
-                                    is_exported,
-                                    Mutability::Const,
-                                    decl.ident.symbol,
-                                )
-                                .unwrap();
-
-                            decl.item_id = item_id;
+                        Item::Const(_) => {
+                            item_decl.item_id = match resove.insert_global_binding(
+                                module_id,
+                                decl.is_exported,
+                                Mutability::Const,
+                                item_decl.ident.symbol,
+                            ) {
+                                Ok(item_id) => item_id,
+                                Err(error) => {
+                                    errors.push(CompileError {
+                                        path: module_paths.path.clone(),
+                                        kind: error.into(),
+                                    });
+                                    continue;
+                                }
+                            }
                         }
+                        _ => todo!(),
                     },
                     DeclKind::Use(use_decl) => {
                         let path = use_decl
@@ -134,73 +170,64 @@ impl<'a> Driver<'a> {
 
                         let alias = use_decl.alias.map(|alias| alias.symbol);
 
-                        self.imports_to_resolve.push_back(ImportToResolve {
+                        imports.push_back(Import {
+                            source_path: source_file.paths.path.clone(),
                             module_id,
-                            is_exported,
+                            is_exported: decl.is_exported,
                             path,
                             alias,
-                        })
+                        });
                     }
                 }
             }
         }
 
-        self.source_files.push(source_file);
-        true
+        package.sources.push(source_file);
     }
 
-    pub fn resolve_imports(&mut self) -> Result<(), Vec<ResolveError>> {
-        let mut import_errors = Vec::<ResolveError>::new();
+    let mut import_fail_count = 0_usize;
+    while let Some(import) = imports.pop_back() {
+        match resove.insert_use(
+            import.module_id,
+            import.is_exported,
+            import.path.as_symbol_slice(),
+            import.alias,
+        ) {
+            Ok(_) => import_fail_count = 0,
+            Err(error) => {
+                import_fail_count += 1;
 
-        while !self.imports_to_resolve.is_empty() {
-            let mut solved_any_import = false;
-            let initial_import_count = self.imports_to_resolve.len();
+                if error.kind == ResolveErrorKind::SymbolNotFound {
+                    imports.push_back(import);
+                } else {
+                    errors.push(CompileError {
+                        path: import.source_path,
+                        kind: error.into(),
+                    });
+                }
 
-            for _ in 0..initial_import_count {
-                let import = self.imports_to_resolve.pop_front().unwrap();
-
-                let resolve_result = self.resolve.insert_use(
-                    import.module_id,
-                    import.is_exported,
-                    import.path.as_path(),
-                    import.alias,
-                );
-
-                match resolve_result {
-                    Ok(_) => solved_any_import = true,
-                    Err(error) => {
-                        if error.kind == ResolveErrorKind::SymbolNotFound {
-                            self.imports_to_resolve.push_back(import);
-                        } else {
-                            import_errors.push(error);
-                        }
-                    }
+                if import_fail_count >= imports.len() {
+                    break;
                 }
             }
-
-            if !solved_any_import {
-                break;
-            }
         }
-
-        for import in self.imports_to_resolve.drain(..) {
-            import_errors.push(ResolveError::not_found(import.path.last()));
-        }
-
-        if !import_errors.is_empty() {
-            return Err(import_errors);
-        }
-
-        Ok(())
     }
 
-    #[inline]
-    pub fn into_source_files(self) -> Vec<SourceFile> {
-        self.source_files
+    for import in imports.drain(..) {
+        errors.push(CompileError {
+            path: import.source_path,
+            kind: ResolveError::not_found(import.path.last()).into(),
+        });
+    }
+
+    if errors.is_empty() {
+        Ok(package)
+    } else {
+        Err(CompileErrorBundle { package, errors })
     }
 }
 
-fn parse_source_file(paths: ModulePaths, module_id: ModuleId) -> ParseResult<SourceFile> {
+fn parse_source_file(module_id: ModuleId, paths: &ModulePaths) -> ParseResult<SourceFile> {
     let lexed = {
         let file = File::open(&paths.path).unwrap();
         let mut buf_reader = BufReader::new(file);
@@ -212,32 +239,9 @@ fn parse_source_file(paths: ModulePaths, module_id: ModuleId) -> ParseResult<Sou
     let module = parser.parse_module_file()?;
 
     Ok(SourceFile {
-        paths,
+        paths: paths.clone(),
         lexed,
         module_id,
         module,
     })
-}
-
-pub fn generate_ast(package: &mut Package) -> Result<Vec<ModuleItemAst>, ()> {
-    let mut ast_generator = AstGenerator::new(&mut package.resolve);
-    let mut module_asts = Vec::<ModuleItemAst>::new();
-
-    for source in package.sources.iter() {
-        module_asts.push(ast_generator.gen_module(source.module_id, &source.module));
-    }
-
-    for module_ast in module_asts.iter() {
-        module_ast
-            .resolve_consts(&mut ast_generator, tys::MODULE)
-            .unwrap();
-    }
-
-    for module_ast in module_asts.iter() {
-        module_ast
-            .resolve_exprs(&mut ast_generator, tys::MODULE)
-            .unwrap();
-    }
-
-    Ok(module_asts)
 }

@@ -1,4 +1,5 @@
 use crate::ty::TyId;
+use crate::StructId;
 use cool_lexer::symbols::Symbol;
 use smallvec::SmallVec;
 
@@ -12,6 +13,7 @@ pub enum TyKind {
     Char,
     Tuple(TupleTy),
     Fn(FnTy),
+    Struct(StructId),
     Module,
 }
 

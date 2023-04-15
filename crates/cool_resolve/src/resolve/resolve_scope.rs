@@ -1,9 +1,9 @@
-use crate::{BindingId, ItemPathBuf};
+use crate::{BindingId, ItemId, ItemPathBuf, ResolveTable};
 use cool_collections::{id_newtype, SmallVecMap};
 use cool_lexer::symbols::Symbol;
 use rustc_hash::FxHashMap;
+use std::ops;
 
-id_newtype!(ItemId);
 id_newtype!(ModuleId);
 id_newtype!(FrameId);
 
@@ -71,5 +71,14 @@ impl Frame {
             parent_id,
             bindings: Default::default(),
         }
+    }
+}
+
+impl ops::Index<ModuleId> for ResolveTable {
+    type Output = Module;
+
+    #[inline]
+    fn index(&self, module_id: ModuleId) -> &Self::Output {
+        &self.modules[module_id]
     }
 }
