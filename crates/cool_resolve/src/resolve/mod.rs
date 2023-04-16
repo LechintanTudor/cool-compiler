@@ -1,3 +1,4 @@
+mod resolve_alias;
 mod resolve_binding;
 mod resolve_error;
 mod resolve_expr;
@@ -8,6 +9,7 @@ mod resolve_scope;
 mod resolve_struct;
 mod resolve_ty;
 
+pub use self::resolve_alias::*;
 pub use self::resolve_binding::*;
 pub use self::resolve_error::*;
 pub use self::resolve_expr::*;

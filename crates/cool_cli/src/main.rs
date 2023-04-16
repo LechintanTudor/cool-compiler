@@ -7,7 +7,6 @@ use cool_resolve::ResolveTable;
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-
     let options = CompileOptions {
         crate_name: args.crate_name,
         crate_root_file: args.crate_root_file,
@@ -21,6 +20,9 @@ fn main() -> anyhow::Result<()> {
         println!("{:#?}", source.module);
         println!();
     }
+
+    cool_driver::resolve_aliases(&package, &mut resolve);
+    println!("alias resolution completed successfully");
 
     // let _module_asts = cool_driver::generate_ast(&mut package).unwrap();
     // println!("Ast generation success!");

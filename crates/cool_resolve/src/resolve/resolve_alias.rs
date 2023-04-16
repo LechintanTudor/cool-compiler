@@ -1,0 +1,45 @@
+use crate::{
+    tys, ItemId, ItemKind, ModuleElem, ModuleId, ResolveError, ResolveResult, ResolveTable, TyId,
+};
+use cool_lexer::symbols::Symbol;
+
+impl ResolveTable {
+    pub fn declare_alias(
+        &mut self,
+        module_id: ModuleId,
+        is_exported: bool,
+        symbol: Symbol,
+    ) -> ResolveResult<ItemId> {
+        let module = &mut self.modules[module_id];
+        let item_path = module.path.append(symbol);
+
+        let item_id = self
+            .paths
+            .insert_if_not_exists(item_path.as_symbol_slice())
+            .ok_or(ResolveError::already_defined(symbol))?;
+
+        self.items
+            .push_checked(item_id, ItemKind::Ty(tys::INFERRED));
+
+        module.elems.insert(
+            symbol,
+            ModuleElem {
+                is_exported,
+                item_id,
+            },
+        );
+
+        Ok(item_id)
+    }
+
+    pub fn define_alias(&mut self, item_id: ItemId, resolved_ty_id: TyId) {
+        let item = &mut self.items[item_id];
+
+        let ItemKind::Ty(alias_ty_id) = item else {
+            panic!("item is not a type alias");
+        };
+
+        assert!(alias_ty_id.is_inferred());
+        *alias_ty_id = resolved_ty_id;
+    }
+}

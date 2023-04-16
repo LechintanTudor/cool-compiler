@@ -125,6 +125,22 @@ pub fn parse(resove: &mut ResolveTable, options: &CompileOptions) -> CompileResu
                                 }
                             }
                         }
+                        Item::Alias(_) => {
+                            item_decl.item_id = match resove.declare_alias(
+                                module_id,
+                                decl.is_exported,
+                                item_decl.ident.symbol,
+                            ) {
+                                Ok(item_id) => item_id,
+                                Err(error) => {
+                                    errors.push(CompileError {
+                                        path: module_paths.path.clone(),
+                                        kind: error.into(),
+                                    });
+                                    continue;
+                                }
+                            };
+                        }
                         Item::Struct(_) => {
                             item_decl.item_id = match resove.declare_struct(
                                 module_id,
