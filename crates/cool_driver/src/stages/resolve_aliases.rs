@@ -2,7 +2,8 @@ use crate::Package;
 use cool_lexer::symbols::sym;
 use cool_parser::{AliasItem, Item, ModuleContent, ModuleItem, ModuleKind, StructItem, Ty};
 use cool_resolve::{
-    tys, ItemId, ItemPathBuf, ModuleId, ResolveError, ResolveResult, ResolveTable, ScopeId, TyId,
+    tys, ItemId, ItemPathBuf, ModuleId, ResolveError, ResolveResult, ResolveTable, ScopeId,
+    StructTy, TyId,
 };
 use smallvec::SmallVec;
 use std::collections::VecDeque;
@@ -55,6 +56,33 @@ pub fn resolve_aliases(package: &Package, resolve: &mut ResolveTable) {
                     panic!("failed to resolve type aliases");
                 }
             }
+        }
+    }
+
+    let mut resolve_fail_count = 0;
+    while let Some((module_id, item_id, struct_item)) = structs.pop_front() {
+        let struct_ty = {
+            let mut builder = StructTy::builder();
+
+            for field in struct_item.fields.iter() {
+                let field_ty_id = resolve_parsed_ty(resolve, module_id.into(), &field.ty).unwrap();
+                builder.add_field(field.ident.symbol, field_ty_id);
+            }
+
+            builder.build()
+        };
+
+        match resolve.define_struct(item_id, struct_ty) {
+            Some(true) => resolve_fail_count = 0,
+            Some(false) => {
+                structs.push_back((module_id, item_id, struct_item));
+
+                resolve_fail_count += 1;
+                if resolve_fail_count >= structs.len() {
+                    panic!("failed to resolve structs");
+                }
+            }
+            _ => todo!(),
         }
     }
 }

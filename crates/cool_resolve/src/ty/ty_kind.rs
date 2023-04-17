@@ -32,6 +32,14 @@ impl TyKind {
             _ => None,
         }
     }
+
+    #[inline]
+    pub fn as_struct_id(&self) -> Option<StructId> {
+        match self {
+            Self::Struct(struct_id) => Some(*struct_id),
+            _ => None,
+        }
+    }
 }
 
 impl From<InferredTy> for TyKind {

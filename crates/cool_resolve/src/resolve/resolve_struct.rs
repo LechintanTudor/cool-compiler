@@ -1,8 +1,9 @@
 use crate::{
-    ItemId, ItemKind, ModuleElem, ModuleId, ResolveError, ResolveResult, ResolveTable, TyId,
+    ItemId, ItemKind, ModuleElem, ModuleId, ResolveError, ResolveResult, ResolveTable, TyId, TyKind,
 };
 use cool_collections::{id_newtype, SmallVecMap};
 use cool_lexer::symbols::Symbol;
+use std::collections::VecDeque;
 
 id_newtype!(StructId);
 
@@ -65,5 +66,50 @@ impl ResolveTable {
         );
 
         Ok(item_id)
+    }
+
+    // TODO: Separate error type for ty definitions
+    pub fn define_struct(&mut self, item_id: ItemId, struct_ty: StructTy) -> Option<bool> {
+        let struct_ty_id = self.items[item_id].as_ty_id().expect("item is not a type");
+
+        let struct_id = self.tys[struct_ty_id]
+            .as_struct_id()
+            .expect("type is not a struct");
+
+        for ty_id in struct_ty.fields.values() {
+            match self.ty_contains_ty(*ty_id, struct_ty_id) {
+                Some(true) => panic!("type has infinite size"),
+                Some(false) => (),
+                None => return Some(false),
+            }
+        }
+
+        self.struct_tys[struct_id] = Some(struct_ty);
+        Some(true)
+    }
+
+    fn ty_contains_ty(&self, haysack_ty_id: TyId, needle_ty_id: TyId) -> Option<bool> {
+        let mut tys_to_check = VecDeque::<TyId>::new();
+        tys_to_check.push_back(haysack_ty_id);
+
+        while let Some(ty_id) = tys_to_check.pop_front() {
+            if ty_id == needle_ty_id {
+                return Some(true);
+            }
+
+            match &self.tys[ty_id] {
+                TyKind::Tuple(tuple_ty) => tys_to_check.extend(tuple_ty.elems.iter()),
+                TyKind::Struct(struct_id) => {
+                    let Some(struct_ty) = &self.struct_tys[*struct_id] else {
+                        return None;
+                    };
+
+                    tys_to_check.extend(struct_ty.fields.values());
+                }
+                _ => (),
+            }
+        }
+
+        Some(false)
     }
 }

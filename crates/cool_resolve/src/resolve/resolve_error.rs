@@ -86,6 +86,9 @@ impl fmt::Display for ResolveError {
             ResolveErrorKind::SymbolNotTy => {
                 write!(f, "symbol \"{}\" does not refer to a type", self.symbol)
             }
+            ResolveErrorKind::SymbolNotStruct => {
+                write!(f, "symbol \"{}\" does not refer to a struct", self.symbol)
+            }
         }
     }
 }
@@ -99,4 +102,5 @@ pub enum ResolveErrorKind {
     SymbolNotItem,
     SymbolNotModule,
     SymbolNotTy,
+    SymbolNotStruct,
 }
