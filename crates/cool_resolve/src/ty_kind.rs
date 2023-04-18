@@ -1,5 +1,4 @@
-use crate::ty::TyId;
-use crate::StructId;
+use crate::{StructId, TyId};
 use cool_lexer::symbols::Symbol;
 use smallvec::SmallVec;
 
@@ -74,6 +73,13 @@ impl From<FnTy> for TyKind {
     #[inline]
     fn from(ty: FnTy) -> Self {
         Self::Fn(ty)
+    }
+}
+
+impl From<StructId> for TyKind {
+    #[inline]
+    fn from(struct_id: StructId) -> Self {
+        Self::Struct(struct_id)
     }
 }
 

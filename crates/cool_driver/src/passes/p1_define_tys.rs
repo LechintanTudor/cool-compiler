@@ -2,13 +2,13 @@ use crate::Package;
 use cool_lexer::symbols::sym;
 use cool_parser::{AliasItem, Item, ModuleContent, ModuleItem, ModuleKind, StructItem, Ty};
 use cool_resolve::{
-    tys, ItemId, ItemPathBuf, ModuleId, ResolveError, ResolveResult, ResolveTable, ScopeId,
+    tys, ItemId, ItemPathBuf, ModuleId, ResolveContext, ResolveError, ResolveResult, ScopeId,
     StructTy, TyId,
 };
 use smallvec::SmallVec;
 use std::collections::VecDeque;
 
-pub fn resolve_aliases(package: &Package, resolve: &mut ResolveTable) {
+pub fn p1_define_tys(package: &Package, resolve: &mut ResolveContext) {
     let mut aliases = VecDeque::<(ModuleId, ItemId, &AliasItem)>::new();
     let mut structs = VecDeque::<(ModuleId, ItemId, &StructItem)>::new();
 
@@ -62,14 +62,16 @@ pub fn resolve_aliases(package: &Package, resolve: &mut ResolveTable) {
     let mut resolve_fail_count = 0;
     while let Some((module_id, item_id, struct_item)) = structs.pop_front() {
         let struct_ty = {
-            let mut builder = StructTy::builder();
+            let mut struct_ty = StructTy::default();
 
             for field in struct_item.fields.iter() {
-                let field_ty_id = resolve_parsed_ty(resolve, module_id.into(), &field.ty).unwrap();
-                builder.add_field(field.ident.symbol, field_ty_id);
+                struct_ty.fields.insert_if_not_exists(
+                    field.ident.symbol,
+                    resolve_parsed_ty(resolve, module_id.into(), &field.ty).unwrap(),
+                );
             }
 
-            builder.build()
+            struct_ty
         };
 
         match resolve.define_struct(item_id, struct_ty) {
@@ -88,7 +90,7 @@ pub fn resolve_aliases(package: &Package, resolve: &mut ResolveTable) {
 }
 
 pub fn resolve_parsed_ty(
-    resolve: &mut ResolveTable,
+    resolve: &mut ResolveContext,
     scope_id: ScopeId,
     parsed_ty: &Ty,
 ) -> ResolveResult<TyId> {

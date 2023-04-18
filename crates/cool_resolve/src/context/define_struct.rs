@@ -1,44 +1,14 @@
 use crate::{
-    ItemId, ItemKind, ModuleElem, ModuleId, ResolveError, ResolveResult, ResolveTable, TyId, TyKind,
+    ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveResult, StructTy,
+    TyId, TyKind,
 };
-use cool_collections::{id_newtype, SmallVecMap};
+use cool_collections::id_newtype;
 use cool_lexer::symbols::Symbol;
 use std::collections::VecDeque;
 
 id_newtype!(StructId);
 
-#[derive(Clone, Debug)]
-pub struct StructTy {
-    fields: SmallVecMap<Symbol, TyId, 2>,
-}
-
-impl StructTy {
-    #[inline]
-    pub fn builder() -> StructTyBuilder {
-        StructTyBuilder::default()
-    }
-}
-
-#[derive(Default, Debug)]
-pub struct StructTyBuilder {
-    fields: SmallVecMap<Symbol, TyId, 2>,
-}
-
-impl StructTyBuilder {
-    #[inline]
-    pub fn add_field(&mut self, symbol: Symbol, ty_id: TyId) {
-        assert!(self.fields.insert_if_not_exists(symbol, ty_id));
-    }
-
-    #[inline]
-    pub fn build(self) -> StructTy {
-        StructTy {
-            fields: self.fields,
-        }
-    }
-}
-
-impl ResolveTable {
+impl ResolveContext {
     pub fn declare_struct(
         &mut self,
         module_id: ModuleId,
@@ -54,7 +24,7 @@ impl ResolveTable {
             .ok_or(ResolveError::already_defined(symbol))?;
 
         let struct_id = self.struct_tys.push(None);
-        let ty_id = self.tys.mk_struct(struct_id);
+        let ty_id = self.tys.get_or_insert(TyKind::Struct(struct_id));
         self.items.push_checked(item_id, ItemKind::Ty(ty_id));
 
         module.elems.insert(

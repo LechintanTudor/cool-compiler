@@ -1,9 +1,9 @@
 use crate::{
-    tys, ItemId, ItemKind, ModuleElem, ModuleId, ResolveError, ResolveResult, ResolveTable, TyId,
+    tys, ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveResult, TyId,
 };
 use cool_lexer::symbols::Symbol;
 
-impl ResolveTable {
+impl ResolveContext {
     pub fn declare_alias(
         &mut self,
         module_id: ModuleId,

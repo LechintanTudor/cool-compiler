@@ -4,7 +4,7 @@ use cool_lexer::lexer::{LexedSourceFile, Tokenizer};
 use cool_lexer::symbols::Symbol;
 use cool_parser::{DeclKind, Item, ModuleContent, ModuleKind, ParseResult, Parser};
 use cool_resolve::{
-    ItemPathBuf, ModuleId, Mutability, ResolveError, ResolveErrorKind, ResolveTable,
+    ItemPathBuf, ModuleId, Mutability, ResolveContext, ResolveError, ResolveErrorKind,
 };
 use std::collections::VecDeque;
 use std::fs::File;
@@ -26,7 +26,7 @@ pub struct Import {
     pub alias: Option<Symbol>,
 }
 
-pub fn parse(resove: &mut ResolveTable, options: &CompileOptions) -> CompileResult<Package> {
+pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> CompileResult<Package> {
     let mut package = Package {
         root_file: options.crate_root_file.clone(),
         sources: Default::default(),

@@ -36,6 +36,16 @@ impl<I, T> Arena<I, T> {
         Some(self.insert_new(value))
     }
 
+    pub fn insert_checked(&mut self, expected_id: I, value: T)
+    where
+        I: Id,
+        T: Eq + Hash,
+    {
+        assert!(!self.ids.contains_key(&value), "value already exists");
+        let id = self.insert_new(value);
+        assert_eq!(id.inner(), expected_id.inner(), "ids are different");
+    }
+
     pub fn get_or_insert(&mut self, value: T) -> I
     where
         I: Id,

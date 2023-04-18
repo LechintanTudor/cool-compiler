@@ -1,12 +1,22 @@
-use crate::resolve::{
-    Binding, ItemId, ItemKind, Module, ModuleElem, ModuleId, Mutability, ResolveError,
-    ResolveErrorKind, ResolveResult, ResolveTable, ScopeId,
+use crate::{
+    tys, Binding, ItemKind, ItemPath, ItemPathBuf, Module, ModuleElem, Mutability, ResolveContext,
+    ResolveError, ResolveErrorKind, ResolveResult, ScopeId,
 };
-use crate::ty::tys;
-use crate::{ItemPath, ItemPathBuf};
+use cool_collections::id_newtype;
 use cool_lexer::symbols::{sym, Symbol};
+use std::ops;
 
-impl ResolveTable {
+id_newtype!(ItemId);
+id_newtype!(ModuleId);
+
+impl ModuleId {
+    #[inline]
+    pub fn for_builtins() -> Self {
+        Self::new_unwrap(1)
+    }
+}
+
+impl ResolveContext {
     pub fn insert_root_module(&mut self, symbol: Symbol) -> ResolveResult<ModuleId> {
         let item_id = self
             .paths
@@ -211,5 +221,23 @@ impl ResolveTable {
             .ok_or(ResolveError::not_module(path.last()))?;
 
         Ok(&self.modules[module_id])
+    }
+}
+
+impl ops::Index<ItemId> for ResolveContext {
+    type Output = ItemKind;
+
+    #[inline]
+    fn index(&self, item_id: ItemId) -> &Self::Output {
+        &self.items[item_id]
+    }
+}
+
+impl ops::Index<ModuleId> for ResolveContext {
+    type Output = Module;
+
+    #[inline]
+    fn index(&self, module_id: ModuleId) -> &Self::Output {
+        &self.modules[module_id]
     }
 }

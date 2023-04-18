@@ -1,35 +1,12 @@
-use crate::{tys, Frame, FrameId, ResolveResult, ResolveTable, ScopeId, TyId};
+use crate::{tys, Binding, Frame, Mutability, ResolveContext, ResolveResult, ScopeId, TyId};
 use cool_collections::id_newtype;
 use cool_lexer::symbols::Symbol;
 use std::ops;
 
+id_newtype!(FrameId);
 id_newtype!(BindingId);
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum Mutability {
-    Const,
-    Immutable,
-    Mutable,
-}
-
-impl Mutability {
-    #[inline]
-    pub fn local(is_mutable: bool) -> Self {
-        if is_mutable {
-            Self::Mutable
-        } else {
-            Self::Immutable
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct Binding {
-    pub mutability: Mutability,
-    pub ty_id: TyId,
-}
-
-impl ResolveTable {
+impl ResolveContext {
     #[inline]
     pub fn add_frame(&mut self, parent_id: ScopeId) -> FrameId {
         self.frames.push(Frame::new(parent_id))
@@ -63,7 +40,7 @@ impl ResolveTable {
     }
 }
 
-impl ops::Index<BindingId> for ResolveTable {
+impl ops::Index<BindingId> for ResolveContext {
     type Output = Binding;
 
     #[inline]

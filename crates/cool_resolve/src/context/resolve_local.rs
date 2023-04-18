@@ -1,9 +1,8 @@
-use crate::resolve::{
-    FrameId, ItemKind, ModuleId, ResolveError, ResolveResult, ResolveTable, ScopeId,
-};
+use crate::context::{FrameId, ItemKind, ModuleId, ResolveContext, ResolveError, ResolveResult};
+use crate::ScopeId;
 use cool_lexer::symbols::Symbol;
 
-impl ResolveTable {
+impl ResolveContext {
     pub fn resolve_local(&self, frame_id: FrameId, symbol: Symbol) -> ResolveResult<ItemKind> {
         let mut scope_id = ScopeId::Frame(frame_id);
 

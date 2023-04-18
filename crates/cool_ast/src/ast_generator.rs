@@ -1,15 +1,15 @@
 use cool_lexer::symbols::sym;
 use cool_parser::Ty;
-use cool_resolve::{tys, ItemPathBuf, ResolveError, ResolveResult, ResolveTable, ScopeId, TyId};
+use cool_resolve::{tys, ItemPathBuf, ResolveContext, ResolveError, ResolveResult, ScopeId, TyId};
 use smallvec::SmallVec;
 
 pub struct AstGenerator<'a> {
-    pub resolve: &'a mut ResolveTable,
+    pub resolve: &'a mut ResolveContext,
 }
 
 impl<'a> AstGenerator<'a> {
     #[inline]
-    pub fn new(resolve: &'a mut ResolveTable) -> Self {
+    pub fn new(resolve: &'a mut ResolveContext) -> Self {
         Self { resolve }
     }
 

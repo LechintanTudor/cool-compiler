@@ -1,6 +1,5 @@
-use crate::consts::tys;
-use crate::resolve::ResolveTable;
-use crate::ty::TyId;
+use crate::context::ResolveContext;
+use crate::{tys, TyId};
 use cool_collections::id_newtype;
 use std::ops;
 
@@ -18,7 +17,7 @@ pub struct Expr {
     pub ty_id: TyId,
 }
 
-impl ResolveTable {
+impl ResolveContext {
     #[inline]
     pub fn add_expr(&mut self) -> ExprId {
         self.exprs.push(tys::INFERRED)
@@ -30,7 +29,7 @@ impl ResolveTable {
     }
 }
 
-impl ops::Index<ExprId> for ResolveTable {
+impl ops::Index<ExprId> for ResolveContext {
     type Output = TyId;
 
     #[inline]

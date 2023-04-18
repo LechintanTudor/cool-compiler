@@ -1,6 +1,5 @@
-use crate::resolve::ResolveTable;
-use crate::ty::{FloatTy, IntTy, TyKind};
-use crate::InferredTy;
+use crate::context::ResolveContext;
+use crate::{FloatTy, InferredTy, IntTy, TyKind};
 use cool_lexer::symbols::sym;
 
 macro_rules! builtins {
@@ -14,7 +13,7 @@ macro_rules! builtins {
     } => {
         #[allow(dead_code)]
         pub mod itm {
-            use crate::resolve::ItemId;
+            use crate::ItemId;
 
             $(
                 pub const $item_ident: ItemId = unsafe { ItemId::new_unchecked($item_idx) };
@@ -23,7 +22,7 @@ macro_rules! builtins {
 
         #[allow(dead_code)]
         pub mod tys {
-            use crate::ty::*;
+            use crate::TyId;
 
             pub const UNIT: TyId = unsafe { TyId::new_unchecked(1) };
             $(
@@ -34,9 +33,9 @@ macro_rules! builtins {
             )+
         }
 
-        impl ResolveTable {
+        impl ResolveContext {
             pub fn with_builtins() -> Self {
-                let mut resolve = ResolveTable::default();
+                let mut resolve = ResolveContext::default();
                 resolve.insert_root_module(sym::EMPTY).unwrap();
                 resolve.insert_builtin_ty(tys::UNIT, TyKind::Unit);
 

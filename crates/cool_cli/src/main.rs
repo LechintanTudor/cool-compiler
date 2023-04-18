@@ -3,7 +3,7 @@ mod args;
 use crate::args::Args;
 use clap::Parser as _;
 use cool_driver::CompileOptions;
-use cool_resolve::ResolveTable;
+use cool_resolve::ResolveContext;
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
@@ -12,8 +12,8 @@ fn main() -> anyhow::Result<()> {
         crate_root_file: args.crate_root_file,
     };
 
-    let mut resolve = ResolveTable::with_builtins();
-    let package = cool_driver::parse(&mut resolve, &options)?;
+    let mut resolve = ResolveContext::with_builtins();
+    let package = cool_driver::p0_parse(&mut resolve, &options)?;
 
     for source in package.sources.iter() {
         println!("[[[ {} ]]]", source.paths.path.display());
@@ -21,7 +21,7 @@ fn main() -> anyhow::Result<()> {
         println!();
     }
 
-    cool_driver::resolve_aliases(&package, &mut resolve);
+    cool_driver::p1_define_tys(&package, &mut resolve);
     println!("alias resolution completed successfully");
 
     // let _module_asts = cool_driver::generate_ast(&mut package).unwrap();

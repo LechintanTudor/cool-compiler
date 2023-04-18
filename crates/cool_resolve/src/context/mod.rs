@@ -1,43 +1,38 @@
-mod resolve_alias;
+mod define_alias;
+mod define_struct;
+mod define_ty;
 mod resolve_binding;
 mod resolve_error;
 mod resolve_expr;
 mod resolve_global;
-mod resolve_item;
 mod resolve_local;
-mod resolve_scope;
-mod resolve_struct;
-mod resolve_ty;
 
-pub use self::resolve_alias::*;
+pub use self::define_alias::*;
+pub use self::define_struct::*;
+pub use self::define_ty::*;
 pub use self::resolve_binding::*;
 pub use self::resolve_error::*;
 pub use self::resolve_expr::*;
 pub use self::resolve_global::*;
-pub use self::resolve_item::*;
 pub use self::resolve_local::*;
-pub use self::resolve_scope::*;
-pub use self::resolve_struct::*;
-pub use self::resolve_ty::*;
-use crate::ty::{tys, TyId};
-use crate::TyTable;
-use cool_arena::SliceArena;
+use crate::{tys, Binding, Frame, ItemKind, Module, Mutability, StructTy, TyKind};
+use cool_arena::{Arena, SliceArena};
 use cool_collections::IdIndexedVec;
 use cool_lexer::symbols::Symbol;
 
 #[derive(Debug)]
-pub struct ResolveTable {
+pub struct ResolveContext {
     paths: SliceArena<ItemId, Symbol>,
     items: IdIndexedVec<ItemId, ItemKind>,
     modules: IdIndexedVec<ModuleId, Module>,
-    tys: TyTable,
+    tys: Arena<TyId, TyKind>,
     struct_tys: IdIndexedVec<StructId, Option<StructTy>>,
     bindings: IdIndexedVec<BindingId, Binding>,
     frames: IdIndexedVec<FrameId, Frame>,
     exprs: IdIndexedVec<ExprId, TyId>,
 }
 
-impl Default for ResolveTable {
+impl Default for ResolveContext {
     fn default() -> Self {
         Self {
             paths: Default::default(),
@@ -53,7 +48,7 @@ impl Default for ResolveTable {
                 ty_id: tys::INFERRED,
             }),
             frames: IdIndexedVec::new(Frame {
-                parent_id: ScopeId::Module(ModuleId::dummy()),
+                parent_id: ModuleId::dummy().into(),
                 bindings: Default::default(),
             }),
             exprs: Default::default(),
