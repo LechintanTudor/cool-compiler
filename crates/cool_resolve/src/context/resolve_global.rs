@@ -198,6 +198,11 @@ impl ResolveContext {
     }
 
     #[inline]
+    pub fn get_path_by_item_id(&self, item_id: ItemId) -> ItemPath {
+        self.paths[item_id].into()
+    }
+
+    #[inline]
     fn get_item_id_by_path<'a, P>(&self, path: P) -> Option<ItemId>
     where
         P: Into<ItemPath<'a>>,

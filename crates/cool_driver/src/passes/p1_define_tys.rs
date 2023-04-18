@@ -1,14 +1,15 @@
-use crate::Package;
+use crate::{CompileError, CompileErrorBundle, CompileErrorKind, CompileResult, Package};
 use cool_lexer::symbols::sym;
 use cool_parser::{AliasItem, Item, ModuleContent, ModuleItem, ModuleKind, StructItem, Ty};
 use cool_resolve::{
     tys, ItemId, ItemPathBuf, ModuleId, ResolveContext, ResolveError, ResolveResult, ScopeId,
-    StructTy, TyId,
+    StructHasDuplicatedField, StructTy, TyId, TypeCannotBeDefined,
 };
 use smallvec::SmallVec;
 use std::collections::VecDeque;
 
-pub fn p1_define_tys(package: &Package, resolve: &mut ResolveContext) {
+pub fn p1_define_tys(package: &Package, resolve: &mut ResolveContext) -> CompileResult<()> {
+    let mut errors = Vec::<CompileError>::new();
     let mut aliases = VecDeque::<(ModuleId, ItemId, &AliasItem)>::new();
     let mut structs = VecDeque::<(ModuleId, ItemId, &StructItem)>::new();
 
@@ -53,39 +54,98 @@ pub fn p1_define_tys(package: &Package, resolve: &mut ResolveContext) {
 
                 resolve_fail_count += 1;
                 if resolve_fail_count >= aliases.len() {
-                    panic!("failed to resolve type aliases");
+                    break;
                 }
             }
         }
     }
 
     let mut resolve_fail_count = 0;
-    while let Some((module_id, item_id, struct_item)) = structs.pop_front() {
+    'struct_loop: while let Some((module_id, item_id, struct_item)) = structs.pop_front() {
         let struct_ty = {
             let mut struct_ty = StructTy::default();
 
             for field in struct_item.fields.iter() {
-                struct_ty.fields.insert_if_not_exists(
-                    field.ident.symbol,
-                    resolve_parsed_ty(resolve, module_id.into(), &field.ty).unwrap(),
-                );
+                let ty_id = match resolve_parsed_ty(resolve, module_id.into(), &field.ty) {
+                    Ok(ty_id) => ty_id,
+                    Err(error) => {
+                        errors.push(CompileError {
+                            path: Default::default(),
+                            kind: error.into(),
+                        });
+                        continue 'struct_loop;
+                    }
+                };
+
+                let inserted_successfully = struct_ty
+                    .fields
+                    .insert_if_not_exists(field.ident.symbol, ty_id);
+
+                if !inserted_successfully {
+                    errors.push(CompileError {
+                        path: Default::default(),
+                        kind: CompileErrorKind::Define(
+                            StructHasDuplicatedField {
+                                path: resolve.get_path_by_item_id(item_id).to_path_buf(),
+                                field: field.ident.symbol,
+                            }
+                            .into(),
+                        ),
+                    });
+                    continue 'struct_loop;
+                }
             }
 
             struct_ty
         };
 
         match resolve.define_struct(item_id, struct_ty) {
-            Some(true) => resolve_fail_count = 0,
-            Some(false) => {
+            Ok(true) => resolve_fail_count = 0,
+            Ok(false) => {
                 structs.push_back((module_id, item_id, struct_item));
 
                 resolve_fail_count += 1;
                 if resolve_fail_count >= structs.len() {
-                    panic!("failed to resolve structs");
+                    break;
                 }
             }
-            _ => todo!(),
+            Err(error) => {
+                errors.push(CompileError {
+                    path: Default::default(),
+                    kind: CompileErrorKind::Define(error.into()),
+                });
+            }
         }
+    }
+
+    while let Some((_, item_id, _)) = aliases.pop_front() {
+        errors.push(CompileError {
+            path: Default::default(),
+            kind: CompileErrorKind::Define(
+                TypeCannotBeDefined {
+                    path: resolve.get_path_by_item_id(item_id).to_path_buf(),
+                }
+                .into(),
+            ),
+        });
+    }
+
+    while let Some((_, item_id, _)) = structs.pop_front() {
+        errors.push(CompileError {
+            path: Default::default(),
+            kind: CompileErrorKind::Define(
+                TypeCannotBeDefined {
+                    path: resolve.get_path_by_item_id(item_id).to_path_buf(),
+                }
+                .into(),
+            ),
+        });
+    }
+
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(CompileErrorBundle { errors })
     }
 }
 

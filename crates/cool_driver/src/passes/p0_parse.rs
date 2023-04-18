@@ -59,7 +59,7 @@ pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
 
     let (crate_paths, crate_module_id) = match (crate_paths, crate_module_id) {
         (Some(crate_paths), Some(crate_module_id)) => (crate_paths, crate_module_id),
-        _ => return Err(CompileErrorBundle { package, errors }),
+        _ => return Err(CompileErrorBundle { errors }),
     };
 
     let mut file_modules = VecDeque::<(ModuleId, ModulePaths)>::new();
@@ -239,7 +239,7 @@ pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
     if errors.is_empty() {
         Ok(package)
     } else {
-        Err(CompileErrorBundle { package, errors })
+        Err(CompileErrorBundle { errors })
     }
 }
 

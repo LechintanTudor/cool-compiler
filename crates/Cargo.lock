@@ -241,6 +241,7 @@ dependencies = [
  "paste",
  "rustc-hash",
  "smallvec",
+ "thiserror",
 ]
 
 [[package]]

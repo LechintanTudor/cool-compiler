@@ -1,6 +1,6 @@
 use crate::{
-    ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveResult, StructTy,
-    TyId, TyKind,
+    ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveResult,
+    StructHasInfiniteSize, StructTy, TyId, TyKind,
 };
 use cool_collections::id_newtype;
 use cool_lexer::symbols::Symbol;
@@ -39,7 +39,11 @@ impl ResolveContext {
     }
 
     // TODO: Separate error type for ty definitions
-    pub fn define_struct(&mut self, item_id: ItemId, struct_ty: StructTy) -> Option<bool> {
+    pub fn define_struct(
+        &mut self,
+        item_id: ItemId,
+        struct_ty: StructTy,
+    ) -> Result<bool, StructHasInfiniteSize> {
         let struct_ty_id = self.items[item_id].as_ty_id().expect("item is not a type");
 
         let struct_id = self.tys[struct_ty_id]
@@ -48,14 +52,18 @@ impl ResolveContext {
 
         for ty_id in struct_ty.fields.values() {
             match self.ty_contains_ty(*ty_id, struct_ty_id) {
-                Some(true) => panic!("type has infinite size"),
+                Some(true) => {
+                    return Err(StructHasInfiniteSize {
+                        path: self.paths[item_id].into(),
+                    })
+                }
                 Some(false) => (),
-                None => return Some(false),
+                None => return Ok(false),
             }
         }
 
         self.struct_tys[struct_id] = Some(struct_ty);
-        Some(true)
+        Ok(true)
     }
 
     fn ty_contains_ty(&self, haysack_ty_id: TyId, needle_ty_id: TyId) -> Option<bool> {

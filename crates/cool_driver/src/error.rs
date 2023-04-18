@@ -1,6 +1,6 @@
-use crate::{ModulePathsError, Package};
+use crate::ModulePathsError;
 use cool_parser::ParseError;
-use cool_resolve::{ItemPathBuf, ResolveError};
+use cool_resolve::{DefineError, ItemPathBuf, ResolveError};
 use std::fmt;
 use std::path::PathBuf;
 use thiserror::Error;
@@ -9,7 +9,6 @@ pub type CompileResult<T> = Result<T, CompileErrorBundle>;
 
 #[derive(Error, Debug)]
 pub struct CompileErrorBundle {
-    pub package: Package,
     pub errors: Vec<CompileError>,
 }
 
@@ -51,6 +50,9 @@ pub enum CompileErrorKind {
 
     #[error(transparent)]
     Resolve(#[from] ResolveError),
+
+    #[error(transparent)]
+    Define(#[from] DefineError),
 }
 
 #[derive(Clone, Error, Debug)]

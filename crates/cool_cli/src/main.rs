@@ -21,8 +21,7 @@ fn main() -> anyhow::Result<()> {
         println!();
     }
 
-    cool_driver::p1_define_tys(&package, &mut resolve);
-    println!("alias resolution completed successfully");
+    cool_driver::p1_define_tys(&package, &mut resolve)?;
 
     // let _module_asts = cool_driver::generate_ast(&mut package).unwrap();
     // println!("Ast generation success!");

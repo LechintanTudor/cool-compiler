@@ -1,4 +1,5 @@
 mod define_alias;
+mod define_error;
 mod define_struct;
 mod define_ty;
 mod resolve_binding;
@@ -8,6 +9,7 @@ mod resolve_global;
 mod resolve_local;
 
 pub use self::define_alias::*;
+pub use self::define_error::*;
 pub use self::define_struct::*;
 pub use self::define_ty::*;
 pub use self::resolve_binding::*;
