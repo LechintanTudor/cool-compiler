@@ -1,5 +1,4 @@
-use cool_lexer::symbols::Symbol;
-use cool_resolve::TyId;
+use cool_resolve::{FnAbi, ResolveError, TyId};
 use thiserror::Error;
 
 pub type AstResult<T = ()> = Result<T, AstError>;
@@ -13,13 +12,16 @@ pub enum AstError {
     TyNotFn(#[from] TyNotFn),
 
     #[error(transparent)]
-    InvalidArgCount(#[from] InvalidArgCount),
+    InvalidParamCount(#[from] InvalidParamCount),
 
     #[error(transparent)]
     TyHintMissing(#[from] TyHintMissing),
 
     #[error(transparent)]
     FnAbiMismatch(#[from] FnAbiMismatch),
+
+    #[error(transparent)]
+    Resolve(#[from] ResolveError),
 }
 
 #[derive(Clone, Error, Debug)]
@@ -37,7 +39,7 @@ pub struct TyNotFn {
 
 #[derive(Clone, Error, Debug)]
 #[error("invalid argument count: found {found}, expected {expected}")]
-pub struct InvalidArgCount {
+pub struct InvalidParamCount {
     pub found: u32,
     pub expected: u32,
 }
@@ -49,6 +51,6 @@ pub struct TyHintMissing;
 #[derive(Clone, Error, Debug)]
 #[error("function abi mismatch: found \"{found}\", expected \"{expected}\"")]
 pub struct FnAbiMismatch {
-    pub found: Symbol,
-    pub expected: Symbol,
+    pub found: FnAbi,
+    pub expected: FnAbi,
 }

@@ -187,7 +187,7 @@ impl ResolveContext {
                 .ok_or(ResolveError::not_found(symbol))?;
 
             if !current_item.is_exported && !module.path.starts_with(&current_module.path) {
-                return Err(ResolveError::private(symbol));
+                return Err(ResolveError::not_public(symbol));
             }
 
             resolved_path = resolved_path.append(symbol);

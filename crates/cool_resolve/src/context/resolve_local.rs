@@ -47,7 +47,7 @@ impl ResolveContext {
             .ok_or(ResolveError::not_found(symbol))?;
 
         if !resolved_elem.is_exported && !parent_module.path.starts_with(&source_module.path) {
-            return Err(ResolveError::private(symbol));
+            return Err(ResolveError::not_public(symbol));
         }
 
         Ok(self.items[resolved_elem.item_id])

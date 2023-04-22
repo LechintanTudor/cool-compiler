@@ -1,5 +1,4 @@
-use crate::{StructId, TyId};
-use cool_lexer::symbols::Symbol;
+use crate::{FnAbi, StructId, TyId};
 use smallvec::SmallVec;
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
@@ -119,7 +118,7 @@ pub struct TupleTy {
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct FnTy {
-    pub abi: Symbol,
+    pub abi: FnAbi,
     pub params: SmallVec<[TyId; 4]>,
     pub ret: TyId,
 }

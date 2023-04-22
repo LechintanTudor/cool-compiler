@@ -1,10 +1,8 @@
 mod ty_codegen;
 
 use crate::ty_codegen::GeneratedTys;
-use cool_ast::ModuleItemAst;
 use cool_resolve::ResolveContext;
 use inkwell::context::Context;
-use inkwell::module::Module;
 use inkwell::targets::{CodeModel, InitializationConfig, RelocMode, Target, TargetTriple};
 use inkwell::{AddressSpace, OptimizationLevel};
 
@@ -42,24 +40,24 @@ impl<'ctx> Codegen<'ctx> {
         }
     }
 
-    pub fn run_for_module(&self, _module_ast: &ModuleItemAst) -> Module<'ctx> {
-        let module = self.context.create_module("todo");
-        module.set_source_file_name("todo.cl");
-        module.set_triple(&self.target_triple);
+    // pub fn run_for_module(&self, _module_ast: &ModuleItemAst) -> Module<'ctx> {
+    //     let module = self.context.create_module("todo");
+    //     module.set_source_file_name("todo.cl");
+    //     module.set_triple(&self.target_triple);
 
-        // for decl in module_ast.decls.iter() {
-        //     match &decl.item {
-        //         ItemAst::Fn(fn_ast) => {
-        //             let fn_type = self.tys.get(fn_ast.ty_id).into_function_type();
-        //             let fn_item = module.add_function(decl.symbol.as_str(), fn_type, None);
-        //             let _fn_body = self.context.append_basic_block(fn_item, "entry");
-        //         }
-        //         _ => todo!(),
-        //     }
-        // }
+    //     // for decl in module_ast.decls.iter() {
+    //     //     match &decl.item {
+    //     //         ItemAst::Fn(fn_ast) => {
+    //     //             let fn_type = self.tys.get(fn_ast.ty_id).into_function_type();
+    //     //             let fn_item = module.add_function(decl.symbol.as_str(), fn_type, None);
+    //     //             let _fn_body = self.context.append_basic_block(fn_item, "entry");
+    //     //         }
+    //     //         _ => todo!(),
+    //     //     }
+    //     // }
 
-        module
-    }
+    //     module
+    // }
 }
 
 pub fn create_context() -> Context {

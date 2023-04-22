@@ -1,6 +1,6 @@
 use crate::{
-    tys, FnTy, ItemId, ItemKind, ItemPath, ModuleElem, ModuleId, ResolveContext, ResolveError,
-    ResolveResult, ScopeId, StructId, TupleTy, TyKind,
+    tys, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ModuleElem, ModuleId, ResolveContext,
+    ResolveError, ResolveResult, ScopeId, StructId, TupleTy, TyKind,
 };
 use cool_collections::id_newtype;
 use cool_lexer::symbols::{sym, Symbol};
@@ -93,7 +93,7 @@ impl ResolveContext {
         self.tys.get_or_insert(ty_kind)
     }
 
-    pub fn mk_fn<P>(&mut self, abi: Symbol, params: P, ret: TyId) -> TyId
+    pub fn mk_fn<P>(&mut self, abi: FnAbi, params: P, ret: TyId) -> TyId
     where
         P: IntoIterator<Item = TyId>,
     {

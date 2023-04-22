@@ -1,11 +1,8 @@
 use crate::{CompileError, CompileErrorBundle, CompileErrorKind, CompileResult, Package};
-use cool_lexer::symbols::sym;
-use cool_parser::{AliasItem, Item, ModuleContent, ModuleItem, ModuleKind, StructItem, Ty};
+use cool_parser::{AliasItem, Item, ModuleContent, ModuleItem, ModuleKind, StructItem};
 use cool_resolve::{
-    tys, ItemId, ItemPathBuf, ModuleId, ResolveContext, ResolveError, ResolveResult, ScopeId,
-    StructHasDuplicatedField, StructTy, TyId, TypeCannotBeDefined,
+    ItemId, ModuleId, ResolveContext, StructHasDuplicatedField, StructTy, TypeCannotBeDefined,
 };
-use smallvec::SmallVec;
 use std::collections::VecDeque;
 
 pub fn p1_define_tys(package: &Package, resolve: &mut ResolveContext) -> CompileResult<()> {
@@ -44,7 +41,7 @@ pub fn p1_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
 
     let mut resolve_fail_count = 0;
     while let Some((module_id, item_id, alias)) = aliases.pop_front() {
-        match resolve_parsed_ty(resolve, module_id.into(), &alias.ty) {
+        match cool_ast::resolve_ty(resolve, module_id.into(), &alias.ty) {
             Ok(resolved_ty_id) => {
                 resolve.define_alias(item_id, resolved_ty_id);
                 resolve_fail_count = 0;
@@ -66,7 +63,7 @@ pub fn p1_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
             let mut struct_ty = StructTy::default();
 
             for field in struct_item.fields.iter() {
-                let ty_id = match resolve_parsed_ty(resolve, module_id.into(), &field.ty) {
+                let ty_id = match cool_ast::resolve_ty(resolve, module_id.into(), &field.ty) {
                     Ok(ty_id) => ty_id,
                     Err(error) => {
                         errors.push(CompileError {
@@ -146,58 +143,5 @@ pub fn p1_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
         Ok(())
     } else {
         Err(CompileErrorBundle { errors })
-    }
-}
-
-pub fn resolve_parsed_ty(
-    resolve: &mut ResolveContext,
-    scope_id: ScopeId,
-    parsed_ty: &Ty,
-) -> ResolveResult<TyId> {
-    match parsed_ty {
-        Ty::Fn(fn_ty) => {
-            let mut param_ty_ids = SmallVec::<[TyId; 6]>::new();
-
-            let abi = fn_ty
-                .extern_decl
-                .as_ref()
-                .map(|decl| decl.abi.unwrap_or(sym::ABI_C))
-                .unwrap_or(sym::ABI_COOL);
-
-            for param in fn_ty.param_list.params.iter() {
-                param_ty_ids.push(resolve_parsed_ty(resolve, scope_id, param)?);
-            }
-
-            let ret_ty_id = match &fn_ty.ret_ty {
-                Some(ret_ty) => resolve_parsed_ty(resolve, scope_id, ret_ty)?,
-                None => tys::UNIT,
-            };
-
-            Ok(resolve.mk_fn(abi, param_ty_ids, ret_ty_id))
-        }
-        Ty::Path(path) => {
-            let path = path
-                .idents
-                .iter()
-                .map(|ident| ident.symbol)
-                .collect::<ItemPathBuf>();
-
-            let item_id = resolve.resolve_global(scope_id, &path)?;
-
-            resolve[item_id]
-                .as_ty_id()
-                .filter(|ty| !ty.is_inferred())
-                .ok_or(ResolveError::not_ty(path.last()))
-        }
-        Ty::Tuple(tuple_ty) => {
-            let mut elem_tys = SmallVec::<[TyId; 6]>::new();
-
-            for ty in tuple_ty.elems.iter() {
-                elem_tys.push(resolve_parsed_ty(resolve, scope_id, ty)?);
-            }
-
-            Ok(resolve.mk_tuple(elem_tys))
-        }
-        _ => todo!(),
     }
 }

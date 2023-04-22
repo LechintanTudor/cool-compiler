@@ -1,106 +1,95 @@
 use cool_lexer::symbols::Symbol;
+use paste::paste;
 use std::error::Error;
 use std::fmt;
 
 pub type ResolveResult<T> = Result<T, ResolveError>;
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub struct ResolveError {
-    pub symbol: Symbol,
-    pub kind: ResolveErrorKind,
+macro_rules! define_resolve_error {
+    {
+        Symbol {
+            $($SymbolError:ident: $symbol_message:literal,)+
+        }
+
+        Other {
+            $($OtherError:ident: $other_message:literal,)+
+        }
+    } => {
+        paste!{
+            #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+            pub enum ResolveErrorKind {
+                $([<Symbol $SymbolError>],)+
+                $($OtherError,)+
+            }
+        }
+
+        #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+        pub struct ResolveError {
+            pub symbol: Symbol,
+            pub kind: ResolveErrorKind,
+        }
+
+        paste! {
+            impl ResolveError {
+                $(
+                    #[inline]
+                    pub fn [<$SymbolError:snake:lower>](symbol: Symbol) -> Self {
+                        Self {
+                            symbol,
+                            kind: ResolveErrorKind::[<Symbol $SymbolError>],
+                        }
+                    }
+                )+
+
+                $(
+                    #[inline]
+                    pub fn [<$OtherError:snake:lower>](symbol: Symbol) -> Self {
+                        Self {
+                            symbol,
+                            kind: ResolveErrorKind::$OtherError,
+                        }
+                    }
+                )+
+            }
+        }
+
+        impl Error for ResolveError {
+            // Empty
+        }
+
+        impl fmt::Display for ResolveError {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                paste!{
+                    match self.kind {
+                        $(
+                            ResolveErrorKind::[<Symbol $SymbolError>] => {
+                                write!(f, "symbol \"{}\" {}", self.symbol, $symbol_message)
+                            }
+                        )+
+                        $(
+                            ResolveErrorKind::$OtherError => {
+                                write!(f, "{}", $other_message)
+                            }
+                        )+
+                    }
+                }
+            }
+        }
+    };
 }
 
-impl ResolveError {
-    #[inline]
-    pub fn already_defined(symbol: Symbol) -> Self {
-        Self {
-            symbol,
-            kind: ResolveErrorKind::SymbolAlreadyDefined,
-        }
+define_resolve_error! {
+    Symbol {
+        AlreadyDefined: "was already defined",
+        NotFound: "could not be found",
+        NotPublic: "is not public",
+        NotItem: "does not refer to an item",
+        NotModule: "does not refer to a module",
+        NotTy: "does not refer to a type",
+        NotAbi: "does not refer to an abi",
     }
 
-    #[inline]
-    pub fn not_found(symbol: Symbol) -> Self {
-        Self {
-            symbol,
-            kind: ResolveErrorKind::SymbolNotFound,
-        }
+    Other {
+        TooManySuperKeywords: "path contains too many super keywords",
     }
-
-    #[inline]
-    pub fn private(symbol: Symbol) -> Self {
-        Self {
-            symbol,
-            kind: ResolveErrorKind::SymbolIsPrivate,
-        }
-    }
-
-    #[inline]
-    pub fn not_item(symbol: Symbol) -> Self {
-        Self {
-            symbol,
-            kind: ResolveErrorKind::SymbolNotItem,
-        }
-    }
-
-    #[inline]
-    pub fn not_module(symbol: Symbol) -> Self {
-        Self {
-            symbol,
-            kind: ResolveErrorKind::SymbolNotModule,
-        }
-    }
-
-    #[inline]
-    pub fn not_ty(symbol: Symbol) -> Self {
-        Self {
-            symbol,
-            kind: ResolveErrorKind::SymbolNotTy,
-        }
-    }
-}
-
-impl Error for ResolveError {}
-
-impl fmt::Display for ResolveError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.kind {
-            ResolveErrorKind::SymbolAlreadyDefined => {
-                write!(f, "symbol \"{}\" is already defined", self.symbol)
-            }
-            ResolveErrorKind::SymbolNotFound => {
-                write!(f, "symbol \"{}\" was not found", self.symbol)
-            }
-            ResolveErrorKind::SymbolIsPrivate => {
-                write!(f, "symbol \"{}\" is private", self.symbol)
-            }
-            ResolveErrorKind::TooManySuperKeywords => {
-                write!(f, "use path contains too many super keywords")
-            }
-            ResolveErrorKind::SymbolNotItem => {
-                write!(f, "symbol \"{}\" does not refer to an item", self.symbol)
-            }
-            ResolveErrorKind::SymbolNotModule => {
-                write!(f, "symbol \"{}\" does not refer to a module", self.symbol)
-            }
-            ResolveErrorKind::SymbolNotTy => {
-                write!(f, "symbol \"{}\" does not refer to a type", self.symbol)
-            }
-            ResolveErrorKind::SymbolNotStruct => {
-                write!(f, "symbol \"{}\" does not refer to a struct", self.symbol)
-            }
-        }
-    }
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum ResolveErrorKind {
-    SymbolAlreadyDefined,
-    SymbolNotFound,
-    SymbolIsPrivate,
-    TooManySuperKeywords,
-    SymbolNotItem,
-    SymbolNotModule,
-    SymbolNotTy,
-    SymbolNotStruct,
 }
