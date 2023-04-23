@@ -1,14 +1,12 @@
 use crate::item::Item;
 use crate::{Ident, ParseResult, ParseTree, Parser, Ty};
 use cool_lexer::tokens::tk;
-use cool_resolve::ItemId;
 use cool_span::Span;
 
 #[derive(Clone, Debug)]
 pub struct ItemDecl {
     pub ident: Ident,
     pub ty: Option<Ty>,
-    pub item_id: ItemId,
     pub item: Item,
 }
 
@@ -36,7 +34,6 @@ impl Parser<'_> {
         Ok(ItemDecl {
             ident,
             ty,
-            item_id: ItemId::dummy(),
             item,
         })
     }

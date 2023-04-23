@@ -1,5 +1,5 @@
 use crate::paths::ModulePaths;
-use crate::{CompileError, CompileErrorBundle, CompileOptions, CompileResult, SourceFile};
+use crate::{CompileError, CompileErrorBundle, CompileOptions, CompileResult, SourceFile, Package, Alias, Struct, Const};
 use cool_lexer::lexer::{LexedSourceFile, Tokenizer};
 use cool_lexer::symbols::Symbol;
 use cool_parser::{DeclKind, Item, ModuleContent, ModuleKind, ParseResult, Parser};
@@ -11,12 +11,6 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::PathBuf;
 
-#[derive(Debug)]
-pub struct Package {
-    pub root_file: PathBuf,
-    pub sources: Vec<SourceFile>,
-}
-
 #[derive(Clone, Debug)]
 pub struct Import {
     pub source_path: PathBuf,
@@ -27,12 +21,10 @@ pub struct Import {
 }
 
 pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> CompileResult<Package> {
-    let mut package = Package {
-        root_file: options.crate_root_file.clone(),
-        sources: Default::default(),
-    };
-
     let mut errors = Vec::<CompileError>::new();
+    let mut aliases = Vec::<Alias>::new();
+    let mut structs = Vec::<Struct>::new();
+    let mut consts = Vec::<Const>::new();
 
     let crate_paths = match ModulePaths::for_root(&options.crate_root_file) {
         Ok(crate_paths) => Some(crate_paths),
@@ -68,7 +60,7 @@ pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
     let mut imports = VecDeque::<Import>::new();
 
     while let Some((module_id, module_paths)) = file_modules.pop_front() {
-        let mut source_file = match parse_source_file(module_id, &module_paths) {
+        let source_file = match parse_source_file(module_id, &module_paths) {
             Ok(source_file) => source_file,
             Err(error) => {
                 errors.push(CompileError {
@@ -79,13 +71,13 @@ pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
             }
         };
 
-        let mut modules = VecDeque::<(ModuleId, &mut ModuleContent)>::new();
-        modules.push_back((module_id, &mut source_file.module));
+        let mut modules = VecDeque::<(ModuleId, ModuleContent)>::new();
+        modules.push_back((module_id, source_file.module));
 
         while let Some((module_id, module)) = modules.pop_front() {
-            for decl in module.decls.iter_mut() {
-                match &mut decl.kind {
-                    DeclKind::Item(item_decl) => match &mut item_decl.item {
+            for decl in module.decls {
+                match decl.kind {
+                    DeclKind::Item(item_decl) => match item_decl.item {
                         Item::Module(child_module) => {
                             let child_module_id = match resove.insert_module(
                                 module_id,
@@ -102,7 +94,7 @@ pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
                                 }
                             };
 
-                            match &mut child_module.kind {
+                            match child_module.kind {
                                 ModuleKind::Inline(child_module_content) => {
                                     modules.push_back((child_module_id, child_module_content));
                                 }
@@ -125,8 +117,8 @@ pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
                                 }
                             }
                         }
-                        Item::Alias(_) => {
-                            item_decl.item_id = match resove.declare_alias(
+                        Item::Alias(item) => {
+                            let item_id = match resove.declare_alias(
                                 module_id,
                                 decl.is_exported,
                                 item_decl.ident.symbol,
@@ -140,9 +132,16 @@ pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
                                     continue;
                                 }
                             };
+                            
+                            aliases.push(Alias {
+                                module_id,
+                                item_id,
+                                ty: item_decl.ty,
+                                item,
+                            });
                         }
-                        Item::Struct(_) => {
-                            item_decl.item_id = match resove.declare_struct(
+                        Item::Struct(item) => {
+                            let item_id = match resove.declare_struct(
                                 module_id,
                                 decl.is_exported,
                                 item_decl.ident.symbol,
@@ -156,9 +155,16 @@ pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
                                     continue;
                                 }
                             };
+                            
+                            structs.push(Struct {
+                                module_id,
+                                item_id,
+                                ty: item_decl.ty,
+                                item,
+                            });
                         }
-                        Item::Const(_) => {
-                            item_decl.item_id = match resove.insert_global_binding(
+                        Item::Const(item) => {
+                            let item_id = match resove.insert_global_binding(
                                 module_id,
                                 decl.is_exported,
                                 Mutability::Const,
@@ -172,7 +178,14 @@ pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
                                     });
                                     continue;
                                 }
-                            }
+                            };
+
+                            consts.push(Const {
+                                module_id,
+                                item_id,
+                                ty: item_decl.ty,
+                                item,
+                            });
                         }
                         _ => todo!(),
                     },
@@ -197,8 +210,6 @@ pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
                 }
             }
         }
-
-        package.sources.push(source_file);
     }
 
     let mut import_fail_count = 0_usize;
@@ -237,7 +248,7 @@ pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
     }
 
     if errors.is_empty() {
-        Ok(package)
+        Ok(Package { aliases, structs, consts })
     } else {
         Err(CompileErrorBundle { errors })
     }
