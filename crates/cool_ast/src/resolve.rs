@@ -150,6 +150,10 @@ pub fn resolve_ty(resolve: &mut ResolveContext, scope_id: ScopeId, ty: &Ty) -> R
                 .as_ty_id()
                 .ok_or(ResolveError::not_ty(path.last()))
         }
+        Ty::Pointer(pointer_ty) => {
+            let pointee = resolve_ty(resolve, scope_id, &pointer_ty.pointee)?;
+            Ok(resolve.mk_pointer(pointer_ty.is_mutable, pointee))
+        }
         Ty::Tuple(tuple_ty) => {
             let mut elem_tys = SmallVec::<[TyId; 6]>::new();
 

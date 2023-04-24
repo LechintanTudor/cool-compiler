@@ -6,7 +6,7 @@ use cool_span::Span;
 pub struct PointerTy {
     pub span: Span,
     pub is_mutable: bool,
-    pub inner_ty: Box<Ty>,
+    pub pointee: Box<Ty>,
 }
 
 impl ParseTree for PointerTy {
@@ -20,12 +20,12 @@ impl Parser<'_> {
     pub fn parse_pointer_ty(&mut self) -> ParseResult<PointerTy> {
         let start_token = self.bump_expect(&tk::STAR)?;
         let is_mutable = self.bump_if_eq(tk::KW_MUT).is_some();
-        let inner_ty = Box::new(self.parse_ty()?);
+        let pointee = Box::new(self.parse_ty()?);
 
         Ok(PointerTy {
-            span: start_token.span.to(inner_ty.span()),
+            span: start_token.span.to(pointee.span()),
             is_mutable,
-            inner_ty,
+            pointee,
         })
     }
 }

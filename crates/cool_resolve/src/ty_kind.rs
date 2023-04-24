@@ -9,6 +9,7 @@ pub enum TyKind {
     Float(FloatTy),
     Bool,
     Char,
+    Pointer(PointerTy),
     Tuple(TupleTy),
     Fn(FnTy),
     Struct(StructId),
@@ -61,6 +62,13 @@ impl From<FloatTy> for TyKind {
     }
 }
 
+impl From<PointerTy> for TyKind {
+    #[inline]
+    fn from(ty: PointerTy) -> Self {
+        Self::Pointer(ty)
+    }
+}
+
 impl From<TupleTy> for TyKind {
     #[inline]
     fn from(ty: TupleTy) -> Self {
@@ -109,6 +117,12 @@ pub enum IntTy {
 pub enum FloatTy {
     F32,
     F64,
+}
+
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PointerTy {
+    pub is_mutable: bool,
+    pub pointee: TyId,
 }
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]

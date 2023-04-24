@@ -1,5 +1,5 @@
 use crate::context::ResolveContext;
-use crate::{FloatTy, InferredTy, IntTy, TyKind};
+use crate::{FloatTy, InferredTy, IntTy, PointerTy, TyKind};
 use cool_lexer::symbols::sym;
 
 macro_rules! builtins {
@@ -86,5 +86,6 @@ builtins! {
         19: (INFERRED_INT, TyKind::Inferred(InferredTy::Int)),
         20: (INFERRED_FLOAT, TyKind::Inferred(InferredTy::Float)),
         21: (MODULE, TyKind::Module),
+        22: (C_STR, TyKind::Pointer(PointerTy { is_mutable: false, pointee: tys::U8 })),
     }
 }

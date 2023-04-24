@@ -1,5 +1,5 @@
 use crate::{
-    tys, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ModuleElem, ModuleId, ResolveContext,
+    tys, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ModuleElem, ModuleId, PointerTy, ResolveContext,
     ResolveError, ResolveResult, ScopeId, StructId, TupleTy, TyKind,
 };
 use cool_collections::id_newtype;
@@ -78,6 +78,14 @@ impl ResolveContext {
         self.items.push_checked(item_id, ItemKind::Ty(ty_id));
     }
 
+    #[inline]
+    pub fn mk_pointer(&mut self, is_mutable: bool, pointee: TyId) -> TyId {
+        self.tys.get_or_insert(TyKind::Pointer(PointerTy {
+            is_mutable,
+            pointee,
+        }))
+    }
+
     pub fn mk_tuple<E>(&mut self, elems: E) -> TyId
     where
         E: IntoIterator<Item = TyId>,
@@ -88,23 +96,18 @@ impl ResolveContext {
             return tys::UNIT;
         }
 
-        let ty_kind: TyKind = TupleTy { elems }.into();
-
-        self.tys.get_or_insert(ty_kind)
+        self.tys.get_or_insert(TyKind::Tuple(TupleTy { elems }))
     }
 
     pub fn mk_fn<P>(&mut self, abi: FnAbi, params: P, ret: TyId) -> TyId
     where
         P: IntoIterator<Item = TyId>,
     {
-        let ty_kind: TyKind = FnTy {
+        self.tys.get_or_insert(TyKind::Fn(FnTy {
             abi,
             params: SmallVec::from_iter(params),
             ret,
-        }
-        .into();
-
-        self.tys.get_or_insert(ty_kind)
+        }))
     }
 
     #[inline]
