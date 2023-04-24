@@ -31,10 +31,6 @@ impl Parser<'_> {
         self.bump_expect(&tk::COLON)?;
         let item = self.parse_item()?;
 
-        Ok(ItemDecl {
-            ident,
-            ty,
-            item,
-        })
+        Ok(ItemDecl { ident, ty, item })
     }
 }

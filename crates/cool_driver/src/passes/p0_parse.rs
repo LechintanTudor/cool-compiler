@@ -1,5 +1,8 @@
 use crate::paths::ModulePaths;
-use crate::{CompileError, CompileErrorBundle, CompileOptions, CompileResult, SourceFile, Package, Alias, Struct, Const};
+use crate::{
+    Alias, CompileError, CompileErrorBundle, CompileOptions, CompileResult, Const, ExternFn,
+    Package, SourceFile, Struct,
+};
 use cool_lexer::lexer::{LexedSourceFile, Tokenizer};
 use cool_lexer::symbols::Symbol;
 use cool_parser::{DeclKind, Item, ModuleContent, ModuleKind, ParseResult, Parser};
@@ -24,6 +27,7 @@ pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
     let mut errors = Vec::<CompileError>::new();
     let mut aliases = Vec::<Alias>::new();
     let mut structs = Vec::<Struct>::new();
+    let mut extern_fns = Vec::<ExternFn>::new();
     let mut consts = Vec::<Const>::new();
 
     let crate_paths = match ModulePaths::for_root(&options.crate_root_file) {
@@ -132,7 +136,7 @@ pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
                                     continue;
                                 }
                             };
-                            
+
                             aliases.push(Alias {
                                 module_id,
                                 item_id,
@@ -155,8 +159,32 @@ pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
                                     continue;
                                 }
                             };
-                            
+
                             structs.push(Struct {
+                                module_id,
+                                item_id,
+                                ty: item_decl.ty,
+                                item,
+                            });
+                        }
+                        Item::ExternFn(item) => {
+                            let item_id = match resove.insert_global_binding(
+                                module_id,
+                                decl.is_exported,
+                                Mutability::Const,
+                                item_decl.ident.symbol,
+                            ) {
+                                Ok(item_id) => item_id,
+                                Err(error) => {
+                                    errors.push(CompileError {
+                                        path: module_paths.path.clone(),
+                                        kind: error.into(),
+                                    });
+                                    continue;
+                                }
+                            };
+
+                            extern_fns.push(ExternFn {
                                 module_id,
                                 item_id,
                                 ty: item_decl.ty,
@@ -187,7 +215,6 @@ pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
                                 item,
                             });
                         }
-                        _ => todo!(),
                     },
                     DeclKind::Use(use_decl) => {
                         let path = use_decl
@@ -248,7 +275,12 @@ pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
     }
 
     if errors.is_empty() {
-        Ok(Package { aliases, structs, consts })
+        Ok(Package {
+            aliases,
+            structs,
+            extern_fns,
+            consts,
+        })
     } else {
         Err(CompileErrorBundle { errors })
     }

@@ -1,4 +1,5 @@
 use crate::ModulePathsError;
+use cool_ast::AstError;
 use cool_parser::ParseError;
 use cool_resolve::{DefineError, ItemPathBuf, ResolveError};
 use std::fmt;
@@ -53,6 +54,9 @@ pub enum CompileErrorKind {
 
     #[error(transparent)]
     Define(#[from] DefineError),
+
+    #[error(transparent)]
+    Ast(#[from] AstError),
 }
 
 #[derive(Clone, Error, Debug)]

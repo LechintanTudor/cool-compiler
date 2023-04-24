@@ -1,13 +1,10 @@
 use crate::{CompileError, CompileErrorBundle, CompileErrorKind, CompileResult, Package};
-
-use cool_resolve::{
-    ResolveContext, StructHasDuplicatedField, StructTy, TypeCannotBeDefined,
-};
+use cool_resolve::{ResolveContext, StructHasDuplicatedField, StructTy, TypeCannotBeDefined};
 use std::collections::VecDeque;
 
 pub fn p1_define_tys(package: &Package, resolve: &mut ResolveContext) -> CompileResult<()> {
     let mut errors = Vec::<CompileError>::new();
-    
+
     let mut aliases = package
         .aliases
         .iter()
@@ -31,11 +28,17 @@ pub fn p1_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
             }
         }
     }
-    
+
     let mut structs = package
         .structs
         .iter()
-        .map(|struct_item| (struct_item.module_id, struct_item.item_id, &struct_item.item))
+        .map(|struct_item| {
+            (
+                struct_item.module_id,
+                struct_item.item_id,
+                &struct_item.item,
+            )
+        })
         .collect::<VecDeque<_>>();
 
     let mut resolve_fail_count = 0;

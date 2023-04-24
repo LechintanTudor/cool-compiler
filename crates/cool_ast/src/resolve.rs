@@ -38,10 +38,15 @@ pub fn resolve_explicit_fn_abi(extern_decl: &Option<FnExternDecl>) -> ResolveRes
 pub fn resolve_fn_prototype(
     resolve: &mut ResolveContext,
     module_id: ModuleId,
-    explicit_ty_id: Option<TyId>,
+    explicit_ty: &Option<Ty>,
     prototype: &FnPrototype,
 ) -> AstResult<TyId> {
     let scope_id = ScopeId::Module(module_id);
+
+    let explicit_ty_id = explicit_ty
+        .as_ref()
+        .map(|ty| resolve_ty(resolve, scope_id, ty))
+        .transpose()?;
 
     match explicit_ty_id {
         Some(ty_id) => {

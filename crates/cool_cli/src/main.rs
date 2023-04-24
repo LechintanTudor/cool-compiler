@@ -15,7 +15,7 @@ fn main() -> anyhow::Result<()> {
     let mut resolve = ResolveContext::with_builtins();
     let package = cool_driver::p0_parse(&mut resolve, &options)?;
     cool_driver::p1_define_tys(&package, &mut resolve)?;
-    cool_driver::p2_gen_ast(&package, &mut resolve);
+    cool_driver::p2_define_fn_tys(&package, &mut resolve)?;
 
     // let _module_asts = cool_driver::generate_ast(&mut package).unwrap();
     // println!("Ast generation success!");
