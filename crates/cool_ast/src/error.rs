@@ -21,6 +21,9 @@ pub enum AstError {
     FnAbiMismatch(#[from] FnAbiMismatch),
 
     #[error(transparent)]
+    FnVariadicMismatch(#[from] FnVariadicMismatch),
+
+    #[error(transparent)]
     Resolve(#[from] ResolveError),
 }
 
@@ -53,4 +56,11 @@ pub struct TyHintMissing;
 pub struct FnAbiMismatch {
     pub found: FnAbi,
     pub expected: FnAbi,
+}
+
+#[derive(Clone, Error, Debug)]
+#[error("function variadicity mismatch")]
+pub struct FnVariadicMismatch {
+    pub found: bool,
+    pub expected: bool,
 }

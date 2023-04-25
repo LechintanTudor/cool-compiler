@@ -134,5 +134,6 @@ pub struct TupleTy {
 pub struct FnTy {
     pub abi: FnAbi,
     pub params: SmallVec<[TyId; 4]>,
+    pub is_variadic: bool,
     pub ret: TyId,
 }

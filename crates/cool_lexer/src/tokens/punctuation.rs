@@ -96,6 +96,8 @@ Punctuation! {
     FatArrow: "=>",
 
     Dot: "." from '.',
+    DotDot: "..",
+    DotDotDot: "...",
     Comma: "," from ',',
     Semicolon: ";" from ';',
     Colon: ":" from ':',
@@ -133,6 +135,10 @@ impl Punctuation {
             (Self::Not, Self::Eq) => Self::Ne,
             (Self::Gt, Self::Eq) => Self::Ge,
             (Self::Lt, Self::Eq) => Self::Le,
+
+            // Dots
+            (Self::Dot, Self::Dot) => Self::DotDot,
+            (Self::DotDot, Self::Dot) => Self::DotDotDot,
 
             // Arrows
             (Self::Minus, Self::Gt) => Self::Arrow,

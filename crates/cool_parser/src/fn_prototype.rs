@@ -21,6 +21,7 @@ impl ParseTree for FnParam {
 pub struct FnParamList {
     pub span: Span,
     pub params: Vec<FnParam>,
+    pub is_variadic: bool,
     pub has_trailing_comma: bool,
 }
 
@@ -82,33 +83,42 @@ impl Parser<'_> {
 
     fn parse_fn_param_list(&mut self) -> ParseResult<FnParamList> {
         let start_token = self.bump_expect(&tk::OPEN_PAREN)?;
-
         let mut params = Vec::<FnParam>::new();
-        let (end_span, has_trailing_comma) = if self.peek().kind == tk::CLOSE_PAREN {
-            (self.bump().span, false)
-        } else {
-            loop {
-                params.push(self.parse_fn_param()?);
+
+        let (end_span, is_variadic, has_trailing_comma) = match self.peek().kind {
+            tk::CLOSE_PAREN => (self.bump().span, false, false),
+            _ => loop {
+                match self.peek().kind {
+                    tk::DOT_DOT_DOT => {
+                        self.bump_expect(&tk::DOT_DOT_DOT)?;
+                        let end_token = self.bump_expect(&tk::CLOSE_PAREN)?;
+                        break (end_token.span, true, false);
+                    }
+                    _ => {
+                        params.push(self.parse_fn_param()?);
+                    }
+                }
 
                 let next_token = self.bump();
 
                 match next_token.kind {
                     tk::CLOSE_PAREN => {
-                        break (next_token.span, false);
+                        break (next_token.span, false, false);
                     }
                     tk::COMMA => {
                         if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
-                            break (end_token.span, true);
+                            break (end_token.span, false, true);
                         }
                     }
                     _ => self.error(next_token, &[tk::CLOSE_PAREN, tk::COMMA])?,
                 }
-            }
+            },
         };
 
         Ok(FnParamList {
             span: start_token.span.to(end_span),
             params,
+            is_variadic,
             has_trailing_comma,
         })
     }
@@ -123,7 +133,7 @@ impl Parser<'_> {
         let fn_kw = self.bump_expect(&tk::KW_FN)?;
         let param_list = self.parse_fn_param_list()?;
 
-        let return_ty = if self.bump_if_eq(tk::ARROW).is_some() {
+        let ret_ty = if self.bump_if_eq(tk::ARROW).is_some() {
             Some(self.parse_ty()?)
         } else {
             None
@@ -135,7 +145,7 @@ impl Parser<'_> {
                 .map(|decl| decl.span)
                 .unwrap_or(fn_kw.span);
 
-            let end_span = return_ty
+            let end_span = ret_ty
                 .as_ref()
                 .map(|ty| ty.span())
                 .unwrap_or(param_list.span);
@@ -147,7 +157,7 @@ impl Parser<'_> {
             span,
             extern_decl,
             param_list,
-            ret_ty: return_ty,
+            ret_ty,
         })
     }
 }

@@ -1,4 +1,7 @@
-use crate::{AstResult, FnAbiMismatch, InvalidParamCount, TyHintMissing, TyMismatch, TyNotFn};
+use crate::{
+    AstResult, FnAbiMismatch, FnVariadicMismatch, InvalidParamCount, TyHintMissing, TyMismatch,
+    TyNotFn,
+};
 use cool_parser::{FnExternDecl, FnPrototype, Ty};
 use cool_resolve::{
     tys, FnAbi, ItemPathBuf, ModuleId, ResolveContext, ResolveError, ResolveResult, ScopeId, TyId,
@@ -87,6 +90,13 @@ pub fn resolve_fn_prototype(
                 }
             }
 
+            if prototype.param_list.is_variadic != fn_ty.is_variadic {
+                Err(FnVariadicMismatch {
+                    found: prototype.param_list.is_variadic,
+                    expected: fn_ty.is_variadic,
+                })?;
+            }
+
             if let Some(ret_ty) = prototype.ret_ty.as_ref() {
                 let ret_ty_id = resolve_ty(resolve, scope_id, ret_ty)?;
 
@@ -115,7 +125,12 @@ pub fn resolve_fn_prototype(
                 None => tys::UNIT,
             };
 
-            Ok(resolve.mk_fn(abi, param_ty_ids, ret_ty_id))
+            Ok(resolve.mk_fn(
+                abi,
+                param_ty_ids,
+                prototype.param_list.is_variadic,
+                ret_ty_id,
+            ))
         }
     }
 }
@@ -135,7 +150,7 @@ pub fn resolve_ty(resolve: &mut ResolveContext, scope_id: ScopeId, ty: &Ty) -> R
                 None => tys::UNIT,
             };
 
-            Ok(resolve.mk_fn(abi, param_ty_ids, ret_ty_id))
+            Ok(resolve.mk_fn(abi, param_ty_ids, fn_ty.param_list.is_variadic, ret_ty_id))
         }
         Ty::Path(path) => {
             let path = path

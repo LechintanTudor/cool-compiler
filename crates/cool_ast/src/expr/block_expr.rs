@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, BlockElemAst, TyMismatch};
-use cool_parser::{BlockExpr, BlockElem};
-use cool_resolve::{ExprId, FrameId, TyId, tys};
+use cool_parser::{BlockElem, BlockExpr};
+use cool_resolve::{tys, ExprId, FrameId, TyId};
 
 #[derive(Clone, Debug)]
 pub struct BlockExprAst {
@@ -31,12 +31,8 @@ impl AstGenerator<'_> {
 
         for elem in other_elems.iter() {
             match elem {
-                BlockElem::Expr(_expr) => {
-
-                }
-                BlockElem::Stmt(_stmt) => {
-                    
-                }
+                BlockElem::Expr(_expr) => {}
+                BlockElem::Stmt(_stmt) => {}
             }
         }
 

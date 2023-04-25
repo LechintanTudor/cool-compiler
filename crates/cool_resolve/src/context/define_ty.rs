@@ -99,13 +99,14 @@ impl ResolveContext {
         self.tys.get_or_insert(TyKind::Tuple(TupleTy { elems }))
     }
 
-    pub fn mk_fn<P>(&mut self, abi: FnAbi, params: P, ret: TyId) -> TyId
+    pub fn mk_fn<P>(&mut self, abi: FnAbi, params: P, is_variadic: bool, ret: TyId) -> TyId
     where
         P: IntoIterator<Item = TyId>,
     {
         self.tys.get_or_insert(TyKind::Fn(FnTy {
             abi,
             params: SmallVec::from_iter(params),
+            is_variadic,
             ret,
         }))
     }
