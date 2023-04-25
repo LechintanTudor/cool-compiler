@@ -1,40 +1,50 @@
 mod block_expr;
+mod fn_call_expr;
 mod ident_expr;
 mod literal_expr;
 
 pub use self::block_expr::*;
+pub use self::fn_call_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 use crate::{AstGenerator, AstResult};
 use cool_parser::Expr;
-use cool_resolve::{FrameId, TyId};
+use cool_resolve::{ExprId, FrameId, TyId};
+use paste::paste;
 
-#[derive(Clone, Debug)]
-pub enum ExprAst {
-    Block(BlockExprAst),
-    Ident(IdentExprAst),
-    Literal(LiteralExprAst),
+macro_rules! define_expr_ast {
+    { $($Variant:ident,)+ } => {
+        paste! {
+            #[derive(Clone, Debug)]
+            pub enum ExprAst {
+                $($Variant([<$Variant ExprAst>]),)+   
+            }
+
+            impl ExprAst {
+                pub fn id(&self) -> ExprId {
+                    match self {
+                        $(Self::$Variant(e) => e.expr_id,)+
+                    }
+                }
+            }
+            
+            $(
+                impl From<[<$Variant ExprAst>]> for ExprAst {
+                    #[inline]
+                    fn from(e: [<$Variant ExprAst>]) -> Self {
+                        Self::$Variant(e)
+                    }
+                }
+            )+
+        }
+    };
 }
 
-impl From<BlockExprAst> for ExprAst {
-    #[inline]
-    fn from(e: BlockExprAst) -> Self {
-        Self::Block(e)
-    }
-}
-
-impl From<IdentExprAst> for ExprAst {
-    #[inline]
-    fn from(e: IdentExprAst) -> Self {
-        Self::Ident(e)
-    }
-}
-
-impl From<LiteralExprAst> for ExprAst {
-    #[inline]
-    fn from(e: LiteralExprAst) -> Self {
-        Self::Literal(e)
-    }
+define_expr_ast! {
+    Block,
+    FnCall,
+    Ident,
+    Literal,
 }
 
 impl AstGenerator<'_> {
@@ -46,7 +56,8 @@ impl AstGenerator<'_> {
     ) -> AstResult<ExprAst> {
         let expr: ExprAst = match expr {
             Expr::Block(e) => self.gen_block_expr(frame_id, expected_ty_id, e)?.into(),
-            Expr::Ident(e) => self.gen_ident_expr(frame_id, e)?.into(),
+            Expr::FnCall(e) => self.gen_fn_call_expr(frame_id, expected_ty_id, e)?.into(),
+            Expr::Ident(e) => self.gen_ident_expr(frame_id, expected_ty_id, e)?.into(),
             Expr::Literal(e) => self.gen_literal_expr(expected_ty_id, e)?.into(),
             _ => todo!(),
         };
