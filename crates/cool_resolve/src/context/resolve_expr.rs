@@ -1,5 +1,4 @@
-use crate::context::ResolveContext;
-use crate::{tys, TyId};
+use crate::{ResolveContext, TyId};
 use cool_collections::id_newtype;
 use std::ops;
 
@@ -19,13 +18,13 @@ pub struct Expr {
 
 impl ResolveContext {
     #[inline]
-    pub fn add_expr(&mut self) -> ExprId {
-        self.exprs.push(tys::INFERRED)
+    pub fn add_expr(&mut self, ty_id: TyId) -> ExprId {
+        self.exprs.push(ty_id)
     }
 
     #[inline]
     pub fn set_expr_ty(&mut self, expr_id: ExprId, ty_id: TyId) {
-        self.exprs[expr_id] = ty_id;
+        self.exprs[expr_id] = ty_id.resolve_non_inferred(self.exprs[expr_id]).unwrap();
     }
 }
 

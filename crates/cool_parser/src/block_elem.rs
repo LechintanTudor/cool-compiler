@@ -54,19 +54,6 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_expr_or_expr_stmt(&mut self) -> ParseResult<BlockElem> {
-        let expr = self.parse_expr()?;
-        let elem = match self.bump_if_eq(tk::SEMICOLON) {
-            Some(semicolon) => BlockElem::Stmt(Stmt::Expr(ExprStmt {
-                span: expr.span().to(semicolon.span),
-                expr,
-            })),
-            None => BlockElem::Expr(expr),
-        };
-
-        Ok(elem)
-    }
-
     fn parse_expr_or_decl_or_assign(&mut self) -> ParseResult<BlockElem> {
         let expr = self.parse_expr()?;
 
@@ -78,8 +65,8 @@ impl Parser<'_> {
                     BlockElem::Stmt(stmt.into())
                 }
                 tk::EQ => {
-                    let pattern = ident_expr.ident.into();
-                    let stmt = self.continue_parse_assign_after_pattern(pattern)?;
+                    let lvalue = ident_expr.into();
+                    let stmt = self.continue_parse_assign_after_lvalue(lvalue)?;
                     BlockElem::Stmt(stmt.into())
                 }
                 tk::SEMICOLON => {
@@ -94,7 +81,8 @@ impl Parser<'_> {
             },
             expr => match self.peek().kind {
                 tk::EQ => {
-                    todo!("Add expression assignments and patterns");
+                    let stmt = self.continue_parse_assign_after_lvalue(expr)?;
+                    BlockElem::Stmt(stmt.into())
                 }
                 tk::SEMICOLON => {
                     let semicolon = self.bump_expect(&tk::SEMICOLON)?;
@@ -106,6 +94,19 @@ impl Parser<'_> {
                 tk::CLOSE_BRACE => BlockElem::Expr(expr.into()),
                 _ => self.peek_error(&[tk::EQ, tk::SEMICOLON, tk::CLOSE_BRACE])?,
             },
+        };
+
+        Ok(elem)
+    }
+
+    fn parse_expr_or_expr_stmt(&mut self) -> ParseResult<BlockElem> {
+        let expr = self.parse_expr()?;
+        let elem = match self.bump_if_eq(tk::SEMICOLON) {
+            Some(semicolon) => BlockElem::Stmt(Stmt::Expr(ExprStmt {
+                span: expr.span().to(semicolon.span),
+                expr,
+            })),
+            None => BlockElem::Expr(expr),
         };
 
         Ok(elem)

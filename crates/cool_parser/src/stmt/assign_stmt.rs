@@ -1,13 +1,13 @@
 use crate::expr::Expr;
-use crate::{ParseResult, ParseTree, Parser, Pattern};
+use crate::{ParseResult, ParseTree, Parser};
 use cool_lexer::tokens::tk;
 use cool_span::Span;
 
 #[derive(Clone, Debug)]
 pub struct AssignStmt {
     pub span: Span,
-    pub pattern: Pattern,
-    pub expr: Expr,
+    pub lvalue: Expr,
+    pub rvalue: Expr,
 }
 
 impl ParseTree for AssignStmt {
@@ -18,18 +18,15 @@ impl ParseTree for AssignStmt {
 }
 
 impl Parser<'_> {
-    pub fn continue_parse_assign_after_pattern(
-        &mut self,
-        pattern: Pattern,
-    ) -> ParseResult<AssignStmt> {
+    pub fn continue_parse_assign_after_lvalue(&mut self, lvalue: Expr) -> ParseResult<AssignStmt> {
         self.bump_expect(&tk::EQ)?;
-        let expr = self.parse_expr()?;
-        let semicolon = self.bump_expect(&tk::SEMICOLON)?;
+        let rvalue = self.parse_expr()?;
+        let end_token = self.bump_expect(&tk::SEMICOLON)?;
 
         Ok(AssignStmt {
-            span: pattern.span.to(semicolon.span),
-            pattern,
-            expr,
+            span: lvalue.span().to(end_token.span),
+            lvalue,
+            rvalue,
         })
     }
 }
