@@ -2,10 +2,11 @@ use crate::{AstGenerator, AstResult, ExprAst};
 use cool_parser::DeclStmt;
 use cool_resolve::{BindingId, FrameId};
 
+#[derive(Clone, Debug)]
 pub struct DeclStmtAst {
     pub frame_id: FrameId,
     pub binding_id: BindingId,
-    pub expr: ExprAst,
+    pub expr: Box<ExprAst>,
 }
 
 impl AstGenerator<'_> {

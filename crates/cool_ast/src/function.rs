@@ -61,7 +61,7 @@ impl AstGenerator<'_> {
             ty_id,
             frame_id,
             binding_ids,
-            body: todo!(),
+            body: self.gen_block_expr(frame_id, fn_ty.ret, &fn_expr.body)?,
         })
     }
 }
