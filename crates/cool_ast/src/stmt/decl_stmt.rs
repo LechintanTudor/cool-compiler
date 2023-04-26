@@ -1,6 +1,6 @@
-use crate::{AstGenerator, AstResult, ExprAst};
+use crate::{resolve_ty, AstGenerator, AstResult, ExprAst};
 use cool_parser::DeclStmt;
-use cool_resolve::{BindingId, FrameId};
+use cool_resolve::{tys, BindingId, FrameId};
 
 #[derive(Clone, Debug)]
 pub struct DeclStmtAst {
@@ -12,9 +12,29 @@ pub struct DeclStmtAst {
 impl AstGenerator<'_> {
     pub fn gen_decl_stmt(
         &mut self,
-        _current_frame_id: FrameId,
-        _decl_stmt: &DeclStmt,
+        frame_id: FrameId,
+        decl_stmt: &DeclStmt,
     ) -> AstResult<DeclStmtAst> {
-        todo!()
+        let expected_ty_id = match decl_stmt.ty.as_ref() {
+            Some(ty) => resolve_ty(&mut self.resolve, frame_id.into(), ty)?,
+            None => tys::INFERRED,
+        };
+
+        let expr = self.gen_expr(frame_id, expected_ty_id, &decl_stmt.expr)?;
+        let expr_ty_id = self.resolve[expr.id()];
+
+        let frame_id = self.resolve.add_frame(frame_id.into());
+        let binding_id = self.resolve.insert_local_binding(
+            frame_id,
+            decl_stmt.pattern.is_mutable,
+            decl_stmt.pattern.ident.symbol,
+            Some(expr_ty_id),
+        )?;
+
+        Ok(DeclStmtAst {
+            frame_id,
+            binding_id,
+            expr: Box::new(expr),
+        })
     }
 }

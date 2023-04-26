@@ -17,7 +17,7 @@ macro_rules! define_expr_ast {
         paste! {
             #[derive(Clone, Debug)]
             pub enum ExprAst {
-                $($Variant([<$Variant ExprAst>]),)+   
+                $($Variant([<$Variant ExprAst>]),)+
             }
 
             impl ExprAst {
@@ -27,7 +27,7 @@ macro_rules! define_expr_ast {
                     }
                 }
             }
-            
+
             $(
                 impl From<[<$Variant ExprAst>]> for ExprAst {
                     #[inline]

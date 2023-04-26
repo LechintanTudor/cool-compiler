@@ -3,7 +3,7 @@ mod block_elem;
 mod error;
 mod expr;
 mod function;
-mod program;
+mod package;
 mod resolve;
 mod stmt;
 
@@ -12,6 +12,6 @@ pub use self::block_elem::*;
 pub use self::error::*;
 pub use self::expr::*;
 pub use self::function::*;
-pub use self::program::*;
+pub use self::package::*;
 pub use self::resolve::*;
 pub use self::stmt::*;

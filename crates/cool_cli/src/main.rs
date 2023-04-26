@@ -13,9 +13,18 @@ fn main() -> anyhow::Result<()> {
     };
 
     let mut resolve = ResolveContext::with_builtins();
+
     let package = cool_driver::p0_parse(&mut resolve, &options)?;
+    println!("p0 - parse:         success");
+
     cool_driver::p1_define_tys(&package, &mut resolve)?;
+    println!("p1 - define tys:    success");
+
     cool_driver::p2_define_fn_tys(&package, &mut resolve)?;
+    println!("p2 - define fn tys: success");
+
+    cool_driver::p3_gen_ast(&package, &mut resolve)?;
+    println!("p3 - gen ast:       success");
 
     // let _module_asts = cool_driver::generate_ast(&mut package).unwrap();
     // println!("Ast generation success!");

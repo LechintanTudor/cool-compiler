@@ -22,6 +22,7 @@ pub fn p2_define_fn_tys(package: &Package, resolve: &mut ResolveContext) -> Comp
                 continue;
             }
         };
+
         let binding_id = resolve[extern_fn.item_id].as_binding_id().unwrap();
         resolve.set_binding_ty(binding_id, fn_expr_ty_id);
     }
