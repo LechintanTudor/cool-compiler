@@ -128,6 +128,11 @@ impl ResolveContext {
 
         Ok(ty_id)
     }
+
+    #[inline]
+    pub fn iter_ty_ids(&self) -> impl Iterator<Item = TyId> {
+        self.tys.iter_ids()
+    }
 }
 
 impl ops::Index<TyId> for ResolveContext {

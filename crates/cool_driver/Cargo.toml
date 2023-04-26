@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 cool_ast = { path = "../cool_ast" }
+cool_codegen = { path = "../cool_codegen" }
 cool_lexer = { path = "../cool_lexer" }
 cool_parser = { path = "../cool_parser" }
 cool_resolve = { path = "../cool_resolve" }
