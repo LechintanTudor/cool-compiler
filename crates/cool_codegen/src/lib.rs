@@ -1,20 +1,30 @@
+mod block_elem;
+mod expr;
 mod function;
 mod generated_tys;
+mod stmt;
 
-use crate::generated_tys::GeneratedTys;
+pub use self::block_elem::*;
+pub use self::expr::*;
+pub use self::function::*;
+pub use self::generated_tys::*;
+pub use self::stmt::*;
 use cool_ast::PackageAst;
-use cool_resolve::ResolveContext;
+use cool_resolve::{BindingId, ItemId, ResolveContext};
 use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::targets::{CodeModel, InitializationConfig, RelocMode, Target, TargetTriple};
+use inkwell::values::{AnyValueEnum, FunctionValue};
 use inkwell::OptimizationLevel;
+use rustc_hash::FxHashMap;
 
 pub struct CodeGenerator<'a> {
     context: &'a Context,
-    target_triple: TargetTriple,
     resolve: &'a ResolveContext,
     tys: GeneratedTys<'a>,
+    fns: FxHashMap<ItemId, FunctionValue<'a>>,
+    bindings: FxHashMap<BindingId, AnyValueEnum<'a>>,
     module: Module<'a>,
     builder: Builder<'a>,
 }
@@ -61,9 +71,10 @@ impl<'a> CodeGenerator<'a> {
 
         Self {
             context,
-            target_triple,
             resolve,
             tys,
+            fns: Default::default(),
+            bindings: Default::default(),
             module,
             builder,
         }
@@ -78,33 +89,11 @@ impl<'a> CodeGenerator<'a> {
             self.add_fn(fn_ast);
         }
 
+        for fn_ast in package.fns.iter() {
+            self.gen_fn(fn_ast);
+        }
+
+        self.module.verify().unwrap();
         self.module
     }
 }
-
-// pub fn codegen() {
-//     let context = Context::create();
-//     let module = context.create_module("hello");
-//     let builder = context.create_builder();
-
-//     let i8_type = context.i8_type();
-
-//     let i32_type = context.i32_type();
-//     let i32_const_0 = i32_type.const_zero();
-
-//     // Main function
-//     let main_type = i32_type.fn_type(&[], false);
-//     let main_item = module.add_function("main", main_type, None);
-//     let main_body = context.append_basic_block(main_item, "entry");
-
-//     // // Printf function
-//     let printf_type = i32_type.fn_type(&[i8_type.ptr_type(AddressSpace::default()).into()], true);
-//     let printf_item = module.add_function("printf", printf_type, None);
-
-//     builder.position_at_end(main_body);
-//     let format_str = builder.build_global_string_ptr("Hello, world!\n", "format_str");
-//     builder.build_call(printf_item, &[format_str.as_pointer_value().into()], "");
-//     builder.build_return(Some(&i32_const_0));
-
-//     module.print_to_file("../programs/test.ll").unwrap();
-// }

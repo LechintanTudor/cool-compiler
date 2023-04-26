@@ -183,6 +183,7 @@ name = "cool_codegen"
 version = "0.1.0"
 dependencies = [
  "cool_ast",
+ "cool_lexer",
  "cool_resolve",
  "inkwell",
  "rustc-hash",

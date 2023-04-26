@@ -133,6 +133,12 @@ impl ResolveContext {
     pub fn iter_ty_ids(&self) -> impl Iterator<Item = TyId> {
         self.tys.iter_ids()
     }
+
+    #[inline]
+    pub fn is_ty_id_zst(&self, ty_id: TyId) -> bool {
+        // TODO: Handle structs and tuples with only zst.
+        ty_id == tys::UNIT
+    }
 }
 
 impl ops::Index<TyId> for ResolveContext {

@@ -86,6 +86,6 @@ builtins! {
         19: (INFERRED_INT, TyKind::Inferred(InferredTy::Int)),
         20: (INFERRED_FLOAT, TyKind::Inferred(InferredTy::Float)),
         21: (MODULE, TyKind::Module),
-        22: (C_STR, TyKind::Pointer(PointerTy { is_mutable: false, pointee: tys::U8 })),
+        22: (C_STR, TyKind::Pointer(PointerTy { is_mutable: false, pointee: tys::I8 })),
     }
 }

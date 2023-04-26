@@ -186,5 +186,7 @@ define_symbols! {
 
         41: "C" as ABI_C,
         42: "Cool" as ABI_COOL,
+
+        43: "main" as MAIN,
     }
 }

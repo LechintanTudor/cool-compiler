@@ -10,6 +10,7 @@ pub enum LiteralExprValue {
     Float(f64),
     Bool(bool),
     Char(u32),
+    Cstr(String),
 }
 
 #[derive(Clone, Debug)]
@@ -72,7 +73,22 @@ impl AstGenerator<'_> {
                     value: LiteralExprValue::Char(value),
                 }
             }
-            _ => todo!(),
+            LiteralKind::Str => {
+                let value_str = literal_expr.literal.symbol.as_str();
+                let value = value_str.to_owned();
+
+                let ty_id = tys::C_STR
+                    .resolve_non_inferred(expected_ty_id)
+                    .ok_or(TyMismatch {
+                        found_ty: tys::C_STR,
+                        expected_ty: expected_ty_id,
+                    })?;
+
+                LiteralExprAst {
+                    expr_id: self.resolve.add_expr(ty_id),
+                    value: LiteralExprValue::Cstr(value),
+                }
+            }
         };
 
         Ok(expr)
