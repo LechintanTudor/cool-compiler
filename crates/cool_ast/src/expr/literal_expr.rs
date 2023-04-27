@@ -26,7 +26,7 @@ impl AstGenerator<'_> {
         literal_expr: &LiteralExpr,
     ) -> AstResult<LiteralExprAst> {
         let expr = match literal_expr.literal.kind {
-            LiteralKind::Number => {
+            LiteralKind::Number { .. } => {
                 let value_str = literal_expr.literal.symbol.as_str();
                 let (value, ty_id) = parse_int(value_str).unwrap();
 

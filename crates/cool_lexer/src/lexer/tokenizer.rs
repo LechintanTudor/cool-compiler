@@ -132,58 +132,85 @@ impl<'a> Tokenizer<'a> {
     }
 
     fn binary_number(&mut self) -> TokenKind {
-        self.number_literal(|c| ('0'..'1').contains(&c))
-    }
+        let (symbol, _) = self.number_literal(|c| ('0'..'1').contains(&c));
 
-    fn octal_number(&mut self) -> TokenKind {
-        self.number_literal(|c| ('0'..'7').contains(&c))
-    }
-
-    fn decimal_number(&mut self) -> TokenKind {
-        self.number_literal(|c| ('0'..'9').contains(&c))
-    }
-
-    fn hexadecimal_number(&mut self) -> TokenKind {
-        self.number_literal(|c| {
-            ('0'..'9').contains(&c) || ('a'..'f').contains(&c) || ('A'..'F').contains(&c)
+        TokenKind::Literal(Literal {
+            kind: LiteralKind::Number { is_plain: false },
+            symbol,
         })
     }
 
-    fn number_literal(&mut self, is_digit_allowed: impl Fn(char) -> bool) -> TokenKind {
-        self.cursor.consume_while(|char| {
-            if !(is_digit_allowed(char) || char == '_') {
-                return false;
-            }
+    fn octal_number(&mut self) -> TokenKind {
+        let (symbol, _) = self.number_literal(|c| ('0'..'7').contains(&c));
 
-            self.buffer.push(char);
-            true
+        TokenKind::Literal(Literal {
+            kind: LiteralKind::Number { is_plain: false },
+            symbol,
+        })
+    }
+
+    fn decimal_number(&mut self) -> TokenKind {
+        let (symbol, is_plain) = self.number_literal(|c| ('0'..'9').contains(&c));
+
+        TokenKind::Literal(Literal {
+            kind: LiteralKind::Number { is_plain },
+            symbol,
+        })
+    }
+
+    fn hexadecimal_number(&mut self) -> TokenKind {
+        let (symbol, _) = self.number_literal(|c| {
+            ('0'..'9').contains(&c) || ('a'..'f').contains(&c) || ('A'..'F').contains(&c)
+        });
+
+        TokenKind::Literal(Literal {
+            kind: LiteralKind::Number { is_plain: false },
+            symbol,
+        })
+    }
+
+    fn number_literal<F>(&mut self, is_digit_allowed: F) -> (Symbol, bool)
+    where
+        F: Fn(char) -> bool,
+    {
+        let mut is_plain = true;
+
+        self.cursor.consume_while(|char| {
+            if is_digit_allowed(char) {
+                self.buffer.push(char);
+                true
+            } else if char == '_' {
+                self.buffer.push(char);
+                is_plain = false;
+                true
+            } else {
+                false
+            }
         });
 
         self.cursor.consume_if(|char| {
-            if !is_ident_start(char) {
-                return false;
+            if is_ident_start(char) {
+                self.buffer.push(char);
+                is_plain = false;
+                true
+            } else {
+                false
             }
-
-            self.buffer.push(char);
-            true
         });
 
         self.cursor.consume_while(|char| {
-            if !is_ident_continue(char) {
-                return false;
+            if is_ident_continue(char) {
+                self.buffer.push(char);
+                is_plain = false;
+                true
+            } else {
+                false
             }
-
-            self.buffer.push(char);
-            true
         });
 
         let symbol = Symbol::insert(&self.buffer);
         self.buffer.clear();
-
-        TokenKind::Literal(Literal {
-            kind: LiteralKind::Number,
-            symbol,
-        })
+        (symbol, is_plain)
     }
 
     fn string(&mut self) -> TokenKind {

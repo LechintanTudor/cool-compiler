@@ -3,7 +3,7 @@ use std::fmt;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum LiteralKind {
-    Number,
+    Number { is_plain: bool },
     Bool,
     Char,
     Str,
