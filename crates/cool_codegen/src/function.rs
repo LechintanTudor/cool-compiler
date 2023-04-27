@@ -46,7 +46,11 @@ impl CodeGenerator<'_> {
         if let Some(ret_value) = self.gen_block_expr(&fn_ast.body) {
             if let Some(ret_value) = basic_value_from_any_value_enum(ret_value) {
                 self.builder.build_return(Some(&ret_value));
+            } else {
+                self.builder.build_return(None);
             }
+        } else {
+            self.builder.build_return(None);
         }
     }
 }
@@ -70,7 +74,7 @@ where
     let mut result = String::from(first.as_str());
 
     for other in others {
-        result.push('_');
+        result.push_str("__");
         result.push_str(other.as_str());
     }
 

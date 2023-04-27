@@ -59,7 +59,7 @@ impl AstGenerator<'_> {
             }
             LiteralKind::Char => {
                 let value_str = literal_expr.literal.symbol.as_str();
-                let value = parse_char(value_str).unwrap();
+                let value = parse_char(value_str);
 
                 let ty_id = tys::CHAR
                     .resolve_non_inferred(expected_ty_id)
@@ -75,7 +75,7 @@ impl AstGenerator<'_> {
             }
             LiteralKind::Str => {
                 let value_str = literal_expr.literal.symbol.as_str();
-                let value = value_str.to_owned();
+                let value = parse_str(value_str);
 
                 let ty_id = tys::C_STR
                     .resolve_non_inferred(expected_ty_id)
@@ -241,6 +241,45 @@ fn parse_int_suffix(suffix: &str) -> Option<TyId> {
     Some(ty_id)
 }
 
-fn parse_char(char_str: &str) -> Option<u32> {
-    char_str.chars().next().map(|c| c as u32)
+fn parse_char(char_str: &str) -> u32 {
+    let mut char_iter = char_str.chars();
+
+    let char = match char_iter.next().unwrap() {
+        '\\' => match char_iter.next().unwrap() {
+            'n' => '\n',
+            'r' => '\r',
+            't' => '\t',
+            '\\' => '\\',
+            '0' => '\0',
+            '\'' => '\'',
+            _ => unreachable!(),
+        },
+        char => char,
+    };
+
+    char as u32
+}
+
+fn parse_str(str: &str) -> String {
+    let mut char_iter = str.chars();
+    let mut result = String::new();
+
+    while let Some(char) = char_iter.next() {
+        let char = match char {
+            '\\' => match char_iter.next().unwrap() {
+                'n' => '\n',
+                'r' => '\r',
+                't' => '\t',
+                '\\' => '\\',
+                '0' => '\0',
+                '"' => '"',
+                _ => unreachable!(),
+            },
+            _ => char,
+        };
+
+        result.push(char);
+    }
+
+    result
 }

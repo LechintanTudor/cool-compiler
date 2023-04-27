@@ -20,7 +20,6 @@ impl AstGenerator<'_> {
             Stmt::Assign(s) => StmtAst::Assign(self.gen_assign_stmt(frame_id, s)?),
             Stmt::Decl(s) => StmtAst::Decl(self.gen_decl_stmt(frame_id, s)?),
             Stmt::Expr(e) => StmtAst::Expr(self.gen_expr(frame_id, tys::INFERRED, &e.expr)?),
-            _ => todo!(),
         };
 
         Ok(stmt)

@@ -187,21 +187,27 @@ impl<'a> Tokenizer<'a> {
     }
 
     fn string(&mut self) -> TokenKind {
-        self.cursor.consume_while(|char| {
-            if ['\n', '"'].contains(&char) {
-                return false;
+        let token = loop {
+            match self.cursor.bump() {
+                '"' => {
+                    break TokenKind::Literal(Literal {
+                        kind: LiteralKind::Str,
+                        symbol: Symbol::insert(&self.buffer),
+                    })
+                }
+                '\\' => {
+                    self.buffer.push('\\');
+
+                    match self.cursor.bump() {
+                        char @ ('n' | 'r' | 't' | '\\' | '0' | '"') => {
+                            self.buffer.push(char);
+                        }
+                        _ => break TokenKind::Unknown,
+                    }
+                }
+                '\n' => break TokenKind::Unknown,
+                char => self.buffer.push(char),
             }
-
-            self.buffer.push(char);
-            true
-        });
-
-        let token = match self.cursor.bump() {
-            '"' => TokenKind::Literal(Literal {
-                kind: LiteralKind::Str,
-                symbol: Symbol::insert(&self.buffer),
-            }),
-            _ => TokenKind::Unknown,
         };
 
         self.buffer.clear();
@@ -209,17 +215,33 @@ impl<'a> Tokenizer<'a> {
     }
 
     fn character(&mut self) -> TokenKind {
-        let char = self.cursor.bump();
+        let is_ok = match self.cursor.bump() {
+            '\'' => false,
+            '\\' => {
+                self.buffer.push('\\');
 
-        if char == '\'' {
-            return TokenKind::Unknown;
-        }
+                match self.cursor.bump() {
+                    char @ ('n' | 'r' | 't' | '\\' | '0' | '\'') => {
+                        self.buffer.push(char);
+                        true
+                    }
+                    _ => false,
+                }
+            }
+            char => {
+                self.buffer.push(char);
+                true
+            }
+        };
 
-        self.buffer.push(char);
-        let token = TokenKind::Literal(Literal {
-            kind: LiteralKind::Char,
-            symbol: Symbol::insert(&self.buffer),
-        });
+        let token = if is_ok && self.cursor.bump() == '\'' {
+            TokenKind::Literal(Literal {
+                kind: LiteralKind::Char,
+                symbol: Symbol::insert(&self.buffer),
+            })
+        } else {
+            TokenKind::Unknown
+        };
 
         self.buffer.clear();
         token
