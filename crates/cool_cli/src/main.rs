@@ -29,18 +29,5 @@ fn main() -> anyhow::Result<()> {
     cool_driver::p4_gen_code(&package, &resolve)?;
     println!("p4 - gen code:      success");
 
-    // let _module_asts = cool_driver::generate_ast(&mut package).unwrap();
-    // println!("Ast generation success!");
-
-    // let context = cool_codegen::create_context();
-    // let codegen = Codegen::new(
-    //     &context,
-    //     "x86_64-unknown-linux-gnu",
-    //     &package.resolve,
-    //     &package.tys,
-    // );
-    // let module = codegen.run_for_module(&module_asts[0]);
-
-    // module.print_to_file("../programs/test.ll").unwrap();
     Ok(())
 }

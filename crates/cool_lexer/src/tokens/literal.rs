@@ -3,10 +3,23 @@ use std::fmt;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum LiteralKind {
-    Number { is_plain: bool },
+    Int { is_plain: bool },
+    Decimal,
     Bool,
     Char,
     Str,
+}
+
+impl LiteralKind {
+    #[inline]
+    pub fn is_int(&self) -> bool {
+        matches!(self, Self::Int { .. })
+    }
+
+    #[inline]
+    pub fn is_plain_int(&self) -> bool {
+        matches!(self, Self::Int { is_plain: true })
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]

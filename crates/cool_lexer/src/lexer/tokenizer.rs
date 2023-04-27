@@ -135,7 +135,7 @@ impl<'a> Tokenizer<'a> {
         let (symbol, _) = self.number_literal(|c| ('0'..'1').contains(&c));
 
         TokenKind::Literal(Literal {
-            kind: LiteralKind::Number { is_plain: false },
+            kind: LiteralKind::Int { is_plain: false },
             symbol,
         })
     }
@@ -144,16 +144,18 @@ impl<'a> Tokenizer<'a> {
         let (symbol, _) = self.number_literal(|c| ('0'..'7').contains(&c));
 
         TokenKind::Literal(Literal {
-            kind: LiteralKind::Number { is_plain: false },
+            kind: LiteralKind::Int { is_plain: false },
             symbol,
         })
     }
 
     fn decimal_number(&mut self) -> TokenKind {
-        let (symbol, is_plain) = self.number_literal(|c| ('0'..'9').contains(&c));
+        let (symbol, has_suffix) = self.number_literal(|c| ('0'..'9').contains(&c));
 
         TokenKind::Literal(Literal {
-            kind: LiteralKind::Number { is_plain },
+            kind: LiteralKind::Int {
+                is_plain: !has_suffix,
+            },
             symbol,
         })
     }
@@ -164,7 +166,7 @@ impl<'a> Tokenizer<'a> {
         });
 
         TokenKind::Literal(Literal {
-            kind: LiteralKind::Number { is_plain: false },
+            kind: LiteralKind::Int { is_plain: false },
             symbol,
         })
     }
@@ -173,44 +175,38 @@ impl<'a> Tokenizer<'a> {
     where
         F: Fn(char) -> bool,
     {
-        let mut is_plain = true;
-
         self.cursor.consume_while(|char| {
-            if is_digit_allowed(char) {
+            if is_digit_allowed(char) || char == '_' {
                 self.buffer.push(char);
-                true
-            } else if char == '_' {
-                self.buffer.push(char);
-                is_plain = false;
                 true
             } else {
                 false
             }
         });
 
-        self.cursor.consume_if(|char| {
+        let has_suffix = self.cursor.consume_if(|char| {
             if is_ident_start(char) {
                 self.buffer.push(char);
-                is_plain = false;
                 true
             } else {
                 false
             }
         });
 
-        self.cursor.consume_while(|char| {
-            if is_ident_continue(char) {
-                self.buffer.push(char);
-                is_plain = false;
-                true
-            } else {
-                false
-            }
-        });
+        if has_suffix {
+            self.cursor.consume_while(|char| {
+                if is_ident_continue(char) {
+                    self.buffer.push(char);
+                    true
+                } else {
+                    false
+                }
+            });
+        }
 
         let symbol = Symbol::insert(&self.buffer);
         self.buffer.clear();
-        (symbol, is_plain)
+        (symbol, has_suffix)
     }
 
     fn string(&mut self) -> TokenKind {

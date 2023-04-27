@@ -26,7 +26,7 @@ impl AstGenerator<'_> {
         literal_expr: &LiteralExpr,
     ) -> AstResult<LiteralExprAst> {
         let expr = match literal_expr.literal.kind {
-            LiteralKind::Number { .. } => {
+            LiteralKind::Int { .. } => {
                 let value_str = literal_expr.literal.symbol.as_str();
                 let (value, ty_id) = parse_int(value_str).unwrap();
 
@@ -41,6 +41,9 @@ impl AstGenerator<'_> {
                     expr_id: self.resolve.add_expr(ty_id),
                     value: LiteralExprValue::Int(value),
                 }
+            }
+            LiteralKind::Decimal => {
+                todo!()
             }
             LiteralKind::Bool => {
                 let value = literal_expr.literal.symbol == sym::KW_TRUE;

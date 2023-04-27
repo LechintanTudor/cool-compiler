@@ -1,6 +1,7 @@
 use cool_parser::{AliasItem, ConstItem, ExternFnItem, StructItem, Ty};
 use cool_resolve::{ItemId, ModuleId};
 
+#[derive(Clone, Debug)]
 pub struct Item<I> {
     pub module_id: ModuleId,
     pub item_id: ItemId,
@@ -13,6 +14,7 @@ pub type Struct = Item<StructItem>;
 pub type ExternFn = Item<ExternFnItem>;
 pub type Const = Item<ConstItem>;
 
+#[derive(Clone, Debug)]
 pub struct Package {
     pub aliases: Vec<Alias>,
     pub structs: Vec<Struct>,

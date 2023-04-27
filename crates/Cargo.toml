@@ -13,4 +13,5 @@ members = [
 ]
 
 [workspace.dependencies]
+smallstr = { version = "0.3", features = ["union"] }
 smallvec = { version = "1.10", features = ["const_generics", "const_new", "union"] }
