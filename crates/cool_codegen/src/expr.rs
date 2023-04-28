@@ -57,7 +57,17 @@ impl<'a> CodeGenerator<'a> {
             LiteralExprValue::Int(value) => {
                 let ty_id = self.resolve[expr.expr_id];
                 let int_ty = self.tys[ty_id].into_int_type();
-                int_ty.const_int(*value as u64, false).into()
+                let parts = [
+                    (value & (u64::MAX as u128)) as u64,
+                    ((value >> 64) & (u64::MAX as u128)) as u64,
+                ];
+
+                int_ty.const_int_arbitrary_precision(&parts).into()
+            }
+            LiteralExprValue::Float(value) => {
+                let ty_id = self.resolve[expr.expr_id];
+                let float_ty = self.tys[ty_id].into_float_type();
+                float_ty.const_float(*value).into()
             }
             LiteralExprValue::Cstr(value) => self
                 .builder

@@ -1,6 +1,6 @@
 use crate::lexer::{Cursor, TokenStream, EOF_CHAR};
 use crate::symbols::Symbol;
-use crate::tokens::{Literal, LiteralKind, Punctuation, Token, TokenKind};
+use crate::tokens::{IntBase, Literal, LiteralKind, Punctuation, Token, TokenKind};
 use cool_span::Span;
 
 pub struct Tokenizer<'a> {
@@ -132,41 +132,51 @@ impl<'a> Tokenizer<'a> {
     }
 
     fn binary_number(&mut self) -> TokenKind {
-        let (symbol, _) = self.number_literal(|c| ('0'..'1').contains(&c));
+        let (symbol, has_suffix) = self.number_literal(|c| ('0'..='1').contains(&c));
 
         TokenKind::Literal(Literal {
-            kind: LiteralKind::Int { is_plain: false },
+            kind: LiteralKind::Int {
+                base: IntBase::Two,
+                has_suffix,
+            },
             symbol,
         })
     }
 
     fn octal_number(&mut self) -> TokenKind {
-        let (symbol, _) = self.number_literal(|c| ('0'..'7').contains(&c));
+        let (symbol, has_suffix) = self.number_literal(|c| ('0'..='7').contains(&c));
 
         TokenKind::Literal(Literal {
-            kind: LiteralKind::Int { is_plain: false },
+            kind: LiteralKind::Int {
+                base: IntBase::Eight,
+                has_suffix,
+            },
             symbol,
         })
     }
 
     fn decimal_number(&mut self) -> TokenKind {
-        let (symbol, has_suffix) = self.number_literal(|c| ('0'..'9').contains(&c));
+        let (symbol, has_suffix) = self.number_literal(|c| ('0'..='9').contains(&c));
 
         TokenKind::Literal(Literal {
             kind: LiteralKind::Int {
-                is_plain: !has_suffix,
+                base: IntBase::Ten,
+                has_suffix,
             },
             symbol,
         })
     }
 
     fn hexadecimal_number(&mut self) -> TokenKind {
-        let (symbol, _) = self.number_literal(|c| {
-            ('0'..'9').contains(&c) || ('a'..'f').contains(&c) || ('A'..'F').contains(&c)
+        let (symbol, has_suffix) = self.number_literal(|c| {
+            ('0'..='9').contains(&c) || ('a'..='f').contains(&c) || ('A'..='F').contains(&c)
         });
 
         TokenKind::Literal(Literal {
-            kind: LiteralKind::Int { is_plain: false },
+            kind: LiteralKind::Int {
+                base: IntBase::Sixteen,
+                has_suffix,
+            },
             symbol,
         })
     }

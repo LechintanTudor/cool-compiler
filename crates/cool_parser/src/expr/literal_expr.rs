@@ -40,7 +40,7 @@ impl Parser<'_> {
                     buffer.push('.');
 
                     let end_token = if let TokenKind::Literal(literal) = self.peek_any().kind {
-                        if literal.kind.is_int() {
+                        if literal.kind.is_base_ten_int() {
                             let end_token = self.bump();
                             buffer.push_str(literal.symbol.as_str());
                             end_token

@@ -1,5 +1,5 @@
 use crate::{
-    AstResult, FnAbiMismatch, FnVariadicMismatch, InvalidParamCount, TyHintMissing, TyMismatch,
+    AstResult, FnAbiMismatch, FnParamCountMismatch, FnVariadicMismatch, TyHintMissing, TyMismatch,
     TyNotFn,
 };
 use cool_parser::{FnExternDecl, FnPrototype, Ty};
@@ -55,7 +55,7 @@ pub fn resolve_fn_prototype(
         Some(ty_id) => {
             let fn_ty = resolve[ty_id]
                 .as_fn_ty()
-                .ok_or(TyNotFn { found_ty: ty_id })?
+                .ok_or(TyNotFn { found: ty_id })?
                 .clone();
 
             if let Some(abi) = resolve_explicit_fn_abi(&prototype.extern_decl)? {
@@ -68,7 +68,7 @@ pub fn resolve_fn_prototype(
             }
 
             if prototype.param_list.params.len() != fn_ty.params.len() {
-                Err(InvalidParamCount {
+                Err(FnParamCountMismatch {
                     found: prototype.param_list.params.len() as _,
                     expected: fn_ty.params.len() as _,
                 })?;
@@ -84,8 +84,8 @@ pub fn resolve_fn_prototype(
 
                 if param_ty_id != fn_ty.params[i] {
                     Err(TyMismatch {
-                        found_ty: param_ty_id,
-                        expected_ty: fn_ty.params[i],
+                        found: param_ty_id,
+                        expected: fn_ty.params[i],
                     })?;
                 }
             }
@@ -102,8 +102,8 @@ pub fn resolve_fn_prototype(
 
                 if ret_ty_id != fn_ty.ret {
                     Err(TyMismatch {
-                        found_ty: ret_ty_id,
-                        expected_ty: fn_ty.ret,
+                        found: ret_ty_id,
+                        expected: fn_ty.ret,
                     })?;
                 }
             }

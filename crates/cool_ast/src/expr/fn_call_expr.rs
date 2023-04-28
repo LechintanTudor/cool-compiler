@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, ExprAst, InvalidParamCount, TyMismatch, TyNotFn};
+use crate::{AstGenerator, AstResult, ExprAst, FnParamCountMismatch, TyMismatch, TyNotFn};
 use cool_parser::FnCallExpr;
 use cool_resolve::{tys, ExprId, FrameId, TyId};
 
@@ -21,20 +21,20 @@ impl AstGenerator<'_> {
         let fn_ty = self.resolve[fn_expr_ty_id]
             .as_fn_ty()
             .ok_or(TyNotFn {
-                found_ty: fn_expr_ty_id,
+                found: fn_expr_ty_id,
             })?
             .clone();
 
         if fn_ty.is_variadic {
             if fn_call_expr.arg_exprs.len() < fn_ty.params.len() {
-                Err(InvalidParamCount {
+                Err(FnParamCountMismatch {
                     found: fn_call_expr.arg_exprs.len() as _,
                     expected: fn_ty.params.len() as _,
                 })?;
             }
         } else {
             if fn_call_expr.arg_exprs.len() != fn_ty.params.len() {
-                Err(InvalidParamCount {
+                Err(FnParamCountMismatch {
                     found: fn_call_expr.arg_exprs.len() as _,
                     expected: fn_ty.params.len() as _,
                 })?;
@@ -52,8 +52,8 @@ impl AstGenerator<'_> {
             .ret
             .resolve_non_inferred(expected_ty_id)
             .ok_or(TyMismatch {
-                found_ty: fn_ty.ret,
-                expected_ty: expected_ty_id,
+                found: fn_ty.ret,
+                expected: expected_ty_id,
             })?;
 
         let expr_id = self.resolve.add_expr(ret_ty_id);

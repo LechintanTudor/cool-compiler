@@ -2,8 +2,16 @@ use crate::symbols::Symbol;
 use std::fmt;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub enum IntBase {
+    Two,
+    Eight,
+    Ten,
+    Sixteen,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum LiteralKind {
-    Int { is_plain: bool },
+    Int { base: IntBase, has_suffix: bool },
     Decimal,
     Bool,
     Char,
@@ -16,9 +24,27 @@ impl LiteralKind {
         matches!(self, Self::Int { .. })
     }
 
+    /// Returns `true` if and only if the literal is a base 10 number without a suffix.
     #[inline]
     pub fn is_plain_int(&self) -> bool {
-        matches!(self, Self::Int { is_plain: true })
+        matches!(
+            self,
+            Self::Int {
+                base: IntBase::Ten,
+                has_suffix: false
+            }
+        )
+    }
+
+    #[inline]
+    pub fn is_base_ten_int(&self) -> bool {
+        matches!(
+            self,
+            Self::Int {
+                base: IntBase::Ten,
+                ..
+            }
+        )
     }
 }
 

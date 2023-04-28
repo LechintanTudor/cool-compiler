@@ -103,6 +103,7 @@ dependencies = [
 name = "cool_ast"
 version = "0.1.0"
 dependencies = [
+ "cool_collections",
  "cool_lexer",
  "cool_parser",
  "cool_resolve",

@@ -48,8 +48,8 @@ impl AstGenerator<'_> {
         ret_ty_id
             .resolve_non_inferred(expected_ty_id)
             .ok_or(TyMismatch {
-                found_ty: ret_ty_id,
-                expected_ty: expected_ty_id,
+                found: ret_ty_id,
+                expected: expected_ty_id,
             })?;
 
         let expr_id = self.resolve.add_expr(ret_ty_id);
