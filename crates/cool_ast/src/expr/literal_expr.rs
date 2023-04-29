@@ -26,9 +26,9 @@ impl AstGenerator<'_> {
         expected_ty_id: TyId,
         literal_expr: &LiteralExpr,
     ) -> AstResult<LiteralExprAst> {
+        let symbol = literal_expr.literal.symbol;
         let expr = match literal_expr.literal.kind {
             LiteralKind::Int { .. } => {
-                let symbol = literal_expr.literal.symbol;
                 let (value, ty_id) = parse_int(symbol)?;
 
                 let ty_id = ty_id
@@ -55,10 +55,22 @@ impl AstGenerator<'_> {
                 }
             }
             LiteralKind::Decimal => {
-                todo!()
+                let (value, ty_id) = parse_decimal(symbol)?;
+
+                let ty_id = ty_id
+                    .resolve_non_inferred(expected_ty_id)
+                    .ok_or(TyMismatch {
+                        found: ty_id,
+                        expected: expected_ty_id,
+                    })?;
+
+                LiteralExprAst {
+                    expr_id: self.resolve.add_expr(ty_id),
+                    value: LiteralExprValue::Float(value),
+                }
             }
             LiteralKind::Bool => {
-                let value = literal_expr.literal.symbol == sym::KW_TRUE;
+                let value = symbol == sym::KW_TRUE;
 
                 let ty_id = tys::BOOL
                     .resolve_non_inferred(expected_ty_id)
@@ -73,8 +85,7 @@ impl AstGenerator<'_> {
                 }
             }
             LiteralKind::Char => {
-                let value_str = literal_expr.literal.symbol.as_str();
-                let value = parse_char(value_str);
+                let value = parse_char(symbol);
 
                 let ty_id = tys::CHAR
                     .resolve_non_inferred(expected_ty_id)
@@ -89,8 +100,7 @@ impl AstGenerator<'_> {
                 }
             }
             LiteralKind::Str => {
-                let value_str = literal_expr.literal.symbol.as_str();
-                let value = parse_str(value_str);
+                let value = parse_str(symbol);
 
                 let ty_id = tys::C_STR
                     .resolve_non_inferred(expected_ty_id)
@@ -291,6 +301,19 @@ fn parse_int_suffix(suffix: &str) -> AstResult<TyId> {
     Ok(ty_id)
 }
 
+pub fn parse_decimal_suffix(suffix: &str) -> AstResult<TyId> {
+    let ty_id = match suffix {
+        "" => tys::INFERRED_FLOAT,
+        "f32" => tys::F32,
+        "f64" => tys::F64,
+        _ => Err(LiteralUnknownSuffix {
+            suffix: Symbol::insert(suffix),
+        })?,
+    };
+
+    Ok(ty_id)
+}
+
 pub fn parse_number_suffix(suffix: &str) -> AstResult<TyId> {
     let ty_id = match suffix {
         "" => tys::INFERRED_INT,
@@ -336,10 +359,42 @@ fn is_int_in_range(value: u128, ty_id: TyId) -> bool {
 }
 
 pub fn parse_decimal(symbol: Symbol) -> AstResult<(f64, TyId)> {
-    todo!()
+    let value_str = symbol.as_str();
+    let mut char_iter = value_str.chars();
+
+    let mut value = 0.0;
+    let mut divider = 10.0;
+    let mut found_dot = false;
+    let mut suffix = SmallString::new();
+
+    while let Some(char) = char_iter.next() {
+        match char {
+            '0'..='9' => {
+                let digit = char as u32 - '0' as u32;
+
+                if !found_dot {
+                    value = value * 10.0 + digit as f64;
+                } else {
+                    let digit_value = (digit as f64) / divider;
+                    divider *= 10.0;
+                    value += digit_value;
+                }
+            }
+            '_' => (),
+            '.' => found_dot = true,
+            _ => {
+                suffix.push(char);
+                break;
+            }
+        }
+    }
+
+    suffix.extend(char_iter);
+    Ok((value, parse_decimal_suffix(&suffix)?))
 }
 
-fn parse_char(char_str: &str) -> u32 {
+fn parse_char(symbol: Symbol) -> u32 {
+    let char_str = symbol.as_str();
     let mut char_iter = char_str.chars();
 
     let char = match char_iter.next().unwrap() {
@@ -358,7 +413,8 @@ fn parse_char(char_str: &str) -> u32 {
     char as u32
 }
 
-fn parse_str(str: &str) -> String {
+fn parse_str(symbol: Symbol) -> String {
+    let str = symbol.as_str();
     let mut char_iter = str.chars();
     let mut result = String::new();
 
