@@ -10,6 +10,7 @@ type TyMap<'a> = FxHashMap<TyId, AnyTypeEnum<'a>>;
 
 pub struct GeneratedTys<'a> {
     tys: TyMap<'a>,
+    void_ty: AnyTypeEnum<'a>,
 }
 
 impl<'a> GeneratedTys<'a> {
@@ -21,7 +22,10 @@ impl<'a> GeneratedTys<'a> {
         let mut tys = TyMap::default();
         Self::insert_builtin_tys(&mut tys, context, target_data);
         Self::insert_derived_tys(&mut tys, context, resolve);
-        Self { tys }
+        Self {
+            tys,
+            void_ty: context.void_type().into(),
+        }
     }
 
     fn insert_builtin_tys(tys: &mut TyMap<'a>, context: &'a Context, target_data: &TargetData) {
@@ -104,6 +108,11 @@ impl<'a> GeneratedTys<'a> {
 
         tys.insert(ty_id, ty);
         ty
+    }
+
+    #[inline]
+    pub fn void_ty(&self) -> AnyTypeEnum {
+        self.void_ty
     }
 }
 

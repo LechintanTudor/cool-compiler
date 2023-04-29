@@ -3,19 +3,23 @@ mod expr;
 mod function;
 mod generated_tys;
 mod stmt;
+mod utils;
+mod value;
 
 pub use self::block_elem::*;
 pub use self::expr::*;
 pub use self::function::*;
 pub use self::generated_tys::*;
 pub use self::stmt::*;
+pub use self::utils::*;
+pub use self::value::*;
 use cool_ast::PackageAst;
 use cool_resolve::{BindingId, ItemId, ResolveContext};
 use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::targets::{CodeModel, InitializationConfig, RelocMode, Target, TargetTriple};
-use inkwell::values::{AnyValueEnum, FunctionValue};
+use inkwell::values::FunctionValue;
 use inkwell::OptimizationLevel;
 use rustc_hash::FxHashMap;
 
@@ -24,7 +28,7 @@ pub struct CodeGenerator<'a> {
     resolve: &'a ResolveContext,
     tys: GeneratedTys<'a>,
     fns: FxHashMap<ItemId, FunctionValue<'a>>,
-    bindings: FxHashMap<BindingId, AnyValueEnum<'a>>,
+    bindings: FxHashMap<BindingId, Value<'a>>,
     module: Module<'a>,
     builder: Builder<'a>,
 }
