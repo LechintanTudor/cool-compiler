@@ -11,7 +11,7 @@ pub enum LiteralExprValue {
     Float(f64),
     Bool(bool),
     Char(u32),
-    Cstr(String),
+    Cstr(SmallString),
 }
 
 #[derive(Clone, Debug)]
@@ -413,10 +413,10 @@ fn parse_char(symbol: Symbol) -> u32 {
     char as u32
 }
 
-fn parse_str(symbol: Symbol) -> String {
+fn parse_str(symbol: Symbol) -> SmallString {
     let str = symbol.as_str();
     let mut char_iter = str.chars();
-    let mut result = String::new();
+    let mut result = SmallString::new();
 
     while let Some(char) = char_iter.next() {
         let char = match char {
