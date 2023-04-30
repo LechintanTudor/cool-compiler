@@ -26,7 +26,7 @@ fn main() -> anyhow::Result<()> {
     let package = cool_driver::p3_gen_ast(&package, &mut resolve)?;
     println!("p3 - gen ast:       success");
 
-    cool_driver::p4_gen_code(&package, &resolve)?;
+    cool_driver::p4_gen_code(&package, &resolve, &options)?;
     println!("p4 - gen code:      success");
 
     Ok(())

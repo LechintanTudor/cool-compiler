@@ -53,12 +53,18 @@ impl<'a> CodeGenerator<'a> {
         context
     }
 
-    pub fn new(context: &'a Context, target_triple: &str, resolve: &'a ResolveContext) -> Self {
+    pub fn new(
+        context: &'a Context,
+        target_triple: &str,
+        resolve: &'a ResolveContext,
+        crate_name: &str,
+        file_name: &str,
+    ) -> Self {
         let target_triple = TargetTriple::create(target_triple);
         let target = Target::from_triple(&target_triple).unwrap();
 
-        let module = context.create_module("Hello");
-        module.set_source_file_name("main.cl");
+        let module = context.create_module(crate_name);
+        module.set_source_file_name(file_name);
         module.set_triple(&target_triple);
 
         let pass_manager = PassManager::create(&module);
