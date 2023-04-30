@@ -18,8 +18,9 @@ use cool_resolve::{BindingId, ItemId, ResolveContext};
 use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::module::Module;
+use inkwell::passes::PassManager;
 use inkwell::targets::{CodeModel, InitializationConfig, RelocMode, Target, TargetTriple};
-use inkwell::values::FunctionValue;
+use inkwell::values::{FunctionValue, InstructionValue};
 use inkwell::OptimizationLevel;
 use rustc_hash::FxHashMap;
 
@@ -30,7 +31,10 @@ pub struct CodeGenerator<'a> {
     fns: FxHashMap<ItemId, FunctionValue<'a>>,
     bindings: FxHashMap<BindingId, Value<'a>>,
     module: Module<'a>,
+    pass_manager: PassManager<FunctionValue<'a>>,
     builder: Builder<'a>,
+    fn_value: Option<FunctionValue<'a>>,
+    last_alloca: Option<InstructionValue<'a>>,
 }
 
 impl<'a> CodeGenerator<'a> {
@@ -57,6 +61,9 @@ impl<'a> CodeGenerator<'a> {
         module.set_source_file_name("main.cl");
         module.set_triple(&target_triple);
 
+        let pass_manager = PassManager::create(&module);
+        pass_manager.initialize();
+
         let builder = context.create_builder();
 
         let target_machine = target
@@ -80,7 +87,10 @@ impl<'a> CodeGenerator<'a> {
             fns: Default::default(),
             bindings: Default::default(),
             module,
+            pass_manager,
             builder,
+            fn_value: None,
+            last_alloca: None,
         }
     }
 

@@ -1,4 +1,5 @@
 use crate::TyId;
+use cool_lexer::symbols::Symbol;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Mutability {
@@ -20,6 +21,7 @@ impl Mutability {
 
 #[derive(Clone, Copy, Debug)]
 pub struct Binding {
+    pub symbol: Symbol,
     pub mutability: Mutability,
     pub ty_id: TyId,
 }

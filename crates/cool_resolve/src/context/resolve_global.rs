@@ -80,6 +80,7 @@ impl ResolveContext {
             .ok_or(ResolveError::already_defined(symbol))?;
 
         let binding_id = self.bindings.push(Binding {
+            symbol,
             mutability,
             ty_id: tys::INFERRED,
         });

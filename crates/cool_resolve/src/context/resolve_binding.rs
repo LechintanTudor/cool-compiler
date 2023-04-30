@@ -22,6 +22,7 @@ impl ResolveContext {
         ty_id: Option<TyId>,
     ) -> ResolveResult<BindingId> {
         let binding_id = self.bindings.push(Binding {
+            symbol,
             mutability: Mutability::local(is_mutable),
             ty_id: ty_id.unwrap_or(tys::INFERRED),
         });

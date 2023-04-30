@@ -102,7 +102,7 @@ impl Parser<'_> {
 
         let mut exprs = Vec::<Expr>::new();
         let (end_token, has_trailing_comma) = match self.peek().kind {
-            tk::CLOSE_BRACKET => (self.bump(), false),
+            tk::CLOSE_PAREN => (self.bump(), false),
             _ => loop {
                 exprs.push(self.parse_expr()?);
 

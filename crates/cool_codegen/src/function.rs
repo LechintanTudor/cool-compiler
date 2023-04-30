@@ -1,4 +1,4 @@
-use crate::{AnyValueEnumExt, CodeGenerator};
+use crate::{AnyValueEnumExt, CodeGenerator, Value};
 use cool_ast::{ExternFnAst, FnAst};
 use cool_collections::SmallString;
 use cool_lexer::symbols::sym;
@@ -41,8 +41,25 @@ impl CodeGenerator<'_> {
 
     pub fn gen_fn(&mut self, fn_ast: &FnAst) {
         let fn_value = self.fns[&fn_ast.item_id];
-        let entry = self.context.append_basic_block(fn_value, "entry");
-        self.builder.position_at_end(entry);
+        self.fn_value = Some(fn_value);
+
+        let entry_block = self.context.append_basic_block(fn_value, "entry");
+        self.builder.position_at_end(entry_block);
+
+        let mut param_value_iter = fn_value.get_param_iter();
+
+        for &binding_id in fn_ast.binding_ids.iter() {
+            let param_ty_id = self.resolve[binding_id].ty_id;
+
+            let param_value = if self.resolve.is_ty_id_zst(param_ty_id) {
+                Value::Void
+            } else {
+                Value::Rvalue(param_value_iter.next().unwrap().as_any_value_enum())
+            };
+
+            debug_assert!(!self.bindings.contains_key(&binding_id));
+            self.bindings.insert(binding_id, param_value);
+        }
 
         let ret_value = self.gen_block_expr(&fn_ast.body);
         let ret_value = self
@@ -55,6 +72,10 @@ impl CodeGenerator<'_> {
         };
 
         self.builder.build_return(ret_value);
+        self.pass_manager.run_on(&fn_value);
+
+        self.fn_value = None;
+        self.last_alloca = None;
     }
 }
 

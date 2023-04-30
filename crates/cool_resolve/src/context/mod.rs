@@ -46,6 +46,7 @@ impl Default for ResolveContext {
             tys: Default::default(),
             struct_tys: Default::default(),
             bindings: IdIndexedVec::new(Binding {
+                symbol: Symbol::dummy(),
                 mutability: Mutability::Immutable,
                 ty_id: tys::INFERRED,
             }),
