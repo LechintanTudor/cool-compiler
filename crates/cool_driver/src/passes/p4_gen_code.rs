@@ -11,8 +11,8 @@ pub fn p4_gen_code(
     let context = CodeGenerator::create_context();
     let codegen = CodeGenerator::new(
         &context,
-        "x86_64-unknown-linux-gnu",
         resolve,
+        "x86_64-unknown-linux-gnu",
         &options.crate_name,
         &options.crate_root_file.to_str().unwrap(),
     );

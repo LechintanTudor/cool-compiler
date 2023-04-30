@@ -42,10 +42,10 @@ impl<'a> CodeGenerator<'a> {
         let context = Context::create();
 
         Target::initialize_all(&InitializationConfig {
-            asm_parser: true,
-            asm_printer: true,
+            asm_parser: false,
+            asm_printer: false,
             base: true,
-            disassembler: true,
+            disassembler: false,
             info: true,
             machine_code: true,
         });
@@ -55,16 +55,16 @@ impl<'a> CodeGenerator<'a> {
 
     pub fn new(
         context: &'a Context,
-        target_triple: &str,
         resolve: &'a ResolveContext,
+        target_triple: &str,
         crate_name: &str,
-        file_name: &str,
+        crate_root_file: &str,
     ) -> Self {
         let target_triple = TargetTriple::create(target_triple);
         let target = Target::from_triple(&target_triple).unwrap();
 
         let module = context.create_module(crate_name);
-        module.set_source_file_name(file_name);
+        module.set_source_file_name(crate_root_file);
         module.set_triple(&target_triple);
 
         let pass_manager = PassManager::create(&module);
