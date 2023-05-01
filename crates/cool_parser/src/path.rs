@@ -13,7 +13,7 @@ pub struct IdentPath {
 impl ParseTree for IdentPath {
     fn span(&self) -> Span {
         match (self.idents.first(), self.idents.last()) {
-            (Some(first), Some(last)) => first.span_to(last),
+            (Some(first), Some(last)) => first.span().to(last.span()),
             _ => Span::empty(),
         }
     }

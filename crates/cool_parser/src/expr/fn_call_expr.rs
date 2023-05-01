@@ -6,8 +6,8 @@ use cool_span::Span;
 #[derive(Clone, Debug)]
 pub struct FnCallExpr {
     pub span: Span,
-    pub fn_expr: Box<Expr>,
-    pub arg_exprs: Vec<Expr>,
+    pub base: Box<Expr>,
+    pub args: Vec<Expr>,
     pub has_trailing_comma: bool,
 }
 
@@ -19,14 +19,14 @@ impl ParseTree for FnCallExpr {
 }
 
 impl Parser<'_> {
-    pub fn continue_parse_fn_call_expr(&mut self, fn_expr: Box<Expr>) -> ParseResult<FnCallExpr> {
+    pub fn continue_parse_fn_call_expr(&mut self, base: Box<Expr>) -> ParseResult<FnCallExpr> {
         self.bump_expect(&tk::OPEN_PAREN)?;
-        let mut arg_exprs = Vec::<Expr>::new();
+        let mut args = Vec::<Expr>::new();
 
         let (end_token, has_trailing_comma) = match self.peek().kind {
             tk::CLOSE_PAREN => (self.bump_expect(&tk::CLOSE_PAREN)?, false),
             _ => loop {
-                arg_exprs.push(self.parse_expr()?);
+                args.push(self.parse_expr()?);
 
                 if self.bump_if_eq(tk::COMMA).is_some() {
                     if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
@@ -41,9 +41,9 @@ impl Parser<'_> {
         };
 
         Ok(FnCallExpr {
-            span: fn_expr.span().to(end_token.span),
-            fn_expr,
-            arg_exprs,
+            span: base.span().to(end_token.span),
+            base,
+            args,
             has_trailing_comma,
         })
     }

@@ -12,7 +12,7 @@ pub struct FnExpr {
 impl ParseTree for FnExpr {
     #[inline]
     fn span(&self) -> Span {
-        self.prototype.span_to(&self.body)
+        self.prototype.span().to(self.body.span())
     }
 }
 

@@ -5,7 +5,7 @@ use cool_span::Span;
 #[derive(Clone, Debug)]
 pub struct TupleExpr {
     pub span: Span,
-    pub exprs: Vec<Expr>,
+    pub elems: Vec<Expr>,
     pub has_trailing_comma: bool,
 }
 

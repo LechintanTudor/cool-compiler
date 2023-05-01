@@ -297,6 +297,8 @@ fn parse_source_file(module_id: ModuleId, paths: &ModulePaths) -> ParseResult<So
     let mut parser = Parser::new(&lexed, tokenizer.stream());
     let module = parser.parse_module_file()?;
 
+    println!("{:#?}", module);
+
     Ok(SourceFile {
         paths: paths.clone(),
         lexed,

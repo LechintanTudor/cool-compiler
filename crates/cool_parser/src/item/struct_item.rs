@@ -11,7 +11,7 @@ pub struct StructField {
 impl ParseTree for StructField {
     #[inline]
     fn span(&self) -> Span {
-        self.ident.span_to(&self.ty)
+        self.ident.span().to(self.ty.span())
     }
 }
 
