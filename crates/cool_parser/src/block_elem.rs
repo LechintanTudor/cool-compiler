@@ -1,7 +1,7 @@
 use crate::expr::Expr;
 use crate::stmt::{ExprStmt, Stmt};
-use crate::{ParseResult, ParseTree, Parser};
-use cool_lexer::tokens::{tk, TokenKind};
+use crate::{AssignOp, ParseResult, ParseTree, Parser};
+use cool_lexer::tokens::tk;
 use cool_span::Span;
 
 macro_rules! define_block_elem {
@@ -45,68 +45,41 @@ define_block_elem! {
 impl Parser<'_> {
     pub fn parse_block_elem(&mut self) -> ParseResult<BlockElem> {
         match self.peek().kind {
-            TokenKind::Ident(_) => Ok(self.parse_expr_or_decl_or_assign()?),
             tk::KW_MUT => {
                 let stmt = self.parse_decl_stmt()?;
-                Ok(BlockElem::Stmt(Stmt::Decl(stmt)))
+                Ok(BlockElem::Stmt(stmt.into()))
             }
-            _ => self.parse_expr_or_expr_stmt(),
+            _ => self.parse_expr_or_decl_or_assign(),
         }
     }
 
     fn parse_expr_or_decl_or_assign(&mut self) -> ParseResult<BlockElem> {
         let expr = self.parse_expr()?;
 
-        let elem = match expr {
-            Expr::Ident(ident_expr) => match self.peek().kind {
-                tk::COLON => {
-                    let pattern = ident_expr.ident.into();
-                    let stmt = self.continue_parse_decl_after_pattern(pattern)?;
-                    BlockElem::Stmt(stmt.into())
-                }
-                tk::EQ => {
-                    let lvalue = ident_expr.into();
-                    let stmt = self.continue_parse_assign_after_lvalue(lvalue)?;
-                    BlockElem::Stmt(stmt.into())
-                }
-                tk::SEMICOLON => {
-                    let semicolon = self.bump_expect(&tk::SEMICOLON)?;
-                    BlockElem::Stmt(Stmt::Expr(ExprStmt {
-                        span: ident_expr.span().to(semicolon.span),
-                        expr: ident_expr.into(),
-                    }))
-                }
-                tk::CLOSE_BRACE => BlockElem::Expr(ident_expr.into()),
-                _ => self.peek_error(&[tk::COLON, tk::EQ, tk::SEMICOLON, tk::CLOSE_BRACE])?,
-            },
-            expr => match self.peek().kind {
-                tk::EQ => {
-                    let stmt = self.continue_parse_assign_after_lvalue(expr)?;
-                    BlockElem::Stmt(stmt.into())
-                }
-                tk::SEMICOLON => {
-                    let semicolon = self.bump_expect(&tk::SEMICOLON)?;
-                    BlockElem::Stmt(Stmt::Expr(ExprStmt {
-                        span: expr.span().to(semicolon.span),
-                        expr: expr.into(),
-                    }))
-                }
-                tk::CLOSE_BRACE => BlockElem::Expr(expr.into()),
-                _ => self.peek_error(&[tk::EQ, tk::SEMICOLON, tk::CLOSE_BRACE])?,
-            },
-        };
+        if let Expr::Ident(ident_expr) = &expr {
+            if self.peek().kind == tk::COLON {
+                let pattern = ident_expr.ident.into();
+                let stmt = self.continue_parse_decl_after_pattern(pattern)?;
+                return Ok(BlockElem::Stmt(stmt.into()));
+            }
+        }
 
-        Ok(elem)
-    }
-
-    fn parse_expr_or_expr_stmt(&mut self) -> ParseResult<BlockElem> {
-        let expr = self.parse_expr()?;
-        let elem = match self.bump_if_eq(tk::SEMICOLON) {
-            Some(semicolon) => BlockElem::Stmt(Stmt::Expr(ExprStmt {
-                span: expr.span().to(semicolon.span),
-                expr,
-            })),
-            None => BlockElem::Expr(expr),
+        let elem = match self.peek().kind {
+            tk::SEMICOLON => {
+                let semicolon = self.bump_expect(&tk::SEMICOLON)?;
+                BlockElem::Stmt(Stmt::Expr(ExprStmt {
+                    span: expr.span().to(semicolon.span),
+                    expr: expr.into(),
+                }))
+            }
+            token => match AssignOp::from_token_kind(token) {
+                Some(assign_op) => {
+                    self.bump();
+                    let stmt = self.continue_parse_assign_after_assign_op(expr, assign_op)?;
+                    BlockElem::Stmt(stmt.into())
+                }
+                None => BlockElem::Expr(expr),
+            },
         };
 
         Ok(elem)

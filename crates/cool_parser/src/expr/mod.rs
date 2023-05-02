@@ -9,6 +9,7 @@ mod ident_expr;
 mod literal_expr;
 mod paren_expr;
 mod return_expr;
+mod struct_expr;
 mod subscript_expr;
 mod tuple_expr;
 
@@ -23,6 +24,7 @@ pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::paren_expr::*;
 pub use self::return_expr::*;
+pub use self::struct_expr::*;
 pub use self::subscript_expr::*;
 pub use self::tuple_expr::*;
 use crate::{BinOp, Ident, ParseResult, ParseTree, Parser};
@@ -79,6 +81,7 @@ define_expr! {
     Literal,
     Paren,
     Return,
+    Struct,
     Subscript,
     Tuple,
 }

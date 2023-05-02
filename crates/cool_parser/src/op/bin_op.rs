@@ -27,19 +27,19 @@ impl BinOp {
 
     pub fn from_punctuation(punctuation: Punctuation) -> Option<Self> {
         let bin_op: Self = match punctuation {
-            Punctuation::Plus => ArithmeticBinOp::Addition.into(),
-            Punctuation::Minus => ArithmeticBinOp::Subtraction.into(),
-            Punctuation::Star => ArithmeticBinOp::Multiplication.into(),
-            Punctuation::Slash => ArithmeticBinOp::Division.into(),
-            Punctuation::Percent => ArithmeticBinOp::Remainder.into(),
+            Punctuation::Plus => ArithmeticBinOp::Add.into(),
+            Punctuation::Minus => ArithmeticBinOp::Sub.into(),
+            Punctuation::Star => ArithmeticBinOp::Mul.into(),
+            Punctuation::Slash => ArithmeticBinOp::Div.into(),
+            Punctuation::Percent => ArithmeticBinOp::Rem.into(),
 
             // Relational
-            Punctuation::EqEq => RelationalBinOp::Equal.into(),
-            Punctuation::Ne => RelationalBinOp::NotEqual.into(),
-            Punctuation::Lt => RelationalBinOp::Less.into(),
-            Punctuation::Le => RelationalBinOp::LessOrEqual.into(),
-            Punctuation::Gt => RelationalBinOp::Greater.into(),
-            Punctuation::Ge => RelationalBinOp::GreaterOrEqual.into(),
+            Punctuation::EqEq => RelationalBinOp::Eq.into(),
+            Punctuation::Ne => RelationalBinOp::Ne.into(),
+            Punctuation::Lt => RelationalBinOp::Lt.into(),
+            Punctuation::Le => RelationalBinOp::Le.into(),
+            Punctuation::Gt => RelationalBinOp::Gt.into(),
+            Punctuation::Ge => RelationalBinOp::Ge.into(),
 
             // Bitwise
             Punctuation::And => BitwiseBinOp::And.into(),
@@ -62,9 +62,9 @@ impl BinOp {
     pub fn precedence(&self) -> BinOpPrecedence {
         match self {
             Self::Arithmetic(arithmetic_op) => match arithmetic_op {
-                ArithmeticBinOp::Multiplication => BinOpPrecedence::High,
-                ArithmeticBinOp::Division => BinOpPrecedence::High,
-                ArithmeticBinOp::Remainder => BinOpPrecedence::High,
+                ArithmeticBinOp::Mul => BinOpPrecedence::High,
+                ArithmeticBinOp::Div => BinOpPrecedence::High,
+                ArithmeticBinOp::Rem => BinOpPrecedence::High,
                 _ => BinOpPrecedence::Medium,
             },
             Self::Relational(_) => BinOpPrecedence::Low,
@@ -104,21 +104,21 @@ impl From<LogicalBinOp> for BinOp {
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum ArithmeticBinOp {
-    Addition,
-    Subtraction,
-    Multiplication,
-    Division,
-    Remainder,
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Rem,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum RelationalBinOp {
-    Equal,
-    NotEqual,
-    Less,
-    LessOrEqual,
-    Greater,
-    GreaterOrEqual,
+    Eq,
+    Ne,
+    Lt,
+    Le,
+    Gt,
+    Ge,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
