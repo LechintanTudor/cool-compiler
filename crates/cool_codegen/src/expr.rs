@@ -1,6 +1,6 @@
 use crate::{AnyValueEnumExt, CodeGenerator, Value};
 use cool_ast::{
-    BlockExprAst, ExprAst, FnCallExprAst, IdentExprAst, LiteralExprAst, LiteralExprValue,
+    BindingExprAst, BlockExprAst, ExprAst, FnCallExprAst, LiteralExprAst, LiteralExprValue,
 };
 use inkwell::values::{AnyValue, AnyValueEnum};
 
@@ -9,8 +9,9 @@ impl<'a> CodeGenerator<'a> {
         match expr {
             ExprAst::Block(e) => self.gen_block_expr(e),
             ExprAst::FnCall(e) => self.gen_fn_call_expr(e),
-            ExprAst::Ident(e) => self.gen_ident_expr(e),
+            ExprAst::Binding(e) => self.gen_ident_expr(e),
             ExprAst::Literal(e) => self.gen_literal_expr(e).into(),
+            ExprAst::Module(_) => panic!("module exprs are not allowed here"),
         }
     }
 
@@ -53,7 +54,7 @@ impl<'a> CodeGenerator<'a> {
         ret_value
     }
 
-    pub fn gen_ident_expr(&self, expr: &IdentExprAst) -> Value<'a> {
+    pub fn gen_ident_expr(&self, expr: &BindingExprAst) -> Value<'a> {
         self.bindings[&expr.binding_id]
     }
 

@@ -59,7 +59,7 @@ impl Parser<'_> {
         if let Expr::Ident(ident_expr) = &expr {
             if self.peek().kind == tk::COLON {
                 let pattern = ident_expr.ident.into();
-                let stmt = self.continue_parse_decl_after_pattern(pattern)?;
+                let stmt = self.continue_parse_decl(pattern)?;
                 return Ok(BlockElem::Stmt(stmt.into()));
             }
         }
@@ -75,7 +75,7 @@ impl Parser<'_> {
             token => match AssignOp::from_token_kind(token) {
                 Some(assign_op) => {
                     self.bump();
-                    let stmt = self.continue_parse_assign_after_assign_op(expr, assign_op)?;
+                    let stmt = self.continue_parse_assign(expr, assign_op)?;
                     BlockElem::Stmt(stmt.into())
                 }
                 None => BlockElem::Expr(expr),

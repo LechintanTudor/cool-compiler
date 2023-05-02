@@ -19,7 +19,7 @@ impl ParseTree for AssignStmt {
 }
 
 impl Parser<'_> {
-    pub fn continue_parse_assign_after_assign_op(
+    pub fn continue_parse_assign(
         &mut self,
         lvalue: Expr,
         assign_op: AssignOp,

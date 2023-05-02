@@ -22,10 +22,10 @@ impl ParseTree for DeclStmt {
 impl Parser<'_> {
     pub fn parse_decl_stmt(&mut self) -> ParseResult<DeclStmt> {
         let pattern = self.parse_pattern()?;
-        self.continue_parse_decl_after_pattern(pattern)
+        self.continue_parse_decl(pattern)
     }
 
-    pub fn continue_parse_decl_after_pattern(&mut self, pattern: Pattern) -> ParseResult<DeclStmt> {
+    pub fn continue_parse_decl(&mut self, pattern: Pattern) -> ParseResult<DeclStmt> {
         self.bump_expect(&tk::COLON)?;
 
         let ty = if self.peek().kind != tk::EQ {

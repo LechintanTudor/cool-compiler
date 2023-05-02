@@ -1,5 +1,5 @@
 use crate::{CompileError, CompileErrorBundle, CompileErrorKind, CompileResult, Package};
-use cool_resolve::{ResolveContext, StructHasDuplicatedField, StructTy, TypeCannotBeDefined};
+use cool_resolve::{ResolveContext, StructHasDuplicatedField, StructTy, TyCannotBeDefined};
 use std::collections::VecDeque;
 
 pub fn p1_define_tys(package: &Package, resolve: &mut ResolveContext) -> CompileResult<()> {
@@ -103,7 +103,7 @@ pub fn p1_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
         errors.push(CompileError {
             path: Default::default(),
             kind: CompileErrorKind::Define(
-                TypeCannotBeDefined {
+                TyCannotBeDefined {
                     path: resolve.get_path_by_item_id(item_id).to_path_buf(),
                 }
                 .into(),
@@ -115,7 +115,7 @@ pub fn p1_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
         errors.push(CompileError {
             path: Default::default(),
             kind: CompileErrorKind::Define(
-                TypeCannotBeDefined {
+                TyCannotBeDefined {
                     path: resolve.get_path_by_item_id(item_id).to_path_buf(),
                 }
                 .into(),

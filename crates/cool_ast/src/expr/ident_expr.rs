@@ -1,11 +1,17 @@
-use crate::{AstGenerator, AstResult, TyMismatch};
+use crate::{AstGenerator, AstResult, ExprAst, TyMismatch};
 use cool_parser::IdentExpr;
-use cool_resolve::{BindingId, ExprId, FrameId, TyId};
+use cool_resolve::{tys, BindingId, ExprId, FrameId, ItemKind, ModuleId, TyId};
 
 #[derive(Clone, Debug)]
-pub struct IdentExprAst {
+pub struct BindingExprAst {
     pub expr_id: ExprId,
     pub binding_id: BindingId,
+}
+
+#[derive(Clone, Debug)]
+pub struct ModuleExprAst {
+    pub expr_id: ExprId,
+    pub module_id: ModuleId,
 }
 
 impl AstGenerator<'_> {
@@ -14,26 +20,49 @@ impl AstGenerator<'_> {
         frame_id: FrameId,
         expected_ty_id: TyId,
         ident_expr: &IdentExpr,
-    ) -> AstResult<IdentExprAst> {
-        let binding_id = self
+    ) -> AstResult<ExprAst> {
+        let item = self
             .resolve
-            .resolve_local(frame_id, ident_expr.ident.symbol)?
-            .as_binding_id()
-            .unwrap();
+            .resolve_local(frame_id, ident_expr.ident.symbol)?;
 
-        let ty_id = self.resolve[binding_id]
-            .ty_id
-            .resolve_non_inferred(expected_ty_id)
-            .ok_or(TyMismatch {
-                found: self.resolve[binding_id].ty_id,
-                expected: expected_ty_id,
-            })?;
+        let expr: ExprAst = match item {
+            ItemKind::Binding(_binding_id) => {
+                let binding_id = self
+                    .resolve
+                    .resolve_local(frame_id, ident_expr.ident.symbol)?
+                    .as_binding_id()
+                    .unwrap();
 
-        let expr_id = self.resolve.add_expr(ty_id);
+                let ty_id = self.resolve[binding_id]
+                    .ty_id
+                    .resolve_non_inferred(expected_ty_id)
+                    .ok_or(TyMismatch {
+                        found: self.resolve[binding_id].ty_id,
+                        expected: expected_ty_id,
+                    })?;
 
-        Ok(IdentExprAst {
-            expr_id,
-            binding_id,
-        })
+                let expr_id = self.resolve.add_expr(ty_id);
+
+                BindingExprAst {
+                    expr_id,
+                    binding_id,
+                }
+                .into()
+            }
+            ItemKind::Module(module_id) => {
+                let ty_id = tys::MODULE
+                    .resolve_non_inferred(expected_ty_id)
+                    .ok_or(TyMismatch {
+                        found: tys::MODULE,
+                        expected: expected_ty_id,
+                    })?;
+
+                let expr_id = self.resolve.add_expr(ty_id);
+                ModuleExprAst { expr_id, module_id }.into()
+            }
+            _ => panic!("types are not allowed in expressions"),
+        };
+
+        Ok(expr)
     }
 }

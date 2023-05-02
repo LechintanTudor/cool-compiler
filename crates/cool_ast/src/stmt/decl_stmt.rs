@@ -20,7 +20,10 @@ impl AstGenerator<'_> {
             None => tys::INFERRED,
         };
 
-        let expr = self.gen_expr(frame_id, expected_ty_id, &decl_stmt.expr)?;
+        let expr = self
+            .gen_expr(frame_id, expected_ty_id, &decl_stmt.expr)?
+            .ensure_not_module()?;
+
         let expr_ty_id = self.resolve[expr.id()];
 
         let frame_id = self.resolve.add_frame(frame_id.into());

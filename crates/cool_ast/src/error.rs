@@ -32,6 +32,9 @@ pub enum AstError {
 
     #[error(transparent)]
     LiteralUnknownSuffix(#[from] LiteralUnknownSuffix),
+
+    #[error(transparent)]
+    ModuleUsedAsExpr(#[from] ModuleUsedAsExpr),
 }
 
 #[derive(Clone, Error, Debug)]
@@ -84,3 +87,7 @@ pub struct LiteralIntOutOfRange {
 pub struct LiteralUnknownSuffix {
     pub suffix: Symbol,
 }
+
+#[derive(Clone, Error, Debug)]
+#[error("expression evaluates to a module")]
+pub struct ModuleUsedAsExpr;

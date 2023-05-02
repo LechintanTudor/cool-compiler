@@ -11,7 +11,7 @@ pub enum DefineError {
     StructHasInfiniteSize(#[from] StructHasInfiniteSize),
 
     #[error(transparent)]
-    TypeCannotBeDefined(#[from] TypeCannotBeDefined),
+    TyCannotBeDefined(#[from] TyCannotBeDefined),
 }
 
 #[derive(Clone, Error, Debug)]
@@ -29,6 +29,6 @@ pub struct StructHasInfiniteSize {
 
 #[derive(Clone, Error, Debug)]
 #[error("type {path} cannot be defined")]
-pub struct TypeCannotBeDefined {
+pub struct TyCannotBeDefined {
     pub path: ItemPathBuf,
 }

@@ -25,7 +25,10 @@ impl AstGenerator<'_> {
             };
 
             let elem: BlockElemAst = match elem {
-                BlockElem::Expr(expr) => self.gen_expr(frame_id, expected_ty_id, expr)?.into(),
+                BlockElem::Expr(expr) => self
+                    .gen_expr(frame_id, expected_ty_id, expr)?
+                    .ensure_not_module()?
+                    .into(),
                 BlockElem::Stmt(stmt) => {
                     let stmt = self.gen_stmt(frame_id, stmt)?;
 

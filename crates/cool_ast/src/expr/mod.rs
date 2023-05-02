@@ -1,13 +1,15 @@
+mod access_expr;
 mod block_expr;
 mod fn_call_expr;
 mod ident_expr;
 mod literal_expr;
 
+pub use self::access_expr::*;
 pub use self::block_expr::*;
 pub use self::fn_call_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
-use crate::{AstGenerator, AstResult};
+use crate::{AstGenerator, AstResult, ModuleUsedAsExpr};
 use cool_parser::Expr;
 use cool_resolve::{ExprId, FrameId, TyId};
 use paste::paste;
@@ -41,10 +43,26 @@ macro_rules! define_expr_ast {
 }
 
 define_expr_ast! {
+    Binding,
     Block,
     FnCall,
-    Ident,
     Literal,
+    Module,
+}
+
+impl ExprAst {
+    #[inline]
+    pub fn is_module(&self) -> bool {
+        matches!(self, Self::Module(_))
+    }
+
+    #[inline]
+    pub fn ensure_not_module(self) -> Result<Self, ModuleUsedAsExpr> {
+        match self {
+            Self::Module(_) => Err(ModuleUsedAsExpr),
+            _ => Ok(self),
+        }
+    }
 }
 
 impl AstGenerator<'_> {
@@ -55,6 +73,7 @@ impl AstGenerator<'_> {
         expr: &Expr,
     ) -> AstResult<ExprAst> {
         let expr: ExprAst = match expr {
+            Expr::Access(e) => self.gen_access_expr(frame_id, expected_ty_id, e)?.into(),
             Expr::Block(e) => self.gen_block_expr(frame_id, expected_ty_id, e)?.into(),
             Expr::FnCall(e) => self.gen_fn_call_expr(frame_id, expected_ty_id, e)?.into(),
             Expr::Ident(e) => self.gen_ident_expr(frame_id, expected_ty_id, e)?.into(),
