@@ -219,14 +219,14 @@ fn parse_hexadecimal_int(symbol: Symbol) -> AstResult<(u128, TyId)> {
                 })?;
             }
             'a'..='f' => {
-                let digit = char as u32 - 'a' as u32;
+                let digit = char as u32 - 'a' as u32 + 10;
                 value = append_digit(value, 16, digit).ok_or(LiteralIntOutOfRange {
                     ty_id: tys::U128,
                     symbol,
                 })?;
             }
             'A'..='F' => {
-                let digit = char as u32 - 'A' as u32;
+                let digit = char as u32 - 'A' as u32 + 10;
                 value = append_digit(value, 16, digit).ok_or(LiteralIntOutOfRange {
                     ty_id: tys::U128,
                     symbol,

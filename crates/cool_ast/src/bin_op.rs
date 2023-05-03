@@ -1,5 +1,5 @@
 use crate::TyMismatch;
-use cool_parser::ArithmeticBinOp;
+use cool_parser::{ArithmeticBinOp, BitwiseBinOp};
 use cool_resolve::{tys, TyId};
 use derive_more::From;
 
@@ -106,6 +106,10 @@ pub enum ComparisonBinOpAst {
     SintGt,
     UintGe,
     SintGe,
+    FloatLt,
+    FloatLe,
+    FloatGt,
+    FloatGe,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -115,6 +119,30 @@ pub enum BitwiseBinOpAst {
     Xor,
     Shl,
     Shr,
+    SignExtendShr,
+}
+
+impl BitwiseBinOpAst {
+    pub fn new(bin_op: BitwiseBinOp, number_kind: NumberKind) -> Self {
+        match bin_op {
+            BitwiseBinOp::And => Self::And,
+            BitwiseBinOp::Or => Self::Or,
+            BitwiseBinOp::Xor => Self::Xor,
+            BitwiseBinOp::Shl => Self::Shl,
+            BitwiseBinOp::Shr => {
+                match number_kind {
+                    NumberKind::Sint => Self::SignExtendShr,
+                    NumberKind::Uint => Self::Shr,
+                    NumberKind::Float => panic!("bitwise operations don't work on floats"),
+                }
+            }
+        }
+    }
+
+    #[inline]
+    pub fn is_shift(&self) -> bool {
+        matches!(self, Self::Shl | Self::Shr | Self::SignExtendShr)
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]

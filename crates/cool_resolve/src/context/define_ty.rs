@@ -42,7 +42,7 @@ impl TyId {
 
     #[inline]
     pub fn resolve_non_inferred(self, expected: Self) -> Option<Self> {
-        if expected == tys::INFERRED {
+        if expected.is_inferred() {
             if !self.is_inferred() {
                 Some(self)
             } else {
