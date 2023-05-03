@@ -1,3 +1,6 @@
+mod binary_expr;
+
+pub use self::binary_expr::*;
 use crate::{AnyValueEnumExt, CodeGenerator, Value};
 use cool_ast::{
     BindingExprAst, BlockExprAst, ExprAst, FnCallExprAst, LiteralExprAst, LiteralExprValue,
@@ -7,6 +10,7 @@ use inkwell::values::{AnyValue, AnyValueEnum};
 impl<'a> CodeGenerator<'a> {
     pub fn gen_expr(&mut self, expr: &ExprAst) -> Value<'a> {
         match expr {
+            ExprAst::Binary(e) => self.gen_binary_expr(e).into(),
             ExprAst::Block(e) => self.gen_block_expr(e),
             ExprAst::FnCall(e) => self.gen_fn_call_expr(e),
             ExprAst::Binding(e) => self.gen_ident_expr(e),
@@ -75,10 +79,11 @@ impl<'a> CodeGenerator<'a> {
                 let float_ty = self.tys[ty_id].into_float_type();
                 float_ty.const_float(*value).into()
             }
-            LiteralExprValue::Cstr(value) => self
-                .builder
-                .build_global_string_ptr(&value, "")
-                .as_any_value_enum(),
+            LiteralExprValue::Cstr(value) => {
+                self.builder
+                    .build_global_string_ptr(&value, "")
+                    .as_any_value_enum()
+            }
             _ => todo!(),
         }
     }

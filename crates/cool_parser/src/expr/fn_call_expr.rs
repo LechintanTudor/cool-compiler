@@ -25,19 +25,21 @@ impl Parser<'_> {
 
         let (end_token, has_trailing_comma) = match self.peek().kind {
             tk::CLOSE_PAREN => (self.bump_expect(&tk::CLOSE_PAREN)?, false),
-            _ => loop {
-                args.push(self.parse_expr()?);
+            _ => {
+                loop {
+                    args.push(self.parse_expr()?);
 
-                if self.bump_if_eq(tk::COMMA).is_some() {
-                    if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
-                        break (end_token, true);
+                    if self.bump_if_eq(tk::COMMA).is_some() {
+                        if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
+                            break (end_token, true);
+                        }
+                    } else if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
+                        break (end_token, false);
+                    } else {
+                        return self.peek_error(&[tk::COMMA, tk::CLOSE_PAREN]);
                     }
-                } else if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
-                    break (end_token, false);
-                } else {
-                    return self.peek_error(&[tk::COMMA, tk::CLOSE_PAREN]);
                 }
-            },
+            }
         };
 
         Ok(FnCallExpr {

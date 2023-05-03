@@ -24,19 +24,21 @@ impl Parser<'_> {
         let mut exprs = Vec::<Expr>::new();
         let (end_token, has_trailing_comma) = match self.peek().kind {
             tk::CLOSE_BRACKET => (self.bump(), false),
-            _ => loop {
-                exprs.push(self.parse_expr()?);
+            _ => {
+                loop {
+                    exprs.push(self.parse_expr()?);
 
-                if self.bump_if_eq(tk::COMMA).is_some() {
-                    if let Some(end_token) = self.bump_if_eq(tk::CLOSE_BRACKET) {
-                        break (end_token, true);
+                    if self.bump_if_eq(tk::COMMA).is_some() {
+                        if let Some(end_token) = self.bump_if_eq(tk::CLOSE_BRACKET) {
+                            break (end_token, true);
+                        }
+                    } else if let Some(end_token) = self.bump_if_eq(tk::CLOSE_BRACKET) {
+                        break (end_token, false);
+                    } else {
+                        return self.peek_error(&[tk::COMMA, tk::CLOSE_BRACKET]);
                     }
-                } else if let Some(end_token) = self.bump_if_eq(tk::CLOSE_BRACKET) {
-                    break (end_token, false);
-                } else {
-                    return self.peek_error(&[tk::COMMA, tk::CLOSE_BRACKET]);
                 }
-            },
+            }
         };
 
         Ok(ArrayExpr {

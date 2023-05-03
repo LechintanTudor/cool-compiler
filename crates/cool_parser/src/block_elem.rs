@@ -72,14 +72,16 @@ impl Parser<'_> {
                     expr: expr.into(),
                 }))
             }
-            token => match AssignOp::from_token_kind(token) {
-                Some(assign_op) => {
-                    self.bump();
-                    let stmt = self.continue_parse_assign(expr, assign_op)?;
-                    BlockElem::Stmt(stmt.into())
+            token => {
+                match AssignOp::from_token_kind(token) {
+                    Some(assign_op) => {
+                        self.bump();
+                        let stmt = self.continue_parse_assign(expr, assign_op)?;
+                        BlockElem::Stmt(stmt.into())
+                    }
+                    None => BlockElem::Expr(expr),
                 }
-                None => BlockElem::Expr(expr),
-            },
+            }
         };
 
         Ok(elem)

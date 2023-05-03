@@ -7,6 +7,7 @@ edition = "2021"
 cool_ast = { path = "../cool_ast" }
 cool_collections =  { path = "../cool_collections" }
 cool_lexer = { path = "../cool_lexer" }
+cool_parser = { path = "../cool_parser" }
 cool_resolve = { path = "../cool_resolve" }
 inkwell = { version = "0.1.1", features = ["llvm15-0"] }
 rustc-hash = "1.1"

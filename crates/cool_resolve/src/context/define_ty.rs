@@ -21,8 +21,23 @@ impl TyId {
     }
 
     #[inline]
+    pub fn is_signed_int(&self) -> bool {
+        tys::I8.index() <= self.index() && self.index() <= tys::ISIZE.index()
+    }
+
+    #[inline]
+    pub fn is_unsigned_int(&self) -> bool {
+        tys::U8.index() <= self.index() && self.index() <= tys::USIZE.index()
+    }
+
+    #[inline]
     pub fn is_float(&self) -> bool {
         self.index() == tys::F32.index() || self.index() == tys::F64.index()
+    }
+
+    #[inline]
+    pub fn is_number(&self) -> bool {
+        self.is_int() || self.is_float()
     }
 
     #[inline]
@@ -37,6 +52,8 @@ impl TyId {
             if self == expected {
                 Some(expected)
             } else if self == tys::INFERRED {
+                Some(expected)
+            } else if self == tys::INFERRED_NUMBER && expected.is_number() {
                 Some(expected)
             } else if self == tys::INFERRED_INT && expected.is_int() {
                 Some(expected)

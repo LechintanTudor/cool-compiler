@@ -53,13 +53,15 @@ impl Parser<'_> {
 
         let (is_mutable, ident) = match start_token.kind {
             tk::KW_MUT => (true, self.parse_ident()?),
-            TokenKind::Ident(symbol) => (
-                false,
-                Ident {
-                    span: start_token.span,
-                    symbol,
-                },
-            ),
+            TokenKind::Ident(symbol) => {
+                (
+                    false,
+                    Ident {
+                        span: start_token.span,
+                        symbol,
+                    },
+                )
+            }
             _ => self.error(start_token, &[tk::KW_MUT, tk::ANY_IDENT])?,
         };
 
@@ -87,32 +89,34 @@ impl Parser<'_> {
 
         let (end_span, is_variadic, has_trailing_comma) = match self.peek().kind {
             tk::CLOSE_PAREN => (self.bump().span, false, false),
-            _ => loop {
-                match self.peek().kind {
-                    tk::DOT_DOT_DOT => {
-                        self.bump_expect(&tk::DOT_DOT_DOT)?;
-                        let end_token = self.bump_expect(&tk::CLOSE_PAREN)?;
-                        break (end_token.span, true, false);
-                    }
-                    _ => {
-                        params.push(self.parse_fn_param()?);
-                    }
-                }
-
-                let next_token = self.bump();
-
-                match next_token.kind {
-                    tk::CLOSE_PAREN => {
-                        break (next_token.span, false, false);
-                    }
-                    tk::COMMA => {
-                        if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
-                            break (end_token.span, false, true);
+            _ => {
+                loop {
+                    match self.peek().kind {
+                        tk::DOT_DOT_DOT => {
+                            self.bump_expect(&tk::DOT_DOT_DOT)?;
+                            let end_token = self.bump_expect(&tk::CLOSE_PAREN)?;
+                            break (end_token.span, true, false);
+                        }
+                        _ => {
+                            params.push(self.parse_fn_param()?);
                         }
                     }
-                    _ => self.error(next_token, &[tk::CLOSE_PAREN, tk::COMMA])?,
+
+                    let next_token = self.bump();
+
+                    match next_token.kind {
+                        tk::CLOSE_PAREN => {
+                            break (next_token.span, false, false);
+                        }
+                        tk::COMMA => {
+                            if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
+                                break (end_token.span, false, true);
+                            }
+                        }
+                        _ => self.error(next_token, &[tk::CLOSE_PAREN, tk::COMMA])?,
+                    }
                 }
-            },
+            }
         };
 
         Ok(FnParamList {

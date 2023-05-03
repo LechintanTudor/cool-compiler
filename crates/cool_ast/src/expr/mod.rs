@@ -1,10 +1,12 @@
 mod access_expr;
+mod binary_expr;
 mod block_expr;
 mod fn_call_expr;
 mod ident_expr;
 mod literal_expr;
 
 pub use self::access_expr::*;
+pub use self::binary_expr::*;
 pub use self::block_expr::*;
 pub use self::fn_call_expr::*;
 pub use self::ident_expr::*;
@@ -43,6 +45,7 @@ macro_rules! define_expr_ast {
 }
 
 define_expr_ast! {
+    Binary,
     Binding,
     Block,
     FnCall,
@@ -74,10 +77,12 @@ impl AstGenerator<'_> {
     ) -> AstResult<ExprAst> {
         let expr: ExprAst = match expr {
             Expr::Access(e) => self.gen_access_expr(frame_id, expected_ty_id, e)?.into(),
+            Expr::Binary(e) => self.gen_binary_expr(frame_id, expected_ty_id, e)?.into(),
             Expr::Block(e) => self.gen_block_expr(frame_id, expected_ty_id, e)?.into(),
             Expr::FnCall(e) => self.gen_fn_call_expr(frame_id, expected_ty_id, e)?.into(),
             Expr::Ident(e) => self.gen_ident_expr(frame_id, expected_ty_id, e)?.into(),
             Expr::Literal(e) => self.gen_literal_expr(expected_ty_id, e)?.into(),
+            Expr::Paren(e) => self.gen_expr(frame_id, expected_ty_id, &e.inner)?.into(),
             _ => todo!(),
         };
 

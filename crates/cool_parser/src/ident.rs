@@ -37,10 +37,12 @@ impl Parser<'_> {
             tk::KW_CRATE => sym::KW_CRATE,
             tk::KW_SUPER => sym::KW_SUPER,
             tk::KW_SELF => sym::KW_SELF,
-            _ => self.error(
-                token,
-                &[tk::ANY_IDENT, tk::KW_CRATE, tk::KW_SUPER, tk::KW_SELF],
-            )?,
+            _ => {
+                self.error(
+                    token,
+                    &[tk::ANY_IDENT, tk::KW_CRATE, tk::KW_SUPER, tk::KW_SELF],
+                )?
+            }
         };
 
         Ok(Ident {

@@ -293,9 +293,11 @@ fn parse_int_suffix(suffix: &str) -> AstResult<TyId> {
         "u64" => tys::U64,
         "u128" => tys::U128,
         "usize" => tys::USIZE,
-        _ => Err(LiteralUnknownSuffix {
-            suffix: Symbol::insert(suffix),
-        })?,
+        _ => {
+            Err(LiteralUnknownSuffix {
+                suffix: Symbol::insert(suffix),
+            })?
+        }
     };
 
     Ok(ty_id)
@@ -306,9 +308,11 @@ pub fn parse_decimal_suffix(suffix: &str) -> AstResult<TyId> {
         "" => tys::INFERRED_FLOAT,
         "f32" => tys::F32,
         "f64" => tys::F64,
-        _ => Err(LiteralUnknownSuffix {
-            suffix: Symbol::insert(suffix),
-        })?,
+        _ => {
+            Err(LiteralUnknownSuffix {
+                suffix: Symbol::insert(suffix),
+            })?
+        }
     };
 
     Ok(ty_id)
@@ -331,9 +335,11 @@ pub fn parse_number_suffix(suffix: &str) -> AstResult<TyId> {
         "usize" => tys::USIZE,
         "f32" => tys::F32,
         "f64" => tys::F64,
-        _ => Err(LiteralUnknownSuffix {
-            suffix: Symbol::insert(suffix),
-        })?,
+        _ => {
+            Err(LiteralUnknownSuffix {
+                suffix: Symbol::insert(suffix),
+            })?
+        }
     };
 
     Ok(ty_id)
@@ -398,15 +404,17 @@ fn parse_char(symbol: Symbol) -> u32 {
     let mut char_iter = char_str.chars();
 
     let char = match char_iter.next().unwrap() {
-        '\\' => match char_iter.next().unwrap() {
-            'n' => '\n',
-            'r' => '\r',
-            't' => '\t',
-            '\\' => '\\',
-            '0' => '\0',
-            '\'' => '\'',
-            _ => unreachable!(),
-        },
+        '\\' => {
+            match char_iter.next().unwrap() {
+                'n' => '\n',
+                'r' => '\r',
+                't' => '\t',
+                '\\' => '\\',
+                '0' => '\0',
+                '\'' => '\'',
+                _ => unreachable!(),
+            }
+        }
         char => char,
     };
 
@@ -420,15 +428,17 @@ fn parse_str(symbol: Symbol) -> SmallString {
 
     while let Some(char) = char_iter.next() {
         let char = match char {
-            '\\' => match char_iter.next().unwrap() {
-                'n' => '\n',
-                'r' => '\r',
-                't' => '\t',
-                '\\' => '\\',
-                '0' => '\0',
-                '"' => '"',
-                _ => unreachable!(),
-            },
+            '\\' => {
+                match char_iter.next().unwrap() {
+                    'n' => '\n',
+                    'r' => '\r',
+                    't' => '\t',
+                    '\\' => '\\',
+                    '0' => '\0',
+                    '"' => '"',
+                    _ => unreachable!(),
+                }
+            }
             _ => char,
         };
 

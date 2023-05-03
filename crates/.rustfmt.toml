@@ -1,3 +1,4 @@
+force_multiline_blocks = true
 group_imports = "One"
 imports_granularity = "Module"
 newline_style = "Unix"

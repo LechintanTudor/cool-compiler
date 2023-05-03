@@ -81,141 +81,144 @@ pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
         while let Some((module_id, module)) = modules.pop_front() {
             for decl in module.decls {
                 match decl.kind {
-                    DeclKind::Item(item_decl) => match item_decl.item {
-                        Item::Module(child_module) => {
-                            let child_module_id = match resove.insert_module(
-                                module_id,
-                                decl.is_exported,
-                                item_decl.ident.symbol,
-                            ) {
-                                Ok(child_module_id) => child_module_id,
-                                Err(error) => {
-                                    errors.push(CompileError {
-                                        path: module_paths.path.clone(),
-                                        kind: error.into(),
-                                    });
-                                    continue;
-                                }
-                            };
+                    DeclKind::Item(item_decl) => {
+                        match item_decl.item {
+                            Item::Module(child_module) => {
+                                let child_module_id = match resove.insert_module(
+                                    module_id,
+                                    decl.is_exported,
+                                    item_decl.ident.symbol,
+                                ) {
+                                    Ok(child_module_id) => child_module_id,
+                                    Err(error) => {
+                                        errors.push(CompileError {
+                                            path: module_paths.path.clone(),
+                                            kind: error.into(),
+                                        });
+                                        continue;
+                                    }
+                                };
 
-                            match child_module.kind {
-                                ModuleKind::Inline(child_module_content) => {
-                                    modules.push_back((child_module_id, child_module_content));
-                                }
-                                ModuleKind::External => {
-                                    let child_module_paths = match ModulePaths::for_child(
-                                        &source_file.paths.child_dir,
-                                        item_decl.ident.symbol.as_str(),
-                                    ) {
-                                        Ok(child_module_paths) => child_module_paths,
-                                        Err(error) => {
-                                            errors.push(CompileError {
-                                                path: module_paths.path.clone(),
-                                                kind: error.into(),
-                                            });
-                                            continue;
-                                        }
-                                    };
+                                match child_module.kind {
+                                    ModuleKind::Inline(child_module_content) => {
+                                        modules.push_back((child_module_id, child_module_content));
+                                    }
+                                    ModuleKind::External => {
+                                        let child_module_paths = match ModulePaths::for_child(
+                                            &source_file.paths.child_dir,
+                                            item_decl.ident.symbol.as_str(),
+                                        ) {
+                                            Ok(child_module_paths) => child_module_paths,
+                                            Err(error) => {
+                                                errors.push(CompileError {
+                                                    path: module_paths.path.clone(),
+                                                    kind: error.into(),
+                                                });
+                                                continue;
+                                            }
+                                        };
 
-                                    file_modules.push_back((child_module_id, child_module_paths));
+                                        file_modules
+                                            .push_back((child_module_id, child_module_paths));
+                                    }
                                 }
                             }
-                        }
-                        Item::Alias(item) => {
-                            let item_id = match resove.declare_alias(
-                                module_id,
-                                decl.is_exported,
-                                item_decl.ident.symbol,
-                            ) {
-                                Ok(item_id) => item_id,
-                                Err(error) => {
-                                    errors.push(CompileError {
-                                        path: module_paths.path.clone(),
-                                        kind: error.into(),
-                                    });
-                                    continue;
-                                }
-                            };
+                            Item::Alias(item) => {
+                                let item_id = match resove.declare_alias(
+                                    module_id,
+                                    decl.is_exported,
+                                    item_decl.ident.symbol,
+                                ) {
+                                    Ok(item_id) => item_id,
+                                    Err(error) => {
+                                        errors.push(CompileError {
+                                            path: module_paths.path.clone(),
+                                            kind: error.into(),
+                                        });
+                                        continue;
+                                    }
+                                };
 
-                            aliases.push(Alias {
-                                module_id,
-                                item_id,
-                                ty: item_decl.ty,
-                                item,
-                            });
-                        }
-                        Item::Struct(item) => {
-                            let item_id = match resove.declare_struct(
-                                module_id,
-                                decl.is_exported,
-                                item_decl.ident.symbol,
-                            ) {
-                                Ok(item_id) => item_id,
-                                Err(error) => {
-                                    errors.push(CompileError {
-                                        path: module_paths.path.clone(),
-                                        kind: error.into(),
-                                    });
-                                    continue;
-                                }
-                            };
+                                aliases.push(Alias {
+                                    module_id,
+                                    item_id,
+                                    ty: item_decl.ty,
+                                    item,
+                                });
+                            }
+                            Item::Struct(item) => {
+                                let item_id = match resove.declare_struct(
+                                    module_id,
+                                    decl.is_exported,
+                                    item_decl.ident.symbol,
+                                ) {
+                                    Ok(item_id) => item_id,
+                                    Err(error) => {
+                                        errors.push(CompileError {
+                                            path: module_paths.path.clone(),
+                                            kind: error.into(),
+                                        });
+                                        continue;
+                                    }
+                                };
 
-                            structs.push(Struct {
-                                module_id,
-                                item_id,
-                                ty: item_decl.ty,
-                                item,
-                            });
-                        }
-                        Item::ExternFn(item) => {
-                            let item_id = match resove.insert_global_binding(
-                                module_id,
-                                decl.is_exported,
-                                Mutability::Const,
-                                item_decl.ident.symbol,
-                            ) {
-                                Ok(item_id) => item_id,
-                                Err(error) => {
-                                    errors.push(CompileError {
-                                        path: module_paths.path.clone(),
-                                        kind: error.into(),
-                                    });
-                                    continue;
-                                }
-                            };
+                                structs.push(Struct {
+                                    module_id,
+                                    item_id,
+                                    ty: item_decl.ty,
+                                    item,
+                                });
+                            }
+                            Item::ExternFn(item) => {
+                                let item_id = match resove.insert_global_binding(
+                                    module_id,
+                                    decl.is_exported,
+                                    Mutability::Const,
+                                    item_decl.ident.symbol,
+                                ) {
+                                    Ok(item_id) => item_id,
+                                    Err(error) => {
+                                        errors.push(CompileError {
+                                            path: module_paths.path.clone(),
+                                            kind: error.into(),
+                                        });
+                                        continue;
+                                    }
+                                };
 
-                            extern_fns.push(ExternFn {
-                                module_id,
-                                item_id,
-                                ty: item_decl.ty,
-                                item,
-                            });
-                        }
-                        Item::Const(item) => {
-                            let item_id = match resove.insert_global_binding(
-                                module_id,
-                                decl.is_exported,
-                                Mutability::Const,
-                                item_decl.ident.symbol,
-                            ) {
-                                Ok(item_id) => item_id,
-                                Err(error) => {
-                                    errors.push(CompileError {
-                                        path: module_paths.path.clone(),
-                                        kind: error.into(),
-                                    });
-                                    continue;
-                                }
-                            };
+                                extern_fns.push(ExternFn {
+                                    module_id,
+                                    item_id,
+                                    ty: item_decl.ty,
+                                    item,
+                                });
+                            }
+                            Item::Const(item) => {
+                                let item_id = match resove.insert_global_binding(
+                                    module_id,
+                                    decl.is_exported,
+                                    Mutability::Const,
+                                    item_decl.ident.symbol,
+                                ) {
+                                    Ok(item_id) => item_id,
+                                    Err(error) => {
+                                        errors.push(CompileError {
+                                            path: module_paths.path.clone(),
+                                            kind: error.into(),
+                                        });
+                                        continue;
+                                    }
+                                };
 
-                            consts.push(Const {
-                                module_id,
-                                item_id,
-                                ty: item_decl.ty,
-                                item,
-                            });
+                                consts.push(Const {
+                                    module_id,
+                                    item_id,
+                                    ty: item_decl.ty,
+                                    item,
+                                });
+                            }
                         }
-                    },
+                    }
                     DeclKind::Use(use_decl) => {
                         let path = use_decl
                             .path
@@ -296,8 +299,6 @@ fn parse_source_file(module_id: ModuleId, paths: &ModulePaths) -> ParseResult<So
     let mut tokenizer = Tokenizer::new(&lexed.source);
     let mut parser = Parser::new(&lexed, tokenizer.stream());
     let module = parser.parse_module_file()?;
-
-    println!("{:#?}", module);
 
     Ok(SourceFile {
         paths: paths.clone(),

@@ -12,9 +12,9 @@ pub enum BinOpPrecedence {
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum BinOp {
     Arithmetic(ArithmeticBinOp),
-    Relational(RelationalBinOp),
+    Comparison(ComparisonBinOp),
     Bitwise(BitwiseBinOp),
-    LogicalBinOp(LogicalBinOp),
+    Logical(LogicalBinOp),
 }
 
 impl BinOp {
@@ -34,12 +34,12 @@ impl BinOp {
             Punctuation::Percent => ArithmeticBinOp::Rem.into(),
 
             // Relational
-            Punctuation::EqEq => RelationalBinOp::Eq.into(),
-            Punctuation::Ne => RelationalBinOp::Ne.into(),
-            Punctuation::Lt => RelationalBinOp::Lt.into(),
-            Punctuation::Le => RelationalBinOp::Le.into(),
-            Punctuation::Gt => RelationalBinOp::Gt.into(),
-            Punctuation::Ge => RelationalBinOp::Ge.into(),
+            Punctuation::EqEq => ComparisonBinOp::Eq.into(),
+            Punctuation::Ne => ComparisonBinOp::Ne.into(),
+            Punctuation::Lt => ComparisonBinOp::Lt.into(),
+            Punctuation::Le => ComparisonBinOp::Le.into(),
+            Punctuation::Gt => ComparisonBinOp::Gt.into(),
+            Punctuation::Ge => ComparisonBinOp::Ge.into(),
 
             // Bitwise
             Punctuation::And => BitwiseBinOp::And.into(),
@@ -61,15 +61,17 @@ impl BinOp {
 
     pub fn precedence(&self) -> BinOpPrecedence {
         match self {
-            Self::Arithmetic(arithmetic_op) => match arithmetic_op {
-                ArithmeticBinOp::Mul => BinOpPrecedence::High,
-                ArithmeticBinOp::Div => BinOpPrecedence::High,
-                ArithmeticBinOp::Rem => BinOpPrecedence::High,
-                _ => BinOpPrecedence::Medium,
-            },
-            Self::Relational(_) => BinOpPrecedence::Low,
+            Self::Arithmetic(arithmetic_op) => {
+                match arithmetic_op {
+                    ArithmeticBinOp::Mul => BinOpPrecedence::High,
+                    ArithmeticBinOp::Div => BinOpPrecedence::High,
+                    ArithmeticBinOp::Rem => BinOpPrecedence::High,
+                    _ => BinOpPrecedence::Medium,
+                }
+            }
+            Self::Comparison(_) => BinOpPrecedence::Low,
             Self::Bitwise(_) => BinOpPrecedence::Medium,
-            Self::LogicalBinOp(_) => BinOpPrecedence::Medium,
+            Self::Logical(_) => BinOpPrecedence::Medium,
         }
     }
 }
@@ -81,10 +83,10 @@ impl From<ArithmeticBinOp> for BinOp {
     }
 }
 
-impl From<RelationalBinOp> for BinOp {
+impl From<ComparisonBinOp> for BinOp {
     #[inline]
-    fn from(op: RelationalBinOp) -> Self {
-        Self::Relational(op)
+    fn from(op: ComparisonBinOp) -> Self {
+        Self::Comparison(op)
     }
 }
 
@@ -98,7 +100,7 @@ impl From<BitwiseBinOp> for BinOp {
 impl From<LogicalBinOp> for BinOp {
     #[inline]
     fn from(op: LogicalBinOp) -> Self {
-        Self::LogicalBinOp(op)
+        Self::Logical(op)
     }
 }
 
@@ -112,7 +114,7 @@ pub enum ArithmeticBinOp {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum RelationalBinOp {
+pub enum ComparisonBinOp {
     Eq,
     Ne,
     Lt,

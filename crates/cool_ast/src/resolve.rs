@@ -10,13 +10,17 @@ use smallvec::SmallVec;
 
 pub fn resolve_fn_abi(extern_decl: &Option<FnExternDecl>) -> ResolveResult<FnAbi> {
     let abi = match extern_decl.as_ref() {
-        Some(decl) => match decl.abi {
-            Some(abi) => match FnAbi::try_from(abi) {
-                Ok(abi) => abi,
-                Err(_) => return Err(ResolveError::not_abi(abi)),
-            },
-            None => FnAbi::C,
-        },
+        Some(decl) => {
+            match decl.abi {
+                Some(abi) => {
+                    match FnAbi::try_from(abi) {
+                        Ok(abi) => abi,
+                        Err(_) => return Err(ResolveError::not_abi(abi)),
+                    }
+                }
+                None => FnAbi::C,
+            }
+        }
         None => FnAbi::Cool,
     };
 
@@ -25,13 +29,17 @@ pub fn resolve_fn_abi(extern_decl: &Option<FnExternDecl>) -> ResolveResult<FnAbi
 
 pub fn resolve_explicit_fn_abi(extern_decl: &Option<FnExternDecl>) -> ResolveResult<Option<FnAbi>> {
     let abi = match extern_decl.as_ref() {
-        Some(decl) => match decl.abi {
-            Some(abi) => match FnAbi::try_from(abi) {
-                Ok(abi) => Some(abi),
-                Err(_) => return Err(ResolveError::not_abi(abi)),
-            },
-            None => Some(FnAbi::C),
-        },
+        Some(decl) => {
+            match decl.abi {
+                Some(abi) => {
+                    match FnAbi::try_from(abi) {
+                        Ok(abi) => Some(abi),
+                        Err(_) => return Err(ResolveError::not_abi(abi)),
+                    }
+                }
+                None => Some(FnAbi::C),
+            }
+        }
         None => None,
     };
 

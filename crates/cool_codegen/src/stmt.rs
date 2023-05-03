@@ -26,16 +26,20 @@ impl<'a> CodeGenerator<'a> {
         let entry_block = self.fn_value.unwrap().get_first_basic_block().unwrap();
 
         match self.last_alloca.as_ref() {
-            Some(last_alloca) => match last_alloca.get_next_instruction() {
-                Some(next_instruction) => {
-                    alloca_builder.position_before(&next_instruction);
+            Some(last_alloca) => {
+                match last_alloca.get_next_instruction() {
+                    Some(next_instruction) => {
+                        alloca_builder.position_before(&next_instruction);
+                    }
+                    None => alloca_builder.position_at_end(entry_block),
                 }
-                None => alloca_builder.position_at_end(entry_block),
-            },
-            None => match entry_block.get_first_instruction() {
-                Some(first_instruction) => alloca_builder.position_before(&first_instruction),
-                None => alloca_builder.position_at_end(entry_block),
-            },
+            }
+            None => {
+                match entry_block.get_first_instruction() {
+                    Some(first_instruction) => alloca_builder.position_before(&first_instruction),
+                    None => alloca_builder.position_at_end(entry_block),
+                }
+            }
         }
 
         let ty = self.tys[binding.ty_id].into_basic_type();

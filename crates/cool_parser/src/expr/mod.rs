@@ -208,12 +208,16 @@ impl Parser<'_> {
                 | Expr::FnCall(_)
                 | Expr::Ident(_)
                 | Expr::Paren(_)
-                | Expr::Subscript(_) => match self.peek().kind {
-                    tk::DOT => self.continue_parse_access_or_deref_expr(Box::new(expr))?,
-                    tk::OPEN_PAREN => self.continue_parse_fn_call_expr(Box::new(expr))?.into(),
-                    tk::OPEN_BRACKET => self.continue_parse_subscript_expr(Box::new(expr))?.into(),
-                    _ => break,
-                },
+                | Expr::Subscript(_) => {
+                    match self.peek().kind {
+                        tk::DOT => self.continue_parse_access_or_deref_expr(Box::new(expr))?,
+                        tk::OPEN_PAREN => self.continue_parse_fn_call_expr(Box::new(expr))?.into(),
+                        tk::OPEN_BRACKET => {
+                            self.continue_parse_subscript_expr(Box::new(expr))?.into()
+                        }
+                        _ => break,
+                    }
+                }
                 _ => break,
             }
         }
@@ -226,19 +230,23 @@ impl Parser<'_> {
         let next_token = self.bump();
 
         let expr: Expr = match next_token.kind {
-            TokenKind::Ident(symbol) => AccessExpr {
-                base,
-                ident: Ident {
-                    span: next_token.span,
-                    symbol,
-                },
+            TokenKind::Ident(symbol) => {
+                AccessExpr {
+                    base,
+                    ident: Ident {
+                        span: next_token.span,
+                        symbol,
+                    },
+                }
+                .into()
             }
-            .into(),
-            tk::STAR => DerefExpr {
-                span: base.span().to(next_token.span),
-                base,
+            tk::STAR => {
+                DerefExpr {
+                    span: base.span().to(next_token.span),
+                    base,
+                }
+                .into()
             }
-            .into(),
             _ => self.error(next_token, &[tk::ANY_IDENT, tk::STAR])?,
         };
 
@@ -251,19 +259,21 @@ impl Parser<'_> {
 
         let (end_token, has_trailing_comma) = match self.peek().kind {
             tk::CLOSE_PAREN => (self.bump(), false),
-            _ => loop {
-                exprs.push(self.parse_expr()?);
+            _ => {
+                loop {
+                    exprs.push(self.parse_expr()?);
 
-                if self.bump_if_eq(tk::COMMA).is_some() {
-                    if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
-                        break (end_token, true);
+                    if self.bump_if_eq(tk::COMMA).is_some() {
+                        if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
+                            break (end_token, true);
+                        }
+                    } else if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
+                        break (end_token, false);
+                    } else {
+                        return self.peek_error(&[tk::COMMA, tk::CLOSE_PAREN]);
                     }
-                } else if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
-                    break (end_token, false);
-                } else {
-                    return self.peek_error(&[tk::COMMA, tk::CLOSE_PAREN]);
                 }
-            },
+            }
         };
 
         let span = start_token.span.to(end_token.span);

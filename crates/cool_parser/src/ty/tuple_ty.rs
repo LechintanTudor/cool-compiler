@@ -24,27 +24,29 @@ impl Parser<'_> {
 
         let (end_token, has_trailing_comma) = match self.bump_if_eq(tk::CLOSE_PAREN) {
             Some(end_token) => (end_token, false),
-            None => loop {
-                elems.push(self.parse_ty()?);
+            None => {
+                loop {
+                    elems.push(self.parse_ty()?);
 
-                let next_token = self.bump();
+                    let next_token = self.bump();
 
-                match next_token.kind {
-                    tk::COMMA => {
-                        if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
-                            break (end_token, true);
+                    match next_token.kind {
+                        tk::COMMA => {
+                            if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
+                                break (end_token, true);
+                            }
                         }
-                    }
-                    tk::CLOSE_PAREN => {
-                        if elems.len() == 1 {
-                            return self.error(next_token, &[tk::COMMA]);
-                        }
+                        tk::CLOSE_PAREN => {
+                            if elems.len() == 1 {
+                                return self.error(next_token, &[tk::COMMA]);
+                            }
 
-                        break (next_token, false);
+                            break (next_token, false);
+                        }
+                        _ => return self.error(next_token, &[tk::COMMA, tk::CLOSE_PAREN]),
                     }
-                    _ => return self.error(next_token, &[tk::COMMA, tk::CLOSE_PAREN]),
                 }
-            },
+            }
         };
 
         Ok(TupleTy {

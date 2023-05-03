@@ -83,9 +83,11 @@ builtins! {
 
     Nonitems {
         18: (INFERRED, TyKind::Inferred(InferredTy::Any)),
-        19: (INFERRED_INT, TyKind::Inferred(InferredTy::Int)),
-        20: (INFERRED_FLOAT, TyKind::Inferred(InferredTy::Float)),
-        21: (MODULE, TyKind::Module),
-        22: (C_STR, TyKind::Pointer(PointerTy { is_mutable: false, pointee: tys::I8 })),
+        19: (INFERRED_NUMBER, TyKind::Inferred(InferredTy::Number)),
+        20: (INFERRED_INT, TyKind::Inferred(InferredTy::Int)),
+        21: (INFERRED_FLOAT, TyKind::Inferred(InferredTy::Float)),
+
+        22: (MODULE, TyKind::Module),
+        23: (C_STR, TyKind::Pointer(PointerTy { is_mutable: false, pointee: tys::I8 })),
     }
 }

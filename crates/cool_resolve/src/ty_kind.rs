@@ -93,6 +93,7 @@ impl From<StructId> for TyKind {
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum InferredTy {
     Any,
+    Number,
     Int,
     Float,
 }
