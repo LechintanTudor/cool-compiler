@@ -6,6 +6,7 @@ pub use self::use_decl::*;
 use crate::{ParseResult, ParseTree, Parser};
 use cool_lexer::tokens::{tk, TokenKind};
 use cool_span::Span;
+use derive_more::From;
 
 #[derive(Clone, Debug)]
 pub struct Decl {
@@ -14,7 +15,7 @@ pub struct Decl {
     pub kind: DeclKind,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, From, Debug)]
 pub enum DeclKind {
     Item(ItemDecl),
     Use(UseDecl),

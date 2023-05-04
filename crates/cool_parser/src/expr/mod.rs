@@ -30,41 +30,24 @@ pub use self::tuple_expr::*;
 use crate::{BinOp, Ident, ParseResult, ParseTree, Parser};
 use cool_lexer::tokens::{tk, TokenKind};
 use cool_span::Span;
+use derive_more::From;
 use paste::paste;
 
 macro_rules! define_expr {
-    { $($variant:ident,)+ } => {
+    { $($Variant:ident,)+ } => {
         paste! {
-            #[derive(Clone)]
+            #[derive(Clone, From, Debug)]
             pub enum Expr {
-                $($variant([<$variant Expr>]),)+
+                $($Variant([<$Variant Expr>]),)+
             }
         }
 
         impl ParseTree for Expr {
             fn span(&self) -> Span {
                 match self {
-                    $(Self::$variant(e) => e.span(),)+
+                    $(Self::$Variant(e) => e.span(),)+
                 }
             }
-        }
-
-        impl std::fmt::Debug for Expr {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                match self {
-                    $(Self::$variant(e) => std::fmt::Debug::fmt(e, f),)+
-                }
-            }
-        }
-
-        paste! {
-            $(
-                impl From<[<$variant Expr>]> for Expr {
-                    fn from(expr: [<$variant Expr>]) -> Self {
-                        Self::$variant(expr)
-                    }
-                }
-            )+
         }
     };
 }

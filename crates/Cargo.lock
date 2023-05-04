@@ -240,6 +240,7 @@ dependencies = [
  "cool_collections",
  "cool_lexer",
  "cool_span",
+ "derive_more",
  "paste",
  "smallvec",
 ]

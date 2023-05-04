@@ -12,41 +12,24 @@ pub use self::struct_item::*;
 use crate::{AbstractFn, ParseResult, ParseTree, Parser};
 use cool_lexer::tokens::tk;
 use cool_span::Span;
+use derive_more::From;
 use paste::paste;
 
 macro_rules! define_item {
-    { $($variant:ident,)+ } => {
+    { $($Variant:ident,)+ } => {
         paste! {
-            #[derive(Clone)]
+            #[derive(Clone, From, Debug)]
             pub enum Item {
-                $($variant([<$variant Item>]),)+
+                $($Variant([<$Variant Item>]),)+
             }
         }
 
         impl ParseTree for Item {
             fn span(&self) -> Span {
                 match self {
-                    $(Self::$variant(i) => i.span(),)+
+                    $(Self::$Variant(i) => i.span(),)+
                 }
             }
-        }
-
-        impl std::fmt::Debug for Item {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                match self {
-                    $(Self::$variant(i) => std::fmt::Debug::fmt(i, f),)+
-                }
-            }
-        }
-
-        paste! {
-            $(
-                impl From<[<$variant Item>]> for Item {
-                    fn from(item: [<$variant Item>]) -> Self {
-                        Self::$variant(item)
-                    }
-                }
-            )+
         }
     };
 }

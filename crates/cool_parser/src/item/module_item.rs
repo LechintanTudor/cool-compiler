@@ -1,13 +1,14 @@
 use crate::{Decl, ParseResult, ParseTree, Parser};
 use cool_lexer::tokens::{tk, TokenKind};
 use cool_span::Span;
+use derive_more::From;
 
 #[derive(Clone, Debug)]
 pub struct ModuleContent {
     pub decls: Vec<Decl>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, From, Debug)]
 pub enum ModuleKind {
     External,
     Inline(ModuleContent),

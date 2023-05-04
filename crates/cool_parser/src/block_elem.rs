@@ -3,37 +3,22 @@ use crate::stmt::{ExprStmt, Stmt};
 use crate::{AssignOp, ParseResult, ParseTree, Parser};
 use cool_lexer::tokens::tk;
 use cool_span::Span;
+use derive_more::From;
 
 macro_rules! define_block_elem {
-    { $($variant:ident,)+ } => {
-        #[derive(Clone)]
+    { $($Variant:ident,)+ } => {
+        #[derive(Clone, From, Debug)]
         pub enum BlockElem {
-            $($variant($variant),)+
+            $($Variant($Variant),)+
         }
 
         impl ParseTree for BlockElem {
             fn span(&self) -> Span {
                 match self {
-                    $(Self::$variant(e) => e.span(),)+
+                    $(Self::$Variant(e) => e.span(),)+
                 }
             }
         }
-
-        impl std::fmt::Debug for BlockElem {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                match self {
-                    $(Self::$variant(s) => std::fmt::Debug::fmt(s, f),)+
-                }
-            }
-        }
-
-        $(
-            impl From<$variant> for BlockElem {
-                fn from(elem: $variant) -> Self {
-                    Self::$variant(elem)
-                }
-            }
-        )+
     };
 }
 

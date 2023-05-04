@@ -12,41 +12,24 @@ pub use self::tuple_ty::*;
 use crate::{ParseResult, ParseTree, Parser};
 use cool_lexer::tokens::{tk, TokenKind};
 use cool_span::Span;
+use derive_more::From;
 use paste::paste;
 
 macro_rules! define_ty {
-    { $($variant:ident,)+ } => {
+    { $($Variant:ident,)+ } => {
         paste! {
-            #[derive(Clone)]
+            #[derive(Clone, From, Debug)]
             pub enum Ty {
-                $($variant([<$variant Ty>]),)+
+                $($Variant([<$Variant Ty>]),)+
             }
         }
 
         impl ParseTree for Ty {
             fn span(&self) -> Span {
                 match self {
-                    $(Self::$variant(i) => i.span(),)+
+                    $(Self::$Variant(i) => i.span(),)+
                 }
             }
-        }
-
-        impl std::fmt::Debug for Ty {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                match self {
-                    $(Self::$variant(i) => std::fmt::Debug::fmt(i, f),)+
-                }
-            }
-        }
-
-        paste! {
-            $(
-                impl From<[<$variant Ty>]> for Ty {
-                    fn from(item: [<$variant Ty>]) -> Self {
-                        Self::$variant(item)
-                    }
-                }
-            )+
         }
     };
 }

@@ -15,8 +15,8 @@ impl ParseTree for IdentExpr {
 
 impl Parser<'_> {
     pub fn parse_ident_expr(&mut self) -> ParseResult<IdentExpr> {
-        let ident = self.parse_path_ident()?;
-
-        Ok(IdentExpr { ident })
+        Ok(IdentExpr {
+            ident: self.parse_path_ident()?,
+        })
     }
 }

@@ -7,41 +7,24 @@ pub use self::decl_stmt::*;
 pub use self::expr_stmt::*;
 use crate::ParseTree;
 use cool_span::Span;
+use derive_more::From;
 use paste::paste;
 
 macro_rules! define_stmt {
-    { $($variant:ident,)+ } => {
+    { $($Variant:ident,)+ } => {
         paste! {
-            #[derive(Clone)]
+            #[derive(Clone, From, Debug)]
             pub enum Stmt {
-                $($variant([<$variant Stmt>]),)+
+                $($Variant([<$Variant Stmt>]),)+
             }
         }
 
         impl ParseTree for Stmt {
             fn span(&self) -> Span {
                 match self {
-                    $(Self::$variant(s) => s.span(),)+
+                    $(Self::$Variant(s) => s.span(),)+
                 }
             }
-        }
-
-        impl std::fmt::Debug for Stmt {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                match self {
-                    $(Self::$variant(s) => std::fmt::Debug::fmt(s, f),)+
-                }
-            }
-        }
-
-        paste! {
-            $(
-                impl From<[<$variant Stmt>]> for Stmt {
-                    fn from(stmt: [<$variant Stmt>]) -> Self {
-                        Self::$variant(stmt)
-                    }
-                }
-            )+
         }
     };
 }

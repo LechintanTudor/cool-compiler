@@ -16,10 +16,8 @@ impl ParseTree for ModuleTy {
 
 impl Parser<'_> {
     pub fn parse_module_ty(&mut self) -> ParseResult<ModuleTy> {
-        let module_kw = self.bump_expect(&tk::KW_MODULE)?;
-
         Ok(ModuleTy {
-            span: module_kw.span,
+            span: self.bump_expect(&tk::KW_MODULE)?.span,
         })
     }
 }

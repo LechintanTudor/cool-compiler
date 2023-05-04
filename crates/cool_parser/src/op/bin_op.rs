@@ -1,4 +1,5 @@
 use cool_lexer::tokens::{Punctuation, TokenKind};
+use derive_more::From;
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub enum BinOpPrecedence {
@@ -9,7 +10,7 @@ pub enum BinOpPrecedence {
     Highest,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, From, Debug)]
 pub enum BinOp {
     Arithmetic(ArithmeticBinOp),
     Comparison(ComparisonBinOp),
@@ -73,34 +74,6 @@ impl BinOp {
             Self::Bitwise(_) => BinOpPrecedence::Medium,
             Self::Logical(_) => BinOpPrecedence::Medium,
         }
-    }
-}
-
-impl From<ArithmeticBinOp> for BinOp {
-    #[inline]
-    fn from(op: ArithmeticBinOp) -> Self {
-        Self::Arithmetic(op)
-    }
-}
-
-impl From<ComparisonBinOp> for BinOp {
-    #[inline]
-    fn from(op: ComparisonBinOp) -> Self {
-        Self::Comparison(op)
-    }
-}
-
-impl From<BitwiseBinOp> for BinOp {
-    #[inline]
-    fn from(op: BitwiseBinOp) -> Self {
-        Self::Bitwise(op)
-    }
-}
-
-impl From<LogicalBinOp> for BinOp {
-    #[inline]
-    fn from(op: LogicalBinOp) -> Self {
-        Self::Logical(op)
     }
 }
 
