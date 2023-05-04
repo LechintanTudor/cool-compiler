@@ -167,7 +167,7 @@ impl Parser<'_> {
         let mut expr: Expr = match self.peek().kind {
             tk::OPEN_BRACKET => self.parse_array_expr()?.into(),
             tk::OPEN_BRACE => self.parse_block_expr()?.into(),
-            tk::OPEN_PAREN => self.parse_paren_or_tuple_expr()?.into(),
+            tk::OPEN_PAREN => self.parse_paren_or_tuple_expr()?,
             tk::KW_RETURN => self.parse_return_expr()?.into(),
             TokenKind::Ident(_) => self.parse_ident_expr()?.into(),
             TokenKind::Prefix(_) | TokenKind::Literal(_) => self.parse_literal_expr()?.into(),

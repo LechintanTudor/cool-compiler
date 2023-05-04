@@ -42,14 +42,14 @@ impl<K, V, const N: usize> SmallVecMap<K, V, N> {
     where
         K: PartialEq,
     {
-        self.inner.iter().find(|(k, _)| k == key).is_some()
+        self.inner.iter().any(|(k, _)| k == key)
     }
 
     pub fn get(&self, key: &K) -> Option<&V>
     where
         K: PartialEq,
     {
-        self.inner.iter().find_map(|(k, v)| (k == key).then(|| v))
+        self.inner.iter().find_map(|(k, v)| (k == key).then_some(v))
     }
 
     pub fn get_mut(&mut self, key: &K) -> Option<&mut V>
@@ -58,7 +58,7 @@ impl<K, V, const N: usize> SmallVecMap<K, V, N> {
     {
         self.inner
             .iter_mut()
-            .find_map(|(k, v)| (k == key).then(|| v))
+            .find_map(|(k, v)| (k == key).then_some(v))
     }
 
     pub fn keys(&self) -> impl Iterator<Item = &K> {

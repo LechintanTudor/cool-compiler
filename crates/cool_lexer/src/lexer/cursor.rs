@@ -61,7 +61,7 @@ impl Cursor<'_> {
     where
         P: FnOnce(char) -> bool,
     {
-        if !(predicate(self.first()) && !self.is_eof()) {
+        if !predicate(self.first()) || self.is_eof() {
             return false;
         }
 

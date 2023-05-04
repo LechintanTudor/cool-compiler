@@ -66,10 +66,9 @@ impl CodeGenerator<'_> {
             .gen_loaded_value(ret_value)
             .and_then(|ret_value| ret_value.try_into_basic_value());
 
-        let ret_value = match ret_value.as_ref() {
-            Some(ret_value) => Some(ret_value as &dyn BasicValue),
-            None => None,
-        };
+        let ret_value = ret_value
+            .as_ref()
+            .map(|ret_value| ret_value as &dyn BasicValue);
 
         self.builder.build_return(ret_value);
         self.pass_manager.run_on(&fn_value);

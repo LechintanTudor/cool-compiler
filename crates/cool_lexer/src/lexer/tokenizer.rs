@@ -43,10 +43,10 @@ impl<'a> Tokenizer<'a> {
             self.line_comment()
         } else if is_ident_start(first_char) {
             self.buffer.push(first_char);
-            self.ident()
+            self.identifier()
         } else if let Ok(start) = Punctuation::try_from(first_char) {
             self.punctuation(start)
-        } else if ('0'..='9').contains(&first_char) {
+        } else if first_char.is_ascii_digit() {
             self.buffer.push(first_char);
 
             match self.cursor.first() {
@@ -82,7 +82,7 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
-    fn ident(&mut self) -> TokenKind {
+    fn identifier(&mut self) -> TokenKind {
         self.cursor.consume_while(|char| {
             if !is_ident_continue(char) {
                 return false;
@@ -156,7 +156,7 @@ impl<'a> Tokenizer<'a> {
     }
 
     fn decimal_number(&mut self) -> TokenKind {
-        let (symbol, has_suffix) = self.number_literal(|c| ('0'..='9').contains(&c));
+        let (symbol, has_suffix) = self.number_literal(|c| c.is_ascii_digit());
 
         TokenKind::Literal(Literal {
             kind: LiteralKind::Int {
@@ -169,7 +169,7 @@ impl<'a> Tokenizer<'a> {
 
     fn hexadecimal_number(&mut self) -> TokenKind {
         let (symbol, has_suffix) = self.number_literal(|c| {
-            ('0'..='9').contains(&c) || ('a'..='f').contains(&c) || ('A'..='F').contains(&c)
+            c.is_ascii_digit() || ('a'..='f').contains(&c) || ('A'..='F').contains(&c)
         });
 
         TokenKind::Literal(Literal {

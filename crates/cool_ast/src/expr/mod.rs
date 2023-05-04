@@ -76,13 +76,13 @@ impl AstGenerator<'_> {
         expr: &Expr,
     ) -> AstResult<ExprAst> {
         let expr: ExprAst = match expr {
-            Expr::Access(e) => self.gen_access_expr(frame_id, expected_ty_id, e)?.into(),
+            Expr::Access(e) => self.gen_access_expr(frame_id, expected_ty_id, e)?,
             Expr::Binary(e) => self.gen_binary_expr(frame_id, expected_ty_id, e)?.into(),
             Expr::Block(e) => self.gen_block_expr(frame_id, expected_ty_id, e)?.into(),
             Expr::FnCall(e) => self.gen_fn_call_expr(frame_id, expected_ty_id, e)?.into(),
-            Expr::Ident(e) => self.gen_ident_expr(frame_id, expected_ty_id, e)?.into(),
+            Expr::Ident(e) => self.gen_ident_expr(frame_id, expected_ty_id, e)?,
             Expr::Literal(e) => self.gen_literal_expr(expected_ty_id, e)?.into(),
-            Expr::Paren(e) => self.gen_expr(frame_id, expected_ty_id, &e.inner)?.into(),
+            Expr::Paren(e) => self.gen_expr(frame_id, expected_ty_id, &e.inner)?,
             _ => todo!(),
         };
 

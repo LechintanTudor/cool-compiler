@@ -27,25 +27,22 @@ pub fn p3_gen_ast(package: &Package, resolve: &mut ResolveContext) -> CompileRes
     }
 
     for const_item in package.consts.iter() {
-        match &const_item.item.expr {
-            Expr::Fn(fn_expr) => {
-                let fn_binding_id = ast.resolve[const_item.item_id].as_binding_id().unwrap();
-                let fn_ty_id = ast.resolve[fn_binding_id].ty_id;
-                let fn_ast =
-                    match ast.gen_fn(const_item.item_id, const_item.module_id, fn_ty_id, fn_expr) {
-                        Ok(fn_ast) => fn_ast,
-                        Err(error) => {
-                            errors.push(CompileError {
-                                path: Default::default(),
-                                kind: error.into(),
-                            });
-                            continue;
-                        }
-                    };
+        if let Expr::Fn(fn_expr) = &const_item.item.expr {
+            let fn_binding_id = ast.resolve[const_item.item_id].as_binding_id().unwrap();
+            let fn_ty_id = ast.resolve[fn_binding_id].ty_id;
+            let fn_ast =
+                match ast.gen_fn(const_item.item_id, const_item.module_id, fn_ty_id, fn_expr) {
+                    Ok(fn_ast) => fn_ast,
+                    Err(error) => {
+                        errors.push(CompileError {
+                            path: Default::default(),
+                            kind: error.into(),
+                        });
+                        continue;
+                    }
+                };
 
-                fns.push(fn_ast);
-            }
-            _ => (),
+            fns.push(fn_ast);
         }
     }
 

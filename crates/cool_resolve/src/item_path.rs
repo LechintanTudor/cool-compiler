@@ -13,7 +13,7 @@ impl ItemPathBuf {
 
     #[must_use]
     pub fn pop(&self) -> Self {
-        let remaining_len = self.0.len().checked_sub(1).unwrap_or(0);
+        let remaining_len = self.0.len().saturating_sub(1);
         let remaining_symbols = &self.0[..remaining_len];
         Self(SmallVec::from_slice(remaining_symbols))
     }
@@ -62,7 +62,7 @@ pub struct ItemPath<'a>(&'a [Symbol]);
 impl ItemPath<'_> {
     #[must_use]
     pub fn pop(&self) -> Self {
-        let remaining_len = self.0.len().checked_sub(1).unwrap_or(0);
+        let remaining_len = self.0.len().saturating_sub(1);
         let remaining_symbols = &self.0[..remaining_len];
         Self(remaining_symbols)
     }

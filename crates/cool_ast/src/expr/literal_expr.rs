@@ -145,7 +145,7 @@ fn parse_binary_int(symbol: Symbol) -> AstResult<(u128, TyId)> {
     let mut value = 0;
     let mut suffix = SmallString::new();
 
-    while let Some(char) = char_iter.next() {
+    for char in char_iter.by_ref() {
         match char {
             '0' | '1' => {
                 let digit = char as u32 - '0' as u32;
@@ -177,7 +177,7 @@ fn parse_octal_int(symbol: Symbol) -> AstResult<(u128, TyId)> {
     let mut value = 0;
     let mut suffix = String::new();
 
-    while let Some(char) = char_iter.next() {
+    for char in char_iter.by_ref() {
         match char {
             '0'..='7' => {
                 let digit = char as u32 - '0' as u32;
@@ -209,7 +209,7 @@ fn parse_hexadecimal_int(symbol: Symbol) -> AstResult<(u128, TyId)> {
     let mut value = 0;
     let mut suffix = String::new();
 
-    while let Some(char) = char_iter.next() {
+    for char in char_iter.by_ref() {
         match char {
             '0'..='9' => {
                 let digit = char as u32 - '0' as u32;
@@ -251,7 +251,7 @@ fn parse_decimal_int(symbol: Symbol) -> AstResult<(u128, TyId)> {
     let mut value = 0;
     let mut suffix = String::new();
 
-    while let Some(char) = char_iter.next() {
+    for char in char_iter.by_ref() {
         match char {
             '0'..='9' => {
                 let digit = char as u32 - '0' as u32;
@@ -373,7 +373,7 @@ pub fn parse_decimal(symbol: Symbol) -> AstResult<(f64, TyId)> {
     let mut found_dot = false;
     let mut suffix = SmallString::new();
 
-    while let Some(char) = char_iter.next() {
+    for char in char_iter.by_ref() {
         match char {
             '0'..='9' => {
                 let digit = char as u32 - '0' as u32;

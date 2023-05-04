@@ -97,7 +97,7 @@ impl<'a> GeneratedTys<'a> {
                     .params
                     .iter()
                     .map(|&param| Self::insert_ty(tys, context, resolve, param))
-                    .flat_map(|param| BasicMetadataTypeEnum::try_from(param))
+                    .flat_map(BasicMetadataTypeEnum::try_from)
                     .collect::<Vec<_>>();
 
                 let ret = Self::insert_ty(tys, context, resolve, fn_ty.ret);
@@ -125,7 +125,7 @@ impl<'a> ops::Index<TyId> for GeneratedTys<'a> {
     }
 }
 
-fn ptr_type_from_any_type_enum<'a>(ty: AnyTypeEnum<'a>) -> Option<PointerType<'a>> {
+fn ptr_type_from_any_type_enum(ty: AnyTypeEnum) -> Option<PointerType> {
     let address_space = AddressSpace::default();
 
     let pointer_ty = match ty {

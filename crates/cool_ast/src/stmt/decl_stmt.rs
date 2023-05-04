@@ -16,7 +16,7 @@ impl AstGenerator<'_> {
         decl_stmt: &DeclStmt,
     ) -> AstResult<DeclStmtAst> {
         let expected_ty_id = match decl_stmt.ty.as_ref() {
-            Some(ty) => resolve_ty(&mut self.resolve, frame_id.into(), ty)?,
+            Some(ty) => resolve_ty(self.resolve, frame_id.into(), ty)?,
             None => tys::INFERRED,
         };
 

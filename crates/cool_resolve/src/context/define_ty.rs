@@ -49,19 +49,13 @@ impl TyId {
                 None
             }
         } else {
-            if self == expected {
-                Some(expected)
-            } else if self == tys::INFERRED {
-                Some(expected)
-            } else if self == tys::INFERRED_NUMBER && expected.is_number() {
-                Some(expected)
-            } else if self == tys::INFERRED_INT && expected.is_int() {
-                Some(expected)
-            } else if self == tys::INFERRED_FLOAT && expected.is_float() {
-                Some(expected)
-            } else {
-                None
-            }
+            let can_resolve = (self == expected)
+                || (self == tys::INFERRED)
+                || (self == tys::INFERRED_NUMBER && expected.is_number())
+                || (self == tys::INFERRED_INT && expected.is_int())
+                || (self == tys::INFERRED_FLOAT && expected.is_float());
+
+            can_resolve.then_some(expected)
         }
     }
 }

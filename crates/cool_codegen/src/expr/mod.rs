@@ -81,7 +81,7 @@ impl<'a> CodeGenerator<'a> {
             }
             LiteralExprValue::Cstr(value) => {
                 self.builder
-                    .build_global_string_ptr(&value, "")
+                    .build_global_string_ptr(value, "")
                     .as_any_value_enum()
             }
             _ => todo!(),

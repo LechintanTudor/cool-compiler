@@ -14,7 +14,7 @@ pub fn p4_gen_code(
         resolve,
         "x86_64-unknown-linux-gnu",
         &options.crate_name,
-        &options.crate_root_file.to_str().unwrap(),
+        options.crate_root_file.to_str().unwrap(),
     );
 
     let module = codegen.gen_module(package);

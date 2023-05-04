@@ -153,14 +153,10 @@ impl ResolveContext {
         let mut resolved_path: ItemPathBuf = match *path_iter.next().unwrap() {
             sym::KW_CRATE => module.path.first().into(),
             sym::KW_SUPER => {
-                module
-                    .path
-                    .try_pop()
-                    .map(|path| path.clone())
-                    .ok_or(ResolveError {
-                        symbol: path.last(),
-                        kind: ResolveErrorKind::TooManySuperKeywords,
-                    })?
+                module.path.try_pop().ok_or(ResolveError {
+                    symbol: path.last(),
+                    kind: ResolveErrorKind::TooManySuperKeywords,
+                })?
             }
             sym::KW_SELF => module.path.clone(),
             symbol => {
