@@ -202,11 +202,20 @@ impl Parser<'_> {
 
         loop {
             expr = match &expr {
-                Expr::Access(_)
-                | Expr::Block(_)
+                Expr::Access(_) | Expr::Ident(_) => {
+                    match self.peek().kind {
+                        tk::DOT => self.continue_parse_access_or_deref_expr(Box::new(expr))?,
+                        tk::OPEN_BRACE => self.continue_parse_struct_expr(Box::new(expr))?.into(),
+                        tk::OPEN_PAREN => self.continue_parse_fn_call_expr(Box::new(expr))?.into(),
+                        tk::OPEN_BRACKET => {
+                            self.continue_parse_subscript_expr(Box::new(expr))?.into()
+                        }
+                        _ => break,
+                    }
+                }
+                Expr::Block(_)
                 | Expr::Deref(_)
                 | Expr::FnCall(_)
-                | Expr::Ident(_)
                 | Expr::Paren(_)
                 | Expr::Subscript(_) => {
                     match self.peek().kind {

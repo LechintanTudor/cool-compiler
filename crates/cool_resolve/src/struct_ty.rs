@@ -4,5 +4,5 @@ use cool_lexer::symbols::Symbol;
 
 #[derive(Clone, Default, Debug)]
 pub struct StructTy {
-    pub fields: SmallVecMap<Symbol, TyId, 3>,
+    pub fields: SmallVecMap<Symbol, TyId, 7>,
 }
