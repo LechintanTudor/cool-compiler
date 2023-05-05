@@ -24,16 +24,15 @@ impl<'a> CodeGenerator<'a> {
         self.gen_loaded_value(value)
     }
 
-    pub fn gen_block_expr(&mut self, expr: &BlockExprAst) -> Value<'a> {
-        let Some((end_elem, start_elems)) = expr.elems.split_last() else {
-            return Value::Void;
-        };
-
-        for elem in start_elems {
-            self.gen_block_elem(elem);
+    pub fn gen_block_expr(&mut self, block: &BlockExprAst) -> Value<'a> {
+        for stmt in block.stmts.iter() {
+            self.gen_stmt(stmt);
         }
 
-        self.gen_block_elem(end_elem)
+        match block.expr.as_ref() {
+            Some(expr) => self.gen_expr(expr),
+            None => Value::Void,
+        }
     }
 
     pub fn gen_fn_call_expr(&mut self, expr: &FnCallExprAst) -> Value<'a> {

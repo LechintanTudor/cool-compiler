@@ -14,3 +14,14 @@ impl ParseTree for ExprStmt {
         self.span
     }
 }
+
+impl From<Expr> for ExprStmt {
+    fn from(expr: Expr) -> Self {
+        assert!(expr.is_promotable_to_stmt());
+
+        Self {
+            span: expr.span(),
+            expr,
+        }
+    }
+}

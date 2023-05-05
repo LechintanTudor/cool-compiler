@@ -2,6 +2,7 @@ mod access_expr;
 mod array_expr;
 mod binary_expr;
 mod block_expr;
+mod cond_expr;
 mod deref_expr;
 mod fn_call_expr;
 mod fn_expr;
@@ -17,6 +18,7 @@ pub use self::access_expr::*;
 pub use self::array_expr::*;
 pub use self::binary_expr::*;
 pub use self::block_expr::*;
+pub use self::cond_expr::*;
 pub use self::deref_expr::*;
 pub use self::fn_call_expr::*;
 pub use self::fn_expr::*;
@@ -57,6 +59,7 @@ define_expr! {
     Array,
     Binary,
     Block,
+    Cond,
     Deref,
     Fn,
     FnCall,
@@ -69,7 +72,14 @@ define_expr! {
     Tuple,
 }
 
-#[derive(Clone, Debug)]
+impl Expr {
+    #[inline]
+    pub fn is_promotable_to_stmt(&self) -> bool {
+        matches!(self, Self::Block(_) | Self::Cond(_))
+    }
+}
+
+#[derive(Clone, From, Debug)]
 enum ExprAtom {
     BinOp(BinOp),
     Expr(Expr),
@@ -85,28 +95,24 @@ impl ExprAtom {
     }
 }
 
-impl From<BinOp> for ExprAtom {
-    #[inline]
-    fn from(bin_op: BinOp) -> Self {
-        Self::BinOp(bin_op)
-    }
-}
-
-impl From<Expr> for ExprAtom {
-    #[inline]
-    fn from(expr: Expr) -> Self {
-        Self::Expr(expr)
-    }
-}
-
 impl Parser<'_> {
+    #[inline]
     pub fn parse_expr(&mut self) -> ParseResult<Expr> {
-        let expr = self.parse_primary_expr()?;
+        self.parse_expr_full(true)
+    }
+
+    #[inline]
+    pub fn parse_guard_expr(&mut self) -> ParseResult<Expr> {
+        self.parse_expr_full(false)
+    }
+
+    fn parse_expr_full(&mut self, allow_struct_expr: bool) -> ParseResult<Expr> {
+        let expr = self.parse_primary_expr(allow_struct_expr)?;
 
         let (first_bin_op, second_expr) = match BinOp::from_token_kind(self.peek().kind) {
             Some(bin_op) => {
                 self.bump();
-                (bin_op, self.parse_primary_expr()?)
+                (bin_op, self.parse_primary_expr(allow_struct_expr)?)
             }
             None => return Ok(expr),
         };
@@ -128,7 +134,7 @@ impl Parser<'_> {
 
             bin_ops.push(bin_op);
 
-            let next_expr = self.parse_primary_expr()?;
+            let next_expr = self.parse_primary_expr(allow_struct_expr)?;
             atoms.push(next_expr.into());
         }
 
@@ -163,11 +169,12 @@ impl Parser<'_> {
         Ok(atom_stack.pop().unwrap().into_expr())
     }
 
-    fn parse_primary_expr(&mut self) -> ParseResult<Expr> {
+    fn parse_primary_expr(&mut self, allow_struct_expr: bool) -> ParseResult<Expr> {
         let mut expr: Expr = match self.peek().kind {
             tk::OPEN_BRACKET => self.parse_array_expr()?.into(),
             tk::OPEN_BRACE => self.parse_block_expr()?.into(),
             tk::OPEN_PAREN => self.parse_paren_or_tuple_expr()?,
+            tk::KW_IF => self.parse_cond_expr()?.into(),
             tk::KW_RETURN => self.parse_return_expr()?.into(),
             TokenKind::Ident(_) => self.parse_ident_expr()?.into(),
             TokenKind::Prefix(_) | TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
@@ -179,7 +186,7 @@ impl Parser<'_> {
                     tk::KW_RETURN,
                     tk::ANY_IDENT,
                     tk::ANY_LITERAL,
-                ])
+                ]);
             }
         };
 
@@ -188,7 +195,9 @@ impl Parser<'_> {
                 Expr::Access(_) | Expr::Ident(_) => {
                     match self.peek().kind {
                         tk::DOT => self.continue_parse_access_or_deref_expr(Box::new(expr))?,
-                        tk::OPEN_BRACE => self.continue_parse_struct_expr(Box::new(expr))?.into(),
+                        tk::OPEN_BRACE if allow_struct_expr => {
+                            self.continue_parse_struct_expr(Box::new(expr))?.into()
+                        }
                         tk::OPEN_PAREN => self.continue_parse_fn_call_expr(Box::new(expr))?.into(),
                         tk::OPEN_BRACKET => {
                             self.continue_parse_subscript_expr(Box::new(expr))?.into()
@@ -197,6 +206,7 @@ impl Parser<'_> {
                     }
                 }
                 Expr::Block(_)
+                | Expr::Cond(_)
                 | Expr::Deref(_)
                 | Expr::FnCall(_)
                 | Expr::Paren(_)
