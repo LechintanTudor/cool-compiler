@@ -9,9 +9,9 @@ pub use self::module_ty::*;
 pub use self::path_ty::*;
 pub use self::pointer_ty::*;
 pub use self::tuple_ty::*;
-use crate::{ParseResult, ParseTree, Parser};
+use crate::{ParseResult, Parser};
 use cool_lexer::tokens::{tk, TokenKind};
-use cool_span::Span;
+use cool_span::{Section, Span};
 use derive_more::From;
 use paste::paste;
 
@@ -24,7 +24,7 @@ macro_rules! define_ty {
             }
         }
 
-        impl ParseTree for Ty {
+        impl Section for Ty {
             fn span(&self) -> Span {
                 match self {
                     $(Self::$Variant(i) => i.span(),)+

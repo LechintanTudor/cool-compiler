@@ -1,8 +1,8 @@
-use crate::{ParseResult, ParseTree, Parser};
+use crate::{ParseResult, Parser};
 use cool_collections::SmallString;
 use cool_lexer::symbols::Symbol;
 use cool_lexer::tokens::{tk, Literal, LiteralKind, TokenKind};
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct LiteralExpr {
@@ -11,7 +11,7 @@ pub struct LiteralExpr {
     pub literal: Literal,
 }
 
-impl ParseTree for LiteralExpr {
+impl Section for LiteralExpr {
     #[inline]
     fn span(&self) -> Span {
         self.span

@@ -1,7 +1,7 @@
 use crate::path::IdentPath;
-use crate::{Ident, ParseResult, ParseTree, Parser};
+use crate::{Ident, ParseResult, Parser};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct UseDecl {
@@ -10,7 +10,7 @@ pub struct UseDecl {
     pub alias: Option<Ident>,
 }
 
-impl ParseTree for UseDecl {
+impl Section for UseDecl {
     #[inline]
     fn span(&self) -> Span {
         self.span

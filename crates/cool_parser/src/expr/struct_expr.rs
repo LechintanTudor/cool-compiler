@@ -1,6 +1,6 @@
-use crate::{Expr, Ident, ParseResult, ParseTree, Parser};
+use crate::{Expr, Ident, ParseResult, Parser};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct StructFieldInitializer {
@@ -8,7 +8,7 @@ pub struct StructFieldInitializer {
     pub expr: Box<Expr>,
 }
 
-impl ParseTree for StructFieldInitializer {
+impl Section for StructFieldInitializer {
     #[inline]
     fn span(&self) -> Span {
         self.ident.span.to(self.expr.span())
@@ -23,7 +23,7 @@ pub struct StructExpr {
     pub has_trailing_comma: bool,
 }
 
-impl ParseTree for StructExpr {
+impl Section for StructExpr {
     #[inline]
     fn span(&self) -> Span {
         self.span

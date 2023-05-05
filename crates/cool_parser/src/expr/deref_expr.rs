@@ -1,5 +1,5 @@
-use crate::{Expr, ParseTree};
-use cool_span::Span;
+use crate::Expr;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct DerefExpr {
@@ -7,7 +7,7 @@ pub struct DerefExpr {
     pub base: Box<Expr>,
 }
 
-impl ParseTree for DerefExpr {
+impl Section for DerefExpr {
     #[inline]
     fn span(&self) -> Span {
         self.span

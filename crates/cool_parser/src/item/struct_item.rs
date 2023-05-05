@@ -1,6 +1,6 @@
-use crate::{Ident, ParseResult, ParseTree, Parser, Ty};
+use crate::{Ident, ParseResult, Parser, Ty};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct StructField {
@@ -8,7 +8,7 @@ pub struct StructField {
     pub ty: Ty,
 }
 
-impl ParseTree for StructField {
+impl Section for StructField {
     #[inline]
     fn span(&self) -> Span {
         self.ident.span().to(self.ty.span())
@@ -22,7 +22,7 @@ pub struct StructItem {
     pub has_trailing_comma: bool,
 }
 
-impl ParseTree for StructItem {
+impl Section for StructItem {
     #[inline]
     fn span(&self) -> Span {
         self.span

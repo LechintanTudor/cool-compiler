@@ -1,7 +1,7 @@
 use crate::expr::Expr;
-use crate::{ParseResult, ParseTree, Parser};
+use crate::{ParseResult, Parser};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct ReturnExpr {
@@ -9,7 +9,7 @@ pub struct ReturnExpr {
     pub expr: Box<Expr>,
 }
 
-impl ParseTree for ReturnExpr {
+impl Section for ReturnExpr {
     #[inline]
     fn span(&self) -> Span {
         self.span

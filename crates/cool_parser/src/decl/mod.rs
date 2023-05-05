@@ -3,9 +3,9 @@ mod use_decl;
 
 pub use self::item_decl::*;
 pub use self::use_decl::*;
-use crate::{ParseResult, ParseTree, Parser};
+use crate::{ParseResult, Parser};
 use cool_lexer::tokens::{tk, TokenKind};
-use cool_span::Span;
+use cool_span::{Section, Span};
 use derive_more::From;
 
 #[derive(Clone, Debug)]
@@ -31,7 +31,7 @@ impl DeclKind {
     }
 }
 
-impl ParseTree for DeclKind {
+impl Section for DeclKind {
     fn span(&self) -> Span {
         match self {
             Self::Item(decl) => decl.span(),

@@ -1,6 +1,6 @@
-use crate::{ParseResult, ParseTree, Parser, Ty};
+use crate::{ParseResult, Parser, Ty};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct PointerTy {
@@ -9,7 +9,7 @@ pub struct PointerTy {
     pub pointee: Box<Ty>,
 }
 
-impl ParseTree for PointerTy {
+impl Section for PointerTy {
     #[inline]
     fn span(&self) -> Span {
         self.span

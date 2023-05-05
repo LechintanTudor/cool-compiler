@@ -1,6 +1,6 @@
-use crate::{Ident, ParseResult, ParseTree, Parser};
+use crate::{Ident, ParseResult, Parser};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 use smallvec::SmallVec;
 
 pub type IdentVec = SmallVec<[Ident; 2]>;
@@ -10,7 +10,7 @@ pub struct IdentPath {
     pub idents: IdentVec,
 }
 
-impl ParseTree for IdentPath {
+impl Section for IdentPath {
     fn span(&self) -> Span {
         match (self.idents.first(), self.idents.last()) {
             (Some(first), Some(last)) => first.span().to(last.span()),

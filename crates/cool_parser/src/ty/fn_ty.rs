@@ -1,6 +1,6 @@
-use crate::{FnExternDecl, ParseResult, ParseTree, Parser, Ty};
+use crate::{FnExternDecl, ParseResult, Parser, Ty};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct FnTyParamList {
@@ -10,7 +10,7 @@ pub struct FnTyParamList {
     pub has_trailing_comma: bool,
 }
 
-impl ParseTree for FnTyParamList {
+impl Section for FnTyParamList {
     #[inline]
     fn span(&self) -> Span {
         self.span
@@ -25,7 +25,7 @@ pub struct FnTy {
     pub ret_ty: Option<Box<Ty>>,
 }
 
-impl ParseTree for FnTy {
+impl Section for FnTy {
     #[inline]
     fn span(&self) -> Span {
         self.span
@@ -87,7 +87,7 @@ impl Parser<'_> {
         let fn_kw = self.bump_expect(&tk::KW_FN)?;
         let param_list = self.parse_fn_ty_param_list()?;
 
-        let return_ty = if self.bump_if_eq(tk::ARROW).is_some() {
+        let ret_ty = if self.bump_if_eq(tk::ARROW).is_some() {
             Some(Box::new(self.parse_ty()?))
         } else {
             None
@@ -99,7 +99,7 @@ impl Parser<'_> {
                 .map(|decl| decl.span)
                 .unwrap_or(fn_kw.span);
 
-            let end_span = return_ty
+            let end_span = ret_ty
                 .as_ref()
                 .map(|ty| ty.span())
                 .unwrap_or(param_list.span);
@@ -111,7 +111,7 @@ impl Parser<'_> {
             span,
             extern_decl,
             param_list,
-            ret_ty: return_ty,
+            ret_ty,
         })
     }
 }

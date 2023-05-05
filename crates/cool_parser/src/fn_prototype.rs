@@ -1,6 +1,6 @@
-use crate::{FnExternDecl, Ident, ParseResult, ParseTree, Parser, Ty};
+use crate::{FnExternDecl, Ident, ParseResult, Parser, Ty};
 use cool_lexer::tokens::{tk, TokenKind};
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct FnParam {
@@ -10,7 +10,7 @@ pub struct FnParam {
     pub ty: Option<Ty>,
 }
 
-impl ParseTree for FnParam {
+impl Section for FnParam {
     #[inline]
     fn span(&self) -> Span {
         self.span
@@ -25,7 +25,7 @@ pub struct FnParamList {
     pub has_trailing_comma: bool,
 }
 
-impl ParseTree for FnParamList {
+impl Section for FnParamList {
     #[inline]
     fn span(&self) -> Span {
         self.span
@@ -40,7 +40,7 @@ pub struct FnPrototype {
     pub ret_ty: Option<Ty>,
 }
 
-impl ParseTree for FnPrototype {
+impl Section for FnPrototype {
     #[inline]
     fn span(&self) -> Span {
         self.span

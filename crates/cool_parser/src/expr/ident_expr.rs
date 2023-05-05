@@ -1,12 +1,12 @@
-use crate::{Ident, ParseResult, ParseTree, Parser};
-use cool_span::Span;
+use crate::{Ident, ParseResult, Parser};
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct IdentExpr {
     pub ident: Ident,
 }
 
-impl ParseTree for IdentExpr {
+impl Section for IdentExpr {
     #[inline]
     fn span(&self) -> Span {
         self.ident.span

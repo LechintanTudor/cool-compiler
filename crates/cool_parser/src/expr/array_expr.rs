@@ -1,7 +1,7 @@
 use crate::expr::Expr;
-use crate::{ParseResult, ParseTree, Parser};
+use crate::{ParseResult, Parser};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct ArrayExpr {
@@ -10,7 +10,7 @@ pub struct ArrayExpr {
     pub has_trailing_comma: bool,
 }
 
-impl ParseTree for ArrayExpr {
+impl Section for ArrayExpr {
     #[inline]
     fn span(&self) -> Span {
         self.span

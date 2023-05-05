@@ -1,6 +1,6 @@
-use crate::{Ident, ParseResult, ParseTree, Parser};
+use crate::{Ident, ParseResult, Parser};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct Pattern {
@@ -9,7 +9,7 @@ pub struct Pattern {
     pub ident: Ident,
 }
 
-impl ParseTree for Pattern {
+impl Section for Pattern {
     #[inline]
     fn span(&self) -> Span {
         self.span

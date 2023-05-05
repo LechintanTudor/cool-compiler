@@ -1,8 +1,7 @@
-use crate::parse_tree::ParseTree;
 use crate::{ParseResult, Parser};
 use cool_lexer::symbols::{sym, Symbol};
 use cool_lexer::tokens::{tk, TokenKind};
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Ident {
@@ -10,7 +9,7 @@ pub struct Ident {
     pub symbol: Symbol,
 }
 
-impl ParseTree for Ident {
+impl Section for Ident {
     #[inline]
     fn span(&self) -> Span {
         self.span

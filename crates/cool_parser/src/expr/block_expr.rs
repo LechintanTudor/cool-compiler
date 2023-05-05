@@ -1,6 +1,6 @@
-use crate::{BlockElem, Expr, ParseResult, ParseTree, Parser, Stmt};
+use crate::{BlockElem, Expr, ParseResult, Parser, Stmt};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct BlockExpr {
@@ -9,7 +9,7 @@ pub struct BlockExpr {
     pub expr: Option<Box<Expr>>,
 }
 
-impl ParseTree for BlockExpr {
+impl Section for BlockExpr {
     #[inline]
     fn span(&self) -> Span {
         self.span

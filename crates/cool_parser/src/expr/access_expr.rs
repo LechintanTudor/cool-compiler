@@ -1,5 +1,5 @@
-use crate::{Expr, Ident, ParseTree};
-use cool_span::Span;
+use crate::{Expr, Ident};
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct AccessExpr {
@@ -7,7 +7,7 @@ pub struct AccessExpr {
     pub ident: Ident,
 }
 
-impl ParseTree for AccessExpr {
+impl Section for AccessExpr {
     #[inline]
     fn span(&self) -> Span {
         self.base.span().to(self.ident.span())

@@ -1,6 +1,6 @@
-use crate::{Decl, ParseResult, ParseTree, Parser};
+use crate::{Decl, ParseResult, Parser};
 use cool_lexer::tokens::{tk, TokenKind};
-use cool_span::Span;
+use cool_span::{Section, Span};
 use derive_more::From;
 
 #[derive(Clone, Debug)]
@@ -20,7 +20,7 @@ pub struct ModuleItem {
     pub kind: ModuleKind,
 }
 
-impl ParseTree for ModuleItem {
+impl Section for ModuleItem {
     #[inline]
     fn span(&self) -> Span {
         self.span

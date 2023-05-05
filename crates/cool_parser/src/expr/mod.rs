@@ -29,9 +29,9 @@ pub use self::return_expr::*;
 pub use self::struct_expr::*;
 pub use self::subscript_expr::*;
 pub use self::tuple_expr::*;
-use crate::{BinOp, Ident, ParseResult, ParseTree, Parser};
+use crate::{BinOp, Ident, ParseResult, Parser};
 use cool_lexer::tokens::{tk, TokenKind};
-use cool_span::Span;
+use cool_span::{Section, Span};
 use derive_more::From;
 use paste::paste;
 
@@ -44,7 +44,7 @@ macro_rules! define_expr {
             }
         }
 
-        impl ParseTree for Expr {
+        impl Section for Expr {
             fn span(&self) -> Span {
                 match self {
                     $(Self::$Variant(e) => e.span(),)+

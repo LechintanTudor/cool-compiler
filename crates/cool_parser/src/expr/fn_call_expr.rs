@@ -1,7 +1,7 @@
 use crate::expr::Expr;
-use crate::{ParseResult, ParseTree, Parser};
+use crate::{ParseResult, Parser};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct FnCallExpr {
@@ -11,7 +11,7 @@ pub struct FnCallExpr {
     pub has_trailing_comma: bool,
 }
 
-impl ParseTree for FnCallExpr {
+impl Section for FnCallExpr {
     #[inline]
     fn span(&self) -> Span {
         self.span

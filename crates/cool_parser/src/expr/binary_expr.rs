@@ -1,5 +1,5 @@
-use crate::{BinOp, Expr, ParseTree};
-use cool_span::Span;
+use crate::{BinOp, Expr};
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct BinaryExpr {
@@ -8,7 +8,7 @@ pub struct BinaryExpr {
     pub rhs: Box<Expr>,
 }
 
-impl ParseTree for BinaryExpr {
+impl Section for BinaryExpr {
     #[inline]
     fn span(&self) -> Span {
         self.lhs.span().to(self.rhs.span())

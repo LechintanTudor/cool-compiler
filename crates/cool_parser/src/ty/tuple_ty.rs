@@ -1,6 +1,6 @@
-use crate::{ParseResult, ParseTree, Parser, Ty};
+use crate::{ParseResult, Parser, Ty};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct TupleTy {
@@ -9,7 +9,7 @@ pub struct TupleTy {
     pub has_trailing_comma: bool,
 }
 
-impl ParseTree for TupleTy {
+impl Section for TupleTy {
     #[inline]
     fn span(&self) -> Span {
         self.span

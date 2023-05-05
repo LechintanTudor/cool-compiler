@@ -1,7 +1,7 @@
 use crate::expr::Expr;
-use crate::{AssignOp, ParseResult, ParseTree, Parser};
+use crate::{AssignOp, ParseResult, Parser};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct AssignStmt {
@@ -11,7 +11,7 @@ pub struct AssignStmt {
     pub rvalue: Box<Expr>,
 }
 
-impl ParseTree for AssignStmt {
+impl Section for AssignStmt {
     #[inline]
     fn span(&self) -> Span {
         self.span

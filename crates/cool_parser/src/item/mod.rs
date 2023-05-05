@@ -9,9 +9,9 @@ pub use self::const_item::*;
 pub use self::extern_fn_item::*;
 pub use self::module_item::*;
 pub use self::struct_item::*;
-use crate::{AbstractFn, ParseResult, ParseTree, Parser};
+use crate::{AbstractFn, ParseResult, Parser};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 use derive_more::From;
 use paste::paste;
 
@@ -24,7 +24,7 @@ macro_rules! define_item {
             }
         }
 
-        impl ParseTree for Item {
+        impl Section for Item {
             fn span(&self) -> Span {
                 match self {
                     $(Self::$Variant(i) => i.span(),)+

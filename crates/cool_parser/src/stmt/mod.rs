@@ -5,8 +5,7 @@ mod expr_stmt;
 pub use self::assign_stmt::*;
 pub use self::decl_stmt::*;
 pub use self::expr_stmt::*;
-use crate::ParseTree;
-use cool_span::Span;
+use cool_span::{Section, Span};
 use derive_more::From;
 use paste::paste;
 
@@ -19,7 +18,7 @@ macro_rules! define_stmt {
             }
         }
 
-        impl ParseTree for Stmt {
+        impl Section for Stmt {
             fn span(&self) -> Span {
                 match self {
                     $(Self::$Variant(s) => s.span(),)+

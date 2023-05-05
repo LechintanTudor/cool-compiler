@@ -1,12 +1,12 @@
-use crate::{Expr, ParseTree};
-use cool_span::Span;
+use crate::Expr;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct ConstItem {
     pub expr: Expr,
 }
 
-impl ParseTree for ConstItem {
+impl Section for ConstItem {
     #[inline]
     fn span(&self) -> Span {
         self.expr.span()

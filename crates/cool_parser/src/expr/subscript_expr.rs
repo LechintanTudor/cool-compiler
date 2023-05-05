@@ -1,6 +1,6 @@
-use crate::{Expr, ParseResult, ParseTree, Parser};
+use crate::{Expr, ParseResult, Parser};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct SubscriptExpr {
@@ -9,7 +9,7 @@ pub struct SubscriptExpr {
     pub subscript: Box<Expr>,
 }
 
-impl ParseTree for SubscriptExpr {
+impl Section for SubscriptExpr {
     #[inline]
     fn span(&self) -> Span {
         self.span

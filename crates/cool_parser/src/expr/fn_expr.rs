@@ -1,7 +1,7 @@
 use crate::expr::BlockExpr;
-use crate::{AbstractFn, ExternFnItem, FnPrototype, ParseResult, ParseTree, Parser};
+use crate::{AbstractFn, ExternFnItem, FnPrototype, ParseResult, Parser};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct FnExpr {
@@ -9,7 +9,7 @@ pub struct FnExpr {
     pub body: BlockExpr,
 }
 
-impl ParseTree for FnExpr {
+impl Section for FnExpr {
     #[inline]
     fn span(&self) -> Span {
         self.prototype.span().to(self.body.span())

@@ -1,8 +1,8 @@
 use crate::expr::Expr;
 use crate::ty::Ty;
-use crate::{ParseResult, ParseTree, Parser, Pattern};
+use crate::{ParseResult, Parser, Pattern};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct DeclStmt {
@@ -12,7 +12,7 @@ pub struct DeclStmt {
     pub expr: Box<Expr>,
 }
 
-impl ParseTree for DeclStmt {
+impl Section for DeclStmt {
     #[inline]
     fn span(&self) -> Span {
         self.span

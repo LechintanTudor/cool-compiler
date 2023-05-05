@@ -1,8 +1,8 @@
 use crate::expr::Expr;
 use crate::stmt::{ExprStmt, Stmt};
-use crate::{AssignOp, ParseResult, ParseTree, Parser};
+use crate::{AssignOp, ParseResult, Parser};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 use derive_more::From;
 
 macro_rules! define_block_elem {
@@ -12,7 +12,7 @@ macro_rules! define_block_elem {
             $($Variant($Variant),)+
         }
 
-        impl ParseTree for BlockElem {
+        impl Section for BlockElem {
             fn span(&self) -> Span {
                 match self {
                     $(Self::$Variant(e) => e.span(),)+

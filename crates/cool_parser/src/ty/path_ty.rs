@@ -1,14 +1,14 @@
-use crate::{Ident, IdentVec, ParseResult, ParseTree, Parser};
+use crate::{Ident, IdentVec, ParseResult, Parser};
 use cool_lexer::symbols::sym;
 use cool_lexer::tokens::{tk, TokenKind};
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct PathTy {
     pub idents: IdentVec,
 }
 
-impl ParseTree for PathTy {
+impl Section for PathTy {
     fn span(&self) -> Span {
         let start = self
             .idents

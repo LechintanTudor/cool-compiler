@@ -1,7 +1,7 @@
 use crate::item::Item;
-use crate::{Ident, ParseResult, ParseTree, Parser, Ty};
+use crate::{Ident, ParseResult, Parser, Ty};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct ItemDecl {
@@ -10,7 +10,7 @@ pub struct ItemDecl {
     pub item: Item,
 }
 
-impl ParseTree for ItemDecl {
+impl Section for ItemDecl {
     #[inline]
     fn span(&self) -> Span {
         self.ident.span.to(self.item.span())

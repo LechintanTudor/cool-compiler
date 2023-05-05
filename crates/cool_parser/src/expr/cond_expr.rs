@@ -1,6 +1,6 @@
-use crate::{BlockExpr, Expr, ParseResult, ParseTree, Parser};
+use crate::{BlockExpr, Expr, ParseResult, Parser};
 use cool_lexer::tokens::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct CondBlock {
@@ -8,7 +8,7 @@ pub struct CondBlock {
     pub expr: BlockExpr,
 }
 
-impl ParseTree for CondBlock {
+impl Section for CondBlock {
     #[inline]
     fn span(&self) -> Span {
         self.cond.span().to(self.expr.span())
@@ -23,7 +23,7 @@ pub struct CondExpr {
     pub else_block: Option<BlockExpr>,
 }
 
-impl ParseTree for CondExpr {
+impl Section for CondExpr {
     #[inline]
     fn span(&self) -> Span {
         self.span
@@ -41,7 +41,7 @@ impl Parser<'_> {
             if self.bump_if_eq(tk::KW_ELSE).is_none() {
                 let end_span = else_if_blocks
                     .last()
-                    .map(ParseTree::span)
+                    .map(Section::span)
                     .unwrap_or_else(|| if_block.span());
 
                 return Ok(CondExpr {

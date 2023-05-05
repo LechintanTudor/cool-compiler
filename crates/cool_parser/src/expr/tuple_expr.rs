@@ -1,6 +1,5 @@
 use crate::expr::Expr;
-use crate::ParseTree;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct TupleExpr {
@@ -9,7 +8,7 @@ pub struct TupleExpr {
     pub has_trailing_comma: bool,
 }
 
-impl ParseTree for TupleExpr {
+impl Section for TupleExpr {
     #[inline]
     fn span(&self) -> Span {
         self.span
