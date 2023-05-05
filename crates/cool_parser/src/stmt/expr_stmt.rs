@@ -5,7 +5,7 @@ use cool_span::Span;
 #[derive(Clone, Debug)]
 pub struct ExprStmt {
     pub span: Span,
-    pub expr: Expr,
+    pub expr: Box<Expr>,
 }
 
 impl ParseTree for ExprStmt {
@@ -21,7 +21,7 @@ impl From<Expr> for ExprStmt {
 
         Self {
             span: expr.span(),
-            expr,
+            expr: Box::new(expr),
         }
     }
 }

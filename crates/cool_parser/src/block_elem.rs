@@ -54,7 +54,7 @@ impl Parser<'_> {
                 let semicolon = self.bump_expect(&tk::SEMICOLON)?;
                 BlockElem::Stmt(Stmt::Expr(ExprStmt {
                     span: expr.span().to(semicolon.span),
-                    expr,
+                    expr: Box::new(expr),
                 }))
             }
             token => {

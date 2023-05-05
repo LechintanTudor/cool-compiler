@@ -5,7 +5,7 @@ use cool_span::Span;
 
 #[derive(Clone, Debug)]
 pub struct FnExpr {
-    pub prototype: FnPrototype,
+    pub prototype: Box<FnPrototype>,
     pub body: BlockExpr,
 }
 
@@ -31,7 +31,13 @@ impl Parser<'_> {
         };
 
         let abstract_fn: AbstractFn = match body {
-            Some(body) => FnExpr { prototype, body }.into(),
+            Some(body) => {
+                FnExpr {
+                    prototype: Box::new(prototype),
+                    body,
+                }
+                .into()
+            }
             None => ExternFnItem { prototype }.into(),
         };
 

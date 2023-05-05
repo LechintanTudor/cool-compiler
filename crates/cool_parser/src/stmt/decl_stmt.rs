@@ -8,8 +8,8 @@ use cool_span::Span;
 pub struct DeclStmt {
     pub span: Span,
     pub pattern: Pattern,
-    pub ty: Option<Ty>,
-    pub expr: Expr,
+    pub ty: Option<Box<Ty>>,
+    pub expr: Box<Expr>,
 }
 
 impl ParseTree for DeclStmt {
@@ -42,8 +42,8 @@ impl Parser<'_> {
         Ok(DeclStmt {
             span: pattern.span().to(end_token.span),
             pattern,
-            ty,
-            expr,
+            ty: ty.map(Box::new),
+            expr: Box::new(expr),
         })
     }
 }

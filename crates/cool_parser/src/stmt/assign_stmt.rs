@@ -7,8 +7,8 @@ use cool_span::Span;
 pub struct AssignStmt {
     pub span: Span,
     pub assign_op: AssignOp,
-    pub lvalue: Expr,
-    pub rvalue: Expr,
+    pub lvalue: Box<Expr>,
+    pub rvalue: Box<Expr>,
 }
 
 impl ParseTree for AssignStmt {
@@ -30,8 +30,8 @@ impl Parser<'_> {
         Ok(AssignStmt {
             span: lvalue.span().to(end_token.span),
             assign_op,
-            lvalue,
-            rvalue,
+            lvalue: Box::new(lvalue),
+            rvalue: Box::new(rvalue),
         })
     }
 }
