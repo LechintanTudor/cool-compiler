@@ -1,5 +1,6 @@
 mod abstract_fn;
 mod block_elem;
+mod cond_block;
 mod decl;
 mod error;
 mod expr;
@@ -15,6 +16,7 @@ mod ty;
 
 pub use self::abstract_fn::*;
 pub use self::block_elem::*;
+pub use self::cond_block::*;
 pub use self::decl::*;
 pub use self::error::*;
 pub use self::expr::*;

@@ -1,26 +1,13 @@
-use crate::{BlockExpr, Expr, ParseResult, Parser};
+use crate::{BlockExpr, CondBlock, ParseResult, Parser};
 use cool_lexer::tokens::tk;
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
-pub struct CondBlock {
-    pub cond: Box<Expr>,
-    pub expr: BlockExpr,
-}
-
-impl Section for CondBlock {
-    #[inline]
-    fn span(&self) -> Span {
-        self.cond.span().to(self.expr.span())
-    }
-}
-
-#[derive(Clone, Debug)]
 pub struct CondExpr {
     pub span: Span,
-    pub if_block: CondBlock,
+    pub if_block: Box<CondBlock>,
     pub else_if_blocks: Vec<CondBlock>,
-    pub else_block: Option<BlockExpr>,
+    pub else_block: Option<Box<BlockExpr>>,
 }
 
 impl Section for CondExpr {
@@ -46,7 +33,7 @@ impl Parser<'_> {
 
                 return Ok(CondExpr {
                     span: start_token.span.to(end_span),
-                    if_block,
+                    if_block: Box::new(if_block),
                     else_if_blocks,
                     else_block: None,
                 });
@@ -57,23 +44,13 @@ impl Parser<'_> {
 
                 return Ok(CondExpr {
                     span: start_token.span.to(else_block.span()),
-                    if_block,
+                    if_block: Box::new(if_block),
                     else_if_blocks,
-                    else_block: Some(else_block),
+                    else_block: Some(Box::new(else_block)),
                 });
             }
 
             else_if_blocks.push(self.parse_cond_block()?);
         }
-    }
-
-    fn parse_cond_block(&mut self) -> ParseResult<CondBlock> {
-        let cond = self.parse_guard_expr()?;
-        let expr = self.parse_block_expr()?;
-
-        Ok(CondBlock {
-            cond: Box::new(cond),
-            expr,
-        })
     }
 }

@@ -6,7 +6,7 @@ use cool_span::{Section, Span};
 #[derive(Clone, Debug)]
 pub struct FnExpr {
     pub prototype: Box<FnPrototype>,
-    pub body: BlockExpr,
+    pub body: Box<BlockExpr>,
 }
 
 impl Section for FnExpr {
@@ -34,7 +34,7 @@ impl Parser<'_> {
             Some(body) => {
                 FnExpr {
                     prototype: Box::new(prototype),
-                    body,
+                    body: Box::new(body),
                 }
                 .into()
             }

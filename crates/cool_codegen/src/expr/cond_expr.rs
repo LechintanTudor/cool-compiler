@@ -7,10 +7,7 @@ use inkwell::IntPredicate;
 impl<'a> CodeGenerator<'a> {
     pub fn gen_cond_expr(&mut self, expr: &CondExprAst) -> Value<'a> {
         let initial_block = self.builder.get_insert_block().unwrap();
-
-        let end_if_block = self
-            .context
-            .insert_basic_block_after(initial_block, "end_if");
+        let end_if_block = self.context.insert_basic_block_after(initial_block, "");
 
         let expr_ty_id = self.resolve[expr.expr_id];
 
@@ -25,16 +22,14 @@ impl<'a> CodeGenerator<'a> {
         let else_block = expr
             .else_block
             .as_ref()
-            .map(|_| self.context.insert_basic_block_after(initial_block, "else"));
+            .map(|_| self.context.insert_basic_block_after(initial_block, ""));
 
         let cond_block_pairs = {
             let mut cond_blocks = vec![(Box::as_ref(&expr.if_block), initial_block)];
             let mut current_block = initial_block;
 
             for cond_block_ast in expr.else_if_blocks.iter() {
-                let else_if_block = self
-                    .context
-                    .insert_basic_block_after(current_block, "then_cond");
+                let else_if_block = self.context.insert_basic_block_after(current_block, "");
 
                 cond_blocks.push((cond_block_ast, else_if_block));
                 current_block = else_if_block;
@@ -91,7 +86,7 @@ impl<'a> CodeGenerator<'a> {
     ) {
         let current_block = self.builder.get_insert_block().unwrap();
 
-        let then_block = self.context.insert_basic_block_after(current_block, "then");
+        let then_block = self.context.insert_basic_block_after(current_block, "");
         self.builder.position_at_end(then_block);
         let value = self.gen_block_expr(&cond_block_ast.expr);
 
