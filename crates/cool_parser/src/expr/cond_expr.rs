@@ -47,7 +47,7 @@ impl Parser<'_> {
                 return Ok(CondExpr {
                     span: start_token.span.to(end_span),
                     if_block,
-                    else_if_blocks: vec![],
+                    else_if_blocks,
                     else_block: None,
                 });
             }
@@ -58,7 +58,7 @@ impl Parser<'_> {
                 return Ok(CondExpr {
                     span: start_token.span.to(else_block.span()),
                     if_block,
-                    else_if_blocks: vec![],
+                    else_if_blocks,
                     else_block: Some(else_block),
                 });
             }

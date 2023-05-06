@@ -35,6 +35,9 @@ pub enum AstError {
 
     #[error(transparent)]
     ModuleUsedAsExpr(#[from] ModuleUsedAsExpr),
+
+    #[error(transparent)]
+    MissingElseBlock(#[from] MissingElseBlock),
 }
 
 #[derive(Clone, Error, Debug)]
@@ -91,3 +94,7 @@ pub struct LiteralUnknownSuffix {
 #[derive(Clone, Error, Debug)]
 #[error("expression evaluates to a module")]
 pub struct ModuleUsedAsExpr;
+
+#[derive(Clone, Error, Debug)]
+#[error("missing else block in non-unit expression")]
+pub struct MissingElseBlock;

@@ -1,6 +1,8 @@
 mod binary_expr;
+mod cond_expr;
 
 pub use self::binary_expr::*;
+pub use self::cond_expr::*;
 use crate::{AnyValueEnumExt, CodeGenerator, Value};
 use cool_ast::{
     BindingExprAst, BlockExprAst, ExprAst, FnCallExprAst, LiteralExprAst, LiteralExprValue,
@@ -12,6 +14,7 @@ impl<'a> CodeGenerator<'a> {
         match expr {
             ExprAst::Binary(e) => self.gen_binary_expr(e).into(),
             ExprAst::Block(e) => self.gen_block_expr(e),
+            ExprAst::Cond(e) => self.gen_cond_expr(e),
             ExprAst::FnCall(e) => self.gen_fn_call_expr(e),
             ExprAst::Binding(e) => self.gen_ident_expr(e),
             ExprAst::Literal(e) => self.gen_literal_expr(e).into(),
@@ -77,6 +80,11 @@ impl<'a> CodeGenerator<'a> {
                 let ty_id = self.resolve[expr.expr_id];
                 let float_ty = self.tys[ty_id].into_float_type();
                 float_ty.const_float(*value).into()
+            }
+            LiteralExprValue::Bool(value) => {
+                let ty_id = self.resolve[expr.expr_id];
+                let bool_ty = self.tys[ty_id].into_int_type();
+                bool_ty.const_int(*value as u64, false).into()
             }
             LiteralExprValue::Cstr(value) => {
                 self.builder

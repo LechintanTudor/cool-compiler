@@ -18,12 +18,13 @@ use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::passes::PassManager;
 use inkwell::targets::{CodeModel, InitializationConfig, RelocMode, Target, TargetTriple};
-use inkwell::values::{FunctionValue, InstructionValue};
+use inkwell::values::{FunctionValue, InstructionValue, IntValue};
 use inkwell::OptimizationLevel;
 use rustc_hash::FxHashMap;
 
 pub struct CodeGenerator<'a> {
     context: &'a Context,
+    llvm_true: IntValue<'a>,
     resolve: &'a ResolveContext,
     tys: GeneratedTys<'a>,
     fns: FxHashMap<ItemId, FunctionValue<'a>>,
@@ -61,6 +62,8 @@ impl<'a> CodeGenerator<'a> {
         let target_triple = TargetTriple::create(target_triple);
         let target = Target::from_triple(&target_triple).unwrap();
 
+        let llvm_true = context.bool_type().const_int(1, false);
+
         let module = context.create_module(crate_name);
         module.set_source_file_name(crate_root_file);
         module.set_triple(&target_triple);
@@ -86,6 +89,7 @@ impl<'a> CodeGenerator<'a> {
 
         Self {
             context,
+            llvm_true,
             resolve,
             tys,
             fns: Default::default(),
