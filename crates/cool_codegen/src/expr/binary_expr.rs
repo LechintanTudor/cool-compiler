@@ -1,12 +1,19 @@
 use crate::CodeGenerator;
-use cool_ast::{ArithmeticBinOpAst, BinOpAst, BinaryExprAst, BitwiseBinOpAst, ExprAst};
-use inkwell::values::{AnyValue, AnyValueEnum};
+use cool_ast::{
+    ArithmeticBinOpAst, BinOpAst, BinaryExprAst, BitwiseBinOpAst, ComparisonBinOpAst, ExprAst,
+};
+use inkwell::values::{AnyValue, AnyValueEnum, IntValue};
+use inkwell::{FloatPredicate as FloatP, IntPredicate as IntP};
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_binary_expr(&mut self, expr: &BinaryExprAst) -> AnyValueEnum<'a> {
+        let lhs = &expr.lhs;
+        let rhs = &expr.rhs;
+
         match expr.bin_op {
-            BinOpAst::Arithmetic(bin_op) => self.gen_arithmetic_expr(&expr.lhs, &expr.rhs, bin_op),
-            BinOpAst::Bitwise(bin_op) => self.gen_bitwise_expr(&expr.lhs, &expr.rhs, bin_op),
+            BinOpAst::Arithmetic(bin_op) => self.gen_arithmetic_expr(lhs, rhs, bin_op),
+            BinOpAst::Comparison(bin_op) => self.gen_comparison_expr(lhs, rhs, bin_op),
+            BinOpAst::Bitwise(bin_op) => self.gen_bitwise_expr(lhs, rhs, bin_op),
             _ => todo!(),
         }
     }
@@ -90,6 +97,45 @@ impl<'a> CodeGenerator<'a> {
         }
     }
 
+    fn gen_comparison_expr(
+        &mut self,
+        lhs: &ExprAst,
+        rhs: &ExprAst,
+        bin_op: ComparisonBinOpAst,
+    ) -> AnyValueEnum<'a> {
+        let lhs = {
+            let value = self.gen_expr(lhs);
+            self.gen_loaded_value(value).unwrap()
+        };
+        let rhs = {
+            let value = self.gen_expr(rhs);
+            self.gen_loaded_value(value).unwrap()
+        };
+
+        let value = match bin_op {
+            ComparisonBinOpAst::IntEq => self.util_gen_int_compare(lhs, rhs, IntP::EQ),
+            ComparisonBinOpAst::IntNe => self.util_gen_int_compare(lhs, rhs, IntP::NE),
+            ComparisonBinOpAst::UintLt => self.util_gen_int_compare(lhs, rhs, IntP::ULT),
+            ComparisonBinOpAst::SintLt => self.util_gen_int_compare(lhs, rhs, IntP::SLT),
+            ComparisonBinOpAst::UintLe => self.util_gen_int_compare(lhs, rhs, IntP::ULE),
+            ComparisonBinOpAst::SintLe => self.util_gen_int_compare(lhs, rhs, IntP::SLE),
+            ComparisonBinOpAst::UintGt => self.util_gen_int_compare(lhs, rhs, IntP::UGT),
+            ComparisonBinOpAst::SintGt => self.util_gen_int_compare(lhs, rhs, IntP::SGT),
+            ComparisonBinOpAst::UintGe => self.util_gen_int_compare(lhs, rhs, IntP::SGE),
+            ComparisonBinOpAst::SintGe => self.util_gen_int_compare(lhs, rhs, IntP::SGE),
+            ComparisonBinOpAst::FloatEq => self.util_gen_float_compare(lhs, rhs, FloatP::OEQ),
+            ComparisonBinOpAst::FloatNe => self.util_gen_float_compare(lhs, rhs, FloatP::ONE),
+            ComparisonBinOpAst::FloatLt => self.util_gen_float_compare(lhs, rhs, FloatP::OLT),
+            ComparisonBinOpAst::FloatLe => self.util_gen_float_compare(lhs, rhs, FloatP::OLE),
+            ComparisonBinOpAst::FloatGt => self.util_gen_float_compare(lhs, rhs, FloatP::OGT),
+            ComparisonBinOpAst::FloatGe => self.util_gen_float_compare(lhs, rhs, FloatP::OGE),
+        };
+
+        self.builder
+            .build_int_z_extend(value, self.tys.i8_ty(), "")
+            .as_any_value_enum()
+    }
+
     fn gen_bitwise_expr(
         &mut self,
         lhs: &ExprAst,
@@ -115,5 +161,29 @@ impl<'a> CodeGenerator<'a> {
         };
 
         value.as_any_value_enum()
+    }
+
+    fn util_gen_int_compare(
+        &mut self,
+        lhs: AnyValueEnum<'a>,
+        rhs: AnyValueEnum<'a>,
+        predicate: IntP,
+    ) -> IntValue<'a> {
+        self.builder
+            .build_int_compare(predicate, lhs.into_int_value(), rhs.into_int_value(), "")
+    }
+
+    fn util_gen_float_compare(
+        &mut self,
+        lhs: AnyValueEnum<'a>,
+        rhs: AnyValueEnum<'a>,
+        predicate: FloatP,
+    ) -> IntValue<'a> {
+        self.builder.build_float_compare(
+            predicate,
+            lhs.into_float_value(),
+            rhs.into_float_value(),
+            "",
+        )
     }
 }

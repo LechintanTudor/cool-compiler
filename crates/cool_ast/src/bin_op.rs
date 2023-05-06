@@ -1,5 +1,5 @@
 use crate::TyMismatch;
-use cool_parser::{ArithmeticBinOp, BitwiseBinOp};
+use cool_parser::{ArithmeticBinOp, BitwiseBinOp, ComparisonBinOp};
 use cool_resolve::{tys, TyId};
 use derive_more::From;
 
@@ -96,8 +96,8 @@ impl ArithmeticBinOpAst {
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum ComparisonBinOpAst {
-    Eq,
-    Ne,
+    IntEq,
+    IntNe,
     UintLt,
     SintLt,
     UintLe,
@@ -106,10 +106,59 @@ pub enum ComparisonBinOpAst {
     SintGt,
     UintGe,
     SintGe,
+    FloatEq,
+    FloatNe,
     FloatLt,
     FloatLe,
     FloatGt,
     FloatGe,
+}
+
+impl ComparisonBinOpAst {
+    pub fn new(bin_op: ComparisonBinOp, number_kind: NumberKind) -> Self {
+        match bin_op {
+            ComparisonBinOp::Eq => {
+                match number_kind {
+                    NumberKind::Sint | NumberKind::Uint => ComparisonBinOpAst::IntEq,
+                    NumberKind::Float => ComparisonBinOpAst::FloatEq,
+                }
+            }
+            ComparisonBinOp::Ne => {
+                match number_kind {
+                    NumberKind::Sint | NumberKind::Uint => ComparisonBinOpAst::IntNe,
+                    NumberKind::Float => ComparisonBinOpAst::FloatNe,
+                }
+            }
+            ComparisonBinOp::Lt => {
+                match number_kind {
+                    NumberKind::Sint => ComparisonBinOpAst::SintLt,
+                    NumberKind::Uint => ComparisonBinOpAst::UintLt,
+                    NumberKind::Float => ComparisonBinOpAst::FloatLt,
+                }
+            }
+            ComparisonBinOp::Le => {
+                match number_kind {
+                    NumberKind::Sint => ComparisonBinOpAst::SintLe,
+                    NumberKind::Uint => ComparisonBinOpAst::UintLe,
+                    NumberKind::Float => ComparisonBinOpAst::FloatLe,
+                }
+            }
+            ComparisonBinOp::Gt => {
+                match number_kind {
+                    NumberKind::Sint => ComparisonBinOpAst::SintGe,
+                    NumberKind::Uint => ComparisonBinOpAst::UintGe,
+                    NumberKind::Float => ComparisonBinOpAst::FloatGe,
+                }
+            }
+            ComparisonBinOp::Ge => {
+                match number_kind {
+                    NumberKind::Sint => ComparisonBinOpAst::SintGe,
+                    NumberKind::Uint => ComparisonBinOpAst::UintGe,
+                    NumberKind::Float => ComparisonBinOpAst::FloatGe,
+                }
+            }
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]

@@ -1,6 +1,6 @@
 use crate::{
-    ArithmeticBinOpAst, AstGenerator, AstResult, BinOpAst, BitwiseBinOpAst, ExprAst, NumberKind,
-    TyMismatch,
+    ArithmeticBinOpAst, AstGenerator, AstResult, BinOpAst, BitwiseBinOpAst, ComparisonBinOpAst,
+    ExprAst, NumberKind, TyMismatch,
 };
 use cool_parser::{BinOp, BinaryExpr};
 use cool_resolve::{tys, ExprId, FrameId, TyId};
@@ -31,6 +31,21 @@ impl AstGenerator<'_> {
 
                 BinaryExprAst {
                     expr_id: self.resolve.add_expr(ty_id),
+                    bin_op: bin_op.into(),
+                    lhs: Box::new(lhs),
+                    rhs: Box::new(rhs),
+                }
+            }
+            BinOp::Comparison(bin_op) => {
+                let lhs = self.gen_expr(frame_id, tys::INFERRED, &binary_expr.lhs)?;
+                let operator_ty_id = self.resolve[lhs.id()];
+                let rhs = self.gen_expr(frame_id, operator_ty_id, &binary_expr.rhs)?;
+
+                let number_kind = NumberKind::try_from(operator_ty_id)?;
+                let bin_op = ComparisonBinOpAst::new(bin_op, number_kind);
+
+                BinaryExprAst {
+                    expr_id: self.resolve.add_expr(tys::BOOL),
                     bin_op: bin_op.into(),
                     lhs: Box::new(lhs),
                     rhs: Box::new(rhs),

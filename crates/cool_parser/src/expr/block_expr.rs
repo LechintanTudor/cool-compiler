@@ -44,7 +44,7 @@ impl Parser<'_> {
                     }
                 }
                 BlockElem::Stmt(stmt) => {
-                    stmts.push(stmt.into());
+                    stmts.push(stmt);
 
                     if let Some(end_token) = self.bump_if_eq(tk::CLOSE_BRACE) {
                         break (end_token, None);

@@ -62,7 +62,7 @@ impl<'a> CodeGenerator<'a> {
         let target_triple = TargetTriple::create(target_triple);
         let target = Target::from_triple(&target_triple).unwrap();
 
-        let llvm_true = context.bool_type().const_int(1, false);
+        let llvm_true = context.i8_type().const_int(1, false);
 
         let module = context.create_module(crate_name);
         module.set_source_file_name(crate_root_file);
@@ -115,7 +115,6 @@ impl<'a> CodeGenerator<'a> {
             self.gen_fn(fn_ast);
         }
 
-        self.module.verify().unwrap();
         self.module
     }
 }

@@ -1,7 +1,7 @@
 use cool_resolve::{tys, ResolveContext, TyId, TyKind};
 use inkwell::context::Context;
 use inkwell::targets::TargetData;
-use inkwell::types::{AnyTypeEnum, BasicMetadataTypeEnum, FunctionType, PointerType};
+use inkwell::types::{AnyTypeEnum, BasicMetadataTypeEnum, FunctionType, IntType, PointerType};
 use inkwell::AddressSpace;
 use rustc_hash::FxHashMap;
 use std::ops;
@@ -11,6 +11,7 @@ type TyMap<'a> = FxHashMap<TyId, AnyTypeEnum<'a>>;
 pub struct GeneratedTys<'a> {
     tys: TyMap<'a>,
     void_ty: AnyTypeEnum<'a>,
+    i8_ty: IntType<'a>,
 }
 
 impl<'a> GeneratedTys<'a> {
@@ -22,9 +23,11 @@ impl<'a> GeneratedTys<'a> {
         let mut tys = TyMap::default();
         Self::insert_builtin_tys(&mut tys, context, target_data);
         Self::insert_derived_tys(&mut tys, context, resolve);
+
         Self {
             tys,
             void_ty: context.void_type().into(),
+            i8_ty: context.i8_type(),
         }
     }
 
@@ -111,8 +114,13 @@ impl<'a> GeneratedTys<'a> {
     }
 
     #[inline]
-    pub fn void_ty(&self) -> AnyTypeEnum {
+    pub fn void_ty(&self) -> AnyTypeEnum<'a> {
         self.void_ty
+    }
+
+    #[inline]
+    pub fn i8_ty(&self) -> IntType<'a> {
+        self.i8_ty
     }
 }
 

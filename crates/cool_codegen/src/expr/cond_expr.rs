@@ -58,11 +58,18 @@ impl<'a> CodeGenerator<'a> {
 
         if let (Some(else_block_ast), Some(else_block)) = (expr.else_block.as_ref(), else_block) {
             self.builder.position_at_end(else_block);
-            let value = self.gen_block_expr(&else_block_ast);
+            let value = self.gen_block_expr(else_block_ast);
 
             if let Some(phi_value) = phi_value {
                 let value = self.gen_loaded_value(value).unwrap().into_basic_value();
-                phi_value.add_incoming(&[(&value as &dyn BasicValue, else_block)]);
+
+                let incoming_block =
+                    std::iter::successors(Some(else_block), |block| block.get_next_basic_block())
+                        .take_while(|block| block != &end_if_block)
+                        .last()
+                        .unwrap_or(else_block);
+
+                phi_value.add_incoming(&[(&value as &dyn BasicValue, incoming_block)]);
             }
 
             self.builder.build_unconditional_branch(end_if_block);
@@ -90,10 +97,19 @@ impl<'a> CodeGenerator<'a> {
 
         if let Some(phi_value) = phi_value {
             let value = self.gen_loaded_value(value).unwrap().into_basic_value();
-            phi_value.add_incoming(&[(&value as &dyn BasicValue, then_block)]);
+
+            let incoming_block =
+                std::iter::successors(Some(then_block), |block| block.get_next_basic_block())
+                    .take_while(|block| block != &else_block)
+                    .last()
+                    .unwrap_or(then_block);
+
+            phi_value.add_incoming(&[(&value as &dyn BasicValue, incoming_block)]);
         }
 
         self.builder.build_unconditional_branch(end_if_block);
+
+        self.builder.position_at_end(current_block);
 
         let cond_value = self
             .gen_rvalue_expr(&cond_block_ast.cond)
@@ -107,7 +123,6 @@ impl<'a> CodeGenerator<'a> {
             "cond_expr",
         );
 
-        self.builder.position_at_end(current_block);
         self.builder
             .build_conditional_branch(cond_value, then_block, else_block);
     }
