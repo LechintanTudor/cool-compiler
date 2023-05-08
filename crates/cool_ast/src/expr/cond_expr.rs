@@ -1,12 +1,6 @@
-use crate::{AstGenerator, AstResult, BlockExprAst, ExprAst, MissingElseBlock};
-use cool_parser::{CondBlock, CondExpr};
+use crate::{AstGenerator, AstResult, BlockExprAst, CondBlockAst, MissingElseBlock};
+use cool_parser::CondExpr;
 use cool_resolve::{tys, ExprId, FrameId, TyId};
-
-#[derive(Clone, Debug)]
-pub struct CondBlockAst {
-    pub cond: ExprAst,
-    pub expr: BlockExprAst,
-}
 
 #[derive(Clone, Debug)]
 pub struct CondExprAst {
@@ -47,18 +41,6 @@ impl AstGenerator<'_> {
             if_block: Box::new(if_block),
             else_if_blocks,
             else_block: else_block.map(Box::new),
-        })
-    }
-
-    fn gen_cond_block(
-        &mut self,
-        frame_id: FrameId,
-        expected_ty_id: TyId,
-        block: &CondBlock,
-    ) -> AstResult<CondBlockAst> {
-        Ok(CondBlockAst {
-            cond: self.gen_expr(frame_id, tys::BOOL, &block.cond)?,
-            expr: self.gen_block_expr(frame_id, expected_ty_id, &block.expr)?,
         })
     }
 }

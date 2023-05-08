@@ -1,5 +1,6 @@
 mod ast_generator;
 mod bin_op;
+mod cond_block;
 mod error;
 mod expr;
 mod function;
@@ -9,6 +10,7 @@ mod stmt;
 
 pub use self::ast_generator::*;
 pub use self::bin_op::*;
+pub use self::cond_block::*;
 pub use self::error::*;
 pub use self::expr::*;
 pub use self::function::*;

@@ -1,8 +1,10 @@
 mod binary_expr;
 mod cond_expr;
+mod while_expr;
 
 pub use self::binary_expr::*;
 pub use self::cond_expr::*;
+pub use self::while_expr::*;
 use crate::{AnyValueEnumExt, CodeGenerator, Value};
 use cool_ast::{
     BindingExprAst, BlockExprAst, ExprAst, FnCallExprAst, LiteralExprAst, LiteralExprValue,
@@ -18,7 +20,8 @@ impl<'a> CodeGenerator<'a> {
             ExprAst::FnCall(e) => self.gen_fn_call_expr(e),
             ExprAst::Binding(e) => self.gen_ident_expr(e),
             ExprAst::Literal(e) => self.gen_literal_expr(e).into(),
-            ExprAst::Module(_) => panic!("module exprs are not allowed here"),
+            ExprAst::While(e) => self.gen_while_expr(e),
+            _ => panic!("unsupported operation"),
         }
     }
 

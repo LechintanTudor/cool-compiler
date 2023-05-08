@@ -5,6 +5,7 @@ mod cond_expr;
 mod fn_call_expr;
 mod ident_expr;
 mod literal_expr;
+mod while_expr;
 
 pub use self::access_expr::*;
 pub use self::binary_expr::*;
@@ -13,6 +14,7 @@ pub use self::cond_expr::*;
 pub use self::fn_call_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
+pub use self::while_expr::*;
 use crate::{AstGenerator, AstResult, ModuleUsedAsExpr};
 use cool_parser::Expr;
 use cool_resolve::{ExprId, FrameId, TyId};
@@ -46,6 +48,7 @@ define_expr_ast! {
     FnCall,
     Literal,
     Module,
+    While,
 }
 
 impl ExprAst {
@@ -79,6 +82,7 @@ impl AstGenerator<'_> {
             Expr::Ident(e) => self.gen_ident_expr(frame_id, expected_ty_id, e)?,
             Expr::Literal(e) => self.gen_literal_expr(expected_ty_id, e)?.into(),
             Expr::Paren(e) => self.gen_expr(frame_id, expected_ty_id, &e.inner)?,
+            Expr::While(e) => self.gen_while_expr(frame_id, expected_ty_id, e)?.into(),
             _ => todo!(),
         };
 
