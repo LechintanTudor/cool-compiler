@@ -87,7 +87,7 @@ impl<'a> GeneratedTys<'a> {
             return ty;
         }
 
-        let ty: AnyTypeEnum = match &resolve[ty_id] {
+        let ty: AnyTypeEnum = match &resolve[ty_id].kind {
             TyKind::Pointer(pointer_ty) => {
                 let pointee_ty = Self::insert_ty(tys, context, resolve, pointer_ty.pointee);
 

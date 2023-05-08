@@ -19,6 +19,7 @@ impl AstGenerator<'_> {
         let fn_expr = self.gen_expr(frame_id, tys::INFERRED, &fn_call_expr.base)?;
         let fn_expr_ty_id = self.resolve[fn_expr.id()];
         let fn_ty = self.resolve[fn_expr_ty_id]
+            .kind
             .as_fn_ty()
             .ok_or(TyNotFn {
                 found: fn_expr_ty_id,

@@ -81,7 +81,10 @@ define_expr! {
 impl Expr {
     #[inline]
     pub fn is_promotable_to_stmt(&self) -> bool {
-        matches!(self, Self::Block(_) | Self::Cond(_) | Self::While(_))
+        matches!(
+            self,
+            Self::Block(_) | Self::Cond(_) | Self::Loop(_) | Self::While(_)
+        )
     }
 }
 

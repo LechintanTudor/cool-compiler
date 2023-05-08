@@ -2,7 +2,7 @@ use crate::{CompileError, CompileErrorBundle, CompileErrorKind, CompileResult, P
 use cool_resolve::{ResolveContext, StructHasDuplicatedField, StructTy, TyCannotBeDefined};
 use std::collections::VecDeque;
 
-pub fn p1_define_tys(package: &Package, resolve: &mut ResolveContext) -> CompileResult<()> {
+pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> CompileResult<()> {
     let mut errors = Vec::<CompileError>::new();
 
     let mut aliases = package
@@ -44,7 +44,7 @@ pub fn p1_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
     let mut resolve_fail_count = 0;
     'struct_loop: while let Some((module_id, item_id, struct_item)) = structs.pop_front() {
         let struct_ty = {
-            let mut struct_ty = StructTy::default();
+            let mut struct_ty = StructTy::empty(item_id);
 
             for field in struct_item.fields.iter() {
                 let ty_id = match cool_ast::resolve_ty(resolve, module_id.into(), &field.ty) {
@@ -80,7 +80,7 @@ pub fn p1_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
             struct_ty
         };
 
-        match resolve.define_struct(item_id, struct_ty) {
+        match resolve.define_struct(struct_ty) {
             Ok(true) => resolve_fail_count = 0,
             Ok(false) => {
                 structs.push_back((module_id, item_id, struct_item));

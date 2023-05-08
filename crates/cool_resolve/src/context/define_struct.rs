@@ -2,11 +2,8 @@ use crate::{
     ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveResult,
     StructHasInfiniteSize, StructTy, TyId, TyKind,
 };
-use cool_collections::id_newtype;
 use cool_lexer::symbols::Symbol;
-use std::collections::VecDeque;
-
-id_newtype!(StructId);
+use smallvec::SmallVec;
 
 impl ResolveContext {
     pub fn declare_struct(
@@ -23,8 +20,7 @@ impl ResolveContext {
             .insert_if_not_exists(item_path.as_symbol_slice())
             .ok_or(ResolveError::already_defined(symbol))?;
 
-        let struct_id = self.struct_tys.push(None);
-        let ty_id = self.tys.get_or_insert(TyKind::Struct(struct_id));
+        let ty_id = self.tys.declare_struct(item_id);
         self.items.push_checked(item_id, ItemKind::Ty(ty_id));
 
         module.elems.insert(
@@ -39,22 +35,16 @@ impl ResolveContext {
     }
 
     // TODO: Separate error type for ty definitions
-    pub fn define_struct(
-        &mut self,
-        item_id: ItemId,
-        struct_ty: StructTy,
-    ) -> Result<bool, StructHasInfiniteSize> {
-        let struct_ty_id = self.items[item_id].as_ty_id().expect("item is not a type");
+    pub fn define_struct(&mut self, struct_ty: StructTy) -> Result<bool, StructHasInfiniteSize> {
+        let ty_id = self.items[struct_ty.item_id]
+            .as_ty_id()
+            .expect("item is not a type");
 
-        let struct_id = self.tys[struct_ty_id]
-            .as_struct_id()
-            .expect("type is not a struct");
-
-        for ty_id in struct_ty.fields.values() {
-            match self.ty_contains_ty(*ty_id, struct_ty_id) {
+        for field_ty_id in struct_ty.fields.values() {
+            match self.ty_contains_ty(*field_ty_id, ty_id) {
                 Some(true) => {
                     return Err(StructHasInfiniteSize {
-                        path: self.paths[item_id].into(),
+                        path: self.paths[struct_ty.item_id].into(),
                     })
                 }
                 Some(false) => (),
@@ -62,27 +52,25 @@ impl ResolveContext {
             }
         }
 
-        self.struct_tys[struct_id] = Some(struct_ty);
+        self.tys.define_struct(struct_ty);
         Ok(true)
     }
 
     fn ty_contains_ty(&self, haysack_ty_id: TyId, needle_ty_id: TyId) -> Option<bool> {
-        let mut tys_to_check = VecDeque::<TyId>::new();
-        tys_to_check.push_back(haysack_ty_id);
+        let mut tys_to_check = SmallVec::<[TyId; 6]>::new();
+        tys_to_check.push(haysack_ty_id);
 
-        while let Some(ty_id) = tys_to_check.pop_front() {
+        while let Some(ty_id) = tys_to_check.pop() {
             if ty_id == needle_ty_id {
                 return Some(true);
             }
 
-            match &self.tys[ty_id] {
-                TyKind::Tuple(tuple_ty) => tys_to_check.extend(tuple_ty.elems.iter()),
-                TyKind::Struct(struct_id) => {
-                    let Some(struct_ty) = &self.struct_tys[*struct_id] else {
-                        return None;
-                    };
-
-                    tys_to_check.extend(struct_ty.fields.values());
+            match &self.tys.get_resolve_ty(ty_id).kind {
+                TyKind::Tuple(tuple_ty) => tys_to_check.extend(tuple_ty.elems.iter().copied()),
+                TyKind::StructDecl(_) => return None,
+                TyKind::Struct(struct_ty) => {
+                    tys_to_check
+                        .extend(struct_ty.fields.iter().map(|(_, field_ty_id)| *field_ty_id))
                 }
                 _ => (),
             }

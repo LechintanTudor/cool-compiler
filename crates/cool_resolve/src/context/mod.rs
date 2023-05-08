@@ -17,8 +17,8 @@ pub use self::resolve_error::*;
 pub use self::resolve_expr::*;
 pub use self::resolve_global::*;
 pub use self::resolve_local::*;
-use crate::{tys, Binding, Frame, ItemKind, Module, Mutability, StructTy, TyKind};
-use cool_arena::{Arena, SliceArena};
+use crate::{tys, Binding, Frame, ItemKind, Module, Mutability, PrimitiveTyProps, TyContext};
+use cool_arena::SliceArena;
 use cool_collections::IdIndexedVec;
 use cool_lexer::symbols::Symbol;
 
@@ -27,15 +27,14 @@ pub struct ResolveContext {
     paths: SliceArena<ItemId, Symbol>,
     items: IdIndexedVec<ItemId, ItemKind>,
     modules: IdIndexedVec<ModuleId, Module>,
-    tys: Arena<TyId, TyKind>,
-    struct_tys: IdIndexedVec<StructId, Option<StructTy>>,
+    tys: TyContext,
     bindings: IdIndexedVec<BindingId, Binding>,
     frames: IdIndexedVec<FrameId, Frame>,
     exprs: IdIndexedVec<ExprId, TyId>,
 }
 
-impl Default for ResolveContext {
-    fn default() -> Self {
+impl ResolveContext {
+    pub(crate) fn empty(primitives: PrimitiveTyProps) -> Self {
         Self {
             paths: Default::default(),
             items: IdIndexedVec::new(ItemKind::Module(ModuleId::dummy())),
@@ -43,8 +42,7 @@ impl Default for ResolveContext {
                 path: Default::default(),
                 elems: Default::default(),
             }),
-            tys: Default::default(),
-            struct_tys: Default::default(),
+            tys: TyContext::new(primitives),
             bindings: IdIndexedVec::new(Binding {
                 symbol: Symbol::dummy(),
                 mutability: Mutability::Immutable,

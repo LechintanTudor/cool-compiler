@@ -23,7 +23,7 @@ pub struct Import {
     pub alias: Option<Symbol>,
 }
 
-pub fn p0_parse(resove: &mut ResolveContext, options: &CompileOptions) -> CompileResult<Package> {
+pub fn p1_parse(resove: &mut ResolveContext, options: &CompileOptions) -> CompileResult<Package> {
     let mut errors = Vec::<CompileError>::new();
     let mut aliases = Vec::<Alias>::new();
     let mut structs = Vec::<Struct>::new();

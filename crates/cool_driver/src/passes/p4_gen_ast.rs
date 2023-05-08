@@ -3,7 +3,7 @@ use cool_ast::{AstGenerator, ExternFnAst, FnAst, PackageAst};
 use cool_parser::Expr;
 use cool_resolve::ResolveContext;
 
-pub fn p3_gen_ast(package: &Package, resolve: &mut ResolveContext) -> CompileResult<PackageAst> {
+pub fn p4_gen_ast(package: &Package, resolve: &mut ResolveContext) -> CompileResult<PackageAst> {
     let mut ast = AstGenerator::new(resolve);
     let mut errors = Vec::<CompileError>::new();
     let mut extern_fns = Vec::<ExternFnAst>::new();

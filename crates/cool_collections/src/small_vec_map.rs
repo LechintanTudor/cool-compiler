@@ -61,6 +61,10 @@ impl<K, V, const N: usize> SmallVecMap<K, V, N> {
             .find_map(|(k, v)| (k == key).then_some(v))
     }
 
+    pub fn iter(&self) -> impl Iterator<Item = &(K, V)> {
+        self.inner.iter()
+    }
+
     pub fn keys(&self) -> impl Iterator<Item = &K> {
         self.inner.iter().map(|(k, _)| k)
     }

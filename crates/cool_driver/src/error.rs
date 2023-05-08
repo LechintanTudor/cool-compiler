@@ -13,6 +13,15 @@ pub struct CompileErrorBundle {
     pub errors: Vec<CompileError>,
 }
 
+impl From<CompileError> for CompileErrorBundle {
+    #[inline]
+    fn from(error: CompileError) -> Self {
+        Self {
+            errors: vec![error],
+        }
+    }
+}
+
 impl fmt::Display for CompileErrorBundle {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "failed to compile package")?;
@@ -31,6 +40,18 @@ pub struct CompileError {
     pub kind: CompileErrorKind,
 }
 
+impl CompileError {
+    pub fn from_kind<K>(kind: K) -> Self
+    where
+        K: Into<CompileErrorKind>,
+    {
+        Self {
+            path: Default::default(),
+            kind: kind.into(),
+        }
+    }
+}
+
 impl fmt::Display for CompileError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "error in file {}:", self.path.display())?;
@@ -40,6 +61,9 @@ impl fmt::Display for CompileError {
 
 #[derive(Clone, Error, Debug)]
 pub enum CompileErrorKind {
+    #[error(transparent)]
+    Init(#[from] InitError),
+
     #[error(transparent)]
     Path(#[from] ModulePathsError),
 
@@ -57,6 +81,12 @@ pub enum CompileErrorKind {
 
     #[error(transparent)]
     Ast(#[from] AstError),
+}
+
+#[derive(Clone, Error, Debug)]
+#[error("failed to initialize compiler: {message}")]
+pub struct InitError {
+    pub message: String,
 }
 
 #[derive(Clone, Error, Debug)]

@@ -62,6 +62,7 @@ pub fn resolve_fn_prototype(
     match explicit_ty_id {
         Some(ty_id) => {
             let fn_ty = resolve[ty_id]
+                .kind
                 .as_fn_ty()
                 .ok_or(TyNotFn { found: ty_id })?
                 .clone();

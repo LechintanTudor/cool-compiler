@@ -14,5 +14,6 @@ members = [
 
 [workspace.dependencies]
 derive_more = "0.99"
+inkwell = { version = "0.2.0", features = ["llvm16-0"] }
 smallstr = { version = "0.3", features = ["union"] }
 smallvec = { version = "1.10", features = ["const_generics", "const_new", "union"] }

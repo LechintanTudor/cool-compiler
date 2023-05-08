@@ -3,7 +3,7 @@ use cool_ast::resolve_fn_prototype;
 use cool_parser::Expr;
 use cool_resolve::ResolveContext;
 
-pub fn p2_define_fn_tys(package: &Package, resolve: &mut ResolveContext) -> CompileResult<()> {
+pub fn p3_define_fn_tys(package: &Package, resolve: &mut ResolveContext) -> CompileResult<()> {
     let mut errors = Vec::<CompileError>::new();
 
     for extern_fn in package.extern_fns.iter() {

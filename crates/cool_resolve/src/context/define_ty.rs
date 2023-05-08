@@ -1,6 +1,6 @@
 use crate::{
     tys, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ModuleElem, ModuleId, PointerTy, ResolveContext,
-    ResolveError, ResolveResult, ScopeId, StructId, TupleTy, TyKind,
+    ResolveError, ResolveResult, ResolveTy, ScopeId, TupleTy, TyKind,
 };
 use cool_collections::id_newtype;
 use cool_lexer::symbols::{sym, Symbol};
@@ -62,7 +62,7 @@ impl TyId {
 
 impl ResolveContext {
     pub fn insert_builtin_ty(&mut self, ty_id: TyId, ty_kind: TyKind) {
-        self.tys.insert_checked(ty_id, ty_kind);
+        self.tys.insert_builtin(ty_id, ty_kind);
     }
 
     pub fn insert_builtin_ty_item(
@@ -85,7 +85,7 @@ impl ResolveContext {
             },
         );
 
-        self.tys.insert_checked(ty_id, ty_kind);
+        self.tys.insert_builtin(ty_id, ty_kind);
         self.items.push_checked(item_id, ItemKind::Ty(ty_id));
     }
 
@@ -123,8 +123,8 @@ impl ResolveContext {
     }
 
     #[inline]
-    pub fn mk_struct(&mut self, struct_id: StructId) -> TyId {
-        self.tys.get_or_insert(TyKind::Struct(struct_id))
+    pub fn mk_struct(&mut self, item_id: ItemId) -> TyId {
+        self.tys.get_or_insert(TyKind::StructDecl(item_id))
     }
 
     pub fn resolve_ty_from_path<'a, P>(&self, scope_id: ScopeId, path: P) -> ResolveResult<TyId>
@@ -142,21 +142,20 @@ impl ResolveContext {
 
     #[inline]
     pub fn iter_ty_ids(&self) -> impl Iterator<Item = TyId> {
-        self.tys.iter_ids()
+        self.tys.iter_ty_ids()
     }
 
     #[inline]
     pub fn is_ty_id_zst(&self, ty_id: TyId) -> bool {
-        // TODO: Handle structs and tuples with only zst.
-        ty_id == tys::UNIT
+        self.tys.get_resolve_ty(ty_id).is_zst()
     }
 }
 
 impl ops::Index<TyId> for ResolveContext {
-    type Output = TyKind;
+    type Output = ResolveTy;
 
     #[inline]
     fn index(&self, ty_id: TyId) -> &Self::Output {
-        &self.tys[ty_id]
+        self.tys.get_resolve_ty(ty_id)
     }
 }

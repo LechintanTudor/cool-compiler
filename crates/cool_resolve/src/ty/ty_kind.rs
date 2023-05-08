@@ -1,7 +1,11 @@
-use crate::{FnAbi, StructId, TyId};
+use crate::{FnAbi, ItemId, TyId};
+use cool_collections::SmallVecMap;
+use cool_lexer::symbols::Symbol;
+use derive_more::From;
 use smallvec::SmallVec;
+use std::hash::{Hash, Hasher};
 
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, PartialEq, Eq, Hash, From, Debug)]
 pub enum TyKind {
     Inferred(InferredTy),
     Unit,
@@ -12,7 +16,8 @@ pub enum TyKind {
     Pointer(PointerTy),
     Tuple(TupleTy),
     Fn(FnTy),
-    Struct(StructId),
+    StructDecl(ItemId),
+    Struct(StructTy),
     Module,
 }
 
@@ -30,63 +35,6 @@ impl TyKind {
             Self::Fn(fn_ty) => Some(fn_ty),
             _ => None,
         }
-    }
-
-    #[inline]
-    pub fn as_struct_id(&self) -> Option<StructId> {
-        match self {
-            Self::Struct(struct_id) => Some(*struct_id),
-            _ => None,
-        }
-    }
-}
-
-impl From<InferredTy> for TyKind {
-    #[inline]
-    fn from(ty: InferredTy) -> Self {
-        Self::Inferred(ty)
-    }
-}
-
-impl From<IntTy> for TyKind {
-    #[inline]
-    fn from(ty: IntTy) -> Self {
-        Self::Int(ty)
-    }
-}
-
-impl From<FloatTy> for TyKind {
-    #[inline]
-    fn from(ty: FloatTy) -> Self {
-        Self::Float(ty)
-    }
-}
-
-impl From<PointerTy> for TyKind {
-    #[inline]
-    fn from(ty: PointerTy) -> Self {
-        Self::Pointer(ty)
-    }
-}
-
-impl From<TupleTy> for TyKind {
-    #[inline]
-    fn from(ty: TupleTy) -> Self {
-        Self::Tuple(ty)
-    }
-}
-
-impl From<FnTy> for TyKind {
-    #[inline]
-    fn from(ty: FnTy) -> Self {
-        Self::Fn(ty)
-    }
-}
-
-impl From<StructId> for TyKind {
-    #[inline]
-    fn from(struct_id: StructId) -> Self {
-        Self::Struct(struct_id)
     }
 }
 
@@ -120,7 +68,7 @@ pub enum FloatTy {
     F64,
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct PointerTy {
     pub is_mutable: bool,
     pub pointee: TyId,
@@ -137,4 +85,36 @@ pub struct FnTy {
     pub params: SmallVec<[TyId; 4]>,
     pub is_variadic: bool,
     pub ret: TyId,
+}
+
+#[derive(Clone, Eq, Debug)]
+pub struct StructTy {
+    pub item_id: ItemId,
+    pub fields: SmallVecMap<Symbol, TyId, 2>,
+}
+
+impl StructTy {
+    #[inline]
+    pub fn empty(item_id: ItemId) -> Self {
+        Self {
+            item_id,
+            fields: Default::default(),
+        }
+    }
+}
+
+impl Hash for StructTy {
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: Hasher,
+    {
+        self.item_id.hash(state);
+    }
+}
+
+impl PartialEq for StructTy {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.item_id == other.item_id
+    }
 }
