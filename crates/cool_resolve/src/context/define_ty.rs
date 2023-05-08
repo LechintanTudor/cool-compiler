@@ -1,6 +1,6 @@
 use crate::{
     tys, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ModuleElem, ModuleId, PointerTy, ResolveContext,
-    ResolveError, ResolveResult, ResolveTy, ScopeId, TupleTy, TyKind,
+    ResolveError, ResolveResult, ResolveTy, Scope, TupleTy, TyKind,
 };
 use cool_collections::id_newtype;
 use cool_lexer::symbols::{sym, Symbol};
@@ -127,12 +127,12 @@ impl ResolveContext {
         self.tys.get_or_insert(TyKind::StructDecl(item_id))
     }
 
-    pub fn resolve_ty_from_path<'a, P>(&self, scope_id: ScopeId, path: P) -> ResolveResult<TyId>
+    pub fn resolve_ty_from_path<'a, P>(&self, scope: Scope, path: P) -> ResolveResult<TyId>
     where
         P: Into<ItemPath<'a>>,
     {
         let path: ItemPath = path.into();
-        let item_id = self.resolve_global(scope_id, path)?;
+        let item_id = self.resolve_global(scope, path)?;
         let ty_id = self[item_id]
             .as_ty_id()
             .ok_or(ResolveError::not_ty(path.last()))?;

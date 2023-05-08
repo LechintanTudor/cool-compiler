@@ -1,6 +1,6 @@
 use crate::{
     tys, Binding, ItemKind, ItemPath, ItemPathBuf, Module, ModuleElem, Mutability, ResolveContext,
-    ResolveError, ResolveErrorKind, ResolveResult, ScopeId,
+    ResolveError, ResolveErrorKind, ResolveResult, Scope,
 };
 use cool_collections::id_newtype;
 use cool_lexer::symbols::{sym, Symbol};
@@ -33,12 +33,12 @@ impl ResolveContext {
 
     pub fn insert_module(
         &mut self,
-        parent_id: ModuleId,
+        parent: ModuleId,
         is_exported: bool,
         symbol: Symbol,
     ) -> ResolveResult<ModuleId> {
         let module_path = {
-            let parent_module = &self.modules[parent_id];
+            let parent_module = &self.modules[parent];
             parent_module.path.append(symbol)
         };
 
@@ -52,7 +52,7 @@ impl ResolveContext {
         self.items
             .push_checked(item_id, ItemKind::Module(module_id));
 
-        let parent_module = &mut self.modules[parent_id];
+        let parent_module = &mut self.modules[parent];
         parent_module.elems.insert(
             symbol,
             ModuleElem {
@@ -66,12 +66,12 @@ impl ResolveContext {
 
     pub fn insert_global_binding(
         &mut self,
-        parent_id: ModuleId,
+        parent: ModuleId,
         is_exported: bool,
         mutability: Mutability,
         symbol: Symbol,
     ) -> ResolveResult<ItemId> {
-        let parent_module = &mut self.modules[parent_id];
+        let parent_module = &mut self.modules[parent];
         let item_path = parent_module.path.append(symbol);
 
         let item_id = self
@@ -101,7 +101,7 @@ impl ResolveContext {
 
     pub fn insert_use<'a, P>(
         &mut self,
-        parent_id: ModuleId,
+        parent: ModuleId,
         is_exported: bool,
         path: P,
         alias: Option<Symbol>,
@@ -110,8 +110,8 @@ impl ResolveContext {
         P: Into<ItemPath<'a>>,
     {
         let path: ItemPath = path.into();
-        let item_id = self.resolve_global(parent_id.into(), path)?;
-        let module = &mut self.modules[parent_id];
+        let item_id = self.resolve_global(parent.into(), path)?;
+        let module = &mut self.modules[parent];
         let symbol = alias.unwrap_or(path.last());
 
         if module.elems.contains_key(&symbol) {
@@ -129,22 +129,22 @@ impl ResolveContext {
         Ok(item_id)
     }
 
-    pub fn resolve_parent_module(&self, mut scope_id: ScopeId) -> ModuleId {
+    pub fn resolve_parent_module(&self, mut scope: Scope) -> ModuleId {
         loop {
-            match scope_id {
-                ScopeId::Frame(frame_id) => {
-                    scope_id = self.frames[frame_id].parent_id;
+            match scope {
+                Scope::Frame(frame_id) => {
+                    scope = self.frames[frame_id].parent;
                 }
-                ScopeId::Module(module_id) => break module_id,
+                Scope::Module(module_id) => break module_id,
             }
         }
     }
 
-    pub fn resolve_global<'a, P>(&self, scope_id: ScopeId, path: P) -> ResolveResult<ItemId>
+    pub fn resolve_global<'a, P>(&self, scope: Scope, path: P) -> ResolveResult<ItemId>
     where
         P: Into<ItemPath<'a>>,
     {
-        let module_id = self.resolve_parent_module(scope_id);
+        let module_id = self.resolve_parent_module(scope);
         let module = &self.modules[module_id];
 
         let path: ItemPath = path.into();

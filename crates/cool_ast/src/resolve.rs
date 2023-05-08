@@ -4,7 +4,7 @@ use crate::{
 };
 use cool_parser::{FnExternDecl, FnPrototype, Ty};
 use cool_resolve::{
-    tys, FnAbi, ItemPathBuf, ModuleId, ResolveContext, ResolveError, ResolveResult, ScopeId, TyId,
+    tys, FnAbi, ItemPathBuf, ModuleId, ResolveContext, ResolveError, ResolveResult, Scope, TyId,
 };
 use smallvec::SmallVec;
 
@@ -52,11 +52,11 @@ pub fn resolve_fn_prototype(
     explicit_ty: &Option<Ty>,
     prototype: &FnPrototype,
 ) -> AstResult<TyId> {
-    let scope_id = ScopeId::Module(module_id);
+    let scope = Scope::Module(module_id);
 
     let explicit_ty_id = explicit_ty
         .as_ref()
-        .map(|ty| resolve_ty(resolve, scope_id, ty))
+        .map(|ty| resolve_ty(resolve, scope, ty))
         .transpose()?;
 
     match explicit_ty_id {
@@ -89,7 +89,7 @@ pub fn resolve_fn_prototype(
                     None => continue,
                 };
 
-                let param_ty_id = resolve_ty(resolve, scope_id, param_ty)?;
+                let param_ty_id = resolve_ty(resolve, scope, param_ty)?;
 
                 if param_ty_id != fn_ty.params[i] {
                     Err(TyMismatch {
@@ -107,7 +107,7 @@ pub fn resolve_fn_prototype(
             }
 
             if let Some(ret_ty) = prototype.ret_ty.as_ref() {
-                let ret_ty_id = resolve_ty(resolve, scope_id, ret_ty)?;
+                let ret_ty_id = resolve_ty(resolve, scope, ret_ty)?;
 
                 if ret_ty_id != fn_ty.ret {
                     Err(TyMismatch {
@@ -125,12 +125,12 @@ pub fn resolve_fn_prototype(
 
             for param in prototype.param_list.params.iter() {
                 let param_ty = param.ty.as_ref().ok_or(TyHintMissing)?;
-                let param_ty_id = resolve_ty(resolve, scope_id, param_ty)?;
+                let param_ty_id = resolve_ty(resolve, scope, param_ty)?;
                 param_ty_ids.push(param_ty_id);
             }
 
             let ret_ty_id = match prototype.ret_ty.as_ref() {
-                Some(ret_ty) => resolve_ty(resolve, scope_id, ret_ty)?,
+                Some(ret_ty) => resolve_ty(resolve, scope, ret_ty)?,
                 None => tys::UNIT,
             };
 
@@ -144,18 +144,18 @@ pub fn resolve_fn_prototype(
     }
 }
 
-pub fn resolve_ty(resolve: &mut ResolveContext, scope_id: ScopeId, ty: &Ty) -> ResolveResult<TyId> {
+pub fn resolve_ty(resolve: &mut ResolveContext, scope: Scope, ty: &Ty) -> ResolveResult<TyId> {
     match ty {
         Ty::Fn(fn_ty) => {
             let abi = resolve_fn_abi(&fn_ty.extern_decl)?;
             let mut param_ty_ids = SmallVec::<[TyId; 6]>::new();
 
             for param in fn_ty.param_list.params.iter() {
-                param_ty_ids.push(resolve_ty(resolve, scope_id, param)?);
+                param_ty_ids.push(resolve_ty(resolve, scope, param)?);
             }
 
             let ret_ty_id = match &fn_ty.ret_ty {
-                Some(ret_ty) => resolve_ty(resolve, scope_id, ret_ty)?,
+                Some(ret_ty) => resolve_ty(resolve, scope, ret_ty)?,
                 None => tys::UNIT,
             };
 
@@ -168,21 +168,21 @@ pub fn resolve_ty(resolve: &mut ResolveContext, scope_id: ScopeId, ty: &Ty) -> R
                 .map(|ident| ident.symbol)
                 .collect::<ItemPathBuf>();
 
-            let item_id = resolve.resolve_global(scope_id, &path)?;
+            let item_id = resolve.resolve_global(scope, &path)?;
 
             resolve[item_id]
                 .as_ty_id()
                 .ok_or(ResolveError::not_ty(path.last()))
         }
         Ty::Pointer(pointer_ty) => {
-            let pointee = resolve_ty(resolve, scope_id, &pointer_ty.pointee)?;
+            let pointee = resolve_ty(resolve, scope, &pointer_ty.pointee)?;
             Ok(resolve.mk_pointer(pointer_ty.is_mutable, pointee))
         }
         Ty::Tuple(tuple_ty) => {
             let mut elem_tys = SmallVec::<[TyId; 6]>::new();
 
             for ty in tuple_ty.elems.iter() {
-                elem_tys.push(resolve_ty(resolve, scope_id, ty)?);
+                elem_tys.push(resolve_ty(resolve, scope, ty)?);
             }
 
             Ok(resolve.mk_tuple(elem_tys))

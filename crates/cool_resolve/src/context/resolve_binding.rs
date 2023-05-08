@@ -1,5 +1,5 @@
 use crate::{
-    tys, Binding, Frame, Mutability, ResolveContext, ResolveError, ResolveResult, ScopeId, TyId,
+    tys, Binding, Frame, Mutability, ResolveContext, ResolveError, ResolveResult, Scope, TyId,
 };
 use cool_collections::id_newtype;
 use cool_lexer::symbols::Symbol;
@@ -10,8 +10,8 @@ id_newtype!(BindingId);
 
 impl ResolveContext {
     #[inline]
-    pub fn add_frame(&mut self, parent_id: ScopeId) -> FrameId {
-        self.frames.push(Frame::new(parent_id))
+    pub fn add_frame(&mut self, parent: Scope) -> FrameId {
+        self.frames.push(Frame::new(parent))
     }
 
     pub fn insert_local_binding(

@@ -49,7 +49,7 @@ impl ResolveContext {
                 ty_id: tys::INFERRED,
             }),
             frames: IdIndexedVec::new(Frame {
-                parent_id: ModuleId::dummy().into(),
+                parent: ModuleId::dummy().into(),
                 bindings: Default::default(),
             }),
             exprs: Default::default(),

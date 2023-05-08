@@ -1,38 +1,25 @@
 use crate::{BindingId, FrameId, ModuleId};
 use cool_collections::SmallVecMap;
 use cool_lexer::symbols::Symbol;
+use derive_more::From;
 
-#[derive(Clone, Copy, Debug)]
-pub enum ScopeId {
+#[derive(Clone, Copy, From, Debug)]
+pub enum Scope {
     Frame(FrameId),
     Module(ModuleId),
 }
 
-impl From<FrameId> for ScopeId {
-    #[inline]
-    fn from(frame_id: FrameId) -> Self {
-        Self::Frame(frame_id)
-    }
-}
-
-impl From<ModuleId> for ScopeId {
-    #[inline]
-    fn from(module_id: ModuleId) -> Self {
-        Self::Module(module_id)
-    }
-}
-
 #[derive(Clone, Debug)]
 pub struct Frame {
-    pub parent_id: ScopeId,
+    pub parent: Scope,
     pub bindings: SmallVecMap<Symbol, BindingId, 2>,
 }
 
 impl Frame {
     #[inline]
-    pub fn new(parent_id: ScopeId) -> Self {
+    pub fn new(parent: Scope) -> Self {
         Self {
-            parent_id,
+            parent,
             bindings: Default::default(),
         }
     }
