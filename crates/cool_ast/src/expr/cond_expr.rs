@@ -24,7 +24,7 @@ impl AstGenerator<'_> {
         expr: &CondExpr,
     ) -> AstResult<CondExprAst> {
         let if_block = self.gen_cond_block(frame_id, expected_ty_id, &expr.if_block)?;
-        let ty_id = self.resolve[if_block.expr.expr_id];
+        let ty_id = self.resolve[if_block.expr.expr_id].ty_id;
 
         let mut else_if_blocks = Vec::<CondBlockAst>::new();
         for block in expr.else_if_blocks.iter() {
@@ -43,7 +43,7 @@ impl AstGenerator<'_> {
         };
 
         Ok(CondExprAst {
-            expr_id: self.resolve.add_expr(ty_id),
+            expr_id: self.resolve.add_expr(ty_id, false),
             if_block: Box::new(if_block),
             else_if_blocks,
             else_block: else_block.map(Box::new),

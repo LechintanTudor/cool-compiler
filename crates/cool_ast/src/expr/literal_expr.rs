@@ -44,12 +44,12 @@ impl AstGenerator<'_> {
 
                 if ty_id.is_int() {
                     LiteralExprAst {
-                        expr_id: self.resolve.add_expr(ty_id),
+                        expr_id: self.resolve.add_expr(ty_id, false),
                         value: LiteralExprValue::Int(value),
                     }
                 } else {
                     LiteralExprAst {
-                        expr_id: self.resolve.add_expr(ty_id),
+                        expr_id: self.resolve.add_expr(ty_id, false),
                         value: LiteralExprValue::Float(value as _),
                     }
                 }
@@ -65,7 +65,7 @@ impl AstGenerator<'_> {
                     })?;
 
                 LiteralExprAst {
-                    expr_id: self.resolve.add_expr(ty_id),
+                    expr_id: self.resolve.add_expr(ty_id, false),
                     value: LiteralExprValue::Float(value),
                 }
             }
@@ -80,7 +80,7 @@ impl AstGenerator<'_> {
                     })?;
 
                 LiteralExprAst {
-                    expr_id: self.resolve.add_expr(ty_id),
+                    expr_id: self.resolve.add_expr(ty_id, false),
                     value: LiteralExprValue::Bool(value),
                 }
             }
@@ -95,7 +95,7 @@ impl AstGenerator<'_> {
                     })?;
 
                 LiteralExprAst {
-                    expr_id: self.resolve.add_expr(ty_id),
+                    expr_id: self.resolve.add_expr(ty_id, false),
                     value: LiteralExprValue::Char(value),
                 }
             }
@@ -110,7 +110,7 @@ impl AstGenerator<'_> {
                     })?;
 
                 LiteralExprAst {
-                    expr_id: self.resolve.add_expr(ty_id),
+                    expr_id: self.resolve.add_expr(ty_id, false),
                     value: LiteralExprValue::Cstr(value),
                 }
             }

@@ -34,7 +34,7 @@ impl AstGenerator<'_> {
                     .gen_expr(frame_id, expected_ty_id, expr)?
                     .ensure_not_module()?;
 
-                let ret_ty_id = self.resolve[expr.id()];
+                let ret_ty_id = self.resolve[expr.id()].ty_id;
                 (Some(expr), ret_ty_id)
             }
             None => (None, tys::UNIT),
@@ -48,7 +48,7 @@ impl AstGenerator<'_> {
             })?;
 
         Ok(BlockExprAst {
-            expr_id: self.resolve.add_expr(ret_ty_id),
+            expr_id: self.resolve.add_expr(ret_ty_id, false),
             stmts,
             expr: expr.map(Box::new),
         })

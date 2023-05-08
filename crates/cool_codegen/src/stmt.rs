@@ -1,18 +1,37 @@
 use crate::{AnyTypeEnumExt, AnyValueEnumExt, CodeGenerator, Value};
-use cool_ast::{DeclStmtAst, StmtAst};
+use cool_ast::{AssignStmtAst, DeclStmtAst, StmtAst};
 use inkwell::values::BasicValue;
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_stmt(&mut self, stmt: &StmtAst) {
         match stmt {
+            StmtAst::Assign(assign) => {
+                self.gen_assign_stmt(assign);
+            }
             StmtAst::Decl(decl) => {
                 self.gen_decl_stmt(decl);
             }
             StmtAst::Expr(expr) => {
                 self.gen_expr(expr);
             }
-            _ => (),
         }
+    }
+
+    pub fn gen_assign_stmt(&mut self, assign: &AssignStmtAst) {
+        let lhs = self.gen_expr(&assign.lhs);
+        let rhs = self.gen_rvalue_expr(&assign.rhs);
+
+        let lhs_ty_id = self.resolve[assign.lhs.id()].ty_id;
+        if self.resolve.is_ty_id_zst(lhs_ty_id) {
+            return;
+        }
+
+        let Value::Lvalue { pointer, .. } = lhs else {
+            panic!("assignment lhs is not an lvalue");
+        };
+
+        self.builder
+            .build_store(pointer, rhs.unwrap().into_basic_value());
     }
 
     pub fn gen_decl_stmt(&mut self, decl: &DeclStmtAst) {

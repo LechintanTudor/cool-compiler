@@ -25,3 +25,10 @@ pub struct Binding {
     pub mutability: Mutability,
     pub ty_id: TyId,
 }
+
+impl Binding {
+    #[inline]
+    pub fn is_mutable(&self) -> bool {
+        self.mutability == Mutability::Mutable
+    }
+}

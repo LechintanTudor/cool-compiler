@@ -17,7 +17,7 @@ impl AstGenerator<'_> {
         fn_call_expr: &FnCallExpr,
     ) -> AstResult<FnCallExprAst> {
         let fn_expr = self.gen_expr(frame_id, tys::INFERRED, &fn_call_expr.base)?;
-        let fn_expr_ty_id = self.resolve[fn_expr.id()];
+        let fn_expr_ty_id = self.resolve[fn_expr.id()].ty_id;
         let fn_ty = self.resolve[fn_expr_ty_id]
             .kind
             .as_fn_ty()
@@ -57,7 +57,7 @@ impl AstGenerator<'_> {
                 expected: expected_ty_id,
             })?;
 
-        let expr_id = self.resolve.add_expr(ret_ty_id);
+        let expr_id = self.resolve.add_expr(ret_ty_id, false);
 
         Ok(FnCallExprAst {
             expr_id,

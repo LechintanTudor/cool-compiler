@@ -24,14 +24,13 @@ impl AstGenerator<'_> {
             .gen_expr(frame_id, expected_ty_id, &decl_stmt.expr)?
             .ensure_not_module()?;
 
-        let expr_ty_id = self.resolve[expr.id()];
-
         let frame_id = self.resolve.add_frame(frame_id.into());
+
         let binding_id = self.resolve.insert_local_binding(
             frame_id,
             decl_stmt.pattern.is_mutable,
             decl_stmt.pattern.ident.symbol,
-            Some(expr_ty_id),
+            Some(self.resolve[expr.id()].ty_id),
         )?;
 
         Ok(DeclStmtAst {

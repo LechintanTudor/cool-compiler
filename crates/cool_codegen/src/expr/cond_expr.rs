@@ -9,7 +9,7 @@ impl<'a> CodeGenerator<'a> {
         let initial_block = self.builder.get_insert_block().unwrap();
         let end_if_block = self.context.insert_basic_block_after(initial_block, "");
 
-        let expr_ty_id = self.resolve[expr.expr_id];
+        let expr_ty_id = self.resolve[expr.expr_id].ty_id;
 
         let phi_value = if !self.resolve.is_ty_id_zst(expr_ty_id) {
             self.builder.position_at_end(end_if_block);

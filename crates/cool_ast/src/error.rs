@@ -38,6 +38,9 @@ pub enum AstError {
 
     #[error(transparent)]
     MissingElseBlock(#[from] MissingElseBlock),
+
+    #[error(transparent)]
+    AssignToRvalue(#[from] AssignToRvalue),
 }
 
 #[derive(Clone, Error, Debug)]
@@ -98,3 +101,7 @@ pub struct ModuleUsedAsExpr;
 #[derive(Clone, Error, Debug)]
 #[error("missing else block in non-unit expression")]
 pub struct MissingElseBlock;
+
+#[derive(Clone, Error, Debug)]
+#[error("tried to assign to an rvalue")]
+pub struct AssignToRvalue;

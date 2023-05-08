@@ -31,7 +31,8 @@ impl AstGenerator<'_> {
                                 expected: expected_ty_id,
                             })?;
 
-                        let expr_id = self.resolve.add_expr(ty_id);
+                        let is_lvalue = self.resolve[binding_id].is_mutable();
+                        let expr_id = self.resolve.add_expr(ty_id, is_lvalue);
 
                         BindingExprAst {
                             expr_id,
@@ -47,7 +48,7 @@ impl AstGenerator<'_> {
                                 expected: expected_ty_id,
                             })?;
 
-                        let expr_id = self.resolve.add_expr(tys::MODULE);
+                        let expr_id = self.resolve.add_expr(tys::MODULE, true);
                         ModuleExprAst { expr_id, module_id }.into()
                     }
                     _ => panic!("types are not allowed here"),

@@ -26,13 +26,7 @@ impl AstGenerator<'_> {
             .resolve_local(frame_id, ident_expr.ident.symbol)?;
 
         let expr: ExprAst = match item {
-            ItemKind::Binding(_binding_id) => {
-                let binding_id = self
-                    .resolve
-                    .resolve_local(frame_id, ident_expr.ident.symbol)?
-                    .as_binding_id()
-                    .unwrap();
-
+            ItemKind::Binding(binding_id) => {
                 let ty_id = self.resolve[binding_id]
                     .ty_id
                     .resolve_non_inferred(expected_ty_id)
@@ -41,7 +35,8 @@ impl AstGenerator<'_> {
                         expected: expected_ty_id,
                     })?;
 
-                let expr_id = self.resolve.add_expr(ty_id);
+                let is_lvalue = self.resolve[binding_id].is_mutable();
+                let expr_id = self.resolve.add_expr(ty_id, is_lvalue);
 
                 BindingExprAst {
                     expr_id,
@@ -57,7 +52,7 @@ impl AstGenerator<'_> {
                         expected: expected_ty_id,
                     })?;
 
-                let expr_id = self.resolve.add_expr(ty_id);
+                let expr_id = self.resolve.add_expr(ty_id, true);
                 ModuleExprAst { expr_id, module_id }.into()
             }
             _ => panic!("types are not allowed in expressions"),
