@@ -260,7 +260,7 @@ impl Parser<'_> {
             tk::STAR => {
                 DerefExpr {
                     span: base.span().to(next_token.span),
-                    base,
+                    expr: base,
                 }
                 .into()
             }

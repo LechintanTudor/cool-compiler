@@ -44,6 +44,9 @@ pub enum AstError {
 
     #[error(transparent)]
     TyNotComparable(#[from] TyNotComparable),
+
+    #[error(transparent)]
+    TyNotPointer(#[from] TyNotPointer),
 }
 
 #[derive(Clone, Error, Debug)]
@@ -112,3 +115,7 @@ pub struct AssignToRvalue;
 #[derive(Clone, Error, Debug)]
 #[error("tried to compare uncomparable types")]
 pub struct TyNotComparable;
+
+#[derive(Clone, Error, Debug)]
+#[error("tried to dereference non-pointer type")]
+pub struct TyNotPointer;

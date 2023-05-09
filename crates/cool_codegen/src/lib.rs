@@ -24,6 +24,7 @@ use rustc_hash::FxHashMap;
 pub struct CodeGenerator<'a> {
     context: &'a Context,
     llvm_true: IntValue<'a>,
+    llvm_false: IntValue<'a>,
     resolve: &'a ResolveContext,
     tys: GeneratedTys<'a>,
     fns: FxHashMap<ItemId, FunctionValue<'a>>,
@@ -60,6 +61,7 @@ impl<'a> CodeGenerator<'a> {
         crate_root_file: &str,
     ) -> Self {
         let llvm_true = context.i8_type().const_int(1, false);
+        let llvm_false = context.i8_type().const_int(0, false);
 
         let module = context.create_module(crate_name);
         module.set_source_file_name(crate_root_file);
@@ -75,6 +77,7 @@ impl<'a> CodeGenerator<'a> {
         Self {
             context,
             llvm_true,
+            llvm_false,
             resolve,
             tys,
             fns: Default::default(),

@@ -1,28 +1,63 @@
-use cool_lexer::tokens::{Punctuation, TokenKind};
+use crate::{ParseResult, Parser};
+use cool_lexer::tokens::tk;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum UnaryOp {
+pub enum UnaryOpKind {
     Minus,
     Not,
-    Addr,
+    Addr { is_mutable: bool },
 }
 
-impl UnaryOp {
-    pub fn from_token_kind(token: TokenKind) -> Option<Self> {
-        match token {
-            TokenKind::Punctuation(punctuation) => Self::from_punctuation(punctuation),
-            _ => None,
-        }
-    }
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct UnaryOp {
+    pub span: Span,
+    pub kind: UnaryOpKind,
+}
 
-    pub fn from_punctuation(punctuation: Punctuation) -> Option<Self> {
-        let unary_op = match punctuation {
-            Punctuation::Minus => Self::Minus,
-            Punctuation::Not => Self::Not,
-            Punctuation::And => Self::Addr,
-            _ => return None,
+impl Section for UnaryOp {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl Parser<'_> {
+    pub fn parse_unary_op(&mut self) -> ParseResult<UnaryOp> {
+        let start_token = self.bump();
+
+        let unary_op = match start_token.kind {
+            tk::MINUS => {
+                UnaryOp {
+                    span: start_token.span,
+                    kind: UnaryOpKind::Minus,
+                }
+            }
+            tk::NOT => {
+                UnaryOp {
+                    span: start_token.span,
+                    kind: UnaryOpKind::Not,
+                }
+            }
+            tk::AND => {
+                match self.bump_if_eq(tk::KW_MUT) {
+                    Some(end_token) => {
+                        UnaryOp {
+                            span: start_token.span.to(end_token.span),
+                            kind: UnaryOpKind::Addr { is_mutable: true },
+                        }
+                    }
+                    None => {
+                        UnaryOp {
+                            span: start_token.span,
+                            kind: UnaryOpKind::Addr { is_mutable: false },
+                        }
+                    }
+                }
+            }
+            _ => self.error(start_token, &[tk::MINUS, tk::NOT, tk::AND])?,
         };
 
-        Some(unary_op)
+        Ok(unary_op)
     }
 }

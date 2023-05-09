@@ -1,13 +1,16 @@
 mod binary_expr;
 mod cond_expr;
+mod unary_expr;
 mod while_expr;
 
 pub use self::binary_expr::*;
 pub use self::cond_expr::*;
+pub use self::unary_expr::*;
 pub use self::while_expr::*;
-use crate::{AnyValueEnumExt, CodeGenerator, Value};
+use crate::{AnyTypeEnumExt, AnyValueEnumExt, CodeGenerator, Value};
 use cool_ast::{
-    BindingExprAst, BlockExprAst, ExprAst, FnCallExprAst, LiteralExprAst, LiteralExprValue,
+    BindingExprAst, BlockExprAst, DerefExprAst, ExprAst, FnCallExprAst, LiteralExprAst,
+    LiteralExprValue,
 };
 use inkwell::values::{AnyValue, AnyValueEnum};
 
@@ -15,11 +18,13 @@ impl<'a> CodeGenerator<'a> {
     pub fn gen_expr(&mut self, expr: &ExprAst) -> Value<'a> {
         match expr {
             ExprAst::Binary(e) => self.gen_binary_expr(e).into(),
+            ExprAst::Binding(e) => self.gen_ident_expr(e),
             ExprAst::Block(e) => self.gen_block_expr(e),
             ExprAst::Cond(e) => self.gen_cond_expr(e),
+            ExprAst::Deref(e) => self.gen_deref_expr(e),
             ExprAst::FnCall(e) => self.gen_fn_call_expr(e),
-            ExprAst::Binding(e) => self.gen_ident_expr(e),
             ExprAst::Literal(e) => self.gen_literal_expr(e).into(),
+            ExprAst::Unary(e) => self.gen_unary_expr(e),
             ExprAst::While(e) => self.gen_while_expr(e),
             _ => panic!("unsupported operation"),
         }
@@ -96,6 +101,22 @@ impl<'a> CodeGenerator<'a> {
             }
             _ => todo!(),
         }
+    }
+
+    #[inline]
+    pub fn gen_deref_expr(&mut self, deref_expr: &DerefExprAst) -> Value<'a> {
+        let pointer = self
+            .gen_rvalue_expr(&deref_expr.expr)
+            .unwrap()
+            .into_pointer_value();
+
+        let expr_ty_id = self.resolve[deref_expr.expr.id()].ty_id;
+        let pointee_ty = self.tys[expr_ty_id].into_basic_type();
+
+        self.builder
+            .build_load(pointee_ty, pointer, "")
+            .as_any_value_enum()
+            .into()
     }
 
     pub fn gen_loaded_value(&self, value: Value<'a>) -> Option<AnyValueEnum<'a>> {
