@@ -14,6 +14,7 @@ mod return_expr;
 mod struct_expr;
 mod subscript_expr;
 mod tuple_expr;
+mod unary_expr;
 mod while_expr;
 
 pub use self::access_expr::*;
@@ -32,6 +33,7 @@ pub use self::return_expr::*;
 pub use self::struct_expr::*;
 pub use self::subscript_expr::*;
 pub use self::tuple_expr::*;
+pub use self::unary_expr::*;
 pub use self::while_expr::*;
 use crate::{BinOp, Ident, ParseResult, Parser};
 use cool_lexer::tokens::{tk, TokenKind};
@@ -75,6 +77,7 @@ define_expr! {
     Struct,
     Subscript,
     Tuple,
+    Unary,
     While,
 }
 
@@ -187,6 +190,7 @@ impl Parser<'_> {
             tk::KW_LOOP => self.parse_loop_expr()?.into(),
             tk::KW_WHILE => self.parse_while_expr()?.into(),
             tk::KW_RETURN => self.parse_return_expr()?.into(),
+            tk::MINUS | tk::NOT | tk::AND => self.parse_unary_expr()?.into(),
             TokenKind::Ident(_) => self.parse_ident_expr()?.into(),
             TokenKind::Prefix(_) | TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
             _ => {
