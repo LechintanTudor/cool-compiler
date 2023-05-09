@@ -21,13 +21,6 @@ pub enum TyKind {
     Module,
 }
 
-impl Default for TyKind {
-    #[inline]
-    fn default() -> Self {
-        Self::Inferred(InferredTy::Any)
-    }
-}
-
 impl TyKind {
     #[inline]
     pub fn as_fn_ty(&self) -> Option<&FnTy> {
@@ -35,6 +28,13 @@ impl TyKind {
             Self::Fn(fn_ty) => Some(fn_ty),
             _ => None,
         }
+    }
+}
+
+impl Default for TyKind {
+    #[inline]
+    fn default() -> Self {
+        Self::Inferred(InferredTy::Any)
     }
 }
 

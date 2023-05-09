@@ -1,7 +1,6 @@
 use crate::CodeGenerator;
-use cool_ast::{
-    ArithmeticBinOpAst, BinOpAst, BinaryExprAst, BitwiseBinOpAst, ComparisonBinOpAst, ExprAst,
-};
+use cool_ast::{BinaryExprAst, ExprAst};
+use cool_parser::{ArithmeticOp, BinOp, BitwiseOp, ComparisonOp};
 use inkwell::values::{AnyValue, AnyValueEnum, IntValue};
 use inkwell::{FloatPredicate as FloatP, IntPredicate as IntP};
 
@@ -11,9 +10,9 @@ impl<'a> CodeGenerator<'a> {
         let rhs = &expr.rhs;
 
         match expr.bin_op {
-            BinOpAst::Arithmetic(bin_op) => self.gen_arithmetic_expr(lhs, rhs, bin_op),
-            BinOpAst::Comparison(bin_op) => self.gen_comparison_expr(lhs, rhs, bin_op),
-            BinOpAst::Bitwise(bin_op) => self.gen_bitwise_expr(lhs, rhs, bin_op),
+            BinOp::Arithmetic(op) => self.gen_arithmetic_expr(lhs, rhs, op),
+            BinOp::Comparison(op) => self.gen_comparison_expr(lhs, rhs, op),
+            BinOp::Bitwise(op) => self.gen_bitwise_expr(lhs, rhs, op),
             _ => todo!(),
         }
     }
@@ -22,77 +21,75 @@ impl<'a> CodeGenerator<'a> {
         &mut self,
         lhs: &ExprAst,
         rhs: &ExprAst,
-        bin_op: ArithmeticBinOpAst,
+        arithmetic_op: ArithmeticOp,
     ) -> AnyValueEnum<'a> {
-        let lhs = {
-            let value = self.gen_expr(lhs);
-            self.gen_loaded_value(value).unwrap()
-        };
-        let rhs = {
-            let value = self.gen_expr(rhs);
-            self.gen_loaded_value(value).unwrap()
-        };
+        let ty_id = self.resolve[lhs.id()].ty_id;
+        let lhs = self.gen_rvalue_expr(lhs).unwrap();
+        let rhs = self.gen_rvalue_expr(rhs).unwrap();
 
-        match bin_op {
-            ArithmeticBinOpAst::IntAdd => {
-                self.builder
-                    .build_int_add(lhs.into_int_value(), rhs.into_int_value(), "")
-                    .as_any_value_enum()
+        match arithmetic_op {
+            ArithmeticOp::Add => {
+                if ty_id.is_int() {
+                    self.builder
+                        .build_int_add(lhs.into_int_value(), rhs.into_int_value(), "")
+                        .as_any_value_enum()
+                } else {
+                    self.builder
+                        .build_float_add(lhs.into_float_value(), rhs.into_float_value(), "")
+                        .as_any_value_enum()
+                }
             }
-            ArithmeticBinOpAst::IntSub => {
-                self.builder
-                    .build_int_sub(lhs.into_int_value(), rhs.into_int_value(), "")
-                    .as_any_value_enum()
+            ArithmeticOp::Sub => {
+                if ty_id.is_int() {
+                    self.builder
+                        .build_int_sub(lhs.into_int_value(), rhs.into_int_value(), "")
+                        .as_any_value_enum()
+                } else {
+                    self.builder
+                        .build_float_sub(lhs.into_float_value(), rhs.into_float_value(), "")
+                        .as_any_value_enum()
+                }
             }
-            ArithmeticBinOpAst::IntMul => {
-                self.builder
-                    .build_int_mul(lhs.into_int_value(), rhs.into_int_value(), "")
-                    .as_any_value_enum()
+            ArithmeticOp::Mul => {
+                if ty_id.is_int() {
+                    self.builder
+                        .build_int_mul(lhs.into_int_value(), rhs.into_int_value(), "")
+                        .as_any_value_enum()
+                } else {
+                    self.builder
+                        .build_float_mul(lhs.into_float_value(), rhs.into_float_value(), "")
+                        .as_any_value_enum()
+                }
             }
-            ArithmeticBinOpAst::UintDiv => {
-                self.builder
-                    .build_int_unsigned_div(lhs.into_int_value(), rhs.into_int_value(), "")
-                    .as_any_value_enum()
+            ArithmeticOp::Div => {
+                if ty_id.is_signed_int() {
+                    self.builder
+                        .build_int_signed_div(lhs.into_int_value(), rhs.into_int_value(), "")
+                        .as_any_value_enum()
+                } else if ty_id.is_unsigned_int() {
+                    self.builder
+                        .build_int_unsigned_div(lhs.into_int_value(), rhs.into_int_value(), "")
+                        .as_any_value_enum()
+                } else {
+                    self.builder
+                        .build_float_div(lhs.into_float_value(), rhs.into_float_value(), "")
+                        .as_any_value_enum()
+                }
             }
-            ArithmeticBinOpAst::SintDiv => {
-                self.builder
-                    .build_int_signed_div(lhs.into_int_value(), rhs.into_int_value(), "")
-                    .as_any_value_enum()
-            }
-            ArithmeticBinOpAst::UintRem => {
-                self.builder
-                    .build_int_unsigned_rem(lhs.into_int_value(), rhs.into_int_value(), "")
-                    .as_any_value_enum()
-            }
-            ArithmeticBinOpAst::SintRem => {
-                self.builder
-                    .build_int_signed_rem(lhs.into_int_value(), rhs.into_int_value(), "")
-                    .as_any_value_enum()
-            }
-            ArithmeticBinOpAst::FloatAdd => {
-                self.builder
-                    .build_float_add(lhs.into_float_value(), rhs.into_float_value(), "")
-                    .as_any_value_enum()
-            }
-            ArithmeticBinOpAst::FloatSub => {
-                self.builder
-                    .build_float_sub(lhs.into_float_value(), rhs.into_float_value(), "")
-                    .as_any_value_enum()
-            }
-            ArithmeticBinOpAst::FloatMul => {
-                self.builder
-                    .build_float_mul(lhs.into_float_value(), rhs.into_float_value(), "")
-                    .as_any_value_enum()
-            }
-            ArithmeticBinOpAst::FloatDiv => {
-                self.builder
-                    .build_float_div(lhs.into_float_value(), rhs.into_float_value(), "")
-                    .as_any_value_enum()
-            }
-            ArithmeticBinOpAst::FloatRem => {
-                self.builder
-                    .build_float_rem(lhs.into_float_value(), rhs.into_float_value(), "")
-                    .as_any_value_enum()
+            ArithmeticOp::Rem => {
+                if ty_id.is_signed_int() {
+                    self.builder
+                        .build_int_signed_rem(lhs.into_int_value(), rhs.into_int_value(), "")
+                        .as_any_value_enum()
+                } else if ty_id.is_unsigned_int() {
+                    self.builder
+                        .build_int_unsigned_rem(lhs.into_int_value(), rhs.into_int_value(), "")
+                        .as_any_value_enum()
+                } else {
+                    self.builder
+                        .build_float_rem(lhs.into_float_value(), rhs.into_float_value(), "")
+                        .as_any_value_enum()
+                }
             }
         }
     }
@@ -101,34 +98,82 @@ impl<'a> CodeGenerator<'a> {
         &mut self,
         lhs: &ExprAst,
         rhs: &ExprAst,
-        bin_op: ComparisonBinOpAst,
+        comparison_op: ComparisonOp,
     ) -> AnyValueEnum<'a> {
+        let ty_id = self.resolve[lhs.id()].ty_id;
+
         let lhs = {
-            let value = self.gen_expr(lhs);
-            self.gen_loaded_value(value).unwrap()
+            match self.gen_rvalue_expr(lhs).unwrap() {
+                AnyValueEnum::PointerValue(ptr) => {
+                    self.builder
+                        .build_ptr_to_int(ptr, self.tys.isize_ty(), "")
+                        .as_any_value_enum()
+                }
+                value => value,
+            }
         };
         let rhs = {
-            let value = self.gen_expr(rhs);
-            self.gen_loaded_value(value).unwrap()
+            match self.gen_rvalue_expr(rhs).unwrap() {
+                AnyValueEnum::PointerValue(ptr) => {
+                    self.builder
+                        .build_ptr_to_int(ptr, self.tys.isize_ty(), "")
+                        .as_any_value_enum()
+                }
+                value => value,
+            }
         };
 
-        let value = match bin_op {
-            ComparisonBinOpAst::IntEq => self.util_gen_int_compare(lhs, rhs, IntP::EQ),
-            ComparisonBinOpAst::IntNe => self.util_gen_int_compare(lhs, rhs, IntP::NE),
-            ComparisonBinOpAst::UintLt => self.util_gen_int_compare(lhs, rhs, IntP::ULT),
-            ComparisonBinOpAst::SintLt => self.util_gen_int_compare(lhs, rhs, IntP::SLT),
-            ComparisonBinOpAst::UintLe => self.util_gen_int_compare(lhs, rhs, IntP::ULE),
-            ComparisonBinOpAst::SintLe => self.util_gen_int_compare(lhs, rhs, IntP::SLE),
-            ComparisonBinOpAst::UintGt => self.util_gen_int_compare(lhs, rhs, IntP::UGT),
-            ComparisonBinOpAst::SintGt => self.util_gen_int_compare(lhs, rhs, IntP::SGT),
-            ComparisonBinOpAst::UintGe => self.util_gen_int_compare(lhs, rhs, IntP::SGE),
-            ComparisonBinOpAst::SintGe => self.util_gen_int_compare(lhs, rhs, IntP::SGE),
-            ComparisonBinOpAst::FloatEq => self.util_gen_float_compare(lhs, rhs, FloatP::OEQ),
-            ComparisonBinOpAst::FloatNe => self.util_gen_float_compare(lhs, rhs, FloatP::ONE),
-            ComparisonBinOpAst::FloatLt => self.util_gen_float_compare(lhs, rhs, FloatP::OLT),
-            ComparisonBinOpAst::FloatLe => self.util_gen_float_compare(lhs, rhs, FloatP::OLE),
-            ComparisonBinOpAst::FloatGt => self.util_gen_float_compare(lhs, rhs, FloatP::OGT),
-            ComparisonBinOpAst::FloatGe => self.util_gen_float_compare(lhs, rhs, FloatP::OGE),
+        let value = match comparison_op {
+            ComparisonOp::Eq => {
+                if ty_id.is_float() {
+                    self.util_gen_float_compare(lhs, rhs, FloatP::OEQ)
+                } else {
+                    self.util_gen_int_compare(lhs, rhs, IntP::EQ)
+                }
+            }
+            ComparisonOp::Ne => {
+                if ty_id.is_float() {
+                    self.util_gen_float_compare(lhs, rhs, FloatP::ONE)
+                } else {
+                    self.util_gen_int_compare(lhs, rhs, IntP::NE)
+                }
+            }
+            ComparisonOp::Lt => {
+                if ty_id.is_float() {
+                    self.util_gen_float_compare(lhs, rhs, FloatP::OLE)
+                } else if ty_id.is_signed_int() {
+                    self.util_gen_int_compare(lhs, rhs, IntP::SLT)
+                } else {
+                    self.util_gen_int_compare(lhs, rhs, IntP::ULT)
+                }
+            }
+            ComparisonOp::Le => {
+                if ty_id.is_float() {
+                    self.util_gen_float_compare(lhs, rhs, FloatP::OLE)
+                } else if ty_id.is_signed_int() {
+                    self.util_gen_int_compare(lhs, rhs, IntP::SLT)
+                } else {
+                    self.util_gen_int_compare(lhs, rhs, IntP::ULT)
+                }
+            }
+            ComparisonOp::Gt => {
+                if ty_id.is_float() {
+                    self.util_gen_float_compare(lhs, rhs, FloatP::OGT)
+                } else if ty_id.is_signed_int() {
+                    self.util_gen_int_compare(lhs, rhs, IntP::SGT)
+                } else {
+                    self.util_gen_int_compare(lhs, rhs, IntP::UGT)
+                }
+            }
+            ComparisonOp::Ge => {
+                if ty_id.is_float() {
+                    self.util_gen_float_compare(lhs, rhs, FloatP::OGE)
+                } else if ty_id.is_signed_int() {
+                    self.util_gen_int_compare(lhs, rhs, IntP::SGE)
+                } else {
+                    self.util_gen_int_compare(lhs, rhs, IntP::UGE)
+                }
+            }
         };
 
         self.builder
@@ -140,24 +185,21 @@ impl<'a> CodeGenerator<'a> {
         &mut self,
         lhs: &ExprAst,
         rhs: &ExprAst,
-        bin_op: BitwiseBinOpAst,
+        bitwise_op: BitwiseOp,
     ) -> AnyValueEnum<'a> {
-        let lhs = {
-            let value = self.gen_expr(lhs);
-            self.gen_loaded_value(value).unwrap().into_int_value()
-        };
-        let rhs = {
-            let value = self.gen_expr(rhs);
-            self.gen_loaded_value(value).unwrap().into_int_value()
-        };
+        let ty_id = self.resolve[lhs.id()].ty_id;
+        let lhs = self.gen_rvalue_expr(lhs).unwrap().into_int_value();
+        let rhs = self.gen_rvalue_expr(rhs).unwrap().into_int_value();
 
-        let value = match bin_op {
-            BitwiseBinOpAst::And => self.builder.build_and(lhs, rhs, ""),
-            BitwiseBinOpAst::Or => self.builder.build_or(lhs, rhs, ""),
-            BitwiseBinOpAst::Xor => self.builder.build_xor(lhs, rhs, ""),
-            BitwiseBinOpAst::Shl => self.builder.build_left_shift(lhs, rhs, ""),
-            BitwiseBinOpAst::Shr => self.builder.build_right_shift(lhs, rhs, false, ""),
-            BitwiseBinOpAst::SignExtendShr => self.builder.build_right_shift(lhs, rhs, true, ""),
+        let value = match bitwise_op {
+            BitwiseOp::And => self.builder.build_and(lhs, rhs, ""),
+            BitwiseOp::Or => self.builder.build_or(lhs, rhs, ""),
+            BitwiseOp::Xor => self.builder.build_xor(lhs, rhs, ""),
+            BitwiseOp::Shl => self.builder.build_left_shift(lhs, rhs, ""),
+            BitwiseOp::Shr => {
+                let sign_extend = ty_id.is_signed_int();
+                self.builder.build_right_shift(lhs, rhs, sign_extend, "")
+            }
         };
 
         value.as_any_value_enum()

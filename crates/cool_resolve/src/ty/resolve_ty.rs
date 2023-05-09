@@ -46,6 +46,19 @@ impl ResolveTy {
             kind: TyKind::Module,
         }
     }
+
+    #[inline]
+    pub fn is_zst(&self) -> bool {
+        self.size == 0
+    }
+
+    #[inline]
+    pub fn is_comparable(&self) -> bool {
+        matches!(
+            self.kind,
+            TyKind::Int(_) | TyKind::Float(_) | TyKind::Bool | TyKind::Char | TyKind::Pointer(_),
+        )
+    }
 }
 
 impl Default for ResolveTy {
@@ -53,15 +66,8 @@ impl Default for ResolveTy {
     fn default() -> Self {
         Self {
             size: 0,
-            align: 1,
+            align: 0,
             kind: TyKind::Unit,
         }
-    }
-}
-
-impl ResolveTy {
-    #[inline]
-    pub fn is_zst(&self) -> bool {
-        self.size == 0
     }
 }

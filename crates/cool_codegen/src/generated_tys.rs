@@ -12,6 +12,7 @@ pub struct GeneratedTys<'a> {
     tys: TyMap<'a>,
     void_ty: AnyTypeEnum<'a>,
     i8_ty: IntType<'a>,
+    isize_ty: IntType<'a>,
 }
 
 impl<'a> GeneratedTys<'a> {
@@ -28,6 +29,7 @@ impl<'a> GeneratedTys<'a> {
             tys,
             void_ty: context.void_type().into(),
             i8_ty: context.i8_type(),
+            isize_ty: context.ptr_sized_int_type(target_data, Default::default()),
         }
     }
 
@@ -121,6 +123,11 @@ impl<'a> GeneratedTys<'a> {
     #[inline]
     pub fn i8_ty(&self) -> IntType<'a> {
         self.i8_ty
+    }
+
+    #[inline]
+    pub fn isize_ty(&self) -> IntType<'a> {
+        self.isize_ty
     }
 }
 

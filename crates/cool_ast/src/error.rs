@@ -41,6 +41,9 @@ pub enum AstError {
 
     #[error(transparent)]
     AssignToRvalue(#[from] AssignToRvalue),
+
+    #[error(transparent)]
+    TyNotComparable(#[from] TyNotComparable),
 }
 
 #[derive(Clone, Error, Debug)]
@@ -105,3 +108,7 @@ pub struct MissingElseBlock;
 #[derive(Clone, Error, Debug)]
 #[error("tried to assign to an rvalue")]
 pub struct AssignToRvalue;
+
+#[derive(Clone, Error, Debug)]
+#[error("tried to compare uncomparable types")]
+pub struct TyNotComparable;

@@ -156,7 +156,7 @@ impl TyContext {
                 ResolveTy {
                     size,
                     align,
-                    kind: TyKind::Struct(struct_ty.clone()),
+                    kind: TyKind::Struct(struct_ty),
                 }
             }
             TyKind::Inferred(inferred_ty) => ResolveTy::inferred(inferred_ty),

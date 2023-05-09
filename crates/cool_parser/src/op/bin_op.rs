@@ -12,10 +12,10 @@ pub enum BinOpPrecedence {
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, From, Debug)]
 pub enum BinOp {
-    Arithmetic(ArithmeticBinOp),
-    Comparison(ComparisonBinOp),
-    Bitwise(BitwiseBinOp),
-    Logical(LogicalBinOp),
+    Arithmetic(ArithmeticOp),
+    Comparison(ComparisonOp),
+    Bitwise(BitwiseOp),
+    Logical(LogicalOp),
 }
 
 impl BinOp {
@@ -28,30 +28,30 @@ impl BinOp {
 
     pub fn from_punctuation(punctuation: Punctuation) -> Option<Self> {
         let bin_op: Self = match punctuation {
-            Punctuation::Plus => ArithmeticBinOp::Add.into(),
-            Punctuation::Minus => ArithmeticBinOp::Sub.into(),
-            Punctuation::Star => ArithmeticBinOp::Mul.into(),
-            Punctuation::Slash => ArithmeticBinOp::Div.into(),
-            Punctuation::Percent => ArithmeticBinOp::Rem.into(),
+            Punctuation::Plus => ArithmeticOp::Add.into(),
+            Punctuation::Minus => ArithmeticOp::Sub.into(),
+            Punctuation::Star => ArithmeticOp::Mul.into(),
+            Punctuation::Slash => ArithmeticOp::Div.into(),
+            Punctuation::Percent => ArithmeticOp::Rem.into(),
 
             // Relational
-            Punctuation::EqEq => ComparisonBinOp::Eq.into(),
-            Punctuation::Ne => ComparisonBinOp::Ne.into(),
-            Punctuation::Lt => ComparisonBinOp::Lt.into(),
-            Punctuation::Le => ComparisonBinOp::Le.into(),
-            Punctuation::Gt => ComparisonBinOp::Gt.into(),
-            Punctuation::Ge => ComparisonBinOp::Ge.into(),
+            Punctuation::EqEq => ComparisonOp::Eq.into(),
+            Punctuation::Ne => ComparisonOp::Ne.into(),
+            Punctuation::Lt => ComparisonOp::Lt.into(),
+            Punctuation::Le => ComparisonOp::Le.into(),
+            Punctuation::Gt => ComparisonOp::Gt.into(),
+            Punctuation::Ge => ComparisonOp::Ge.into(),
 
             // Bitwise
-            Punctuation::And => BitwiseBinOp::And.into(),
-            Punctuation::Or => BitwiseBinOp::Or.into(),
-            Punctuation::Caret => BitwiseBinOp::Xor.into(),
-            Punctuation::Shl => BitwiseBinOp::Shl.into(),
-            Punctuation::Shr => BitwiseBinOp::Shr.into(),
+            Punctuation::And => BitwiseOp::And.into(),
+            Punctuation::Or => BitwiseOp::Or.into(),
+            Punctuation::Caret => BitwiseOp::Xor.into(),
+            Punctuation::Shl => BitwiseOp::Shl.into(),
+            Punctuation::Shr => BitwiseOp::Shr.into(),
 
             // Logical
-            Punctuation::AndAnd => LogicalBinOp::And.into(),
-            Punctuation::OrOr => LogicalBinOp::Or.into(),
+            Punctuation::AndAnd => LogicalOp::And.into(),
+            Punctuation::OrOr => LogicalOp::Or.into(),
 
             // Other
             _ => return None,
@@ -64,9 +64,9 @@ impl BinOp {
         match self {
             Self::Arithmetic(arithmetic_op) => {
                 match arithmetic_op {
-                    ArithmeticBinOp::Mul => BinOpPrecedence::High,
-                    ArithmeticBinOp::Div => BinOpPrecedence::High,
-                    ArithmeticBinOp::Rem => BinOpPrecedence::High,
+                    ArithmeticOp::Mul => BinOpPrecedence::High,
+                    ArithmeticOp::Div => BinOpPrecedence::High,
+                    ArithmeticOp::Rem => BinOpPrecedence::High,
                     _ => BinOpPrecedence::Medium,
                 }
             }
@@ -78,7 +78,7 @@ impl BinOp {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum ArithmeticBinOp {
+pub enum ArithmeticOp {
     Add,
     Sub,
     Mul,
@@ -87,7 +87,7 @@ pub enum ArithmeticBinOp {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum ComparisonBinOp {
+pub enum ComparisonOp {
     Eq,
     Ne,
     Lt,
@@ -97,7 +97,7 @@ pub enum ComparisonBinOp {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum BitwiseBinOp {
+pub enum BitwiseOp {
     And,
     Or,
     Xor,
@@ -106,7 +106,7 @@ pub enum BitwiseBinOp {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum LogicalBinOp {
+pub enum LogicalOp {
     And,
     Or,
 }
