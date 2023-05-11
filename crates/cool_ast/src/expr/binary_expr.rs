@@ -56,16 +56,25 @@ impl AstGenerator<'_> {
                 let lhs = self.gen_expr(frame_id, expected_ty_id, &binary_expr.lhs)?;
                 let lhs_ty_id = self.resolve[lhs.id()].ty_id;
 
-                if !lhs_ty_id.is_int() {
+                let rhs_expected_ty_id = if lhs_ty_id == tys::BOOL {
+                    if matches!(bitwise_op, BitwiseOp::Shl | BitwiseOp::Shr) {
+                        Err(TyMismatch {
+                            found: tys::BOOL,
+                            expected: tys::INFERRED_INT,
+                        })?;
+                    }
+
+                    tys::BOOL
+                } else if lhs_ty_id.is_int() {
+                    match bitwise_op {
+                        BitwiseOp::Shl | BitwiseOp::Shr => tys::INFERRED_INT,
+                        _ => lhs_ty_id,
+                    }
+                } else {
                     Err(TyMismatch {
                         found: lhs_ty_id,
                         expected: tys::INFERRED_INT,
-                    })?;
-                }
-
-                let rhs_expected_ty_id = match bitwise_op {
-                    BitwiseOp::Shl | BitwiseOp::Shr => tys::INFERRED_INT,
-                    _ => lhs_ty_id,
+                    })?
                 };
 
                 let rhs = self.gen_expr(frame_id, rhs_expected_ty_id, &binary_expr.rhs)?;

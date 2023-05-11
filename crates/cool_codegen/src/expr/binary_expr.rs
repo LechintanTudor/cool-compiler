@@ -1,6 +1,6 @@
-use crate::CodeGenerator;
+use crate::{BuilderExt, CodeGenerator};
 use cool_ast::{BinaryExprAst, ExprAst};
-use cool_parser::{ArithmeticOp, BinOp, BitwiseOp, ComparisonOp};
+use cool_parser::{ArithmeticOp, BinOp, BitwiseOp, ComparisonOp, LogicalOp};
 use inkwell::values::{AnyValue, AnyValueEnum, IntValue};
 use inkwell::{FloatPredicate as FloatP, IntPredicate as IntP};
 
@@ -13,7 +13,7 @@ impl<'a> CodeGenerator<'a> {
             BinOp::Arithmetic(op) => self.gen_arithmetic_expr(lhs, rhs, op),
             BinOp::Comparison(op) => self.gen_comparison_expr(lhs, rhs, op),
             BinOp::Bitwise(op) => self.gen_bitwise_expr(lhs, rhs, op),
-            _ => todo!(),
+            BinOp::Logical(op) => self.gen_logical_expr(lhs, rhs, op),
         }
     }
 
@@ -203,6 +203,64 @@ impl<'a> CodeGenerator<'a> {
         };
 
         value.as_any_value_enum()
+    }
+
+    fn gen_logical_expr(
+        &mut self,
+        lhs: &ExprAst,
+        rhs: &ExprAst,
+        logical_op: LogicalOp,
+    ) -> AnyValueEnum<'a> {
+        match logical_op {
+            LogicalOp::And => self.gen_logical_and(lhs, rhs),
+            LogicalOp::Or => self.gen_logical_or(lhs, rhs),
+        }
+    }
+
+    fn gen_logical_and(&mut self, lhs: &ExprAst, rhs: &ExprAst) -> AnyValueEnum<'a> {
+        let lhs_value = self.gen_rvalue_expr(lhs).unwrap().into_int_value();
+        let lhs_cond_value = self.builder.build_bool(lhs_value, "");
+
+        let lhs_block = self.builder.get_insert_block().unwrap();
+        let rhs_block = self.context.insert_basic_block_after(lhs_block, "");
+        let end_block = self.context.insert_basic_block_after(rhs_block, "");
+
+        self.builder
+            .build_conditional_branch(lhs_cond_value, rhs_block, end_block);
+
+        self.builder.position_at_end(rhs_block);
+        let rhs_value = self.gen_rvalue_expr(rhs).unwrap().into_int_value();
+        self.builder.build_unconditional_branch(end_block);
+
+        self.builder.position_at_end(end_block);
+
+        let phi_value = self.builder.build_phi(self.tys.i8_ty(), "");
+        phi_value.add_incoming(&[(&self.llvm_false, lhs_block)]);
+        phi_value.add_incoming(&[(&rhs_value, rhs_block)]);
+        phi_value.as_basic_value().as_any_value_enum()
+    }
+
+    fn gen_logical_or(&mut self, lhs: &ExprAst, rhs: &ExprAst) -> AnyValueEnum<'a> {
+        let lhs_value = self.gen_rvalue_expr(lhs).unwrap().into_int_value();
+        let lhs_cond_value = self.builder.build_bool(lhs_value, "");
+
+        let lhs_block = self.builder.get_insert_block().unwrap();
+        let rhs_block = self.context.insert_basic_block_after(lhs_block, "");
+        let end_block = self.context.insert_basic_block_after(rhs_block, "");
+
+        self.builder
+            .build_conditional_branch(lhs_cond_value, end_block, rhs_block);
+
+        self.builder.position_at_end(rhs_block);
+        let rhs_value = self.gen_rvalue_expr(rhs).unwrap().into_int_value();
+        self.builder.build_unconditional_branch(end_block);
+
+        self.builder.position_at_end(end_block);
+
+        let phi_value = self.builder.build_phi(self.tys.i8_ty(), "");
+        phi_value.add_incoming(&[(&self.llvm_true, lhs_block)]);
+        phi_value.add_incoming(&([(&rhs_value, rhs_block)]));
+        phi_value.as_basic_value().as_any_value_enum()
     }
 
     fn util_gen_int_compare(

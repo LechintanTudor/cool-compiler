@@ -1,3 +1,4 @@
+mod builder_ext;
 mod expr;
 mod function;
 mod generated_tys;
@@ -5,6 +6,7 @@ mod stmt;
 mod utils;
 mod value;
 
+pub use self::builder_ext::*;
 pub use self::expr::*;
 pub use self::function::*;
 pub use self::generated_tys::*;
