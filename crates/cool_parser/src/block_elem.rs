@@ -1,70 +1,100 @@
 use crate::expr::Expr;
-use crate::stmt::{ExprStmt, Stmt};
-use crate::{AssignOp, ParseResult, Parser};
+use crate::stmt::Stmt;
+use crate::{AssignOp, ParseResult, Parser, StmtKind};
 use cool_lexer::tokens::tk;
 use cool_span::{Section, Span};
 use derive_more::From;
 
-macro_rules! define_block_elem {
-    { $($Variant:ident,)+ } => {
-        #[derive(Clone, From, Debug)]
-        pub enum BlockElem {
-            $($Variant($Variant),)+
-        }
-
-        impl Section for BlockElem {
-            fn span(&self) -> Span {
-                match self {
-                    $(Self::$Variant(e) => e.span(),)+
-                }
-            }
-        }
-    };
+#[derive(Clone, From, Debug)]
+pub enum BareBlockElem {
+    Expr(Expr),
+    Stmt(StmtKind),
 }
 
-define_block_elem! {
-    Expr,
-    Stmt,
+impl Section for BareBlockElem {
+    #[inline]
+    fn span(&self) -> Span {
+        match self {
+            Self::Expr(expr) => expr.span(),
+            Self::Stmt(stmt) => stmt.span(),
+        }
+    }
+}
+
+#[derive(Clone, From, Debug)]
+pub enum BlockElem {
+    Expr(Expr),
+    Stmt(Stmt),
+}
+
+impl Section for BlockElem {
+    #[inline]
+    fn span(&self) -> Span {
+        match self {
+            Self::Expr(expr) => expr.span(),
+            Self::Stmt(stmt) => stmt.span(),
+        }
+    }
 }
 
 impl Parser<'_> {
+    #[inline]
     pub fn parse_block_elem(&mut self) -> ParseResult<BlockElem> {
+        match self.parse_bare_block_elem(true)? {
+            BareBlockElem::Expr(expr) => {
+                match self.peek().kind {
+                    tk::SEMICOLON => {
+                        self.continue_parse_stmt(Box::new(expr).into())
+                            .map(BlockElem::Stmt)
+                    }
+                    _ => Ok(BlockElem::Expr(expr)),
+                }
+            }
+            BareBlockElem::Stmt(stmt) => self.continue_parse_stmt(stmt).map(BlockElem::Stmt),
+        }
+    }
+
+    #[inline]
+    pub fn parse_defer_block_elem(&mut self) -> ParseResult<BareBlockElem> {
+        self.parse_bare_block_elem(false)
+    }
+
+    fn parse_bare_block_elem(&mut self, allow_defer_stmt: bool) -> ParseResult<BareBlockElem> {
         match self.peek().kind {
             tk::KW_MUT => {
-                let stmt = self.parse_decl_stmt()?;
-                Ok(BlockElem::Stmt(stmt.into()))
+                self.parse_decl_stmt()
+                    .map(|decl_stmt| BareBlockElem::Stmt(decl_stmt.into()))
+            }
+            tk::KW_DEFER if allow_defer_stmt => {
+                self.parse_defer_stmt()
+                    .map(|defer_stmt| BareBlockElem::Stmt(defer_stmt.into()))
             }
             _ => self.parse_expr_or_decl_or_assign(),
         }
     }
 
-    fn parse_expr_or_decl_or_assign(&mut self) -> ParseResult<BlockElem> {
+    fn parse_expr_or_decl_or_assign(&mut self) -> ParseResult<BareBlockElem> {
         let expr = self.parse_expr()?;
 
         if let Expr::Ident(ident_expr) = &expr {
             if self.peek().kind == tk::COLON {
-                let pattern = ident_expr.ident.into();
-                let stmt = self.continue_parse_decl(pattern)?;
-                return Ok(BlockElem::Stmt(stmt.into()));
+                return self
+                    .continue_parse_decl(ident_expr.ident.into())
+                    .map(|decl_stmt| BareBlockElem::Stmt(decl_stmt.into()));
             }
         }
 
         let elem = match self.peek().kind {
-            tk::SEMICOLON => {
-                let semicolon = self.bump_expect(&tk::SEMICOLON)?;
-                BlockElem::Stmt(Stmt::Expr(ExprStmt {
-                    span: expr.span().to(semicolon.span),
-                    expr: Box::new(expr),
-                }))
-            }
+            tk::SEMICOLON => expr.into(),
             token => {
                 match AssignOp::from_token_kind(token) {
                     Some(assign_op) => {
                         self.bump();
-                        let stmt = self.continue_parse_assign(expr, assign_op)?;
-                        BlockElem::Stmt(stmt.into())
+
+                        self.continue_parse_assign(expr, assign_op)
+                            .map(|assign_stmt| BareBlockElem::Stmt(assign_stmt.into()))?
                     }
-                    None => BlockElem::Expr(expr),
+                    None => expr.into(),
                 }
             }
         };

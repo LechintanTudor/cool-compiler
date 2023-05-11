@@ -1,37 +1,33 @@
 use crate::expr::Expr;
 use crate::{AssignOp, ParseResult, Parser};
-use cool_lexer::tokens::tk;
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct AssignStmt {
-    pub span: Span,
     pub assign_op: AssignOp,
-    pub lvalue: Box<Expr>,
-    pub rvalue: Box<Expr>,
+    pub lhs: Box<Expr>,
+    pub rhs: Box<Expr>,
 }
 
 impl Section for AssignStmt {
     #[inline]
     fn span(&self) -> Span {
-        self.span
+        self.lhs.span().to(self.rhs.span())
     }
 }
 
 impl Parser<'_> {
     pub fn continue_parse_assign(
         &mut self,
-        lvalue: Expr,
+        lhs: Expr,
         assign_op: AssignOp,
     ) -> ParseResult<AssignStmt> {
-        let rvalue = self.parse_expr()?;
-        let end_token = self.bump_expect(&tk::SEMICOLON)?;
+        let rhs = self.parse_expr()?;
 
         Ok(AssignStmt {
-            span: lvalue.span().to(end_token.span),
             assign_op,
-            lvalue: Box::new(lvalue),
-            rvalue: Box::new(rvalue),
+            lhs: Box::new(lhs),
+            rhs: Box::new(rhs),
         })
     }
 }

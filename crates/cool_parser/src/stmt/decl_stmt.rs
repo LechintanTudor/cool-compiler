@@ -6,7 +6,6 @@ use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct DeclStmt {
-    pub span: Span,
     pub pattern: Pattern,
     pub ty: Option<Box<Ty>>,
     pub expr: Box<Expr>,
@@ -15,7 +14,7 @@ pub struct DeclStmt {
 impl Section for DeclStmt {
     #[inline]
     fn span(&self) -> Span {
-        self.span
+        self.pattern.span().to(self.expr.span())
     }
 }
 
@@ -37,10 +36,8 @@ impl Parser<'_> {
         self.bump_expect(&tk::EQ)?;
 
         let expr = self.parse_expr()?;
-        let end_token = self.bump_expect(&tk::SEMICOLON)?;
 
         Ok(DeclStmt {
-            span: pattern.span().to(end_token.span),
             pattern,
             ty: ty.map(Box::new),
             expr: Box::new(expr),
