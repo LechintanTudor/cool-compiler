@@ -42,21 +42,53 @@ impl TyId {
 
     #[inline]
     pub fn resolve_non_inferred(self, expected: Self) -> Option<Self> {
-        if expected.is_inferred() {
-            if !self.is_inferred() {
-                Some(self)
-            } else {
-                None
+        let ty_id = match expected {
+            tys::INFERRED => {
+                match self {
+                    tys::INFERRED_INT => tys::I32,
+                    tys::INFERRED_FLOAT => tys::F64,
+                    _ if !self.is_inferred() => self,
+                    _ => return None,
+                }
             }
-        } else {
-            let can_resolve = (self == expected)
-                || (self == tys::INFERRED)
-                || (self == tys::INFERRED_NUMBER && expected.is_number())
-                || (self == tys::INFERRED_INT && expected.is_int())
-                || (self == tys::INFERRED_FLOAT && expected.is_float());
+            tys::INFERRED_NUMBER => {
+                match self {
+                    tys::INFERRED_INT => tys::I32,
+                    tys::INFERRED_FLOAT => tys::F64,
+                    _ => return None,
+                }
+            }
+            tys::INFERRED_INT => {
+                match self {
+                    tys::INFERRED_INT => tys::I32,
+                    _ if self.is_int() => self,
+                    _ => return None,
+                }
+            }
+            tys::INFERRED_FLOAT => {
+                match self {
+                    tys::INFERRED_INT => tys::F64,
+                    tys::INFERRED_FLOAT => tys::F64,
+                    _ if self.is_float() => self,
+                    _ => return None,
+                }
+            }
+            _ => {
+                let can_resolve = (self == expected)
+                    || (self == tys::INFERRED)
+                    || (self == tys::INFERRED_NUMBER && expected.is_number())
+                    || (self == tys::INFERRED_INT && expected.is_number())
+                    || (self == tys::INFERRED_FLOAT && expected.is_float());
 
-            can_resolve.then_some(expected)
-        }
+                if !can_resolve {
+                    return None;
+                }
+
+                expected
+            }
+        };
+
+        Some(ty_id)
     }
 }
 
