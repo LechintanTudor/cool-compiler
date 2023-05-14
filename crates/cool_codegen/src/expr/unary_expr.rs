@@ -52,7 +52,7 @@ impl<'a> CodeGenerator<'a> {
                 let value = self.gen_expr(&unary_expr.expr);
 
                 match value {
-                    Value::Lvalue { pointer, .. } => pointer.as_any_value_enum().into(),
+                    Value::Lvalue { pointer, .. } => Value::Rvalue(pointer.as_any_value_enum()),
                     _ => todo!(),
                 }
             }

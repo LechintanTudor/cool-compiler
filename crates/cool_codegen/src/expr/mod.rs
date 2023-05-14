@@ -110,22 +110,18 @@ impl<'a> CodeGenerator<'a> {
             .unwrap()
             .into_pointer_value();
 
-        let expr_ty_id = self.resolve[deref_expr.expr.id()].ty_id;
-        let pointee_ty = self.tys[expr_ty_id].into_basic_type();
+        let expr_ty_id = self.resolve[deref_expr.expr_id].ty_id;
+        let ty = self.tys[expr_ty_id].into_basic_type();
 
-        self.builder
-            .build_load(pointee_ty, pointer, "")
-            .as_any_value_enum()
-            .into()
+        Value::Lvalue { pointer, ty }
     }
 
     pub fn gen_loaded_value(&self, value: Value<'a>) -> Option<AnyValueEnum<'a>> {
         match value {
             Value::Void => None,
-            Value::Lvalue {
-                pointer: address,
-                ty,
-            } => Some(self.builder.build_load(ty, address, "").as_any_value_enum()),
+            Value::Lvalue { pointer, ty } => {
+                Some(self.builder.build_load(ty, pointer, "").as_any_value_enum())
+            }
             Value::Rvalue(value) => Some(value),
         }
     }
