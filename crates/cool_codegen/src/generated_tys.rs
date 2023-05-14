@@ -1,8 +1,9 @@
 use cool_resolve::{tys, ResolveContext, TyId, TyKind};
 use inkwell::context::Context;
 use inkwell::targets::TargetData;
-use inkwell::types::{AnyTypeEnum, BasicMetadataTypeEnum, FunctionType, IntType, PointerType};
-use inkwell::AddressSpace;
+use inkwell::types::{
+    AnyType, AnyTypeEnum, BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType, IntType,
+};
 use rustc_hash::FxHashMap;
 use std::ops;
 
@@ -66,6 +67,10 @@ impl<'a> GeneratedTys<'a> {
             // Other
             (tys::BOOL, context.i8_type().into()),
             (tys::CHAR, context.i32_type().into()),
+            (
+                tys::C_STR,
+                context.i8_type().ptr_type(Default::default()).into(),
+            ),
         ];
 
         tys.extend(ty_mappings);
@@ -90,13 +95,6 @@ impl<'a> GeneratedTys<'a> {
         }
 
         let ty: AnyTypeEnum = match &resolve[ty_id].kind {
-            TyKind::Pointer(pointer_ty) => {
-                let pointee_ty = Self::insert_ty(tys, context, resolve, pointer_ty.pointee);
-
-                ptr_type_from_any_type_enum(pointee_ty)
-                    .unwrap_or_else(|| context.i8_type().ptr_type(Default::default()))
-                    .into()
-            }
             TyKind::Fn(fn_ty) => {
                 let params = fn_ty
                     .params
@@ -107,6 +105,22 @@ impl<'a> GeneratedTys<'a> {
 
                 let ret = Self::insert_ty(tys, context, resolve, fn_ty.ret);
                 fn_type_from_any_type_enum(ret, &params, fn_ty.is_variadic).into()
+            }
+            TyKind::Array(array_ty) => {
+                let elem_ty = Self::insert_ty(tys, context, resolve, array_ty.elem);
+
+                BasicTypeEnum::try_from(elem_ty)
+                    .map(|ty| ty.array_type(array_ty.len as u32))
+                    .map(|ty| ty.as_any_type_enum())
+                    .unwrap_or_else(|_| tys[&tys::UNIT])
+            }
+            TyKind::Pointer(pointer_ty) => {
+                let pointee_ty = Self::insert_ty(tys, context, resolve, pointer_ty.pointee);
+
+                BasicTypeEnum::try_from(pointee_ty)
+                    .map(|ty| ty.ptr_type(Default::default()))
+                    .map(|ty| ty.as_any_type_enum())
+                    .unwrap_or_else(|_| tys[&tys::C_STR])
             }
             ty => todo!("Unimplemented ty: {:?}", ty),
         };
@@ -138,23 +152,6 @@ impl<'a> ops::Index<TyId> for GeneratedTys<'a> {
     fn index(&self, ty_id: TyId) -> &Self::Output {
         &self.tys[&ty_id]
     }
-}
-
-fn ptr_type_from_any_type_enum(ty: AnyTypeEnum) -> Option<PointerType> {
-    let address_space = AddressSpace::default();
-
-    let pointer_ty = match ty {
-        AnyTypeEnum::ArrayType(ty) => ty.ptr_type(address_space),
-        AnyTypeEnum::FloatType(ty) => ty.ptr_type(address_space),
-        AnyTypeEnum::FunctionType(ty) => ty.ptr_type(address_space),
-        AnyTypeEnum::IntType(ty) => ty.ptr_type(address_space),
-        AnyTypeEnum::PointerType(ty) => ty.ptr_type(address_space),
-        AnyTypeEnum::StructType(ty) => ty.ptr_type(address_space),
-        AnyTypeEnum::VectorType(ty) => ty.ptr_type(address_space),
-        AnyTypeEnum::VoidType(_) => return None,
-    };
-
-    Some(pointer_ty)
 }
 
 fn fn_type_from_any_type_enum<'a>(

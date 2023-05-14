@@ -1,4 +1,4 @@
-use crate::{resolve_ty, AstGenerator, AstResult, ExprAst};
+use crate::{AstGenerator, AstResult, ExprAst};
 use cool_parser::DeclStmt;
 use cool_resolve::{tys, BindingId, FrameId};
 
@@ -16,7 +16,7 @@ impl AstGenerator<'_> {
         decl_stmt: &DeclStmt,
     ) -> AstResult<DeclStmtAst> {
         let expected_ty_id = match decl_stmt.ty.as_ref() {
-            Some(ty) => resolve_ty(self.resolve, frame_id.into(), ty)?,
+            Some(ty) => self.resolve_ty(frame_id.into(), ty)?,
             None => tys::INFERRED,
         };
 

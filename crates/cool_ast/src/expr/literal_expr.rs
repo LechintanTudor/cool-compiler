@@ -20,6 +20,16 @@ pub struct LiteralExprAst {
     pub value: LiteralExprValue,
 }
 
+impl LiteralExprAst {
+    #[inline]
+    pub fn as_int_value(&self) -> Option<u128> {
+        match self.value {
+            LiteralExprValue::Int(value) => Some(value),
+            _ => None,
+        }
+    }
+}
+
 impl AstGenerator<'_> {
     pub fn gen_literal_expr(
         &mut self,

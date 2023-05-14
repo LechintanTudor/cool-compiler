@@ -13,7 +13,9 @@ pub enum TyKind {
     Float(FloatTy),
     Bool,
     Char,
+    Array(ArrayTy),
     Pointer(PointerTy),
+    Slice(SliceTy),
     Tuple(TupleTy),
     Fn(FnTy),
     StructDecl(ItemId),
@@ -69,9 +71,21 @@ pub enum FloatTy {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct ArrayTy {
+    pub len: u64,
+    pub elem: TyId,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct PointerTy {
     pub is_mutable: bool,
     pub pointee: TyId,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct SliceTy {
+    pub is_mutable: bool,
+    pub elem: TyId,
 }
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]

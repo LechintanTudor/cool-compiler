@@ -1,6 +1,6 @@
 use crate::{
-    tys, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ModuleElem, ModuleId, PointerTy, ResolveContext,
-    ResolveError, ResolveResult, ResolveTy, Scope, TupleTy, TyKind,
+    tys, ArrayTy, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ModuleElem, ModuleId, PointerTy,
+    ResolveContext, ResolveError, ResolveResult, ResolveTy, Scope, SliceTy, TupleTy, TyKind,
 };
 use cool_collections::id_newtype;
 use cool_lexer::symbols::{sym, Symbol};
@@ -122,11 +122,22 @@ impl ResolveContext {
     }
 
     #[inline]
+    pub fn mk_array(&mut self, len: u64, elem: TyId) -> TyId {
+        self.tys.get_or_insert(TyKind::Array(ArrayTy { len, elem }))
+    }
+
+    #[inline]
     pub fn mk_pointer(&mut self, is_mutable: bool, pointee: TyId) -> TyId {
         self.tys.get_or_insert(TyKind::Pointer(PointerTy {
             is_mutable,
             pointee,
         }))
+    }
+
+    #[inline]
+    pub fn mk_slice(&mut self, is_mutable: bool, elem: TyId) -> TyId {
+        self.tys
+            .get_or_insert(TyKind::Slice(SliceTy { is_mutable, elem }))
     }
 
     pub fn mk_tuple<E>(&mut self, elems: E) -> TyId
