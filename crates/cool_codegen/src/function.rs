@@ -3,6 +3,7 @@ use cool_ast::{ExternFnAst, FnAst};
 use cool_collections::SmallString;
 use cool_lexer::symbols::sym;
 use cool_resolve::ItemPath;
+use inkwell::types::BasicType;
 use inkwell::values::{AnyValue, BasicValue};
 
 impl CodeGenerator<'_> {
@@ -49,12 +50,15 @@ impl CodeGenerator<'_> {
         let mut param_value_iter = fn_value.get_param_iter();
 
         for &binding_id in fn_ast.binding_ids.iter() {
-            let param_ty_id = self.resolve[binding_id].ty_id;
+            let param = self.resolve[binding_id];
 
-            let param_value = if self.resolve.is_ty_id_zst(param_ty_id) {
+            let param_value = if self.resolve.is_ty_id_zst(param.ty_id) {
                 Value::Void
             } else {
-                Value::Rvalue(param_value_iter.next().unwrap().as_any_value_enum())
+                let value = param_value_iter.next().unwrap().as_basic_value_enum();
+                let pointer = self.util_gen_alloca(value, param.symbol.as_str());
+                let ty = value.get_type().as_basic_type_enum();
+                Value::Lvalue { pointer, ty }
             };
 
             debug_assert!(!self.bindings.contains_key(&binding_id));

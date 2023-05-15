@@ -1,10 +1,12 @@
 mod binary_expr;
 mod cond_expr;
+mod subscript_expr;
 mod unary_expr;
 mod while_expr;
 
 pub use self::binary_expr::*;
 pub use self::cond_expr::*;
+pub use self::subscript_expr::*;
 pub use self::unary_expr::*;
 pub use self::while_expr::*;
 use crate::{AnyTypeEnumExt, AnyValueEnumExt, CodeGenerator, Value};
@@ -24,6 +26,7 @@ impl<'a> CodeGenerator<'a> {
             ExprAst::Deref(e) => self.gen_deref_expr(e),
             ExprAst::FnCall(e) => self.gen_fn_call_expr(e),
             ExprAst::Literal(e) => self.gen_literal_expr(e).into(),
+            ExprAst::Subscript(e) => self.gen_subscript_expr(e).into(),
             ExprAst::Unary(e) => self.gen_unary_expr(e),
             ExprAst::While(e) => self.gen_while_expr(e),
             _ => panic!("unsupported operation"),
@@ -41,7 +44,11 @@ impl<'a> CodeGenerator<'a> {
         }
 
         match block.expr.as_ref() {
-            Some(expr) => self.gen_expr(expr),
+            Some(expr) => {
+                self.gen_rvalue_expr(expr)
+                    .map(Value::Rvalue)
+                    .unwrap_or(Value::Void)
+            }
             None => Value::Void,
         }
     }

@@ -6,6 +6,7 @@ mod deref_expr;
 mod fn_call_expr;
 mod ident_expr;
 mod literal_expr;
+mod subscript_expr;
 mod unary_expr;
 mod while_expr;
 
@@ -17,6 +18,7 @@ pub use self::deref_expr::*;
 pub use self::fn_call_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
+pub use self::subscript_expr::*;
 pub use self::unary_expr::*;
 pub use self::while_expr::*;
 use crate::{AstGenerator, AstResult, ModuleUsedAsExpr};
@@ -53,6 +55,7 @@ define_expr_ast! {
     FnCall,
     Literal,
     Module,
+    Subscript,
     Unary,
     While,
 }
@@ -90,6 +93,7 @@ impl AstGenerator<'_> {
             Expr::Literal(e) => self.gen_literal_expr(expected_ty_id, e)?.into(),
             Expr::Paren(e) => self.gen_expr(frame_id, expected_ty_id, &e.inner)?,
             Expr::Unary(e) => self.gen_unary_expr(frame_id, expected_ty_id, e)?.into(),
+            Expr::Subscript(e) => self.gen_subscript_expr(frame_id, expected_ty_id, e)?.into(),
             Expr::While(e) => self.gen_while_expr(frame_id, expected_ty_id, e)?.into(),
             _ => todo!(),
         };

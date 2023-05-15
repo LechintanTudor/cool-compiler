@@ -6,7 +6,7 @@ use cool_span::{Section, Span};
 pub struct SubscriptExpr {
     pub span: Span,
     pub base: Box<Expr>,
-    pub subscript: Box<Expr>,
+    pub index: Box<Expr>,
 }
 
 impl Section for SubscriptExpr {
@@ -19,13 +19,13 @@ impl Section for SubscriptExpr {
 impl Parser<'_> {
     pub fn continue_parse_subscript_expr(&mut self, base: Box<Expr>) -> ParseResult<SubscriptExpr> {
         let start_token = self.bump_expect(&tk::OPEN_BRACKET)?;
-        let subscript = self.parse_expr()?;
+        let index = self.parse_expr()?;
         let end_token = self.bump_expect(&tk::CLOSE_BRACKET)?;
 
         Ok(SubscriptExpr {
             span: start_token.span.to(end_token.span),
             base,
-            subscript: Box::new(subscript),
+            index: Box::new(index),
         })
     }
 }

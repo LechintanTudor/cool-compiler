@@ -1,9 +1,11 @@
 mod assign_stmt;
+mod decl_stmt;
 
 pub use self::assign_stmt::*;
-use crate::{AnyTypeEnumExt, AnyValueEnumExt, CodeGenerator, Value};
-use cool_ast::{DeclStmtAst, StmtAst};
-use inkwell::values::BasicValue;
+pub use self::decl_stmt::*;
+use crate::CodeGenerator;
+use cool_ast::StmtAst;
+use inkwell::values::{BasicValue, PointerValue};
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_stmt(&mut self, stmt: &StmtAst) {
@@ -20,13 +22,10 @@ impl<'a> CodeGenerator<'a> {
         }
     }
 
-    pub fn gen_decl_stmt(&mut self, decl: &DeclStmtAst) {
-        let binding = self.resolve[decl.binding_id];
-
-        if self.resolve.is_ty_id_zst(binding.ty_id) {
-            return;
-        }
-
+    pub(crate) fn util_gen_alloca<V>(&mut self, value: V, name: &str) -> PointerValue<'a>
+    where
+        V: BasicValue<'a>,
+    {
         let alloca_builder = self.context.create_builder();
         let entry_block = self.fn_value.unwrap().get_first_basic_block().unwrap();
 
@@ -47,15 +46,11 @@ impl<'a> CodeGenerator<'a> {
             }
         }
 
-        let ty = self.tys[binding.ty_id].into_basic_type();
-        let pointer = alloca_builder.build_alloca(ty, binding.symbol.as_str());
-        let alloca = pointer.as_instruction_value().unwrap();
+        let ty = value.as_basic_value_enum().get_type();
+        let pointer = alloca_builder.build_alloca(ty, name);
 
-        self.bindings
-            .insert(decl.binding_id, Value::Lvalue { pointer, ty });
-        self.last_alloca = Some(alloca);
-
-        let value = self.gen_rvalue_expr(&decl.expr).unwrap().into_basic_value();
+        self.last_alloca = Some(pointer.as_instruction_value().unwrap());
         self.builder.build_store(pointer, value);
+        pointer
     }
 }

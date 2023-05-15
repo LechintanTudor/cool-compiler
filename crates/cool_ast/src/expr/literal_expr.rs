@@ -370,7 +370,8 @@ fn is_int_in_range(value: u128, ty_id: TyId) -> bool {
         tys::U128 => value <= u128::MAX as _,
         tys::F32 => value <= f32::MAX as _,
         tys::F64 => value <= f64::MAX as _,
-        _ => todo!(),
+        // TODO: Check range for usize and isize
+        _ => true,
     }
 }
 
