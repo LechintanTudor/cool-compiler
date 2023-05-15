@@ -3,7 +3,7 @@ use cool_collections::SmallString;
 use cool_lexer::symbols::{sym, Symbol};
 use cool_lexer::tokens::LiteralKind;
 use cool_parser::LiteralExpr;
-use cool_resolve::{tys, ExprId, TyId};
+use cool_resolve::{tys, ExprId, ResolveExpr, TyId};
 
 #[derive(Clone, Debug)]
 pub enum LiteralExprValue {
@@ -54,12 +54,12 @@ impl AstGenerator<'_> {
 
                 if ty_id.is_int() {
                     LiteralExprAst {
-                        expr_id: self.resolve.add_expr(ty_id, false),
+                        expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                         value: LiteralExprValue::Int(value),
                     }
                 } else {
                     LiteralExprAst {
-                        expr_id: self.resolve.add_expr(ty_id, false),
+                        expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                         value: LiteralExprValue::Float(value as _),
                     }
                 }
@@ -75,7 +75,7 @@ impl AstGenerator<'_> {
                     })?;
 
                 LiteralExprAst {
-                    expr_id: self.resolve.add_expr(ty_id, false),
+                    expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                     value: LiteralExprValue::Float(value),
                 }
             }
@@ -90,7 +90,7 @@ impl AstGenerator<'_> {
                     })?;
 
                 LiteralExprAst {
-                    expr_id: self.resolve.add_expr(ty_id, false),
+                    expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                     value: LiteralExprValue::Bool(value),
                 }
             }
@@ -105,7 +105,7 @@ impl AstGenerator<'_> {
                     })?;
 
                 LiteralExprAst {
-                    expr_id: self.resolve.add_expr(ty_id, false),
+                    expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                     value: LiteralExprValue::Char(value),
                 }
             }
@@ -120,7 +120,7 @@ impl AstGenerator<'_> {
                     })?;
 
                 LiteralExprAst {
-                    expr_id: self.resolve.add_expr(ty_id, false),
+                    expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                     value: LiteralExprValue::Cstr(value),
                 }
             }

@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, CondBlockAst, TyMismatch};
 use cool_parser::WhileExpr;
-use cool_resolve::{tys, ExprId, FrameId, TyId};
+use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
 
 #[derive(Clone, Debug)]
 pub struct WhileExprAst {
@@ -25,7 +25,7 @@ impl AstGenerator<'_> {
         let block = self.gen_cond_block(frame_id, ty_id, &expr.block)?;
 
         Ok(WhileExprAst {
-            expr_id: self.resolve.add_expr(ty_id, false),
+            expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
             block: Box::new(block),
         })
     }

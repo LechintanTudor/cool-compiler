@@ -47,6 +47,12 @@ pub enum AstError {
 
     #[error(transparent)]
     TyNotPointer(#[from] TyNotPointer),
+
+    #[error(transparent)]
+    ExprNotAddressable(#[from] ExprNotAddressable),
+
+    #[error(transparent)]
+    ExprNotMutablyAddressable(#[from] ExprNotMutablyAddressable),
 }
 
 #[derive(Clone, Error, Debug)]
@@ -119,3 +125,11 @@ pub struct TyNotComparable;
 #[derive(Clone, Error, Debug)]
 #[error("tried to dereference non-pointer type")]
 pub struct TyNotPointer;
+
+#[derive(Clone, Error, Debug)]
+#[error("tried to create a pointer from a non-addressable expression")]
+pub struct ExprNotAddressable;
+
+#[derive(Clone, Error, Debug)]
+#[error("tried to create a mutable pointer from a non-mutably-addresable expression")]
+pub struct ExprNotMutablyAddressable;

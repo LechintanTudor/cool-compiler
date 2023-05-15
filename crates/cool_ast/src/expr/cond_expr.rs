@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, BlockExprAst, CondBlockAst, MissingElseBlock};
 use cool_parser::CondExpr;
-use cool_resolve::{tys, ExprId, FrameId, TyId};
+use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
 
 #[derive(Clone, Debug)]
 pub struct CondExprAst {
@@ -37,7 +37,7 @@ impl AstGenerator<'_> {
         };
 
         Ok(CondExprAst {
-            expr_id: self.resolve.add_expr(ty_id, false),
+            expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
             if_block: Box::new(if_block),
             else_if_blocks,
             else_block: else_block.map(Box::new),

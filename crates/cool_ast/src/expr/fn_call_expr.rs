@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, ExprAst, FnParamCountMismatch, TyMismatch, TyNotFn};
 use cool_parser::FnCallExpr;
-use cool_resolve::{tys, ExprId, FrameId, TyId};
+use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
 
 #[derive(Clone, Debug)]
 pub struct FnCallExprAst {
@@ -57,7 +57,7 @@ impl AstGenerator<'_> {
                 expected: expected_ty_id,
             })?;
 
-        let expr_id = self.resolve.add_expr(ret_ty_id, false);
+        let expr_id = self.resolve.add_expr(ResolveExpr::rvalue(ret_ty_id));
 
         Ok(FnCallExprAst {
             expr_id,

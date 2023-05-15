@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, ExprAst, TyMismatch};
 use cool_parser::IdentExpr;
-use cool_resolve::{tys, BindingId, ExprId, FrameId, ItemKind, ModuleId, TyId};
+use cool_resolve::{tys, BindingId, ExprId, FrameId, ItemKind, ModuleId, ResolveExpr, TyId};
 
 #[derive(Clone, Debug)]
 pub struct BindingExprAst {
@@ -35,8 +35,11 @@ impl AstGenerator<'_> {
                         expected: expected_ty_id,
                     })?;
 
-                let is_lvalue = self.resolve[binding_id].is_mutable();
-                let expr_id = self.resolve.add_expr(ty_id, is_lvalue);
+                let is_mutable = self.resolve[binding_id].is_mutable();
+
+                let expr_id = self
+                    .resolve
+                    .add_expr(ResolveExpr::lvalue(ty_id, is_mutable));
 
                 BindingExprAst {
                     expr_id,
@@ -45,14 +48,14 @@ impl AstGenerator<'_> {
                 .into()
             }
             ItemKind::Module(module_id) => {
-                let ty_id = tys::MODULE
+                tys::MODULE
                     .resolve_non_inferred(expected_ty_id)
                     .ok_or(TyMismatch {
                         found: tys::MODULE,
                         expected: expected_ty_id,
                     })?;
 
-                let expr_id = self.resolve.add_expr(ty_id, true);
+                let expr_id = self.resolve.add_expr(ResolveExpr::module());
                 ModuleExprAst { expr_id, module_id }.into()
             }
             _ => panic!("types are not allowed in expressions"),

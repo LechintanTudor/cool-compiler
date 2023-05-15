@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, BindingExprAst, ExprAst, ModuleExprAst, TyMismatch};
 use cool_parser::AccessExpr;
-use cool_resolve::{tys, FrameId, ItemKind, TyId};
+use cool_resolve::{tys, FrameId, ItemKind, ResolveExpr, TyId};
 
 impl AstGenerator<'_> {
     pub fn gen_access_expr(
@@ -31,8 +31,11 @@ impl AstGenerator<'_> {
                                 expected: expected_ty_id,
                             })?;
 
-                        let is_lvalue = self.resolve[binding_id].is_mutable();
-                        let expr_id = self.resolve.add_expr(ty_id, is_lvalue);
+                        let is_mutable = self.resolve[binding_id].is_mutable();
+
+                        let expr_id = self
+                            .resolve
+                            .add_expr(ResolveExpr::lvalue(ty_id, is_mutable));
 
                         BindingExprAst {
                             expr_id,
@@ -48,7 +51,7 @@ impl AstGenerator<'_> {
                                 expected: expected_ty_id,
                             })?;
 
-                        let expr_id = self.resolve.add_expr(tys::MODULE, true);
+                        let expr_id = self.resolve.add_expr(ResolveExpr::module());
                         ModuleExprAst { expr_id, module_id }.into()
                     }
                     _ => panic!("types are not allowed here"),

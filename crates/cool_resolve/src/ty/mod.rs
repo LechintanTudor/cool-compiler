@@ -141,6 +141,15 @@ impl TyContext {
                     kind: ty_kind,
                 }
             }
+            TyKind::Array(array_ty) => {
+                let elem = &self.get_resolve_ty(array_ty.elem);
+
+                ResolveTy {
+                    size: elem.size * array_ty.len,
+                    align: elem.align,
+                    kind: ty_kind,
+                }
+            }
             TyKind::Struct(struct_ty) => {
                 let mut offset = 0;
                 let mut align = 0;

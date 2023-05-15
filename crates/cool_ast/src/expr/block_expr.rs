@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, ExprAst, StmtAst, TyMismatch};
 use cool_parser::BlockExpr;
-use cool_resolve::{tys, ExprId, FrameId, TyId};
+use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
 
 #[derive(Clone, Debug)]
 pub struct BlockExprAst {
@@ -28,27 +28,29 @@ impl AstGenerator<'_> {
             stmts.push(stmt);
         }
 
-        let (expr, ret_ty_id) = match block.expr.as_ref() {
+        let (expr, ty_id) = match block.expr.as_ref() {
             Some(expr) => {
                 let expr = self
                     .gen_expr(frame_id, expected_ty_id, expr)?
                     .ensure_not_module()?;
 
-                let ret_ty_id = self.resolve[expr.id()].ty_id;
-                (Some(expr), ret_ty_id)
+                let ty_id = self.resolve[expr.id()].ty_id;
+                (Some(expr), ty_id)
             }
-            None => (None, tys::UNIT),
+            None => {
+                tys::UNIT
+                    .resolve_non_inferred(expected_ty_id)
+                    .ok_or(TyMismatch {
+                        found: tys::UNIT,
+                        expected: expected_ty_id,
+                    })?;
+
+                (None, tys::UNIT)
+            }
         };
 
-        ret_ty_id
-            .resolve_non_inferred(expected_ty_id)
-            .ok_or(TyMismatch {
-                found: ret_ty_id,
-                expected: expected_ty_id,
-            })?;
-
         Ok(BlockExprAst {
-            expr_id: self.resolve.add_expr(ret_ty_id, false),
+            expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
             stmts,
             expr: expr.map(Box::new),
         })

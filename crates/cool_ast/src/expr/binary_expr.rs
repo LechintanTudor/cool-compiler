@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, ExprAst, TyMismatch, TyNotComparable};
 use cool_parser::{BinOp, BinaryExpr, BitwiseOp};
-use cool_resolve::{tys, ExprId, FrameId, TyId};
+use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
 
 #[derive(Clone, Debug)]
 pub struct BinaryExprAst {
@@ -97,7 +97,7 @@ impl AstGenerator<'_> {
         };
 
         Ok(BinaryExprAst {
-            expr_id: self.resolve.add_expr(ty_id, false),
+            expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
             bin_op,
             lhs: Box::new(lhs),
             rhs: Box::new(rhs),

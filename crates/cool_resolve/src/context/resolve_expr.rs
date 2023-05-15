@@ -4,16 +4,58 @@ use std::ops;
 
 id_newtype!(ExprId);
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub enum ResolveExprKind {
+    Lvalue { is_mutable: bool },
+    Rvalue,
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct ResolveExpr {
     pub ty_id: TyId,
-    pub is_lvalue: bool,
+    pub kind: ResolveExprKind,
 }
 
 impl ResolveExpr {
     #[inline]
+    pub const fn lvalue(ty_id: TyId, is_mutable: bool) -> Self {
+        Self {
+            ty_id,
+            kind: ResolveExprKind::Lvalue { is_mutable },
+        }
+    }
+
+    #[inline]
+    pub const fn rvalue(ty_id: TyId) -> Self {
+        Self {
+            ty_id,
+            kind: ResolveExprKind::Rvalue,
+        }
+    }
+
+    #[inline]
+    pub const fn module() -> Self {
+        Self {
+            ty_id: tys::MODULE,
+            kind: ResolveExprKind::Lvalue { is_mutable: false },
+        }
+    }
+
+    #[inline]
     pub fn is_assignable(&self) -> bool {
-        self.is_lvalue && self.ty_id != tys::MODULE
+        self.ty_id != tys::MODULE
+            && matches!(self.kind, ResolveExprKind::Lvalue { is_mutable: true })
+    }
+
+    #[inline]
+    pub fn is_addressable(&self) -> bool {
+        self.ty_id != tys::MODULE
+    }
+
+    #[inline]
+    pub fn is_mutably_addressable(&self) -> bool {
+        self.ty_id != tys::MODULE
+            && !matches!(self.kind, ResolveExprKind::Lvalue { is_mutable: false })
     }
 }
 
@@ -21,14 +63,15 @@ impl Default for ResolveExpr {
     fn default() -> Self {
         Self {
             ty_id: tys::UNIT,
-            is_lvalue: false,
+            kind: ResolveExprKind::Rvalue,
         }
     }
 }
 
 impl ResolveContext {
-    pub fn add_expr(&mut self, ty_id: TyId, is_lvalue: bool) -> ExprId {
-        self.exprs.push(ResolveExpr { ty_id, is_lvalue })
+    #[inline]
+    pub fn add_expr(&mut self, expr: ResolveExpr) -> ExprId {
+        self.exprs.push(expr)
     }
 
     #[inline]
