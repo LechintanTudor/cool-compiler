@@ -3,7 +3,9 @@ use crate::{
     TyHintMissing, TyMismatch, TyNotFn,
 };
 use cool_parser::{FnExternDecl, FnPrototype, Ty};
-use cool_resolve::{tys, FnAbi, ModuleId, ResolveError, ResolveResult, Scope, TyId};
+use cool_resolve::{
+    tys, FnAbi, ModuleId, ResolveError, ResolveErrorKind, ResolveResult, Scope, TyId,
+};
 use smallvec::SmallVec;
 
 impl AstGenerator<'_> {
@@ -113,7 +115,12 @@ pub fn resolve_fn_abi(extern_decl: &Option<FnExternDecl>) -> ResolveResult<FnAbi
                 Some(abi) => {
                     match FnAbi::try_from(abi) {
                         Ok(abi) => abi,
-                        Err(_) => return Err(ResolveError::not_abi(abi)),
+                        Err(_) => {
+                            return Err(ResolveError {
+                                symbol: abi,
+                                kind: ResolveErrorKind::SymbolNotAbi,
+                            });
+                        }
                     }
                 }
                 None => FnAbi::C,
@@ -132,7 +139,12 @@ pub fn resolve_explicit_fn_abi(extern_decl: &Option<FnExternDecl>) -> ResolveRes
                 Some(abi) => {
                     match FnAbi::try_from(abi) {
                         Ok(abi) => Some(abi),
-                        Err(_) => return Err(ResolveError::not_abi(abi)),
+                        Err(_) => {
+                            return Err(ResolveError {
+                                symbol: abi,
+                                kind: ResolveErrorKind::SymbolNotAbi,
+                            });
+                        }
                     }
                 }
                 None => Some(FnAbi::C),

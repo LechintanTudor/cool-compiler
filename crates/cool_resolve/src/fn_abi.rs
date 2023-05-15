@@ -1,9 +1,9 @@
 use cool_lexer::symbols::{sym, Symbol};
+use derive_more::{Display, Error};
 use std::fmt;
-use thiserror::Error;
 
-#[derive(Clone, Copy, Error, Debug)]
-#[error("function has an unknown abi")]
+#[derive(Clone, Copy, Error, Display, Debug)]
+#[display(fmt = "function has an unknown abi")]
 pub struct UnknownAbi;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Default, Debug)]

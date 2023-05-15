@@ -1,5 +1,6 @@
 use crate::{
-    tys, ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveResult, TyId,
+    tys, ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveErrorKind,
+    ResolveResult, TyId,
 };
 use cool_lexer::symbols::Symbol;
 
@@ -16,7 +17,10 @@ impl ResolveContext {
         let item_id = self
             .paths
             .insert_if_not_exists(item_path.as_symbol_slice())
-            .ok_or(ResolveError::already_defined(symbol))?;
+            .ok_or(ResolveError {
+                symbol,
+                kind: ResolveErrorKind::SymbolAlreadyDefined,
+            })?;
 
         self.items
             .push_checked(item_id, ItemKind::Ty(tys::INFERRED));

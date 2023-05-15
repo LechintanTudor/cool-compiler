@@ -1,7 +1,7 @@
 use crate::resolve::fn_ty::resolve_fn_abi;
 use crate::AstGenerator;
 use cool_parser::Ty;
-use cool_resolve::{tys, ItemPathBuf, ResolveError, ResolveResult, Scope, TyId};
+use cool_resolve::{tys, ItemPathBuf, ResolveError, ResolveErrorKind, ResolveResult, Scope, TyId};
 mod fn_ty;
 use smallvec::SmallVec;
 
@@ -33,9 +33,10 @@ impl AstGenerator<'_> {
 
                 let item_id = self.resolve.resolve_global(scope, &path)?;
 
-                self.resolve[item_id]
-                    .as_ty_id()
-                    .ok_or(ResolveError::not_ty(path.last()))?
+                self.resolve[item_id].as_ty_id().ok_or(ResolveError {
+                    symbol: path.last(),
+                    kind: ResolveErrorKind::SymbolNotTy,
+                })?
             }
             Ty::Array(array_ty) => {
                 let len = self

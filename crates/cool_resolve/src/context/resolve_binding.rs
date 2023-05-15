@@ -1,5 +1,6 @@
 use crate::{
-    tys, Binding, Frame, Mutability, ResolveContext, ResolveError, ResolveResult, Scope, TyId,
+    tys, Binding, Frame, Mutability, ResolveContext, ResolveError, ResolveErrorKind, ResolveResult,
+    Scope, TyId,
 };
 use cool_collections::id_newtype;
 use cool_lexer::symbols::Symbol;
@@ -31,7 +32,10 @@ impl ResolveContext {
             .bindings
             .insert_if_not_exists(symbol, binding_id)
         {
-            return Err(ResolveError::already_defined(symbol));
+            return Err(ResolveError {
+                symbol,
+                kind: ResolveErrorKind::SymbolAlreadyDefined,
+            });
         }
 
         Ok(binding_id)

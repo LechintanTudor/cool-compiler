@@ -1,34 +1,27 @@
 use crate::ItemPathBuf;
 use cool_lexer::symbols::Symbol;
-use thiserror::Error;
+use derive_more::{Display, Error, From};
 
-#[derive(Clone, Error, Debug)]
+#[derive(Clone, Error, From, Display, Debug)]
 pub enum DefineError {
-    #[error(transparent)]
-    StructHasDuplicatedField(#[from] StructHasDuplicatedField),
-
-    #[error(transparent)]
-    StructHasInfiniteSize(#[from] StructHasInfiniteSize),
-
-    #[error(transparent)]
-    TyCannotBeDefined(#[from] TyCannotBeDefined),
+    StructHasDuplicatedField(StructHasDuplicatedField),
+    StructHasInfiniteSize(StructHasInfiniteSize),
+    TyCannotBeDefined(TyCannotBeDefined),
 }
 
-#[derive(Clone, Error, Debug)]
-#[error("struct {path} has a duplicated field \"{field}\"")]
+#[derive(Clone, Error, Display, Debug)]
+#[display(fmt = "struct {path} has duplicate field '{field}'")]
 pub struct StructHasDuplicatedField {
     pub path: ItemPathBuf,
     pub field: Symbol,
 }
 
-#[derive(Clone, Error, Debug)]
-#[error("struct {path} has infinite size")]
+#[derive(Clone, Error, Display, Debug)]
 pub struct StructHasInfiniteSize {
     pub path: ItemPathBuf,
 }
 
-#[derive(Clone, Error, Debug)]
-#[error("type {path} cannot be defined")]
+#[derive(Clone, Error, Display, Debug)]
 pub struct TyCannotBeDefined {
     pub path: ItemPathBuf,
 }

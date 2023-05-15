@@ -21,7 +21,10 @@ impl ResolveContext {
         let item_id = self
             .paths
             .insert_if_not_exists(&[symbol])
-            .ok_or(ResolveError::already_defined(symbol))?;
+            .ok_or(ResolveError {
+                symbol,
+                kind: ResolveErrorKind::SymbolAlreadyDefined,
+            })?;
 
         let module_id = self.modules.push(Module::from_path(symbol));
 
@@ -45,7 +48,10 @@ impl ResolveContext {
         let item_id = self
             .paths
             .insert_if_not_exists(module_path.as_symbol_slice())
-            .ok_or(ResolveError::already_defined(symbol))?;
+            .ok_or(ResolveError {
+                symbol,
+                kind: ResolveErrorKind::SymbolAlreadyDefined,
+            })?;
 
         let module_id = self.modules.push(Module::from_path(module_path));
 
@@ -77,7 +83,10 @@ impl ResolveContext {
         let item_id = self
             .paths
             .insert_if_not_exists(item_path.as_symbol_slice())
-            .ok_or(ResolveError::already_defined(symbol))?;
+            .ok_or(ResolveError {
+                symbol,
+                kind: ResolveErrorKind::SymbolAlreadyDefined,
+            })?;
 
         let binding_id = self.bindings.push(Binding {
             symbol,
@@ -115,7 +124,10 @@ impl ResolveContext {
         let symbol = alias.unwrap_or(path.last());
 
         if module.elems.contains_key(&symbol) {
-            return Err(ResolveError::already_defined(symbol));
+            return Err(ResolveError {
+                symbol,
+                kind: ResolveErrorKind::SymbolAlreadyDefined,
+            });
         }
 
         module.elems.insert(
@@ -170,7 +182,10 @@ impl ResolveContext {
                     // Check builtins
                     ItemPathBuf::from([sym::EMPTY, symbol].as_slice())
                 } else {
-                    return Err(ResolveError::not_found(symbol));
+                    return Err(ResolveError {
+                        symbol,
+                        kind: ResolveErrorKind::SymbolNotFound,
+                    });
                 }
             }
         };
@@ -178,20 +193,26 @@ impl ResolveContext {
         for &symbol in path_iter {
             let current_module = self.get_module_by_path(&resolved_path)?;
 
-            let current_item = current_module
-                .elems
-                .get(&symbol)
-                .ok_or(ResolveError::not_found(symbol))?;
+            let current_item = current_module.elems.get(&symbol).ok_or(ResolveError {
+                symbol,
+                kind: ResolveErrorKind::SymbolNotFound,
+            })?;
 
             if !current_item.is_exported && !module.path.starts_with(&current_module.path) {
-                return Err(ResolveError::not_public(symbol));
+                return Err(ResolveError {
+                    symbol,
+                    kind: ResolveErrorKind::SymbolNotPublic,
+                });
             }
 
             resolved_path = resolved_path.append(symbol);
         }
 
         self.get_item_id_by_path(&resolved_path)
-            .ok_or(ResolveError::not_found(resolved_path.last()))
+            .ok_or(ResolveError {
+                symbol: resolved_path.last(),
+                kind: ResolveErrorKind::SymbolNotFound,
+            })
     }
 
     #[inline]
@@ -216,11 +237,15 @@ impl ResolveContext {
         let item_id = self
             .paths
             .get_id(path.as_symbol_slice())
-            .ok_or(ResolveError::not_found(path.last()))?;
+            .ok_or(ResolveError {
+                symbol: path.last(),
+                kind: ResolveErrorKind::SymbolNotFound,
+            })?;
 
-        let module_id = self.items[item_id]
-            .as_module_id()
-            .ok_or(ResolveError::not_module(path.last()))?;
+        let module_id = self.items[item_id].as_module_id().ok_or(ResolveError {
+            symbol: path.last(),
+            kind: ResolveErrorKind::SymbolNotModule,
+        })?;
 
         Ok(&self.modules[module_id])
     }

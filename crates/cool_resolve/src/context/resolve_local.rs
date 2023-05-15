@@ -1,5 +1,5 @@
 use crate::context::{FrameId, ItemKind, ModuleId, ResolveContext, ResolveError, ResolveResult};
-use crate::Scope;
+use crate::{ResolveErrorKind, Scope};
 use cool_lexer::symbols::Symbol;
 
 impl ResolveContext {
@@ -25,7 +25,12 @@ impl ResolveContext {
 
                     match resolved_elem {
                         Some(resolved_elem) => return Ok(self.items[resolved_elem.item_id]),
-                        None => return Err(ResolveError::not_found(symbol)),
+                        None => {
+                            return Err(ResolveError {
+                                symbol,
+                                kind: ResolveErrorKind::SymbolNotFound,
+                            });
+                        }
                     }
                 }
             }
@@ -41,13 +46,16 @@ impl ResolveContext {
         let parent_module = &self.modules[parent];
         let source_module = &self.modules[source_id];
 
-        let resolved_elem = source_module
-            .elems
-            .get(&symbol)
-            .ok_or(ResolveError::not_found(symbol))?;
+        let resolved_elem = source_module.elems.get(&symbol).ok_or(ResolveError {
+            symbol,
+            kind: ResolveErrorKind::SymbolNotFound,
+        })?;
 
         if !resolved_elem.is_exported && !parent_module.path.starts_with(&source_module.path) {
-            return Err(ResolveError::not_public(symbol));
+            return Err(ResolveError {
+                symbol,
+                kind: ResolveErrorKind::SymbolNotPublic,
+            });
         }
 
         Ok(self.items[resolved_elem.item_id])

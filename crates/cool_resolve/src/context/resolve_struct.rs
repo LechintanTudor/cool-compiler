@@ -1,6 +1,6 @@
 use crate::{
-    ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveResult,
-    StructHasInfiniteSize, StructTy, TyId, TyKind,
+    ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveErrorKind,
+    ResolveResult, StructHasInfiniteSize, StructTy, TyId, TyKind,
 };
 use cool_lexer::symbols::Symbol;
 use smallvec::SmallVec;
@@ -18,7 +18,10 @@ impl ResolveContext {
         let item_id = self
             .paths
             .insert_if_not_exists(item_path.as_symbol_slice())
-            .ok_or(ResolveError::already_defined(symbol))?;
+            .ok_or(ResolveError {
+                symbol,
+                kind: ResolveErrorKind::SymbolAlreadyDefined,
+            })?;
 
         let ty_id = self.tys.declare_struct(item_id);
         self.items.push_checked(item_id, ItemKind::Ty(ty_id));

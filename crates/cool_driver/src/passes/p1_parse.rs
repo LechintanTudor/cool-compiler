@@ -273,7 +273,11 @@ pub fn p1_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
     for import in imports.drain(..) {
         errors.push(CompileError {
             path: import.source_path,
-            kind: ResolveError::not_found(import.path.last()).into(),
+            kind: ResolveError {
+                symbol: import.path.last(),
+                kind: ResolveErrorKind::SymbolNotFound,
+            }
+            .into(),
         });
     }
 
