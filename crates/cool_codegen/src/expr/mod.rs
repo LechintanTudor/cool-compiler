@@ -22,6 +22,7 @@ impl<'a> CodeGenerator<'a> {
     pub fn gen_expr(&mut self, expr: &ExprAst) -> Value<'a> {
         match expr {
             ExprAst::Array(e) => self.gen_array_expr(e),
+            ExprAst::ArrayRepeat(e) => self.gen_array_repeat_expr(e),
             ExprAst::Binary(e) => self.gen_binary_expr(e).into(),
             ExprAst::Binding(e) => self.gen_ident_expr(e),
             ExprAst::Block(e) => self.gen_block_expr(e),
@@ -29,7 +30,7 @@ impl<'a> CodeGenerator<'a> {
             ExprAst::Deref(e) => self.gen_deref_expr(e),
             ExprAst::FnCall(e) => self.gen_fn_call_expr(e),
             ExprAst::Literal(e) => self.gen_literal_expr(e).into(),
-            ExprAst::Subscript(e) => self.gen_subscript_expr(e).into(),
+            ExprAst::Subscript(e) => self.gen_subscript_expr(e),
             ExprAst::Unary(e) => self.gen_unary_expr(e),
             ExprAst::While(e) => self.gen_while_expr(e),
             _ => panic!("unsupported operation"),

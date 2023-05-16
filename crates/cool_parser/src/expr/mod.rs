@@ -63,6 +63,7 @@ macro_rules! define_expr {
 define_expr! {
     Access,
     Array,
+    ArrayRepeat,
     Binary,
     Block,
     Cond,
@@ -183,7 +184,7 @@ impl Parser<'_> {
 
     fn parse_primary_expr(&mut self, allow_struct_expr: bool) -> ParseResult<Expr> {
         let mut expr: Expr = match self.peek().kind {
-            tk::OPEN_BRACKET => self.parse_array_expr()?.into(),
+            tk::OPEN_BRACKET => self.parse_array_expr()?,
             tk::OPEN_BRACE => self.parse_block_expr()?.into(),
             tk::OPEN_PAREN => self.parse_paren_or_tuple_expr()?,
             tk::KW_IF => self.parse_cond_expr()?.into(),

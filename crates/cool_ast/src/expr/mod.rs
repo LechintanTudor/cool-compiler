@@ -31,6 +31,7 @@ use derive_more::From;
 #[derive(Clone, From, Debug)]
 pub enum ExprAst {
     Array(ArrayExprAst),
+    ArrayRepeat(ArrayRepeatExprAst),
     Binary(BinaryExprAst),
     Binding(BindingExprAst),
     Block(BlockExprAst),
@@ -48,6 +49,7 @@ impl ExprAst {
     pub fn expr_id(&self) -> ExprId {
         match self {
             Self::Array(e) => e.expr_id,
+            Self::ArrayRepeat(e) => e.expr_id,
             Self::Binary(e) => e.expr_id,
             Self::Binding(e) => e.expr_id,
             Self::Block(e) => e.expr_id,
@@ -86,6 +88,10 @@ impl AstGenerator<'_> {
         let expr: ExprAst = match expr {
             Expr::Access(e) => self.gen_access_expr(frame_id, expected_ty_id, e)?,
             Expr::Array(e) => self.gen_array_expr(frame_id, expected_ty_id, e)?.into(),
+            Expr::ArrayRepeat(e) => {
+                self.gen_array_repeat_expr(frame_id, expected_ty_id, e)?
+                    .into()
+            }
             Expr::Binary(e) => self.gen_binary_expr(frame_id, expected_ty_id, e)?.into(),
             Expr::Block(e) => self.gen_block_expr(frame_id, expected_ty_id, e)?.into(),
             Expr::Cond(e) => self.gen_cond_expr(frame_id, expected_ty_id, e)?.into(),
