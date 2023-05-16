@@ -1,5 +1,5 @@
 use crate::context::ResolveContext;
-use crate::{FloatTy, InferredTy, IntTy, PointerTy, PrimitiveTyProps, TyKind};
+use crate::{FloatTy, InferTy, IntTy, PointerTy, PrimitiveTyProps, TyKind};
 use cool_lexer::symbols::sym;
 
 macro_rules! builtins {
@@ -82,12 +82,13 @@ builtins! {
     }
 
     Nonitems {
-        18: (INFERRED, TyKind::Inferred(InferredTy::Any)),
-        19: (INFERRED_NUMBER, TyKind::Inferred(InferredTy::Number)),
-        20: (INFERRED_INT, TyKind::Inferred(InferredTy::Int)),
-        21: (INFERRED_FLOAT, TyKind::Inferred(InferredTy::Float)),
+        18: (INFER, TyKind::Infer(InferTy::Any)),
+        19: (INFER_NUMBER, TyKind::Infer(InferTy::Number)),
+        20: (INFER_INT, TyKind::Infer(InferTy::Int)),
+        21: (INFER_FLOAT, TyKind::Infer(InferTy::Float)),
+        22: (INFER_EMPTY_ARRAY, TyKind::Infer(InferTy::EmptyArray)),
 
-        22: (MODULE, TyKind::Module),
-        23: (C_STR, TyKind::Pointer(PointerTy { is_mutable: false, pointee: tys::I8 })),
+        23: (MODULE, TyKind::Module),
+        24: (C_STR, TyKind::Pointer(PointerTy { is_mutable: false, pointee: tys::I8 })),
     }
 }

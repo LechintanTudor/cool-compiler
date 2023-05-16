@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, ExprAst, TyMismatch};
+use crate::{AstGenerator, AstResult, ExprAst};
 use cool_parser::IdentExpr;
 use cool_resolve::{tys, BindingId, ExprId, FrameId, ItemKind, ModuleId, ResolveExpr, TyId};
 
@@ -27,13 +27,9 @@ impl AstGenerator<'_> {
 
         let expr: ExprAst = match item {
             ItemKind::Binding(binding_id) => {
-                let ty_id = self.resolve[binding_id]
-                    .ty_id
-                    .resolve_non_inferred(expected_ty_id)
-                    .ok_or(TyMismatch {
-                        found: self.resolve[binding_id].ty_id,
-                        expected: expected_ty_id,
-                    })?;
+                let ty_id = self
+                    .resolve
+                    .resolve_direct_ty_id(self.resolve[binding_id].ty_id, expected_ty_id)?;
 
                 let is_mutable = self.resolve[binding_id].is_mutable();
 
@@ -48,12 +44,8 @@ impl AstGenerator<'_> {
                 .into()
             }
             ItemKind::Module(module_id) => {
-                tys::MODULE
-                    .resolve_non_inferred(expected_ty_id)
-                    .ok_or(TyMismatch {
-                        found: tys::MODULE,
-                        expected: expected_ty_id,
-                    })?;
+                self.resolve
+                    .resolve_direct_ty_id(tys::MODULE, expected_ty_id)?;
 
                 let expr_id = self.resolve.add_expr(ResolveExpr::module());
                 ModuleExprAst { expr_id, module_id }.into()

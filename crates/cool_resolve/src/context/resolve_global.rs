@@ -91,7 +91,7 @@ impl ResolveContext {
         let binding_id = self.bindings.push(Binding {
             symbol,
             mutability,
-            ty_id: tys::INFERRED,
+            ty_id: tys::INFER,
         });
 
         self.items

@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, LiteralIntOutOfRange, LiteralUnknownSuffix, TyMismatch};
+use crate::{AstGenerator, AstResult, LiteralIntOutOfRange, LiteralUnknownSuffix};
 use cool_collections::SmallString;
 use cool_lexer::symbols::{sym, Symbol};
 use cool_lexer::tokens::LiteralKind;
@@ -40,13 +40,7 @@ impl AstGenerator<'_> {
         let expr = match literal_expr.literal.kind {
             LiteralKind::Int { .. } => {
                 let (value, ty_id) = parse_int(symbol)?;
-
-                let ty_id = ty_id
-                    .resolve_non_inferred(expected_ty_id)
-                    .ok_or(TyMismatch {
-                        found: ty_id,
-                        expected: expected_ty_id,
-                    })?;
+                let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
 
                 if !is_int_in_range(value, ty_id) {
                     Err(LiteralIntOutOfRange { ty_id, symbol })?;
@@ -66,13 +60,7 @@ impl AstGenerator<'_> {
             }
             LiteralKind::Decimal => {
                 let (value, ty_id) = parse_decimal(symbol)?;
-
-                let ty_id = ty_id
-                    .resolve_non_inferred(expected_ty_id)
-                    .ok_or(TyMismatch {
-                        found: ty_id,
-                        expected: expected_ty_id,
-                    })?;
+                let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
 
                 LiteralExprAst {
                     expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
@@ -81,13 +69,9 @@ impl AstGenerator<'_> {
             }
             LiteralKind::Bool => {
                 let value = symbol == sym::KW_TRUE;
-
-                let ty_id = tys::BOOL
-                    .resolve_non_inferred(expected_ty_id)
-                    .ok_or(TyMismatch {
-                        found: tys::BOOL,
-                        expected: expected_ty_id,
-                    })?;
+                let ty_id = self
+                    .resolve
+                    .resolve_direct_ty_id(tys::BOOL, expected_ty_id)?;
 
                 LiteralExprAst {
                     expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
@@ -96,13 +80,9 @@ impl AstGenerator<'_> {
             }
             LiteralKind::Char => {
                 let value = parse_char(symbol);
-
-                let ty_id = tys::CHAR
-                    .resolve_non_inferred(expected_ty_id)
-                    .ok_or(TyMismatch {
-                        found: tys::CHAR,
-                        expected: expected_ty_id,
-                    })?;
+                let ty_id = self
+                    .resolve
+                    .resolve_direct_ty_id(tys::CHAR, expected_ty_id)?;
 
                 LiteralExprAst {
                     expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
@@ -111,13 +91,9 @@ impl AstGenerator<'_> {
             }
             LiteralKind::Str => {
                 let value = parse_str(symbol);
-
-                let ty_id = tys::C_STR
-                    .resolve_non_inferred(expected_ty_id)
-                    .ok_or(TyMismatch {
-                        found: tys::C_STR,
-                        expected: expected_ty_id,
-                    })?;
+                let ty_id = self
+                    .resolve
+                    .resolve_direct_ty_id(tys::C_STR, expected_ty_id)?;
 
                 LiteralExprAst {
                     expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
@@ -290,7 +266,7 @@ fn append_digit(value: u128, base: u128, digit: u32) -> Option<u128> {
 
 fn parse_int_suffix(suffix: &str) -> AstResult<TyId> {
     let ty_id = match suffix {
-        "" => tys::INFERRED_INT,
+        "" => tys::INFER_INT,
         "i8" => tys::I8,
         "i16" => tys::I16,
         "i32" => tys::I32,
@@ -315,7 +291,7 @@ fn parse_int_suffix(suffix: &str) -> AstResult<TyId> {
 
 pub fn parse_decimal_suffix(suffix: &str) -> AstResult<TyId> {
     let ty_id = match suffix {
-        "" => tys::INFERRED_FLOAT,
+        "" => tys::INFER_FLOAT,
         "f32" => tys::F32,
         "f64" => tys::F64,
         _ => {
@@ -330,7 +306,7 @@ pub fn parse_decimal_suffix(suffix: &str) -> AstResult<TyId> {
 
 pub fn parse_number_suffix(suffix: &str) -> AstResult<TyId> {
     let ty_id = match suffix {
-        "" => tys::INFERRED_INT,
+        "" => tys::INFER_INT,
         "i8" => tys::I8,
         "i16" => tys::I16,
         "i32" => tys::I32,
@@ -357,7 +333,7 @@ pub fn parse_number_suffix(suffix: &str) -> AstResult<TyId> {
 
 fn is_int_in_range(value: u128, ty_id: TyId) -> bool {
     match ty_id {
-        tys::INFERRED_INT => true,
+        tys::INFER_INT => true,
         tys::I8 => value <= i8::MAX as _,
         tys::I16 => value <= i16::MAX as _,
         tys::I32 => value <= i32::MAX as _,

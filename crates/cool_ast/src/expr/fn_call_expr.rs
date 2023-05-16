@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, ExprAst, FnParamCountMismatch, TyMismatch, TyNotFn};
+use crate::{AstGenerator, AstResult, ExprAst, FnParamCountMismatch, TyNotFn};
 use cool_parser::FnCallExpr;
 use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
 
@@ -16,7 +16,7 @@ impl AstGenerator<'_> {
         expected_ty_id: TyId,
         fn_call_expr: &FnCallExpr,
     ) -> AstResult<FnCallExprAst> {
-        let fn_expr = self.gen_expr(frame_id, tys::INFERRED, &fn_call_expr.base)?;
+        let fn_expr = self.gen_expr(frame_id, tys::INFER, &fn_call_expr.base)?;
         let fn_expr_ty_id = self.resolve[fn_expr.id()].ty_id;
         let fn_ty = self.resolve[fn_expr_ty_id]
             .kind
@@ -45,17 +45,13 @@ impl AstGenerator<'_> {
         let mut arg_exprs = Vec::<ExprAst>::new();
 
         for (i, arg_expr) in fn_call_expr.args.iter().enumerate() {
-            let param_ty_id = fn_ty.params.get(i).copied().unwrap_or(tys::INFERRED);
+            let param_ty_id = fn_ty.params.get(i).copied().unwrap_or(tys::INFER);
             arg_exprs.push(self.gen_expr(frame_id, param_ty_id, arg_expr)?);
         }
 
-        let ret_ty_id = fn_ty
-            .ret
-            .resolve_non_inferred(expected_ty_id)
-            .ok_or(TyMismatch {
-                found: fn_ty.ret,
-                expected: expected_ty_id,
-            })?;
+        let ret_ty_id = self
+            .resolve
+            .resolve_direct_ty_id(fn_ty.ret, expected_ty_id)?;
 
         let expr_id = self.resolve.add_expr(ResolveExpr::rvalue(ret_ty_id));
 

@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, ExprAst, TyMismatch, TyNotPointer};
+use crate::{AstGenerator, AstResult, ExprAst, TyNotPointer};
 use cool_parser::DerefExpr;
 use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId, TyKind};
 
@@ -22,13 +22,9 @@ impl AstGenerator<'_> {
             Err(TyNotPointer)?
         };
 
-        let ty_id = pointer_ty
-            .pointee
-            .resolve_non_inferred(expected_ty_id)
-            .ok_or(TyMismatch {
-                found: pointer_ty.pointee,
-                expected: expected_ty_id,
-            })?;
+        let ty_id = self
+            .resolve
+            .resolve_direct_ty_id(pointer_ty.pointee, expected_ty_id)?;
 
         Ok(DerefExprAst {
             expr_id: self

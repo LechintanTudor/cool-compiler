@@ -1,4 +1,4 @@
-use crate::{InferredTy, ItemId, TyKind};
+use crate::{InferTy, ItemId, TyKind};
 
 #[derive(Clone, Copy, Debug)]
 pub struct PrimitiveTyProps {
@@ -22,11 +22,11 @@ pub struct ResolveTy {
 
 impl ResolveTy {
     #[inline]
-    pub fn inferred(inferred_ty: InferredTy) -> Self {
+    pub fn inferred(inferred_ty: InferTy) -> Self {
         Self {
             size: 0,
             align: 0,
-            kind: TyKind::Inferred(inferred_ty),
+            kind: TyKind::Infer(inferred_ty),
         }
     }
 

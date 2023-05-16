@@ -7,7 +7,7 @@ use std::hash::{Hash, Hasher};
 
 #[derive(Clone, PartialEq, Eq, Hash, From, Debug)]
 pub enum TyKind {
-    Inferred(InferredTy),
+    Infer(InferTy),
     Unit,
     Int(IntTy),
     Float(FloatTy),
@@ -25,6 +25,19 @@ pub enum TyKind {
 
 impl TyKind {
     #[inline]
+    pub fn is_defined(&self) -> bool {
+        !matches!(self, Self::Infer(_) | Self::StructDecl(_) | Self::Module)
+    }
+
+    #[inline]
+    pub fn as_pointer_ty(&self) -> Option<&PointerTy> {
+        match self {
+            Self::Pointer(pointer_ty) => Some(pointer_ty),
+            _ => None,
+        }
+    }
+
+    #[inline]
     pub fn as_fn_ty(&self) -> Option<&FnTy> {
         match self {
             Self::Fn(fn_ty) => Some(fn_ty),
@@ -36,22 +49,25 @@ impl TyKind {
 impl Default for TyKind {
     #[inline]
     fn default() -> Self {
-        Self::Inferred(InferredTy::Any)
+        Self::Infer(InferTy::Any)
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum InferredTy {
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Default, Debug)]
+pub enum InferTy {
+    #[default]
     Any,
     Number,
     Int,
     Float,
+    EmptyArray,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Default, Debug)]
 pub enum IntTy {
     I8,
     I16,
+    #[default]
     I32,
     I64,
     I128,
@@ -64,9 +80,10 @@ pub enum IntTy {
     Usize,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Default, Debug)]
 pub enum FloatTy {
     F32,
+    #[default]
     F64,
 }
 

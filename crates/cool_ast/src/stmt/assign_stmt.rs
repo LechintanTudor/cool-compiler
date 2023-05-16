@@ -16,7 +16,7 @@ impl AstGenerator<'_> {
         assign_stmt: &AssignStmt,
     ) -> AstResult<AssignStmtAst> {
         let lhs = self
-            .gen_expr(frame_id, tys::INFERRED, &assign_stmt.lhs)?
+            .gen_expr(frame_id, tys::INFER, &assign_stmt.lhs)?
             .ensure_not_module()?;
 
         if !self.resolve[lhs.id()].is_assignable() {

@@ -46,7 +46,7 @@ impl ResolveContext {
             bindings: IdIndexedVec::new(Binding {
                 symbol: Symbol::dummy(),
                 mutability: Mutability::Immutable,
-                ty_id: tys::INFERRED,
+                ty_id: tys::INFER,
             }),
             frames: IdIndexedVec::new(Frame {
                 parent: ModuleId::dummy().into(),

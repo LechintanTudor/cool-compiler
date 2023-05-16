@@ -25,7 +25,7 @@ impl ResolveContext {
         let binding_id = self.bindings.push(Binding {
             symbol,
             mutability: Mutability::local(is_mutable),
-            ty_id: ty_id.unwrap_or(tys::INFERRED),
+            ty_id: ty_id.unwrap_or(tys::INFER),
         });
 
         if !self.frames[frame_id]
@@ -43,8 +43,13 @@ impl ResolveContext {
 
     #[inline]
     pub fn set_binding_ty(&mut self, binding_id: BindingId, ty_id: TyId) {
-        let old_ty_id = &mut self.bindings[binding_id].ty_id;
-        *old_ty_id = old_ty_id.resolve_non_inferred(ty_id).unwrap();
+        let old_ty_id = self.bindings[binding_id].ty_id;
+
+        if old_ty_id != tys::INFER && old_ty_id != ty_id {
+            panic!("cannot set binding type");
+        }
+
+        self.bindings[binding_id].ty_id = ty_id;
     }
 }
 

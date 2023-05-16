@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, CondBlockAst, TyMismatch};
+use crate::{AstGenerator, AstResult, CondBlockAst};
 use cool_parser::WhileExpr;
 use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
 
@@ -15,12 +15,9 @@ impl AstGenerator<'_> {
         expected_ty_id: TyId,
         expr: &WhileExpr,
     ) -> AstResult<WhileExprAst> {
-        let ty_id = tys::UNIT
-            .resolve_non_inferred(expected_ty_id)
-            .ok_or(TyMismatch {
-                found: tys::UNIT,
-                expected: expected_ty_id,
-            })?;
+        let ty_id = self
+            .resolve
+            .resolve_direct_ty_id(tys::UNIT, expected_ty_id)?;
 
         let block = self.gen_cond_block(frame_id, ty_id, &expr.block)?;
 

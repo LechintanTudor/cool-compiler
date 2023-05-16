@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, ExprAst, StmtAst, TyMismatch};
+use crate::{AstGenerator, AstResult, ExprAst, StmtAst};
 use cool_parser::BlockExpr;
 use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
 
@@ -38,14 +38,11 @@ impl AstGenerator<'_> {
                 (Some(expr), ty_id)
             }
             None => {
-                tys::UNIT
-                    .resolve_non_inferred(expected_ty_id)
-                    .ok_or(TyMismatch {
-                        found: tys::UNIT,
-                        expected: expected_ty_id,
-                    })?;
+                let ty_id = self
+                    .resolve
+                    .resolve_direct_ty_id(tys::UNIT, expected_ty_id)?;
 
-                (None, tys::UNIT)
+                (None, ty_id)
             }
         };
 

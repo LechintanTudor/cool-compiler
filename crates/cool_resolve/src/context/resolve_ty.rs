@@ -1,97 +1,11 @@
 use crate::{
     tys, ArrayTy, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ModuleElem, ModuleId, PointerTy,
     ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, ResolveTy, Scope, SliceTy,
-    TupleTy, TyKind,
+    TupleTy, TyId, TyKind, TyMismatch,
 };
-use cool_collections::id_newtype;
 use cool_lexer::symbols::{sym, Symbol};
 use smallvec::SmallVec;
 use std::ops;
-
-id_newtype!(TyId);
-
-impl TyId {
-    #[inline]
-    pub fn is_inferred(&self) -> bool {
-        tys::INFERRED.index() <= self.index() && self.index() <= tys::INFERRED_FLOAT.index()
-    }
-
-    #[inline]
-    pub fn is_int(&self) -> bool {
-        tys::I8.index() <= self.index() && self.index() <= tys::USIZE.index()
-    }
-
-    #[inline]
-    pub fn is_signed_int(&self) -> bool {
-        tys::I8.index() <= self.index() && self.index() <= tys::ISIZE.index()
-    }
-
-    #[inline]
-    pub fn is_unsigned_int(&self) -> bool {
-        tys::U8.index() <= self.index() && self.index() <= tys::USIZE.index()
-    }
-
-    #[inline]
-    pub fn is_float(&self) -> bool {
-        self.index() == tys::F32.index() || self.index() == tys::F64.index()
-    }
-
-    #[inline]
-    pub fn is_number(&self) -> bool {
-        self.is_int() || self.is_float()
-    }
-
-    #[inline]
-    pub fn resolve_non_inferred(self, expected: Self) -> Option<Self> {
-        let ty_id = match expected {
-            tys::INFERRED => {
-                match self {
-                    tys::INFERRED_INT => tys::I32,
-                    tys::INFERRED_FLOAT => tys::F64,
-                    _ if !self.is_inferred() => self,
-                    _ => return None,
-                }
-            }
-            tys::INFERRED_NUMBER => {
-                match self {
-                    tys::INFERRED_INT => tys::I32,
-                    tys::INFERRED_FLOAT => tys::F64,
-                    _ => return None,
-                }
-            }
-            tys::INFERRED_INT => {
-                match self {
-                    tys::INFERRED_INT => tys::I32,
-                    _ if self.is_int() => self,
-                    _ => return None,
-                }
-            }
-            tys::INFERRED_FLOAT => {
-                match self {
-                    tys::INFERRED_INT => tys::F64,
-                    tys::INFERRED_FLOAT => tys::F64,
-                    _ if self.is_float() => self,
-                    _ => return None,
-                }
-            }
-            _ => {
-                let can_resolve = (self == expected)
-                    || (self == tys::INFERRED)
-                    || (self == tys::INFERRED_NUMBER && expected.is_number())
-                    || (self == tys::INFERRED_INT && expected.is_number())
-                    || (self == tys::INFERRED_FLOAT && expected.is_float());
-
-                if !can_resolve {
-                    return None;
-                }
-
-                expected
-            }
-        };
-
-        Some(ty_id)
-    }
-}
 
 impl ResolveContext {
     pub fn insert_builtin_ty(&mut self, ty_id: TyId, ty_kind: TyKind) {
@@ -183,6 +97,20 @@ impl ResolveContext {
         })?;
 
         Ok(ty_id)
+    }
+
+    #[inline]
+    pub fn resolve_direct_ty_id(
+        &self,
+        found_ty_id: TyId,
+        expected_ty_id: TyId,
+    ) -> Result<TyId, TyMismatch> {
+        self.tys
+            .resolve_direct_ty_id(found_ty_id, expected_ty_id)
+            .ok_or(TyMismatch {
+                found_ty_id,
+                expected_ty_id,
+            })
     }
 
     #[inline]

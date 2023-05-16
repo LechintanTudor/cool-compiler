@@ -20,7 +20,7 @@ impl AstGenerator<'_> {
             StmtKind::Assign(stmt) => StmtAst::Assign(self.gen_assign_stmt(frame_id, stmt)?),
             StmtKind::Decl(stmt) => StmtAst::Decl(self.gen_decl_stmt(frame_id, stmt)?),
             StmtKind::Defer(_) => todo!(),
-            StmtKind::Expr(expr) => StmtAst::Expr(self.gen_expr(frame_id, tys::INFERRED, expr)?),
+            StmtKind::Expr(expr) => StmtAst::Expr(self.gen_expr(frame_id, tys::INFER, expr)?),
         };
 
         Ok(stmt)

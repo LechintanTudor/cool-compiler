@@ -1,5 +1,5 @@
 use cool_lexer::symbols::Symbol;
-use cool_resolve::{FnAbi, ResolveError, TyId};
+use cool_resolve::{FnAbi, ResolveError, TyId, TyMismatch};
 use thiserror::Error;
 
 pub type AstResult<T = ()> = Result<T, AstError>;
@@ -53,13 +53,6 @@ pub enum AstError {
 
     #[error(transparent)]
     ExprNotMutablyAddressable(#[from] ExprNotMutablyAddressable),
-}
-
-#[derive(Clone, Error, Debug)]
-#[error("failed to resolve types")]
-pub struct TyMismatch {
-    pub found: TyId,
-    pub expected: TyId,
 }
 
 #[derive(Clone, Error, Debug)]

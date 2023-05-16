@@ -78,7 +78,7 @@ impl<'a> GeneratedTys<'a> {
 
     fn insert_derived_tys(tys: &mut TyMap<'a>, resolve: &'a ResolveContext) {
         for ty_id in resolve.iter_ty_ids() {
-            if !ty_id.is_inferred() && ty_id != tys::MODULE {
+            if resolve[ty_id].kind.is_defined() {
                 Self::insert_ty(tys, resolve, ty_id);
             }
         }

@@ -22,8 +22,7 @@ impl ResolveContext {
                 kind: ResolveErrorKind::SymbolAlreadyDefined,
             })?;
 
-        self.items
-            .push_checked(item_id, ItemKind::Ty(tys::INFERRED));
+        self.items.push_checked(item_id, ItemKind::Ty(tys::INFER));
 
         module.elems.insert(
             symbol,

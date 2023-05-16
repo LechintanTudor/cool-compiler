@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, ExprAst, TyMismatch};
+use crate::{AstGenerator, AstResult, ExprAst};
 use cool_parser::SubscriptExpr;
 use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId, TyKind};
 
@@ -16,7 +16,7 @@ impl AstGenerator<'_> {
         expected_ty_id: TyId,
         expr: &SubscriptExpr,
     ) -> AstResult<SubscriptExprAst> {
-        let base = self.gen_expr(frame_id, tys::INFERRED, &expr.base)?;
+        let base = self.gen_expr(frame_id, tys::INFER, &expr.base)?;
         let index = self.gen_expr(frame_id, tys::USIZE, &expr.index)?;
 
         let base_resolve_expr = self.resolve[base.id()];
@@ -25,13 +25,9 @@ impl AstGenerator<'_> {
             panic!("ty not array");
         };
 
-        let ty_id = array_ty
-            .elem
-            .resolve_non_inferred(expected_ty_id)
-            .ok_or(TyMismatch {
-                found: array_ty.elem,
-                expected: expected_ty_id,
-            })?;
+        let ty_id = self
+            .resolve
+            .resolve_direct_ty_id(array_ty.elem, expected_ty_id)?;
 
         Ok(SubscriptExprAst {
             expr_id: self.resolve.add_expr(ResolveExpr {

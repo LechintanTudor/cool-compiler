@@ -76,8 +76,13 @@ impl ResolveContext {
 
     #[inline]
     pub fn set_expr_ty(&mut self, expr_id: ExprId, ty_id: TyId) {
-        let expr_ty_id = &mut self.exprs[expr_id].ty_id;
-        *expr_ty_id = ty_id.resolve_non_inferred(*expr_ty_id).unwrap();
+        let old_ty_id = self.exprs[expr_id].ty_id;
+
+        if old_ty_id != tys::INFER && old_ty_id != ty_id {
+            panic!("cannot set binding type");
+        }
+
+        self.exprs[expr_id].ty_id = ty_id;
     }
 }
 
