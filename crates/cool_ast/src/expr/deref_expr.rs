@@ -16,7 +16,7 @@ impl AstGenerator<'_> {
         deref_expr: &DerefExpr,
     ) -> AstResult<DerefExprAst> {
         let expr = self.gen_expr(frame_id, expected_ty_id, &deref_expr.expr)?;
-        let expr_ty_id = self.resolve[expr.id()].ty_id;
+        let expr_ty_id = self.resolve[expr.expr_id()].ty_id;
 
         let TyKind::Pointer(pointer_ty) = self.resolve[expr_ty_id].kind else {
             Err(TyNotPointer)?

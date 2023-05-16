@@ -19,11 +19,11 @@ impl AstGenerator<'_> {
             .gen_expr(frame_id, tys::INFER, &assign_stmt.lhs)?
             .ensure_not_module()?;
 
-        if !self.resolve[lhs.id()].is_assignable() {
+        if !self.resolve[lhs.expr_id()].is_assignable() {
             Err(AssignToRvalue)?;
         }
 
-        let ty_id = self.resolve[lhs.id()].ty_id;
+        let ty_id = self.resolve[lhs.expr_id()].ty_id;
 
         let rhs = self
             .gen_expr(frame_id, ty_id, &assign_stmt.rhs)?

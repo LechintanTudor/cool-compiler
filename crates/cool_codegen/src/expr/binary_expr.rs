@@ -23,7 +23,7 @@ impl<'a> CodeGenerator<'a> {
         rhs: &ExprAst,
         arithmetic_op: ArithmeticOp,
     ) -> AnyValueEnum<'a> {
-        let ty_id = self.resolve[lhs.id()].ty_id;
+        let ty_id = self.resolve[lhs.expr_id()].ty_id;
         let lhs = self.gen_rvalue_expr(lhs).unwrap();
         let rhs = self.gen_rvalue_expr(rhs).unwrap();
 
@@ -100,7 +100,7 @@ impl<'a> CodeGenerator<'a> {
         rhs: &ExprAst,
         comparison_op: ComparisonOp,
     ) -> AnyValueEnum<'a> {
-        let ty_id = self.resolve[lhs.id()].ty_id;
+        let ty_id = self.resolve[lhs.expr_id()].ty_id;
 
         let lhs = {
             match self.gen_rvalue_expr(lhs).unwrap() {
@@ -187,7 +187,7 @@ impl<'a> CodeGenerator<'a> {
         rhs: &ExprAst,
         bitwise_op: BitwiseOp,
     ) -> AnyValueEnum<'a> {
-        let ty_id = self.resolve[lhs.id()].ty_id;
+        let ty_id = self.resolve[lhs.expr_id()].ty_id;
         let lhs = self.gen_rvalue_expr(lhs).unwrap().into_int_value();
         let rhs = self.gen_rvalue_expr(rhs).unwrap().into_int_value();
 

@@ -1,9 +1,11 @@
+mod array_expr;
 mod binary_expr;
 mod cond_expr;
 mod subscript_expr;
 mod unary_expr;
 mod while_expr;
 
+pub use self::array_expr::*;
 pub use self::binary_expr::*;
 pub use self::cond_expr::*;
 pub use self::subscript_expr::*;
@@ -19,6 +21,7 @@ use inkwell::values::{AnyValue, AnyValueEnum};
 impl<'a> CodeGenerator<'a> {
     pub fn gen_expr(&mut self, expr: &ExprAst) -> Value<'a> {
         match expr {
+            ExprAst::Array(e) => self.gen_array_expr(e),
             ExprAst::Binary(e) => self.gen_binary_expr(e).into(),
             ExprAst::Binding(e) => self.gen_ident_expr(e),
             ExprAst::Block(e) => self.gen_block_expr(e),

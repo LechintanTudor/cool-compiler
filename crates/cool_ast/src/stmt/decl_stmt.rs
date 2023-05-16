@@ -30,7 +30,7 @@ impl AstGenerator<'_> {
             frame_id,
             decl_stmt.pattern.is_mutable,
             decl_stmt.pattern.ident.symbol,
-            Some(self.resolve[expr.id()].ty_id),
+            Some(self.resolve[expr.expr_id()].ty_id),
         )?;
 
         Ok(DeclStmtAst {

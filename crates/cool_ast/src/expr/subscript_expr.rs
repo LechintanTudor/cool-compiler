@@ -19,7 +19,7 @@ impl AstGenerator<'_> {
         let base = self.gen_expr(frame_id, tys::INFER, &expr.base)?;
         let index = self.gen_expr(frame_id, tys::USIZE, &expr.index)?;
 
-        let base_resolve_expr = self.resolve[base.id()];
+        let base_resolve_expr = self.resolve[base.expr_id()];
 
         let TyKind::Array(array_ty) = self.resolve[base_resolve_expr.ty_id].kind else {
             panic!("ty not array");

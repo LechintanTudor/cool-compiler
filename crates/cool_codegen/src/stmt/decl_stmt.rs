@@ -1,4 +1,4 @@
-use crate::{AnyValueEnumExt, CodeGenerator};
+use crate::{AnyValueEnumExt, CodeGenerator, Value};
 use cool_ast::DeclStmtAst;
 
 impl<'a> CodeGenerator<'a> {
@@ -10,6 +10,10 @@ impl<'a> CodeGenerator<'a> {
         }
 
         let value = self.gen_rvalue_expr(&decl.expr).unwrap().into_basic_value();
-        self.util_gen_alloca(value, binding.symbol.as_str());
+        let pointer = self.util_gen_alloca(value, binding.symbol.as_str());
+        let ty = value.get_type();
+
+        self.bindings
+            .insert(decl.binding_id, Value::Lvalue { pointer, ty });
     }
 }

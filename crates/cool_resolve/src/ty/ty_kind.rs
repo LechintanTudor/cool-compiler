@@ -30,6 +30,14 @@ impl TyKind {
     }
 
     #[inline]
+    pub fn as_array_ty(&self) -> Option<&ArrayTy> {
+        match self {
+            Self::Array(array_ty) => Some(array_ty),
+            _ => None,
+        }
+    }
+
+    #[inline]
     pub fn as_pointer_ty(&self) -> Option<&PointerTy> {
         match self {
             Self::Pointer(pointer_ty) => Some(pointer_ty),

@@ -21,7 +21,7 @@ impl AstGenerator<'_> {
                 let expr = self.gen_expr(frame_id, expected_ty_id, &unary_expr.expr)?;
                 let ty_id = self
                     .resolve
-                    .resolve_direct_ty_id(self.resolve[expr.id()].ty_id, tys::INFER_NUMBER)?;
+                    .resolve_direct_ty_id(self.resolve[expr.expr_id()].ty_id, tys::INFER_NUMBER)?;
 
                 UnaryExprAst {
                     expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
@@ -31,7 +31,7 @@ impl AstGenerator<'_> {
             }
             UnaryOpKind::Not => {
                 let expr = self.gen_expr(frame_id, expected_ty_id, &unary_expr.expr)?;
-                let ty_id = self.resolve[expr.id()].ty_id;
+                let ty_id = self.resolve[expr.expr_id()].ty_id;
 
                 if !ty_id.is_number() && ty_id != tys::BOOL {
                     Err(TyMismatch {
@@ -48,7 +48,7 @@ impl AstGenerator<'_> {
             }
             UnaryOpKind::Addr { is_mutable } => {
                 let inner_expr = self.gen_expr(frame_id, tys::INFER, &unary_expr.expr)?;
-                let inner_resolve_expr = self.resolve[inner_expr.id()];
+                let inner_resolve_expr = self.resolve[inner_expr.expr_id()];
 
                 let ty_id = self
                     .resolve
