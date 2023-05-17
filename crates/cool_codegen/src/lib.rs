@@ -14,7 +14,7 @@ pub use self::stmt::*;
 pub use self::utils::*;
 pub use self::value::*;
 use cool_ast::PackageAst;
-use cool_resolve::{BindingId, ItemId, ResolveContext};
+use cool_resolve::{BindingId, ResolveContext};
 use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::module::Module;
@@ -29,7 +29,6 @@ pub struct CodeGenerator<'a> {
     llvm_false: IntValue<'a>,
     resolve: &'a ResolveContext,
     tys: GeneratedTys<'a>,
-    fns: FxHashMap<ItemId, FunctionValue<'a>>,
     bindings: FxHashMap<BindingId, Value<'a>>,
     module: Module<'a>,
     pass_manager: PassManager<FunctionValue<'a>>,
@@ -82,7 +81,6 @@ impl<'a> CodeGenerator<'a> {
             llvm_false,
             resolve,
             tys,
-            fns: Default::default(),
             bindings: Default::default(),
             module,
             pass_manager,

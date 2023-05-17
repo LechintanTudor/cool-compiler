@@ -1,4 +1,4 @@
-use crate::{AnyValueEnumExt, CodeGenerator, Value};
+use crate::{CodeGenerator, Value};
 use cool_ast::AssignStmtAst;
 use cool_parser::AssignOp;
 use inkwell::values::BasicValue;
@@ -13,28 +13,40 @@ impl<'a> CodeGenerator<'a> {
             return;
         }
 
-        let Value::Lvalue { pointer, .. } = lhs else {
+        let Value::Memory { pointer, .. } = lhs else {
             panic!("assignment lhs is not an lvalue");
         };
 
         let gen_int_values = |gen: &mut Self| {
-            let lhs = gen.gen_loaded_value(lhs).unwrap().into_int_value();
-            let rhs = gen.gen_rvalue_expr(&assign.rhs).unwrap().into_int_value();
+            let lhs = gen
+                .gen_loaded_value(lhs)
+                .into_basic_value()
+                .into_int_value();
+
+            let rhs = gen
+                .gen_loaded_expr(&assign.rhs)
+                .into_basic_value()
+                .into_int_value();
+
             (lhs, rhs)
         };
 
         let gen_float_values = |gen: &mut Self| {
-            let lhs = gen.gen_loaded_value(lhs).unwrap().into_float_value();
-            let rhs = gen.gen_rvalue_expr(&assign.rhs).unwrap().into_float_value();
+            let lhs = gen
+                .gen_loaded_value(lhs)
+                .into_basic_value()
+                .into_float_value();
+
+            let rhs = gen
+                .gen_loaded_expr(&assign.rhs)
+                .into_basic_value()
+                .into_float_value();
+
             (lhs, rhs)
         };
 
         let result_value = match assign.assign_op {
-            AssignOp::Eq => {
-                self.gen_rvalue_expr(&assign.rhs)
-                    .unwrap()
-                    .into_basic_value()
-            }
+            AssignOp::Eq => self.gen_loaded_expr(&assign.rhs).into_basic_value(),
             AssignOp::Add => {
                 if lhs_ty_id.is_int() {
                     let (lhs, rhs) = gen_int_values(self);

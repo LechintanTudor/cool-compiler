@@ -1,4 +1,4 @@
-use crate::{mangle_item_path, AnyTypeEnumExt};
+use crate::mangle_item_path;
 use cool_resolve::{tys, ResolveContext, TyId, TyKind};
 use inkwell::context::Context;
 use inkwell::targets::TargetData;
@@ -131,7 +131,7 @@ impl<'a> GeneratedTys<'a> {
                     .fields
                     .iter()
                     .map(|(_, ty_id)| Self::insert_ty(tys, context, resolve, *ty_id))
-                    .map(|ty| ty.into_basic_type())
+                    .map(|ty| ty.try_into().unwrap())
                     .collect::<Vec<_>>();
 
                 let struct_type = context.opaque_struct_type(&struct_name);

@@ -13,8 +13,8 @@ impl<'a> CodeGenerator<'a> {
         self.builder.position_at_end(cond_block);
 
         let cond_value = self
-            .gen_rvalue_expr(&expr.block.cond)
-            .unwrap()
+            .gen_loaded_expr(&expr.block.cond)
+            .into_basic_value()
             .into_int_value();
 
         let cond_value =

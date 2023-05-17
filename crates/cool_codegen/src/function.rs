@@ -1,7 +1,6 @@
-use crate::{mangle_item_path, AnyValueEnumExt, CodeGenerator, Value};
+use crate::{mangle_item_path, CodeGenerator, LoadedValue, Value};
 use cool_ast::{ExternFnAst, FnAst};
-use inkwell::types::BasicType;
-use inkwell::values::{AnyValue, BasicValue};
+use inkwell::values::BasicValue;
 
 impl CodeGenerator<'_> {
     pub fn add_extern_fn(&mut self, extern_fn_ast: &ExternFnAst) {
@@ -15,12 +14,8 @@ impl CodeGenerator<'_> {
         let binding_id = self.resolve[extern_fn_ast.item_id].as_binding_id().unwrap();
         let fn_value = self.module.add_function(fn_name, fn_ty, None);
 
-        debug_assert!(!self.fns.contains_key(&extern_fn_ast.item_id));
         debug_assert!(!self.bindings.contains_key(&binding_id));
-
-        self.fns.insert(extern_fn_ast.item_id, fn_value);
-        self.bindings
-            .insert(binding_id, fn_value.as_any_value_enum().into());
+        self.bindings.insert(binding_id, fn_value.into());
     }
 
     pub fn add_fn(&mut self, fn_ast: &FnAst) {
@@ -29,16 +24,13 @@ impl CodeGenerator<'_> {
         let binding_id = self.resolve[fn_ast.item_id].as_binding_id().unwrap();
         let fn_value = self.module.add_function(&fn_name, fn_ty, None);
 
-        debug_assert!(!self.fns.contains_key(&fn_ast.item_id));
         debug_assert!(!self.bindings.contains_key(&binding_id));
-
-        self.fns.insert(fn_ast.item_id, fn_value);
-        self.bindings
-            .insert(binding_id, fn_value.as_any_value_enum().into());
+        self.bindings.insert(binding_id, fn_value.into());
     }
 
     pub fn gen_fn(&mut self, fn_ast: &FnAst) {
-        let fn_value = self.fns[&fn_ast.item_id];
+        let binding_id = self.resolve[fn_ast.item_id].as_binding_id().unwrap();
+        let fn_value = self.bindings[&binding_id].into_function_value();
         self.fn_value = Some(fn_value);
 
         let entry_block = self.context.append_basic_block(fn_value, "entry");
@@ -54,8 +46,8 @@ impl CodeGenerator<'_> {
             } else {
                 let value = param_value_iter.next().unwrap().as_basic_value_enum();
                 let pointer = self.util_gen_alloca(value, param.symbol.as_str());
-                let ty = value.get_type().as_basic_type_enum();
-                Value::Lvalue { pointer, ty }
+                let ty = value.get_type();
+                Value::Memory { pointer, ty }
             };
 
             debug_assert!(!self.bindings.contains_key(&binding_id));
@@ -63,13 +55,11 @@ impl CodeGenerator<'_> {
         }
 
         let ret_value = self.gen_block_expr(&fn_ast.body);
-        let ret_value = self
-            .gen_loaded_value(ret_value)
-            .and_then(|ret_value| ret_value.try_into_basic_value());
-
-        let ret_value = ret_value
-            .as_ref()
-            .map(|ret_value| ret_value as &dyn BasicValue);
+        let ret_value = match &ret_value {
+            LoadedValue::Void => None,
+            LoadedValue::Register(value) => Some(value as &dyn BasicValue),
+            _ => todo!(),
+        };
 
         self.builder.build_return(ret_value);
         self.pass_manager.run_on(&fn_value);

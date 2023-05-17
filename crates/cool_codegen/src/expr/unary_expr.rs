@@ -2,7 +2,7 @@ use crate::{CodeGenerator, Value};
 use cool_ast::UnaryExprAst;
 use cool_parser::UnaryOpKind;
 use cool_resolve::tys;
-use inkwell::values::AnyValue;
+use inkwell::values::BasicValue;
 use inkwell::IntPredicate;
 
 impl<'a> CodeGenerator<'a> {
@@ -11,30 +11,33 @@ impl<'a> CodeGenerator<'a> {
 
         match unary_expr.op {
             UnaryOpKind::Minus => {
-                let value = self.gen_rvalue_expr(&unary_expr.expr).unwrap();
+                let value = self.gen_loaded_expr(&unary_expr.expr).into_basic_value();
 
                 if ty_id.is_int() {
                     self.builder
                         .build_int_neg(value.into_int_value(), "")
-                        .as_any_value_enum()
+                        .as_basic_value_enum()
                         .into()
                 } else {
                     debug_assert!(ty_id.is_float());
 
                     self.builder
                         .build_float_neg(value.into_float_value(), "")
-                        .as_any_value_enum()
+                        .as_basic_value_enum()
                         .into()
                 }
             }
             UnaryOpKind::Not => {
                 let value = self
-                    .gen_rvalue_expr(&unary_expr.expr)
-                    .unwrap()
+                    .gen_loaded_expr(&unary_expr.expr)
+                    .into_basic_value()
                     .into_int_value();
 
                 if ty_id.is_int() {
-                    self.builder.build_not(value, "").as_any_value_enum().into()
+                    self.builder
+                        .build_not(value, "")
+                        .as_basic_value_enum()
+                        .into()
                 } else {
                     debug_assert!(ty_id == tys::BOOL);
 
@@ -44,7 +47,7 @@ impl<'a> CodeGenerator<'a> {
 
                     self.builder
                         .build_select(value, self.llvm_false, self.llvm_true, "")
-                        .as_any_value_enum()
+                        .as_basic_value_enum()
                         .into()
                 }
             }
@@ -52,7 +55,7 @@ impl<'a> CodeGenerator<'a> {
                 let value = self.gen_expr(&unary_expr.expr);
 
                 match value {
-                    Value::Lvalue { pointer, .. } => Value::Rvalue(pointer.as_any_value_enum()),
+                    Value::Memory { pointer, .. } => Value::Register(pointer.as_basic_value_enum()),
                     _ => todo!(),
                 }
             }

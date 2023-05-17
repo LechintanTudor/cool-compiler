@@ -1,7 +1,8 @@
-use crate::{AnyTypeEnumExt, AnyValueEnumExt, CodeGenerator, Value};
+use crate::{CodeGenerator, Value};
 use cool_ast::{CondBlockAst, CondExprAst};
 use inkwell::basic_block::BasicBlock;
-use inkwell::values::{AnyValue, BasicValue, PhiValue};
+use inkwell::types::BasicTypeEnum;
+use inkwell::values::{BasicValue, PhiValue};
 use inkwell::IntPredicate;
 
 impl<'a> CodeGenerator<'a> {
@@ -13,7 +14,7 @@ impl<'a> CodeGenerator<'a> {
 
         let phi_value = if !self.resolve.is_ty_id_zst(expr_ty_id) {
             self.builder.position_at_end(end_if_block);
-            let phi_ty = self.tys[expr_ty_id].into_basic_type();
+            let phi_ty: BasicTypeEnum = self.tys[expr_ty_id].try_into().unwrap();
             Some(self.builder.build_phi(phi_ty, ""))
         } else {
             None
@@ -53,11 +54,9 @@ impl<'a> CodeGenerator<'a> {
 
         if let (Some(else_block_ast), Some(else_block)) = (expr.else_block.as_ref(), else_block) {
             self.builder.position_at_end(else_block);
-            let value = self.gen_block_expr(else_block_ast);
+            let value = self.gen_block_expr(else_block_ast).into_basic_value();
 
             if let Some(phi_value) = phi_value {
-                let value = self.gen_loaded_value(value).unwrap().into_basic_value();
-
                 let incoming_block =
                     std::iter::successors(Some(else_block), |block| block.get_next_basic_block())
                         .take_while(|block| block != &end_if_block)
@@ -73,7 +72,7 @@ impl<'a> CodeGenerator<'a> {
         self.builder.position_at_end(end_if_block);
 
         phi_value
-            .map(|value| Value::Rvalue(value.as_basic_value().as_any_value_enum()))
+            .map(|value| Value::Register(value.as_basic_value()))
             .unwrap_or(Value::Void)
     }
 
@@ -88,11 +87,9 @@ impl<'a> CodeGenerator<'a> {
 
         let then_block = self.context.insert_basic_block_after(current_block, "");
         self.builder.position_at_end(then_block);
-        let value = self.gen_block_expr(&cond_block_ast.expr);
+        let value = self.gen_block_expr(&cond_block_ast.expr).into_basic_value();
 
         if let Some(phi_value) = phi_value {
-            let value = self.gen_loaded_value(value).unwrap().into_basic_value();
-
             let incoming_block =
                 std::iter::successors(Some(then_block), |block| block.get_next_basic_block())
                     .take_while(|block| block != &else_block)
@@ -107,8 +104,8 @@ impl<'a> CodeGenerator<'a> {
         self.builder.position_at_end(current_block);
 
         let cond_value = self
-            .gen_rvalue_expr(&cond_block_ast.cond)
-            .unwrap()
+            .gen_loaded_expr(&cond_block_ast.cond)
+            .into_basic_value()
             .into_int_value();
 
         let cond_value = self.builder.build_int_compare(

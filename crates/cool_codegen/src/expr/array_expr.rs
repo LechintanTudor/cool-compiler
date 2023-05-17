@@ -1,6 +1,6 @@
-use crate::{AnyValueEnumExt, CodeGenerator, Value};
+use crate::{CodeGenerator, Value};
 use cool_ast::{ArrayExprAst, ArrayRepeatExprAst};
-use inkwell::values::AnyValue;
+use inkwell::values::BasicValue;
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_array_expr(&mut self, expr: &ArrayExprAst) -> Value<'a> {
@@ -18,7 +18,7 @@ impl<'a> CodeGenerator<'a> {
 
         for (i, elem) in expr.elems.iter().enumerate() {
             let elem_index = index_type.const_int(i as u64, false);
-            let elem_value = self.gen_rvalue_expr(elem).unwrap().into_basic_value();
+            let elem_value = self.gen_loaded_expr(elem).into_basic_value();
 
             let elem_pointer = unsafe {
                 self.builder
@@ -30,12 +30,12 @@ impl<'a> CodeGenerator<'a> {
 
         self.builder
             .build_load(array_type, array_pointer, "")
-            .as_any_value_enum()
+            .as_basic_value_enum()
             .into()
     }
 
     pub fn gen_array_repeat_expr(&mut self, expr: &ArrayRepeatExprAst) -> Value<'a> {
-        let elem_value = self.gen_rvalue_expr(&expr.elem).unwrap().into_basic_value();
+        let elem_value = self.gen_loaded_expr(&expr.elem).into_basic_value();
 
         let ty_id = self.resolve[expr.expr_id].ty_id;
 
@@ -62,7 +62,7 @@ impl<'a> CodeGenerator<'a> {
 
         self.builder
             .build_load(array_type, array_pointer, "")
-            .as_any_value_enum()
+            .as_basic_value_enum()
             .into()
     }
 }
