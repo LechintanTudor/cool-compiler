@@ -1,3 +1,6 @@
+use cool_collections::SmallString;
+use cool_lexer::symbols::sym;
+use cool_resolve::ItemPath;
 use inkwell::types::{AnyTypeEnum, BasicTypeEnum};
 use inkwell::values::{AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum};
 
@@ -77,4 +80,30 @@ impl<'a> AnyValueEnumExt<'a> for AnyValueEnum<'a> {
     fn into_basic_metadata_value(self) -> BasicMetadataValueEnum<'a> {
         self.try_into_basic_metadata_value().unwrap()
     }
+}
+
+pub fn mangle_item_path<'a, P>(path: P) -> SmallString
+where
+    P: Into<ItemPath<'a>>,
+{
+    let path: ItemPath = path.into();
+
+    if path.last() == sym::MAIN {
+        return SmallString::from("main");
+    }
+
+    let path = path.as_symbol_slice();
+
+    let Some((&first, others)) = path.split_first() else {
+        return SmallString::new();
+    };
+
+    let mut result = SmallString::from(first.as_str());
+
+    for other in others {
+        result.push_str("__");
+        result.push_str(other.as_str());
+    }
+
+    result
 }

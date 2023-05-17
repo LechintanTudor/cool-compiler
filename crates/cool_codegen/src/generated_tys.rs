@@ -1,4 +1,4 @@
-use crate::AnyTypeEnumExt;
+use crate::{mangle_item_path, AnyTypeEnumExt};
 use cool_resolve::{tys, ResolveContext, TyId, TyKind};
 use inkwell::context::Context;
 use inkwell::targets::TargetData;
@@ -124,6 +124,9 @@ impl<'a> GeneratedTys<'a> {
                     .unwrap_or_else(|_| tys[&tys::C_STR])
             }
             TyKind::Struct(struct_ty) => {
+                // TODO: Properly handle aggregate types
+                let struct_name = mangle_item_path(resolve.get_path_by_item_id(struct_ty.item_id));
+
                 let fields = struct_ty
                     .fields
                     .iter()
@@ -131,7 +134,9 @@ impl<'a> GeneratedTys<'a> {
                     .map(|ty| ty.into_basic_type())
                     .collect::<Vec<_>>();
 
-                context.struct_type(&fields, false).as_any_type_enum()
+                let struct_type = context.opaque_struct_type(&struct_name);
+                struct_type.set_body(&fields, false);
+                struct_type.as_any_type_enum()
             }
             ty => todo!("Unimplemented ty: {:?}", ty),
         };
