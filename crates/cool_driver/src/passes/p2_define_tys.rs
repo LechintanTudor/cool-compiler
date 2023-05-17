@@ -1,6 +1,5 @@
 use crate::{CompileError, CompileErrorBundle, CompileErrorKind, CompileResult, Package};
 use cool_ast::AstGenerator;
-use cool_collections::HashMapExt;
 use cool_resolve::{ResolveContext, StructHasDuplicatedField, StructTy, TyCannotBeDefined};
 use std::collections::VecDeque;
 
@@ -61,12 +60,12 @@ pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
                     }
                 };
 
-                let inserted_successfully = struct_ty
+                let is_duplicated = struct_ty
                     .fields
-                    .insert_if_not_exists(field.ident.symbol, ty_id)
-                    .is_some();
+                    .iter()
+                    .any(|(symbol, _)| *symbol == field.ident.symbol);
 
-                if !inserted_successfully {
+                if is_duplicated {
                     errors.push(CompileError {
                         path: Default::default(),
                         kind: CompileErrorKind::Define(
@@ -79,6 +78,8 @@ pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
                     });
                     continue 'struct_loop;
                 }
+
+                struct_ty.fields.push((field.ident.symbol, ty_id));
             }
 
             struct_ty

@@ -1,7 +1,6 @@
 use crate::{FnAbi, ItemId, TyId};
 use cool_lexer::symbols::Symbol;
 use derive_more::From;
-use rustc_hash::FxHashMap;
 use smallvec::SmallVec;
 use std::hash::{Hash, Hasher};
 
@@ -138,7 +137,7 @@ pub struct FnTy {
 #[derive(Clone, Eq, Debug)]
 pub struct StructTy {
     pub item_id: ItemId,
-    pub fields: FxHashMap<Symbol, TyId>,
+    pub fields: Vec<(Symbol, TyId)>,
 }
 
 impl StructTy {

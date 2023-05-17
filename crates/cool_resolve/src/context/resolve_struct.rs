@@ -43,8 +43,8 @@ impl ResolveContext {
             .as_ty_id()
             .expect("item is not a type");
 
-        for field_ty_id in struct_ty.fields.values() {
-            match self.ty_contains_ty(*field_ty_id, ty_id) {
+        for field_ty_id in struct_ty.fields.iter().map(|(_, field_ty_id)| *field_ty_id) {
+            match self.ty_contains_ty(field_ty_id, ty_id) {
                 Some(true) => {
                     return Err(StructHasInfiniteSize {
                         path: self.paths[struct_ty.item_id].into(),
@@ -72,7 +72,8 @@ impl ResolveContext {
                 TyKind::Tuple(tuple_ty) => tys_to_check.extend(tuple_ty.elems.iter().copied()),
                 TyKind::StructDecl(_) => return None,
                 TyKind::Struct(struct_ty) => {
-                    tys_to_check.extend(struct_ty.fields.values().copied())
+                    tys_to_check
+                        .extend(struct_ty.fields.iter().map(|(_, field_ty_id)| *field_ty_id))
                 }
                 _ => (),
             }

@@ -39,9 +39,11 @@ impl AstGenerator<'_> {
         let mut used_fields = FxHashSet::<Symbol>::default();
 
         for initializer in expr.initializers.iter() {
-            let field_ty_id = *struct_ty
+            let field_ty_id = struct_ty
                 .fields
-                .get(&initializer.ident.symbol)
+                .iter()
+                .find(|(symbol, _)| *symbol == initializer.ident.symbol)
+                .map(|(_, field_ty_id)| *field_ty_id)
                 .expect("unknown struct field in initializer");
 
             let is_duplicate = !used_fields.insert(initializer.ident.symbol);
