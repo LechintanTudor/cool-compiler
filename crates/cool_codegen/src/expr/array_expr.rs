@@ -10,19 +10,28 @@ impl<'a> CodeGenerator<'a> {
             return Value::Void;
         }
 
-        let mut array_value = self.tys[ty_id].into_array_type().get_undef();
+        let array_type = self.tys[ty_id].into_array_type();
+        let array_pointer = self.util_gen_alloca(array_type.get_undef(), "");
+
+        let index_type = self.tys.i8_ty();
+        let elem_type = array_type.get_element_type();
 
         for (i, elem) in expr.elems.iter().enumerate() {
+            let elem_index = index_type.const_int(i as u64, false);
             let elem_value = self.gen_rvalue_expr(elem).unwrap().into_basic_value();
 
-            array_value = self
-                .builder
-                .build_insert_value(array_value, elem_value, i as u32, "")
-                .unwrap()
-                .into_array_value();
+            let elem_pointer = unsafe {
+                self.builder
+                    .build_gep(elem_type, array_pointer, &[elem_index], "")
+            };
+
+            self.builder.build_store(elem_pointer, elem_value);
         }
 
-        array_value.as_any_value_enum().into()
+        self.builder
+            .build_load(array_type, array_pointer, "")
+            .as_any_value_enum()
+            .into()
     }
 
     pub fn gen_array_repeat_expr(&mut self, expr: &ArrayRepeatExprAst) -> Value<'a> {
@@ -34,16 +43,26 @@ impl<'a> CodeGenerator<'a> {
             return Value::Void;
         }
 
-        let mut array_value = self.tys[ty_id].into_array_type().get_undef();
+        let array_type = self.tys[ty_id].into_array_type();
+        let array_pointer = self.util_gen_alloca(array_type.get_undef(), "");
+
+        let index_type = self.tys.i8_ty();
+        let elem_type = elem_value.get_type();
 
         for i in 0..expr.len {
-            array_value = self
-                .builder
-                .build_insert_value(array_value, elem_value, i as u32, "")
-                .unwrap()
-                .into_array_value();
+            let elem_index = index_type.const_int(i, false);
+
+            let elem_pointer = unsafe {
+                self.builder
+                    .build_gep(elem_type, array_pointer, &[elem_index], "")
+            };
+
+            self.builder.build_store(elem_pointer, elem_value);
         }
 
-        array_value.as_any_value_enum().into()
+        self.builder
+            .build_load(array_type, array_pointer, "")
+            .as_any_value_enum()
+            .into()
     }
 }
