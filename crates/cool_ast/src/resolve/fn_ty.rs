@@ -26,7 +26,7 @@ impl AstGenerator<'_> {
             Some(ty_id) => {
                 let fn_ty = self.resolve[ty_id]
                     .kind
-                    .as_fn_ty()
+                    .as_fn()
                     .ok_or(TyNotFn { found: ty_id })?
                     .clone();
 

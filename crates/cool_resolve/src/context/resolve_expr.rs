@@ -42,19 +42,29 @@ impl ResolveExpr {
     }
 
     #[inline]
+    pub const fn ty() -> Self {
+        Self {
+            ty_id: tys::TY,
+            kind: ResolveExprKind::Lvalue { is_mutable: false },
+        }
+    }
+
+    #[inline]
     pub fn is_assignable(&self) -> bool {
         self.ty_id != tys::MODULE
+            && self.ty_id != tys::TY
             && matches!(self.kind, ResolveExprKind::Lvalue { is_mutable: true })
     }
 
     #[inline]
     pub fn is_addressable(&self) -> bool {
-        self.ty_id != tys::MODULE
+        self.ty_id != tys::MODULE && self.ty_id != tys::TY
     }
 
     #[inline]
     pub fn is_mutably_addressable(&self) -> bool {
         self.ty_id != tys::MODULE
+            && self.ty_id != tys::TY
             && !matches!(self.kind, ResolveExprKind::Lvalue { is_mutable: false })
     }
 }

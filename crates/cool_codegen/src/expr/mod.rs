@@ -1,6 +1,7 @@
 mod array_expr;
 mod binary_expr;
 mod cond_expr;
+mod struct_expr;
 mod subscript_expr;
 mod unary_expr;
 mod while_expr;
@@ -8,6 +9,7 @@ mod while_expr;
 pub use self::array_expr::*;
 pub use self::binary_expr::*;
 pub use self::cond_expr::*;
+pub use self::struct_expr::*;
 pub use self::subscript_expr::*;
 pub use self::unary_expr::*;
 pub use self::while_expr::*;

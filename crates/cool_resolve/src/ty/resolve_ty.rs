@@ -39,11 +39,21 @@ impl ResolveTy {
         }
     }
 
+    #[inline]
     pub fn module() -> Self {
         Self {
             size: 0,
             align: 0,
             kind: TyKind::Module,
+        }
+    }
+
+    #[inline]
+    pub fn ty() -> Self {
+        Self {
+            size: 0,
+            align: 0,
+            kind: TyKind::Ty,
         }
     }
 

@@ -3,7 +3,7 @@ use cool_collections::SmallString;
 use cool_lexer::symbols::{sym, Symbol};
 use cool_lexer::tokens::LiteralKind;
 use cool_parser::LiteralExpr;
-use cool_resolve::{tys, ExprId, ResolveExpr, TyId};
+use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
 
 #[derive(Clone, Debug)]
 pub enum LiteralExprValue {
@@ -33,6 +33,7 @@ impl LiteralExprAst {
 impl AstGenerator<'_> {
     pub fn gen_literal_expr(
         &mut self,
+        _frame_id: FrameId,
         expected_ty_id: TyId,
         literal_expr: &LiteralExpr,
     ) -> AstResult<LiteralExprAst> {

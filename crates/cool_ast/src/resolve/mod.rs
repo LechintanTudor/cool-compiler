@@ -1,7 +1,9 @@
 use crate::resolve::fn_ty::resolve_fn_abi;
 use crate::AstGenerator;
 use cool_parser::Ty;
-use cool_resolve::{tys, ItemPathBuf, ResolveError, ResolveErrorKind, ResolveResult, Scope, TyId};
+use cool_resolve::{
+    tys, FrameId, ItemPathBuf, ResolveError, ResolveErrorKind, ResolveResult, Scope, TyId,
+};
 mod fn_ty;
 use smallvec::SmallVec;
 
@@ -40,7 +42,7 @@ impl AstGenerator<'_> {
             }
             Ty::Array(array_ty) => {
                 let len = self
-                    .gen_literal_expr(tys::USIZE, &array_ty.len)
+                    .gen_literal_expr(FrameId::dummy(), tys::USIZE, &array_ty.len)
                     .unwrap()
                     .as_int_value()
                     .unwrap() as u64;

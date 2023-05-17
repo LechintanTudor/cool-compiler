@@ -20,7 +20,7 @@ impl AstGenerator<'_> {
         let fn_expr_ty_id = self.resolve[fn_expr.expr_id()].ty_id;
         let fn_ty = self.resolve[fn_expr_ty_id]
             .kind
-            .as_fn_ty()
+            .as_fn()
             .ok_or(TyNotFn {
                 found: fn_expr_ty_id,
             })?

@@ -186,7 +186,8 @@ impl TyContext {
             }
             TyKind::Infer(inferred_ty) => ResolveTy::inferred(inferred_ty),
             TyKind::Module => ResolveTy::module(),
-            ty_kind => todo!("todo type resolve: {ty_kind:?}"),
+            TyKind::Ty => ResolveTy::ty(),
+            _ => todo!(),
         }
     }
 
@@ -252,7 +253,7 @@ impl TyContext {
                     }
                     TyKind::Pointer(pointer_ty) => {
                         let found_pointer_ty =
-                            self.get_resolve_ty(found_ty_id).kind.as_pointer_ty()?;
+                            self.get_resolve_ty(found_ty_id).kind.as_pointer()?;
 
                         let can_resolve = found_pointer_ty.pointee == pointer_ty.pointee
                             && !pointer_ty.is_mutable;

@@ -1,7 +1,7 @@
 use crate::{FnAbi, ItemId, TyId};
-use cool_collections::SmallVecMap;
 use cool_lexer::symbols::Symbol;
 use derive_more::From;
+use rustc_hash::FxHashMap;
 use smallvec::SmallVec;
 use std::hash::{Hash, Hasher};
 
@@ -21,6 +21,7 @@ pub enum TyKind {
     StructDecl(ItemId),
     Struct(StructTy),
     Module,
+    Ty,
 }
 
 impl TyKind {
@@ -30,7 +31,7 @@ impl TyKind {
     }
 
     #[inline]
-    pub fn as_array_ty(&self) -> Option<&ArrayTy> {
+    pub fn as_array(&self) -> Option<&ArrayTy> {
         match self {
             Self::Array(array_ty) => Some(array_ty),
             _ => None,
@@ -38,7 +39,7 @@ impl TyKind {
     }
 
     #[inline]
-    pub fn as_pointer_ty(&self) -> Option<&PointerTy> {
+    pub fn as_pointer(&self) -> Option<&PointerTy> {
         match self {
             Self::Pointer(pointer_ty) => Some(pointer_ty),
             _ => None,
@@ -46,9 +47,17 @@ impl TyKind {
     }
 
     #[inline]
-    pub fn as_fn_ty(&self) -> Option<&FnTy> {
+    pub fn as_fn(&self) -> Option<&FnTy> {
         match self {
             Self::Fn(fn_ty) => Some(fn_ty),
+            _ => None,
+        }
+    }
+
+    #[inline]
+    pub fn as_struct(&self) -> Option<&StructTy> {
+        match self {
+            Self::Struct(struct_ty) => Some(struct_ty),
             _ => None,
         }
     }
@@ -129,7 +138,7 @@ pub struct FnTy {
 #[derive(Clone, Eq, Debug)]
 pub struct StructTy {
     pub item_id: ItemId,
-    pub fields: SmallVecMap<Symbol, TyId, 2>,
+    pub fields: FxHashMap<Symbol, TyId>,
 }
 
 impl StructTy {

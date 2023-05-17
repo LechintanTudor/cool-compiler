@@ -1,5 +1,6 @@
 use crate::{CompileError, CompileErrorBundle, CompileErrorKind, CompileResult, Package};
 use cool_ast::AstGenerator;
+use cool_collections::HashMapExt;
 use cool_resolve::{ResolveContext, StructHasDuplicatedField, StructTy, TyCannotBeDefined};
 use std::collections::VecDeque;
 
@@ -62,7 +63,8 @@ pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
 
                 let inserted_successfully = struct_ty
                     .fields
-                    .insert_if_not_exists(field.ident.symbol, ty_id);
+                    .insert_if_not_exists(field.ident.symbol, ty_id)
+                    .is_some();
 
                 if !inserted_successfully {
                     errors.push(CompileError {

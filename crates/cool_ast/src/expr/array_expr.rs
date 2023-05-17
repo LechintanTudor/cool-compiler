@@ -26,7 +26,7 @@ impl AstGenerator<'_> {
             Some((first_elem, other_elems)) => {
                 let expected_elem_ty_id = self.resolve[expected_ty_id]
                     .kind
-                    .as_array_ty()
+                    .as_array()
                     .map(|array_ty| array_ty.elem)
                     .unwrap_or(tys::INFER);
 
@@ -58,12 +58,12 @@ impl AstGenerator<'_> {
         expected_ty_id: TyId,
         expr: &ArrayRepeatExpr,
     ) -> AstResult<ArrayRepeatExprAst> {
-        let len_expr = self.gen_literal_expr(tys::USIZE, &expr.len)?;
+        let len_expr = self.gen_literal_expr(frame_id, tys::USIZE, &expr.len)?;
         let len = len_expr.as_int_value().unwrap() as u64;
 
         let expected_elem_ty_id = self.resolve[expected_ty_id]
             .kind
-            .as_array_ty()
+            .as_array()
             .map(|array_ty| array_ty.elem)
             .unwrap_or(tys::INFER);
 

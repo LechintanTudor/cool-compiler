@@ -7,6 +7,7 @@ mod deref_expr;
 mod fn_call_expr;
 mod ident_expr;
 mod literal_expr;
+mod struct_expr;
 mod subscript_expr;
 mod unary_expr;
 mod while_expr;
@@ -20,50 +21,68 @@ pub use self::deref_expr::*;
 pub use self::fn_call_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
+pub use self::struct_expr::*;
 pub use self::subscript_expr::*;
 pub use self::unary_expr::*;
 pub use self::while_expr::*;
 use crate::{AstGenerator, AstResult, ModuleUsedAsExpr};
-use cool_parser::Expr;
+use cool_parser::{Expr, ParenExpr};
 use cool_resolve::{ExprId, FrameId, TyId};
 use derive_more::From;
+use paste::paste;
 
-#[derive(Clone, From, Debug)]
-pub enum ExprAst {
-    Array(ArrayExprAst),
-    ArrayRepeat(ArrayRepeatExprAst),
-    Binary(BinaryExprAst),
-    Binding(BindingExprAst),
-    Block(BlockExprAst),
-    Cond(CondExprAst),
-    Deref(DerefExprAst),
-    FnCall(FnCallExprAst),
-    Literal(LiteralExprAst),
-    Module(ModuleExprAst),
-    Subscript(SubscriptExprAst),
-    Unary(UnaryExprAst),
-    While(WhileExprAst),
+macro_rules! define_expr_ast {
+    { $($Variant:ident,)+ } => {
+        paste! {
+            #[derive(Clone, From, Debug)]
+            pub enum ExprAst {
+                $(
+                    $Variant([<$Variant ExprAst>]),
+                )+
+            }
+
+            impl ExprAst {
+                pub fn expr_id(&self) -> ExprId {
+                    match self {
+                        $(
+                            Self::$Variant(e) => e.expr_id,
+                        )+
+                    }
+                }
+
+                $(
+                    #[inline]
+                    pub fn [<as_ $Variant:snake:lower>](&self) -> Option<&[<$Variant ExprAst>]> {
+                        match self {
+                            Self::$Variant(e) => Some(e),
+                            _ => None,
+                        }
+                    }
+                )+
+            }
+        }
+    };
+}
+
+define_expr_ast! {
+    Array,
+    ArrayRepeat,
+    Binary,
+    Binding,
+    Block,
+    Cond,
+    Deref,
+    FnCall,
+    Literal,
+    Module,
+    Struct,
+    Subscript,
+    Ty,
+    Unary,
+    While,
 }
 
 impl ExprAst {
-    pub fn expr_id(&self) -> ExprId {
-        match self {
-            Self::Array(e) => e.expr_id,
-            Self::ArrayRepeat(e) => e.expr_id,
-            Self::Binary(e) => e.expr_id,
-            Self::Binding(e) => e.expr_id,
-            Self::Block(e) => e.expr_id,
-            Self::Cond(e) => e.expr_id,
-            Self::Deref(e) => e.expr_id,
-            Self::FnCall(e) => e.expr_id,
-            Self::Literal(e) => e.expr_id,
-            Self::Module(e) => e.expr_id,
-            Self::Subscript(e) => e.expr_id,
-            Self::Unary(e) => e.expr_id,
-            Self::While(e) => e.expr_id,
-        }
-    }
-
     #[inline]
     pub fn is_module(&self) -> bool {
         matches!(self, Self::Module(_))
@@ -78,34 +97,60 @@ impl ExprAst {
     }
 }
 
+macro_rules! impl_gen_expr {
+    { $($Variant:ident,)+ } => {
+        impl AstGenerator<'_> {
+            pub fn gen_expr(
+                &mut self,
+                frame_id: FrameId,
+                expected_ty_id: TyId,
+                expr: &Expr,
+            ) -> AstResult<ExprAst> {
+                paste! {
+                    let expr: ExprAst = match expr {
+                        $(
+                            Expr::$Variant(expr) => self.[<gen_ $Variant:snake:lower _expr>](
+                                frame_id,
+                                expected_ty_id,
+                                expr,
+                            )?.into(),
+                        )+
+                        expr => todo!("ast generation not yet implemented for {:?}", expr),
+                    };
+                }
+
+                Ok(expr)
+            }
+        }
+    };
+}
+
+impl_gen_expr! {
+    Access,
+    Array,
+    ArrayRepeat,
+    Binary,
+    Block,
+    Cond,
+    Deref,
+    FnCall,
+    Ident,
+    Literal,
+    Paren,
+    Unary,
+    Struct,
+    Subscript,
+    While,
+}
+
 impl AstGenerator<'_> {
-    pub fn gen_expr(
+    #[inline]
+    pub fn gen_paren_expr(
         &mut self,
         frame_id: FrameId,
         expected_ty_id: TyId,
-        expr: &Expr,
+        expr: &ParenExpr,
     ) -> AstResult<ExprAst> {
-        let expr: ExprAst = match expr {
-            Expr::Access(e) => self.gen_access_expr(frame_id, expected_ty_id, e)?,
-            Expr::Array(e) => self.gen_array_expr(frame_id, expected_ty_id, e)?.into(),
-            Expr::ArrayRepeat(e) => {
-                self.gen_array_repeat_expr(frame_id, expected_ty_id, e)?
-                    .into()
-            }
-            Expr::Binary(e) => self.gen_binary_expr(frame_id, expected_ty_id, e)?.into(),
-            Expr::Block(e) => self.gen_block_expr(frame_id, expected_ty_id, e)?.into(),
-            Expr::Cond(e) => self.gen_cond_expr(frame_id, expected_ty_id, e)?.into(),
-            Expr::Deref(e) => self.gen_deref_expr(frame_id, expected_ty_id, e)?.into(),
-            Expr::FnCall(e) => self.gen_fn_call_expr(frame_id, expected_ty_id, e)?.into(),
-            Expr::Ident(e) => self.gen_ident_expr(frame_id, expected_ty_id, e)?,
-            Expr::Literal(e) => self.gen_literal_expr(expected_ty_id, e)?.into(),
-            Expr::Paren(e) => self.gen_expr(frame_id, expected_ty_id, &e.inner)?,
-            Expr::Unary(e) => self.gen_unary_expr(frame_id, expected_ty_id, e)?.into(),
-            Expr::Subscript(e) => self.gen_subscript_expr(frame_id, expected_ty_id, e)?.into(),
-            Expr::While(e) => self.gen_while_expr(frame_id, expected_ty_id, e)?.into(),
-            _ => todo!(),
-        };
-
-        Ok(expr)
+        self.gen_expr(frame_id, expected_ty_id, &expr.inner)
     }
 }

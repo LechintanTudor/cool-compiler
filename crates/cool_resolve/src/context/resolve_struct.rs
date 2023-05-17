@@ -72,8 +72,7 @@ impl ResolveContext {
                 TyKind::Tuple(tuple_ty) => tys_to_check.extend(tuple_ty.elems.iter().copied()),
                 TyKind::StructDecl(_) => return None,
                 TyKind::Struct(struct_ty) => {
-                    tys_to_check
-                        .extend(struct_ty.fields.iter().map(|(_, field_ty_id)| *field_ty_id))
+                    tys_to_check.extend(struct_ty.fields.values().copied())
                 }
                 _ => (),
             }

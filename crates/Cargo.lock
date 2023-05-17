@@ -170,6 +170,7 @@ dependencies = [
  "cool_span",
  "derive_more",
  "paste",
+ "rustc-hash",
  "smallvec",
  "thiserror",
 ]
@@ -213,6 +214,7 @@ version = "0.1.0"
 dependencies = [
  "cool_ast",
  "cool_codegen",
+ "cool_collections",
  "cool_lexer",
  "cool_parser",
  "cool_resolve",

@@ -89,6 +89,7 @@ builtins! {
         22: (INFER_EMPTY_ARRAY, TyKind::Infer(InferTy::EmptyArray)),
 
         23: (MODULE, TyKind::Module),
-        24: (C_STR, TyKind::Pointer(PointerTy { is_mutable: false, pointee: tys::I8 })),
+        24: (TY, TyKind::Ty),
+        25: (C_STR, TyKind::Pointer(PointerTy { is_mutable: false, pointee: tys::I8 })),
     }
 }
