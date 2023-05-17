@@ -1,3 +1,4 @@
+use crate::AnyTypeEnumExt;
 use cool_resolve::{tys, ResolveContext, TyId, TyKind};
 use inkwell::context::Context;
 use inkwell::targets::TargetData;
@@ -24,7 +25,7 @@ impl<'a> GeneratedTys<'a> {
     ) -> Self {
         let mut tys = TyMap::default();
         Self::insert_builtin_tys(&mut tys, context, target_data);
-        Self::insert_derived_tys(&mut tys, resolve);
+        Self::insert_derived_tys(&mut tys, context, resolve);
 
         Self {
             tys,
@@ -76,15 +77,20 @@ impl<'a> GeneratedTys<'a> {
         tys.extend(ty_mappings);
     }
 
-    fn insert_derived_tys(tys: &mut TyMap<'a>, resolve: &'a ResolveContext) {
+    fn insert_derived_tys(tys: &mut TyMap<'a>, context: &'a Context, resolve: &'a ResolveContext) {
         for ty_id in resolve.iter_ty_ids() {
             if resolve[ty_id].kind.is_defined() {
-                Self::insert_ty(tys, resolve, ty_id);
+                Self::insert_ty(tys, context, resolve, ty_id);
             }
         }
     }
 
-    fn insert_ty(tys: &mut TyMap<'a>, resolve: &'a ResolveContext, ty_id: TyId) -> AnyTypeEnum<'a> {
+    fn insert_ty(
+        tys: &mut TyMap<'a>,
+        context: &'a Context,
+        resolve: &'a ResolveContext,
+        ty_id: TyId,
+    ) -> AnyTypeEnum<'a> {
         if let Some(&ty) = tys.get(&ty_id) {
             return ty;
         }
@@ -94,15 +100,15 @@ impl<'a> GeneratedTys<'a> {
                 let params = fn_ty
                     .params
                     .iter()
-                    .map(|&param| Self::insert_ty(tys, resolve, param))
+                    .map(|&param| Self::insert_ty(tys, context, resolve, param))
                     .flat_map(BasicMetadataTypeEnum::try_from)
                     .collect::<Vec<_>>();
 
-                let ret = Self::insert_ty(tys, resolve, fn_ty.ret);
+                let ret = Self::insert_ty(tys, context, resolve, fn_ty.ret);
                 fn_type_from_any_type_enum(ret, &params, fn_ty.is_variadic).into()
             }
             TyKind::Array(array_ty) => {
-                let elem_ty = Self::insert_ty(tys, resolve, array_ty.elem);
+                let elem_ty = Self::insert_ty(tys, context, resolve, array_ty.elem);
 
                 BasicTypeEnum::try_from(elem_ty)
                     .map(|ty| ty.array_type(array_ty.len as u32))
@@ -110,12 +116,22 @@ impl<'a> GeneratedTys<'a> {
                     .unwrap_or_else(|_| tys[&tys::UNIT])
             }
             TyKind::Pointer(pointer_ty) => {
-                let pointee_ty = Self::insert_ty(tys, resolve, pointer_ty.pointee);
+                let pointee_ty = Self::insert_ty(tys, context, resolve, pointer_ty.pointee);
 
                 BasicTypeEnum::try_from(pointee_ty)
                     .map(|ty| ty.ptr_type(Default::default()))
                     .map(|ty| ty.as_any_type_enum())
                     .unwrap_or_else(|_| tys[&tys::C_STR])
+            }
+            TyKind::Struct(struct_ty) => {
+                let fields = struct_ty
+                    .fields
+                    .iter()
+                    .map(|(_, ty_id)| Self::insert_ty(tys, context, resolve, *ty_id))
+                    .map(|ty| ty.into_basic_type())
+                    .collect::<Vec<_>>();
+
+                context.struct_type(&fields, false).as_any_type_enum()
             }
             ty => todo!("Unimplemented ty: {:?}", ty),
         };

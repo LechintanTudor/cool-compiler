@@ -26,7 +26,10 @@ pub enum TyKind {
 impl TyKind {
     #[inline]
     pub fn is_defined(&self) -> bool {
-        !matches!(self, Self::Infer(_) | Self::StructDecl(_) | Self::Module)
+        !matches!(
+            self,
+            Self::Infer(_) | Self::StructDecl(_) | Self::Module | Self::Ty,
+        )
     }
 
     #[inline]
