@@ -11,15 +11,14 @@ impl<'a> CodeGenerator<'a> {
 
         match base {
             Value::Void => Value::Void,
-            Value::Memory { pointer, ty } => {
-                let elem_ty = ty.into_array_type().get_element_type();
-                let elem_pointer =
-                    unsafe { self.builder.build_gep(elem_ty, pointer, &[index], "") };
+            Value::Memory(memory) => {
+                let elem_ty = memory.ty.into_array_type().get_element_type();
+                let elem_pointer = unsafe {
+                    self.builder
+                        .build_gep(elem_ty, memory.pointer, &[index], "")
+                };
 
-                Value::Memory {
-                    pointer: elem_pointer,
-                    ty: elem_ty,
-                }
+                Value::memory(elem_pointer, elem_ty)
             }
             Value::Register(array_value) => {
                 let array_pointer = self.util_gen_alloca(array_value, "");
@@ -28,10 +27,7 @@ impl<'a> CodeGenerator<'a> {
                 let elem_pointer =
                     unsafe { self.builder.build_gep(elem_ty, array_pointer, &[index], "") };
 
-                Value::Memory {
-                    pointer: elem_pointer,
-                    ty: elem_ty,
-                }
+                Value::memory(elem_pointer, elem_ty)
             }
             Value::Fn(_) => unreachable!(),
         }

@@ -2,6 +2,7 @@ mod array_expr;
 mod binary_expr;
 mod cond_expr;
 mod fn_call_expr;
+mod literal_expr;
 mod struct_expr;
 mod subscript_expr;
 mod unary_expr;
@@ -11,15 +12,14 @@ pub use self::array_expr::*;
 pub use self::binary_expr::*;
 pub use self::cond_expr::*;
 pub use self::fn_call_expr::*;
+pub use self::literal_expr::*;
 pub use self::struct_expr::*;
 pub use self::subscript_expr::*;
 pub use self::unary_expr::*;
 pub use self::while_expr::*;
 use crate::{CodeGenerator, LoadedValue, Value};
-use cool_ast::{
-    BindingExprAst, BlockExprAst, DerefExprAst, ExprAst, LiteralExprAst, LiteralExprValue,
-};
-use inkwell::values::{BasicValue, BasicValueEnum};
+use cool_ast::{BindingExprAst, BlockExprAst, DerefExprAst, ExprAst};
+use inkwell::values::BasicValue;
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_expr(&mut self, expr: &ExprAst) -> Value<'a> {
@@ -29,13 +29,16 @@ impl<'a> CodeGenerator<'a> {
             ExprAst::Binary(e) => self.gen_binary_expr(e).into(),
             ExprAst::Binding(e) => self.gen_ident_expr(e),
             ExprAst::Block(e) => self.gen_block_expr(e).into(),
-            ExprAst::Cond(e) => self.gen_cond_expr(e),
+            ExprAst::Cond(e) => self.gen_cond_expr(e).into(),
             ExprAst::Deref(e) => self.gen_deref_expr(e),
             ExprAst::FnCall(e) => self.gen_fn_call_expr(e).into(),
             ExprAst::Literal(e) => self.gen_literal_expr(e).into(),
             ExprAst::Subscript(e) => self.gen_subscript_expr(e),
             ExprAst::Unary(e) => self.gen_unary_expr(e),
-            ExprAst::While(e) => self.gen_while_expr(e),
+            ExprAst::While(e) => {
+                self.gen_while_expr(e);
+                Value::Void
+            }
             _ => panic!("unsupported operation"),
         }
     }
@@ -59,37 +62,6 @@ impl<'a> CodeGenerator<'a> {
         self.bindings[&expr.binding_id]
     }
 
-    pub fn gen_literal_expr(&self, expr: &LiteralExprAst) -> BasicValueEnum<'a> {
-        match &expr.value {
-            LiteralExprValue::Int(value) => {
-                let ty_id = self.resolve[expr.expr_id].ty_id;
-                let int_ty = self.tys[ty_id].into_int_type();
-                let parts = [
-                    (value & (u64::MAX as u128)) as u64,
-                    ((value >> 64) & (u64::MAX as u128)) as u64,
-                ];
-
-                int_ty.const_int_arbitrary_precision(&parts).into()
-            }
-            LiteralExprValue::Float(value) => {
-                let ty_id = self.resolve[expr.expr_id].ty_id;
-                let float_ty = self.tys[ty_id].into_float_type();
-                float_ty.const_float(*value).into()
-            }
-            LiteralExprValue::Bool(value) => {
-                let ty_id = self.resolve[expr.expr_id].ty_id;
-                let bool_ty = self.tys[ty_id].into_int_type();
-                bool_ty.const_int(*value as u64, false).into()
-            }
-            LiteralExprValue::Cstr(value) => {
-                self.builder
-                    .build_global_string_ptr(value, "")
-                    .as_basic_value_enum()
-            }
-            _ => todo!(),
-        }
-    }
-
     #[inline]
     pub fn gen_deref_expr(&mut self, deref_expr: &DerefExprAst) -> Value<'a> {
         let pointer = self
@@ -98,19 +70,26 @@ impl<'a> CodeGenerator<'a> {
             .into_pointer_value();
 
         let expr_ty_id = self.resolve[deref_expr.expr_id].ty_id;
-        let ty = self.tys[expr_ty_id].try_into().unwrap();
+        let ty = self.tys[expr_ty_id].unwrap();
 
-        Value::Memory { pointer, ty }
+        Value::memory(pointer, ty)
     }
 
     pub fn gen_loaded_value(&self, value: Value<'a>) -> LoadedValue<'a> {
         match value {
             Value::Void => LoadedValue::Void,
-            Value::Fn(fn_value) => LoadedValue::Fn(fn_value),
-            Value::Memory { pointer, ty } => {
+            Value::Fn(fn_value) => {
+                let value = fn_value
+                    .as_global_value()
+                    .as_pointer_value()
+                    .as_basic_value_enum();
+
+                LoadedValue::Register(value)
+            }
+            Value::Memory(memory) => {
                 let value = self
                     .builder
-                    .build_load(ty, pointer, "")
+                    .build_load(memory.ty, memory.pointer, "")
                     .as_basic_value_enum();
 
                 LoadedValue::Register(value)

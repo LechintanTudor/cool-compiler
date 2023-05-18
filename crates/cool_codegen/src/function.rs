@@ -10,7 +10,7 @@ impl CodeGenerator<'_> {
             .last()
             .as_str();
 
-        let fn_ty = self.tys[extern_fn_ast.ty_id].into_function_type();
+        let fn_ty = self.tys.get_fn_ty(extern_fn_ast.ty_id);
         let binding_id = self.resolve[extern_fn_ast.item_id].as_binding_id().unwrap();
         let fn_value = self.module.add_function(fn_name, fn_ty, None);
 
@@ -20,7 +20,7 @@ impl CodeGenerator<'_> {
 
     pub fn add_fn(&mut self, fn_ast: &FnAst) {
         let fn_name = mangle_item_path(self.resolve.get_path_by_item_id(fn_ast.item_id));
-        let fn_ty = self.tys[fn_ast.ty_id].into_function_type();
+        let fn_ty = self.tys.get_fn_ty(fn_ast.ty_id);
         let binding_id = self.resolve[fn_ast.item_id].as_binding_id().unwrap();
         let fn_value = self.module.add_function(&fn_name, fn_ty, None);
 
@@ -47,7 +47,7 @@ impl CodeGenerator<'_> {
                 let value = param_value_iter.next().unwrap().as_basic_value_enum();
                 let pointer = self.util_gen_alloca(value, param.symbol.as_str());
                 let ty = value.get_type();
-                Value::Memory { pointer, ty }
+                Value::memory(pointer, ty)
             };
 
             debug_assert!(!self.bindings.contains_key(&binding_id));
@@ -58,7 +58,6 @@ impl CodeGenerator<'_> {
         let ret_value = match &ret_value {
             LoadedValue::Void => None,
             LoadedValue::Register(value) => Some(value as &dyn BasicValue),
-            _ => todo!(),
         };
 
         self.builder.build_return(ret_value);

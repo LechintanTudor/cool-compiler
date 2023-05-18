@@ -1,4 +1,4 @@
-use crate::{CodeGenerator, Value};
+use crate::{BaiscTypeEnumOptionExt, CodeGenerator, Value};
 use cool_ast::{ArrayExprAst, ArrayRepeatExprAst};
 use inkwell::values::BasicValue;
 
@@ -13,7 +13,7 @@ impl<'a> CodeGenerator<'a> {
         let array_type = self.tys[ty_id].into_array_type();
         let array_pointer = self.util_gen_alloca(array_type.get_undef(), "");
 
-        let index_type = self.tys.i8_ty();
+        let index_type = self.tys.isize_ty();
         let elem_type = array_type.get_element_type();
 
         for (i, elem) in expr.elems.iter().enumerate() {
@@ -46,7 +46,7 @@ impl<'a> CodeGenerator<'a> {
         let array_type = self.tys[ty_id].into_array_type();
         let array_pointer = self.util_gen_alloca(array_type.get_undef(), "");
 
-        let index_type = self.tys.i8_ty();
+        let index_type = self.tys.isize_ty();
         let elem_type = elem_value.get_type();
 
         for i in 0..expr.len {

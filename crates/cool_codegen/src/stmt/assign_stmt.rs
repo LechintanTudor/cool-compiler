@@ -13,7 +13,7 @@ impl<'a> CodeGenerator<'a> {
             return;
         }
 
-        let Value::Memory { pointer, .. } = lhs else {
+        let Value::Memory(value) = lhs else {
             panic!("assignment lhs is not an lvalue");
         };
 
@@ -150,6 +150,6 @@ impl<'a> CodeGenerator<'a> {
             }
         };
 
-        self.builder.build_store(pointer, result_value);
+        self.builder.build_store(value.pointer, result_value);
     }
 }

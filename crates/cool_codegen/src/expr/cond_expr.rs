@@ -1,4 +1,4 @@
-use crate::{CodeGenerator, Value};
+use crate::{CodeGenerator, LoadedValue};
 use cool_ast::{CondBlockAst, CondExprAst};
 use inkwell::basic_block::BasicBlock;
 use inkwell::types::BasicTypeEnum;
@@ -6,7 +6,7 @@ use inkwell::values::{BasicValue, PhiValue};
 use inkwell::IntPredicate;
 
 impl<'a> CodeGenerator<'a> {
-    pub fn gen_cond_expr(&mut self, expr: &CondExprAst) -> Value<'a> {
+    pub fn gen_cond_expr(&mut self, expr: &CondExprAst) -> LoadedValue<'a> {
         let initial_block = self.builder.get_insert_block().unwrap();
         let end_if_block = self.context.insert_basic_block_after(initial_block, "");
 
@@ -14,7 +14,7 @@ impl<'a> CodeGenerator<'a> {
 
         let phi_value = if !self.resolve.is_ty_id_zst(expr_ty_id) {
             self.builder.position_at_end(end_if_block);
-            let phi_ty: BasicTypeEnum = self.tys[expr_ty_id].try_into().unwrap();
+            let phi_ty: BasicTypeEnum = self.tys[expr_ty_id].unwrap();
             Some(self.builder.build_phi(phi_ty, ""))
         } else {
             None
@@ -72,8 +72,8 @@ impl<'a> CodeGenerator<'a> {
         self.builder.position_at_end(end_if_block);
 
         phi_value
-            .map(|value| Value::Register(value.as_basic_value()))
-            .unwrap_or(Value::Void)
+            .map(|value| LoadedValue::Register(value.as_basic_value()))
+            .unwrap_or(LoadedValue::Void)
     }
 
     fn util_gen_if_then_else_block(

@@ -1,16 +1,16 @@
 mod builder_ext;
 mod expr;
 mod function;
-mod generated_tys;
 mod stmt;
+mod ty;
 mod utils;
 mod value;
 
 pub use self::builder_ext::*;
 pub use self::expr::*;
 pub use self::function::*;
-pub use self::generated_tys::*;
 pub use self::stmt::*;
+pub use self::ty::*;
 pub use self::utils::*;
 pub use self::value::*;
 use cool_ast::PackageAst;

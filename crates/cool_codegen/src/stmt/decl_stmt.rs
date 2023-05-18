@@ -14,6 +14,6 @@ impl<'a> CodeGenerator<'a> {
         let ty = value.get_type();
 
         self.bindings
-            .insert(decl.binding_id, Value::Memory { pointer, ty });
+            .insert(decl.binding_id, Value::memory(pointer, ty));
     }
 }

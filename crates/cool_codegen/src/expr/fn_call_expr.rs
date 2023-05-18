@@ -20,8 +20,8 @@ impl<'a> CodeGenerator<'a> {
                     .left_or(LoadedValue::Void)
             }
             CallableValue::Register(fn_pointer) => {
-                let expr_ty_id = self.resolve[expr.expr_id].ty_id;
-                let fn_type = self.tys[expr_ty_id].into_function_type();
+                let ty_id = self.resolve[expr.fn_expr.expr_id()].ty_id;
+                let fn_type = self.tys.get_fn_ty(ty_id);
 
                 self.builder
                     .build_indirect_call(fn_type, fn_pointer, &arg_values, "")
