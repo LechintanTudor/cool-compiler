@@ -25,12 +25,16 @@ impl<'a> CodeGenerator<'a> {
                 let bool_ty = self.tys[ty_id].into_int_type();
                 bool_ty.const_int(*value as u64, false).into()
             }
+            LiteralExprValue::Char(value) => {
+                let ty_id = self.resolve[expr.expr_id].ty_id;
+                let char_ty = self.tys[ty_id].into_int_type();
+                char_ty.const_int(*value as u64, false).into()
+            }
             LiteralExprValue::Cstr(value) => {
                 self.builder
                     .build_global_string_ptr(value, "")
                     .as_basic_value_enum()
             }
-            _ => todo!(),
         }
     }
 }

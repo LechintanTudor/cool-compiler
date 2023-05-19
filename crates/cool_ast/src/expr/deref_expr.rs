@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, ExprAst, TyNotPointer};
 use cool_parser::DerefExpr;
-use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId, TyKind};
+use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId, ValueTy};
 
 #[derive(Clone, Debug)]
 pub struct DerefExprAst {
@@ -18,7 +18,7 @@ impl AstGenerator<'_> {
         let expr = self.gen_expr(frame_id, expected_ty_id, &deref_expr.expr)?;
         let expr_ty_id = self.resolve[expr.expr_id()].ty_id;
 
-        let TyKind::Pointer(pointer_ty) = self.resolve[expr_ty_id].kind else {
+        let ValueTy::Ptr(pointer_ty) = self.resolve[expr_ty_id].ty else {
             Err(TyNotPointer)?
         };
 

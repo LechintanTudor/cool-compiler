@@ -1,4 +1,4 @@
-use crate::{CodeGenerator, Value};
+use crate::CodeGenerator;
 use cool_ast::WhileExprAst;
 use inkwell::IntPredicate;
 

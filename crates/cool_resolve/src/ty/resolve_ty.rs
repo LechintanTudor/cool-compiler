@@ -1,4 +1,4 @@
-use crate::{InferTy, ItemId, TyKind};
+use crate::ValueTy;
 
 #[derive(Clone, Copy, Debug)]
 pub struct PrimitiveTyProps {
@@ -17,46 +17,10 @@ pub struct PrimitiveTyProps {
 pub struct ResolveTy {
     pub size: u64,
     pub align: u64,
-    pub kind: TyKind,
+    pub ty: ValueTy,
 }
 
 impl ResolveTy {
-    #[inline]
-    pub fn inferred(inferred_ty: InferTy) -> Self {
-        Self {
-            size: 0,
-            align: 0,
-            kind: TyKind::Infer(inferred_ty),
-        }
-    }
-
-    #[inline]
-    pub fn struct_decl(item_id: ItemId) -> Self {
-        Self {
-            size: 0,
-            align: 0,
-            kind: TyKind::StructDecl(item_id),
-        }
-    }
-
-    #[inline]
-    pub fn module() -> Self {
-        Self {
-            size: 0,
-            align: 0,
-            kind: TyKind::Module,
-        }
-    }
-
-    #[inline]
-    pub fn ty() -> Self {
-        Self {
-            size: 0,
-            align: 0,
-            kind: TyKind::Ty,
-        }
-    }
-
     #[inline]
     pub fn is_zst(&self) -> bool {
         self.size == 0
@@ -65,8 +29,8 @@ impl ResolveTy {
     #[inline]
     pub fn is_comparable(&self) -> bool {
         matches!(
-            self.kind,
-            TyKind::Int(_) | TyKind::Float(_) | TyKind::Bool | TyKind::Char | TyKind::Pointer(_),
+            self.ty,
+            ValueTy::Int(_) | ValueTy::Float(_) | ValueTy::Bool | ValueTy::Char | ValueTy::Ptr(_),
         )
     }
 }
@@ -76,8 +40,8 @@ impl Default for ResolveTy {
     fn default() -> Self {
         Self {
             size: 0,
-            align: 0,
-            kind: TyKind::Unit,
+            align: 1,
+            ty: ValueTy::Unit,
         }
     }
 }

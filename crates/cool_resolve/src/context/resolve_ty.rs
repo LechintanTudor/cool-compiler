@@ -1,14 +1,14 @@
 use crate::{
-    tys, ArrayTy, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ModuleElem, ModuleId, PointerTy,
+    tys, AnyTy, ArrayTy, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ModuleElem, ModuleId, PtrTy,
     ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, ResolveTy, Scope, SliceTy,
-    TupleTy, TyId, TyKind, TyMismatch,
+    TupleTy, TyId, TyMismatch, ValueTy,
 };
 use cool_lexer::symbols::{sym, Symbol};
 use smallvec::SmallVec;
 use std::ops;
 
 impl ResolveContext {
-    pub fn insert_builtin_ty(&mut self, ty_id: TyId, ty_kind: TyKind) {
+    pub fn insert_builtin_ty(&mut self, ty_id: TyId, ty_kind: AnyTy) {
         self.tys.insert_builtin(ty_id, ty_kind);
     }
 
@@ -17,7 +17,7 @@ impl ResolveContext {
         symbol: Symbol,
         item_id: ItemId,
         ty_id: TyId,
-        ty_kind: TyKind,
+        ty_kind: AnyTy,
     ) {
         self.paths
             .insert_if_not_exists(&[sym::EMPTY, symbol])
@@ -38,21 +38,23 @@ impl ResolveContext {
 
     #[inline]
     pub fn mk_array(&mut self, len: u64, elem: TyId) -> TyId {
-        self.tys.get_or_insert(TyKind::Array(ArrayTy { len, elem }))
+        let ty = ValueTy::Array(ArrayTy { len, elem });
+        self.tys.get_or_insert(ty.into())
     }
 
     #[inline]
     pub fn mk_pointer(&mut self, is_mutable: bool, pointee: TyId) -> TyId {
-        self.tys.get_or_insert(TyKind::Pointer(PointerTy {
+        let ty = ValueTy::Ptr(PtrTy {
             is_mutable,
             pointee,
-        }))
+        });
+        self.tys.get_or_insert(ty.into())
     }
 
     #[inline]
     pub fn mk_slice(&mut self, is_mutable: bool, elem: TyId) -> TyId {
-        self.tys
-            .get_or_insert(TyKind::Slice(SliceTy { is_mutable, elem }))
+        let ty = ValueTy::Slice(SliceTy { is_mutable, elem });
+        self.tys.get_or_insert(ty.into())
     }
 
     pub fn mk_tuple<E>(&mut self, elems: E) -> TyId
@@ -65,24 +67,27 @@ impl ResolveContext {
             return tys::UNIT;
         }
 
-        self.tys.get_or_insert(TyKind::Tuple(TupleTy { elems }))
+        let ty = ValueTy::Tuple(TupleTy { elems });
+        self.tys.get_or_insert(ty.into())
     }
 
     pub fn mk_fn<P>(&mut self, abi: FnAbi, params: P, is_variadic: bool, ret: TyId) -> TyId
     where
         P: IntoIterator<Item = TyId>,
     {
-        self.tys.get_or_insert(TyKind::Fn(FnTy {
+        let ty = ValueTy::Fn(FnTy {
             abi,
             params: SmallVec::from_iter(params),
             is_variadic,
             ret,
-        }))
+        });
+
+        self.tys.get_or_insert(ty.into())
     }
 
     #[inline]
     pub fn mk_struct(&mut self, item_id: ItemId) -> TyId {
-        self.tys.get_or_insert(TyKind::StructDecl(item_id))
+        self.tys.get_or_insert(AnyTy::StructDecl(item_id))
     }
 
     pub fn resolve_ty_from_path<'a, P>(&self, scope: Scope, path: P) -> ResolveResult<TyId>
@@ -114,13 +119,13 @@ impl ResolveContext {
     }
 
     #[inline]
-    pub fn iter_ty_ids(&self) -> impl Iterator<Item = TyId> {
-        self.tys.iter_ty_ids()
+    pub fn iter_resolve_ty_ids(&self) -> impl Iterator<Item = TyId> + '_ {
+        self.tys.iter_resolve_ty_ids()
     }
 
     #[inline]
     pub fn is_ty_id_zst(&self, ty_id: TyId) -> bool {
-        self.tys.get_resolve_ty(ty_id).is_zst()
+        self.tys.get_resolve_ty(ty_id).unwrap().is_zst()
     }
 }
 
@@ -129,6 +134,6 @@ impl ops::Index<TyId> for ResolveContext {
 
     #[inline]
     fn index(&self, ty_id: TyId) -> &Self::Output {
-        self.tys.get_resolve_ty(ty_id)
+        self.tys.get_resolve_ty(ty_id).unwrap()
     }
 }

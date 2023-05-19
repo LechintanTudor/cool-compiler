@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, ExprAst};
 use cool_parser::SubscriptExpr;
-use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId, TyKind};
+use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId, ValueTy};
 
 #[derive(Clone, Debug)]
 pub struct SubscriptExprAst {
@@ -21,7 +21,7 @@ impl AstGenerator<'_> {
 
         let base_resolve_expr = self.resolve[base.expr_id()];
 
-        let TyKind::Array(array_ty) = self.resolve[base_resolve_expr.ty_id].kind else {
+        let ValueTy::Array(array_ty) = self.resolve[base_resolve_expr.ty_id].ty else {
             panic!("ty not array");
         };
 

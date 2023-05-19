@@ -5,31 +5,27 @@ use smallvec::SmallVec;
 use std::hash::{Hash, Hasher};
 
 #[derive(Clone, PartialEq, Eq, Hash, From, Debug)]
-pub enum TyKind {
-    Infer(InferTy),
+pub enum ValueTy {
     Unit,
     Int(IntTy),
     Float(FloatTy),
     Bool,
     Char,
+    Fn(FnTy),
     Array(ArrayTy),
-    Pointer(PointerTy),
+    Ptr(PtrTy),
     Slice(SliceTy),
     Tuple(TupleTy),
-    Fn(FnTy),
-    StructDecl(ItemId),
     Struct(StructTy),
-    Module,
-    Ty,
 }
 
-impl TyKind {
+impl ValueTy {
     #[inline]
-    pub fn is_defined(&self) -> bool {
-        !matches!(
-            self,
-            Self::Infer(_) | Self::StructDecl(_) | Self::Module | Self::Ty,
-        )
+    pub fn as_fn(&self) -> Option<&FnTy> {
+        match self {
+            Self::Fn(fn_ty) => Some(fn_ty),
+            _ => None,
+        }
     }
 
     #[inline]
@@ -41,45 +37,19 @@ impl TyKind {
     }
 
     #[inline]
-    pub fn as_pointer(&self) -> Option<&PointerTy> {
+    pub fn as_ptr(&self) -> Option<&PtrTy> {
         match self {
-            Self::Pointer(pointer_ty) => Some(pointer_ty),
+            Self::Ptr(ptr_ty) => Some(ptr_ty),
             _ => None,
         }
     }
 
-    #[inline]
-    pub fn as_fn(&self) -> Option<&FnTy> {
-        match self {
-            Self::Fn(fn_ty) => Some(fn_ty),
-            _ => None,
-        }
-    }
-
-    #[inline]
     pub fn as_struct(&self) -> Option<&StructTy> {
         match self {
             Self::Struct(struct_ty) => Some(struct_ty),
             _ => None,
         }
     }
-}
-
-impl Default for TyKind {
-    #[inline]
-    fn default() -> Self {
-        Self::Infer(InferTy::Any)
-    }
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Default, Debug)]
-pub enum InferTy {
-    #[default]
-    Any,
-    Number,
-    Int,
-    Float,
-    EmptyArray,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Default, Debug)]
@@ -113,7 +83,7 @@ pub struct ArrayTy {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub struct PointerTy {
+pub struct PtrTy {
     pub is_mutable: bool,
     pub pointee: TyId,
 }

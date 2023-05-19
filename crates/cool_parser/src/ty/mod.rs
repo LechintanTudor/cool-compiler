@@ -24,7 +24,7 @@ pub enum Ty {
     Fn(FnTy),
     Module(ModuleTy),
     Path(PathTy),
-    Pointer(PointerTy),
+    Ptr(PtrTy),
     Slice(SliceTy),
     Tuple(TupleTy),
 }
@@ -37,7 +37,7 @@ impl Section for Ty {
             Ty::Fn(ty) => ty.span(),
             Ty::Module(ty) => ty.span(),
             Ty::Path(ty) => ty.span(),
-            Ty::Pointer(ty) => ty.span(),
+            Ty::Ptr(ty) => ty.span(),
             Ty::Slice(ty) => ty.span(),
             Ty::Tuple(ty) => ty.span(),
         }
@@ -50,7 +50,7 @@ impl Parser<'_> {
             tk::KW_EXTERN | tk::KW_FN => self.parse_fn_ty()?.into(),
             tk::KW_MODULE => self.parse_module_ty()?.into(),
             TokenKind::Ident(_) => self.parse_path_ty()?.into(),
-            tk::STAR => self.parse_pointer_ty()?.into(),
+            tk::STAR => self.parse_ptr_ty()?.into(),
             tk::OPEN_PAREN => self.parse_tuple_ty()?.into(),
             tk::OPEN_BRACKET => self.parse_array_or_slice_ty()?,
             _ => {

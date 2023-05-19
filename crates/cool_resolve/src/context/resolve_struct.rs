@@ -1,6 +1,6 @@
 use crate::{
     ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveErrorKind,
-    ResolveResult, StructHasInfiniteSize, StructTy, TyId, TyKind,
+    ResolveResult, StructHasInfiniteSize, StructTy, TyId, ValueTy,
 };
 use cool_lexer::symbols::Symbol;
 use smallvec::SmallVec;
@@ -68,10 +68,10 @@ impl ResolveContext {
                 return Some(true);
             }
 
-            match &self.tys.get_resolve_ty(ty_id).kind {
-                TyKind::Tuple(tuple_ty) => tys_to_check.extend(tuple_ty.elems.iter().copied()),
-                TyKind::StructDecl(_) => return None,
-                TyKind::Struct(struct_ty) => {
+            match &self.tys.get_resolve_ty(ty_id)?.ty {
+                ValueTy::Array(array_ty) => tys_to_check.push(array_ty.elem),
+                ValueTy::Tuple(tuple_ty) => tys_to_check.extend(tuple_ty.elems.iter().copied()),
+                ValueTy::Struct(struct_ty) => {
                     tys_to_check
                         .extend(struct_ty.fields.iter().map(|(_, field_ty_id)| *field_ty_id))
                 }

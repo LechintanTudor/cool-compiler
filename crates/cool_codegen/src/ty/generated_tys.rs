@@ -1,5 +1,5 @@
-use crate::mangle_item_path;
-use cool_resolve::{tys, ResolveContext, TyId, TyKind};
+use crate::{mangle_item_path, BaiscTypeEnumOptionExt};
+use cool_resolve::{tys, ResolveContext, StructTy, TyId, ValueTy};
 use inkwell::context::Context;
 use inkwell::targets::TargetData;
 use inkwell::types::{
@@ -76,11 +76,51 @@ impl<'a> GeneratedTys<'a> {
     }
 
     fn insert_derived_tys(&mut self, context: &'a Context, resolve: &'a ResolveContext) {
-        for ty_id in resolve.iter_ty_ids() {
-            if resolve[ty_id].kind.is_defined() {
-                self.insert_ty(context, resolve, ty_id);
+        for ty_id in resolve.iter_resolve_ty_ids() {
+            if let ValueTy::Struct(struct_ty) = &resolve[ty_id].ty {
+                self.declare_struct_ty(context, resolve, ty_id, struct_ty);
             }
         }
+
+        for ty_id in resolve.iter_resolve_ty_ids() {
+            self.insert_ty(context, resolve, ty_id);
+        }
+
+        for ty_id in resolve.iter_resolve_ty_ids() {
+            if let ValueTy::Struct(struct_ty) = &resolve[ty_id].ty {
+                self.define_struct_ty(context, resolve, ty_id, struct_ty);
+            }
+        }
+    }
+
+    fn declare_struct_ty(
+        &mut self,
+        context: &'a Context,
+        resolve: &'a ResolveContext,
+        ty_id: TyId,
+        struct_ty: &StructTy,
+    ) {
+        let struct_name = mangle_item_path(resolve.get_path_by_item_id(struct_ty.item_id));
+        let struct_ty = context.opaque_struct_type(&struct_name);
+        self.tys.insert(ty_id, Some(struct_ty.as_basic_type_enum()));
+    }
+
+    fn define_struct_ty(
+        &mut self,
+        context: &'a Context,
+        resolve: &'a ResolveContext,
+        ty_id: TyId,
+        struct_ty: &StructTy,
+    ) {
+        let struct_decl = self.tys[&ty_id].into_struct_type();
+
+        let fields = struct_ty
+            .fields
+            .iter()
+            .flat_map(|(_, ty_id)| self.insert_ty(context, resolve, *ty_id))
+            .collect::<Vec<_>>();
+
+        struct_decl.set_body(&fields, false);
     }
 
     fn insert_ty(
@@ -93,8 +133,8 @@ impl<'a> GeneratedTys<'a> {
             return ty;
         }
 
-        let ty: Option<BasicTypeEnum> = match &resolve[ty_id].kind {
-            TyKind::Fn(fn_ty) => {
+        let ty: Option<BasicTypeEnum> = match &resolve[ty_id].ty {
+            ValueTy::Fn(fn_ty) => {
                 let params = fn_ty
                     .params
                     .iter()
@@ -110,33 +150,32 @@ impl<'a> GeneratedTys<'a> {
                 self.fns.insert(ty_id, fn_item_ty);
                 Some(fn_item_ty.ptr_type(Default::default()).as_basic_type_enum())
             }
-            TyKind::Array(array_ty) => {
+            ValueTy::Array(array_ty) => {
                 self.insert_ty(context, resolve, array_ty.elem)
                     .filter(|_| array_ty.len != 0)
                     .map(|elem_ty| elem_ty.array_type(array_ty.len as u32))
                     .map(BasicTypeEnum::from)
             }
-            TyKind::Pointer(pointer_ty) => {
+            ValueTy::Ptr(ptr_ty) => {
                 Some(
-                    self.insert_ty(context, resolve, pointer_ty.pointee)
+                    self.insert_ty(context, resolve, ptr_ty.pointee)
                         .map(|pointee_ty| pointee_ty.ptr_type(Default::default()))
                         .unwrap_or(self.i8_ptr_ty)
                         .as_basic_type_enum(),
                 )
             }
-            TyKind::Struct(struct_ty) => {
-                // TODO: Properly handle aggregate types
-                let struct_name = mangle_item_path(resolve.get_path_by_item_id(struct_ty.item_id));
-
-                let fields = struct_ty
-                    .fields
+            ValueTy::Tuple(tuple_ty) => {
+                let fields = tuple_ty
+                    .elems
                     .iter()
-                    .flat_map(|(_, ty_id)| self.insert_ty(context, resolve, *ty_id))
+                    .flat_map(|&elem| self.insert_ty(context, resolve, elem))
                     .collect::<Vec<_>>();
 
-                let struct_type = context.opaque_struct_type(&struct_name);
-                struct_type.set_body(&fields, false);
-                Some(struct_type.as_basic_type_enum())
+                if fields.is_empty() {
+                    return None;
+                }
+
+                Some(context.struct_type(&fields, false).as_basic_type_enum())
             }
             ty => todo!("Unimplemented ty: {:?}", ty),
         };

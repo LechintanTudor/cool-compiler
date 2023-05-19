@@ -1,5 +1,5 @@
 use crate::context::ResolveContext;
-use crate::{FloatTy, InferTy, IntTy, PointerTy, PrimitiveTyProps, TyKind};
+use crate::{AnyTy, FloatTy, InferTy, IntTy, ItemTy, PrimitiveTyProps, PtrTy, ValueTy};
 use cool_lexer::symbols::sym;
 
 macro_rules! builtins {
@@ -37,7 +37,7 @@ macro_rules! builtins {
             pub fn new(primitives: PrimitiveTyProps) -> Self {
                 let mut resolve = ResolveContext::empty(primitives);
                 resolve.insert_root_module(sym::EMPTY).unwrap();
-                resolve.insert_builtin_ty(tys::UNIT, TyKind::Unit);
+                resolve.insert_builtin_ty(tys::UNIT, AnyTy::Value(ValueTy::Unit));
 
                 $(
                     resolve.insert_builtin_ty_item(
@@ -60,36 +60,39 @@ macro_rules! builtins {
 
 builtins! {
     Items {
-         2: (I8, TyKind::Int(IntTy::I8)),
-         3: (I16, TyKind::Int(IntTy::I16)),
-         4: (I32, TyKind::Int(IntTy::I32)),
-         5: (I64, TyKind::Int(IntTy::I64)),
-         6: (I128, TyKind::Int(IntTy::I128)),
-         7: (ISIZE, TyKind::Int(IntTy::Isize)),
+         2: (I8, AnyTy::Value(ValueTy::Int(IntTy::I8))),
+         3: (I16, AnyTy::Value(ValueTy::Int(IntTy::I16))),
+         4: (I32, AnyTy::Value(ValueTy::Int(IntTy::I32))),
+         5: (I64, AnyTy::Value(ValueTy::Int(IntTy::I64))),
+         6: (I128, AnyTy::Value(ValueTy::Int(IntTy::I128))),
+         7: (ISIZE, AnyTy::Value(ValueTy::Int(IntTy::Isize))),
 
-         8: (U8, TyKind::Int(IntTy::U8)),
-         9: (U16, TyKind::Int(IntTy::U16)),
-        10: (U32, TyKind::Int(IntTy::U32)),
-        11: (U64, TyKind::Int(IntTy::U64)),
-        12: (U128, TyKind::Int(IntTy::U128)),
-        13: (USIZE, TyKind::Int(IntTy::Usize)),
+         8: (U8, AnyTy::Value(ValueTy::Int(IntTy::U8))),
+         9: (U16, AnyTy::Value(ValueTy::Int(IntTy::U16))),
+        10: (U32, AnyTy::Value(ValueTy::Int(IntTy::U32))),
+        11: (U64, AnyTy::Value(ValueTy::Int(IntTy::U64))),
+        12: (U128, AnyTy::Value(ValueTy::Int(IntTy::U128))),
+        13: (USIZE, AnyTy::Value(ValueTy::Int(IntTy::Usize))),
 
-        14: (F32, TyKind::Float(FloatTy::F32)),
-        15: (F64, TyKind::Float(FloatTy::F64)),
+        14: (F32, AnyTy::Value(ValueTy::Float(FloatTy::F32))),
+        15: (F64, AnyTy::Value(ValueTy::Float(FloatTy::F64))),
 
-        16: (BOOL, TyKind::Bool),
-        17: (CHAR, TyKind::Char),
+        16: (BOOL, AnyTy::Value(ValueTy::Bool)),
+        17: (CHAR, AnyTy::Value(ValueTy::Char)),
     }
 
     Nonitems {
-        18: (INFER, TyKind::Infer(InferTy::Any)),
-        19: (INFER_NUMBER, TyKind::Infer(InferTy::Number)),
-        20: (INFER_INT, TyKind::Infer(InferTy::Int)),
-        21: (INFER_FLOAT, TyKind::Infer(InferTy::Float)),
-        22: (INFER_EMPTY_ARRAY, TyKind::Infer(InferTy::EmptyArray)),
+        18: (INFER, AnyTy::Infer(InferTy::Any)),
+        19: (INFER_NUMBER, AnyTy::Infer(InferTy::Number)),
+        20: (INFER_INT, AnyTy::Infer(InferTy::Int)),
+        21: (INFER_FLOAT, AnyTy::Infer(InferTy::Float)),
+        22: (INFER_EMPTY_ARRAY, AnyTy::Infer(InferTy::EmptyArray)),
 
-        23: (MODULE, TyKind::Module),
-        24: (TY, TyKind::Ty),
-        25: (C_STR, TyKind::Pointer(PointerTy { is_mutable: false, pointee: tys::I8 })),
+        23: (MODULE, AnyTy::Item(ItemTy::Module)),
+        24: (TY, AnyTy::Item(ItemTy::Ty)),
+        25: (
+            C_STR,
+            AnyTy::Value(ValueTy::Ptr(PtrTy { is_mutable: false, pointee: tys::I8 }))
+        ),
     }
 }

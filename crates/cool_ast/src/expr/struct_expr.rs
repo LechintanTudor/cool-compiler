@@ -30,7 +30,7 @@ impl AstGenerator<'_> {
             .ty_id;
 
         let struct_ty = self.resolve[ty_id]
-            .kind
+            .ty
             .as_struct()
             .expect("struct base is not a struct type")
             .clone();

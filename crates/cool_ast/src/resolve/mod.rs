@@ -35,10 +35,13 @@ impl AstGenerator<'_> {
 
                 let item_id = self.resolve.resolve_global(scope, &path)?;
 
-                self.resolve[item_id].as_ty_id().ok_or(ResolveError {
-                    symbol: path.last(),
-                    kind: ResolveErrorKind::SymbolNotTy,
-                })?
+                self.resolve[item_id]
+                    .as_ty_id()
+                    .filter(|ty_id| !ty_id.is_inferred())
+                    .ok_or(ResolveError {
+                        symbol: path.last(),
+                        kind: ResolveErrorKind::SymbolNotTy,
+                    })?
             }
             Ty::Array(array_ty) => {
                 let len = self
@@ -50,9 +53,9 @@ impl AstGenerator<'_> {
                 let elem = self.resolve_ty(scope, &array_ty.elem)?;
                 self.resolve.mk_array(len, elem)
             }
-            Ty::Pointer(pointer_ty) => {
-                let pointee = self.resolve_ty(scope, &pointer_ty.pointee)?;
-                self.resolve.mk_pointer(pointer_ty.is_mutable, pointee)
+            Ty::Ptr(ptr_ty) => {
+                let pointee = self.resolve_ty(scope, &ptr_ty.pointee)?;
+                self.resolve.mk_pointer(ptr_ty.is_mutable, pointee)
             }
             Ty::Slice(slice_ty) => {
                 let elem = self.resolve_ty(scope, &slice_ty.elem)?;
