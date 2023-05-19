@@ -21,7 +21,7 @@ impl<'a> CodeGenerator<'a> {
                 Value::memory(elem_pointer, elem_ty)
             }
             Value::Register(array_value) => {
-                let array_pointer = self.util_gen_alloca(array_value, "");
+                let array_pointer = self.util_gen_init(array_value);
 
                 let elem_ty = array_value.get_type().into_array_type().get_element_type();
                 let elem_pointer =

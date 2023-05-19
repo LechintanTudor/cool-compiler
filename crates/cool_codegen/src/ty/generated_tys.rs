@@ -1,4 +1,5 @@
-use crate::{mangle_item_path, BaiscTypeEnumOptionExt};
+use crate::{mangle_item_path, BaiscTypeEnumOptionExt, TyFieldMap};
+use cool_lexer::symbols::Symbol;
 use cool_resolve::{tys, ResolveContext, StructTy, TyId, ValueTy};
 use inkwell::context::Context;
 use inkwell::targets::TargetData;
@@ -12,6 +13,7 @@ use std::ops;
 pub struct GeneratedTys<'a> {
     fns: FxHashMap<TyId, FunctionType<'a>>,
     tys: FxHashMap<TyId, Option<BasicTypeEnum<'a>>>,
+    field_maps: FxHashMap<TyId, TyFieldMap>,
     void_ty: VoidType<'a>,
     i8_ty: IntType<'a>,
     isize_ty: IntType<'a>,
@@ -27,6 +29,7 @@ impl<'a> GeneratedTys<'a> {
         let mut generated_tys = Self {
             fns: Default::default(),
             tys: Default::default(),
+            field_maps: Default::default(),
             void_ty: context.void_type(),
             i8_ty: context.i8_type(),
             isize_ty: context.ptr_sized_int_type(target_data, Default::default()),
@@ -113,14 +116,24 @@ impl<'a> GeneratedTys<'a> {
         struct_ty: &StructTy,
     ) {
         let struct_decl = self.tys[&ty_id].into_struct_type();
+        let mut fields = Vec::<BasicTypeEnum>::new();
+        let mut field_map = FxHashMap::<Symbol, u32>::default();
 
-        let fields = struct_ty
+        struct_ty
             .fields
             .iter()
-            .flat_map(|(_, ty_id)| self.insert_ty(context, resolve, *ty_id))
-            .collect::<Vec<_>>();
+            .flat_map(|(symbol, ty_id)| {
+                self.insert_ty(context, resolve, *ty_id)
+                    .map(|ty| (*symbol, ty))
+            })
+            .enumerate()
+            .for_each(|(i, (symbol, ty))| {
+                fields.push(ty);
+                field_map.insert(symbol, i as u32);
+            });
 
         struct_decl.set_body(&fields, false);
+        self.field_maps.insert(ty_id, field_map.into());
     }
 
     fn insert_ty(
@@ -186,7 +199,12 @@ impl<'a> GeneratedTys<'a> {
 
     #[inline]
     pub fn get_fn_ty(&self, ty_id: TyId) -> FunctionType<'a> {
-        *self.fns.get(&ty_id).unwrap()
+        self.fns[&ty_id]
+    }
+
+    #[inline]
+    pub fn get_field_map(&self, ty_id: TyId) -> &TyFieldMap {
+        &self.field_maps[&ty_id]
     }
 
     #[inline]

@@ -45,9 +45,9 @@ impl CodeGenerator<'_> {
                 Value::Void
             } else {
                 let value = param_value_iter.next().unwrap().as_basic_value_enum();
-                let pointer = self.util_gen_alloca(value, param.symbol.as_str());
+                let ptr = self.util_gen_named_init(value, param.symbol.as_str());
                 let ty = value.get_type();
-                Value::memory(pointer, ty)
+                Value::memory(ptr, ty)
             };
 
             debug_assert!(!self.bindings.contains_key(&binding_id));

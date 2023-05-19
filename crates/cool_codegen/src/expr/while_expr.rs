@@ -1,9 +1,9 @@
-use crate::CodeGenerator;
+use crate::{CodeGenerator, LoadedValue};
 use cool_ast::WhileExprAst;
 use inkwell::IntPredicate;
 
 impl<'a> CodeGenerator<'a> {
-    pub fn gen_while_expr(&mut self, expr: &WhileExprAst) {
+    pub fn gen_while_expr(&mut self, expr: &WhileExprAst) -> LoadedValue<'a> {
         let initial_block = self.builder.get_insert_block().unwrap();
         let cond_block = self.context.insert_basic_block_after(initial_block, "");
         let body_block = self.context.insert_basic_block_after(cond_block, "");
@@ -29,5 +29,6 @@ impl<'a> CodeGenerator<'a> {
         self.builder.build_unconditional_branch(cond_block);
 
         self.builder.position_at_end(end_block);
+        LoadedValue::Void
     }
 }
