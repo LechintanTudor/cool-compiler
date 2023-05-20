@@ -13,7 +13,7 @@ pub enum Value<'a> {
 impl<'a> Value<'a> {
     #[inline]
     pub fn memory(pointer: PointerValue<'a>, ty: BasicTypeEnum<'a>) -> Value<'a> {
-        Self::Memory(MemoryValue { pointer, ty })
+        Self::Memory(MemoryValue { ptr: pointer, ty })
     }
 
     #[inline]

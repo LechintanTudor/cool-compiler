@@ -17,7 +17,7 @@ pub struct ModuleExprAst {
 #[derive(Clone, Debug)]
 pub struct TyExprAst {
     pub expr_id: ExprId,
-    pub ty_id: TyId,
+    pub item_ty_id: TyId,
 }
 
 impl AstGenerator<'_> {
@@ -53,7 +53,11 @@ impl AstGenerator<'_> {
                 self.resolve.resolve_direct_ty_id(tys::TY, expected_ty_id)?;
 
                 let expr_id = self.resolve.add_expr(ResolveExpr::ty());
-                TyExprAst { expr_id, ty_id }.into()
+                TyExprAst {
+                    expr_id,
+                    item_ty_id: ty_id,
+                }
+                .into()
             }
             ItemKind::Module(module_id) => {
                 self.resolve

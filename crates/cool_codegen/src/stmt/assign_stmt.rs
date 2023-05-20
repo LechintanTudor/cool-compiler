@@ -150,6 +150,6 @@ impl<'a> CodeGenerator<'a> {
             }
         };
 
-        self.builder.build_store(value.pointer, result_value);
+        self.builder.build_store(value.ptr, result_value);
     }
 }

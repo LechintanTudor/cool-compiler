@@ -3,6 +3,6 @@ use inkwell::values::PointerValue;
 
 #[derive(Clone, Copy, Debug)]
 pub struct MemoryValue<'a> {
-    pub pointer: PointerValue<'a>,
+    pub ptr: PointerValue<'a>,
     pub ty: BasicTypeEnum<'a>,
 }

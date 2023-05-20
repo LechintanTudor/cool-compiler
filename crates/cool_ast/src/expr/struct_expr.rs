@@ -1,7 +1,7 @@
 use crate::{AstGenerator, AstResult, ExprAst};
 use cool_lexer::symbols::Symbol;
 use cool_parser::{Ident, StructExpr};
-use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId};
+use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
 use rustc_hash::FxHashSet;
 
 #[derive(Clone, Debug)]
@@ -24,10 +24,10 @@ impl AstGenerator<'_> {
         expr: &StructExpr,
     ) -> AstResult<StructExprAst> {
         let ty_id = self
-            .gen_expr(frame_id, expected_ty_id, &expr.base)?
+            .gen_expr(frame_id, tys::TY, &expr.base)?
             .as_ty()
             .expect("struct base is not a type")
-            .ty_id;
+            .item_ty_id;
 
         let struct_ty = self.resolve[ty_id]
             .ty
@@ -66,6 +66,8 @@ impl AstGenerator<'_> {
         if initializers.len() < struct_ty.fields.len() {
             panic!("missing struct fields");
         }
+
+        let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
 
         Ok(StructExprAst {
             expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),

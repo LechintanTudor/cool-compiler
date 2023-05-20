@@ -55,7 +55,7 @@ impl<'a> CodeGenerator<'a> {
                 let value = self.gen_expr(&unary_expr.expr);
 
                 match value {
-                    Value::Memory(memory) => Value::Register(memory.pointer.as_basic_value_enum()),
+                    Value::Memory(memory) => Value::Register(memory.ptr.as_basic_value_enum()),
                     _ => todo!(),
                 }
             }

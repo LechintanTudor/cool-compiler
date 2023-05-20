@@ -65,6 +65,7 @@ macro_rules! define_expr_ast {
 }
 
 define_expr_ast! {
+    StructAccess,
     Array,
     ArrayRepeat,
     Binary,

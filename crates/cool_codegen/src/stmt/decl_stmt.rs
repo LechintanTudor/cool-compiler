@@ -7,7 +7,7 @@ impl<'a> CodeGenerator<'a> {
 
         let value = match self.gen_expr(&decl.expr) {
             Value::Memory(memory) => {
-                memory.pointer.set_name(binding.symbol.as_str());
+                memory.ptr.set_name(binding.symbol.as_str());
                 Value::Memory(memory)
             }
             Value::Register(value) => {

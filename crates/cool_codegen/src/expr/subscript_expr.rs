@@ -13,10 +13,8 @@ impl<'a> CodeGenerator<'a> {
             Value::Void => Value::Void,
             Value::Memory(memory) => {
                 let elem_ty = memory.ty.into_array_type().get_element_type();
-                let elem_pointer = unsafe {
-                    self.builder
-                        .build_gep(elem_ty, memory.pointer, &[index], "")
-                };
+                let elem_pointer =
+                    unsafe { self.builder.build_gep(elem_ty, memory.ptr, &[index], "") };
 
                 Value::memory(elem_pointer, elem_ty)
             }
