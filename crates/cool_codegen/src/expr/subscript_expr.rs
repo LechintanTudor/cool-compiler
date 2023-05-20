@@ -3,7 +3,7 @@ use cool_ast::SubscriptExprAst;
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_subscript_expr(&mut self, expr: &SubscriptExprAst) -> Value<'a> {
-        let base = self.gen_expr(&expr.base);
+        let base = self.gen_expr(&expr.base, None);
         let index = self
             .gen_loaded_expr(&expr.index)
             .into_basic_value()

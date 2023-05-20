@@ -52,7 +52,7 @@ impl<'a> CodeGenerator<'a> {
                 }
             }
             UnaryOpKind::Addr { .. } => {
-                let value = self.gen_expr(&unary_expr.expr);
+                let value = self.gen_expr(&unary_expr.expr, None);
 
                 match value {
                     Value::Memory(memory) => Value::Register(memory.ptr.as_basic_value_enum()),

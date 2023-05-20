@@ -3,7 +3,7 @@ use cool_ast::StructAccessExprAst;
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_struct_access_expr(&mut self, expr: &StructAccessExprAst) -> Value<'a> {
-        match self.gen_expr(&expr.base) {
+        match self.gen_expr(&expr.base, None) {
             Value::Void => Value::Void,
             Value::Memory(memory) => {
                 let base_ty_id = self.resolve[expr.base.expr_id()].ty_id;

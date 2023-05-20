@@ -196,6 +196,7 @@ dependencies = [
  "cool_lexer",
  "cool_parser",
  "cool_resolve",
+ "derive_more",
  "inkwell",
  "rustc-hash",
 ]

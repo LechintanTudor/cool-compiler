@@ -1,57 +1,72 @@
-use crate::{BaiscTypeEnumOptionExt, CodeGenerator, Value};
+use crate::{CodeGenerator, LoadedValue, MemoryValue, Value};
 use cool_ast::{ArrayExprAst, ArrayRepeatExprAst};
-use inkwell::types::BasicType;
 
 impl<'a> CodeGenerator<'a> {
-    pub fn gen_array_expr(&mut self, expr: &ArrayExprAst) -> Value<'a> {
-        let ty_id = self.resolve[expr.expr_id].ty_id;
+    // TODO: Support ZST
+    pub fn gen_array_expr(
+        &mut self,
+        expr: &ArrayExprAst,
+        memory: Option<MemoryValue<'a>>,
+    ) -> Value<'a> {
+        let memory = memory.unwrap_or_else(|| {
+            let ty_id = self.resolve[expr.expr_id].ty_id;
+            let ty = self.tys[ty_id].unwrap();
+            let ptr = self.util_gen_alloca(ty);
+            MemoryValue::new(ptr, ty)
+        });
 
-        let array_ty = self.tys[ty_id].into_array_type();
-        let array_ptr = self.util_gen_alloca(array_ty);
-
-        let index_type = self.tys.isize_ty();
-        let elem_type = array_ty.get_element_type();
+        let index_ty = self.tys.isize_ty();
+        let elem_ty = memory.ty.into_array_type().get_element_type();
 
         for (i, elem) in expr.elems.iter().enumerate() {
-            let elem_index = index_type.const_int(i as u64, false);
+            let elem_index = index_ty.const_int(i as u64, false);
             let elem_value = self.gen_loaded_expr(elem).into_basic_value();
 
             let elem_pointer = unsafe {
                 self.builder
-                    .build_gep(elem_type, array_ptr, &[elem_index], "")
+                    .build_gep(elem_ty, memory.ptr, &[elem_index], "")
             };
 
             self.builder.build_store(elem_pointer, elem_value);
         }
 
-        Value::memory(array_ptr, array_ty.as_basic_type_enum())
+        Value::Memory(memory)
     }
 
-    pub fn gen_array_repeat_expr(&mut self, expr: &ArrayRepeatExprAst) -> Value<'a> {
-        let elem_value = self.gen_loaded_expr(&expr.elem).into_basic_value();
-        let ty_id = self.resolve[expr.expr_id].ty_id;
-
-        if self.resolve.is_ty_id_zst(ty_id) {
+    pub fn gen_array_repeat_expr(
+        &mut self,
+        expr: &ArrayRepeatExprAst,
+        memory: Option<MemoryValue<'a>>,
+    ) -> Value<'a> {
+        if expr.len == 0 {
             return Value::Void;
         }
 
-        let array_ty = self.tys[ty_id].into_array_type();
-        let array_ptr = self.util_gen_init(array_ty.get_undef());
+        let LoadedValue::Register(elem_value) = self.gen_loaded_expr(&expr.elem) else {
+            return Value::Void;
+        };
 
-        let index_type = self.tys.isize_ty();
-        let elem_type = elem_value.get_type();
+        let memory = memory.unwrap_or_else(|| {
+            let ty_id = self.resolve[expr.expr_id].ty_id;
+            let ty = self.tys[ty_id].unwrap();
+            let ptr = self.util_gen_alloca(ty);
+            MemoryValue::new(ptr, ty)
+        });
+
+        let index_ty = self.tys.isize_ty();
+        let elem_ty = memory.ty.into_array_type().get_element_type();
 
         for i in 0..expr.len {
-            let elem_index = index_type.const_int(i, false);
+            let elem_index = index_ty.const_int(i, false);
 
-            let elem_pointer = unsafe {
+            let elem_ptr = unsafe {
                 self.builder
-                    .build_gep(elem_type, array_ptr, &[elem_index], "")
+                    .build_gep(elem_ty, memory.ptr, &[elem_index], "")
             };
 
-            self.builder.build_store(elem_pointer, elem_value);
+            self.builder.build_store(elem_ptr, elem_value);
         }
 
-        Value::memory(array_ptr, array_ty.as_basic_type_enum())
+        Value::Memory(memory)
     }
 }

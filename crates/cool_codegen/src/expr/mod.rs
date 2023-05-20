@@ -19,15 +19,15 @@ pub use self::struct_expr::*;
 pub use self::subscript_expr::*;
 pub use self::unary_expr::*;
 pub use self::while_expr::*;
-use crate::{CodeGenerator, LoadedValue, Value};
+use crate::{CodeGenerator, LoadedValue, MemoryValue, Value};
 use cool_ast::{BindingExprAst, BlockExprAst, DerefExprAst, ExprAst};
 use inkwell::values::BasicValue;
 
 impl<'a> CodeGenerator<'a> {
-    pub fn gen_expr(&mut self, expr: &ExprAst) -> Value<'a> {
+    pub fn gen_expr(&mut self, expr: &ExprAst, memory: Option<MemoryValue<'a>>) -> Value<'a> {
         match expr {
-            ExprAst::Array(e) => self.gen_array_expr(e),
-            ExprAst::ArrayRepeat(e) => self.gen_array_repeat_expr(e),
+            ExprAst::Array(e) => self.gen_array_expr(e, memory),
+            ExprAst::ArrayRepeat(e) => self.gen_array_repeat_expr(e, memory),
             ExprAst::Binary(e) => self.gen_binary_expr(e).into(),
             ExprAst::Binding(e) => self.gen_ident_expr(e),
             ExprAst::Block(e) => self.gen_block_expr(e).into(),
@@ -35,7 +35,7 @@ impl<'a> CodeGenerator<'a> {
             ExprAst::Deref(e) => self.gen_deref_expr(e),
             ExprAst::FnCall(e) => self.gen_fn_call_expr(e).into(),
             ExprAst::Literal(e) => self.gen_literal_expr(e).into(),
-            ExprAst::Struct(e) => self.gen_struct_expr(e),
+            ExprAst::Struct(e) => self.gen_struct_expr(e, memory),
             ExprAst::StructAccess(e) => self.gen_struct_access_expr(e),
             ExprAst::Subscript(e) => self.gen_subscript_expr(e),
             ExprAst::Unary(e) => self.gen_unary_expr(e),
@@ -45,7 +45,7 @@ impl<'a> CodeGenerator<'a> {
     }
 
     pub fn gen_loaded_expr(&mut self, expr: &ExprAst) -> LoadedValue<'a> {
-        let value = self.gen_expr(expr);
+        let value = self.gen_expr(expr, None);
         self.gen_loaded_value(value)
     }
 

@@ -1,31 +1,58 @@
-use crate::{CodeGenerator, Value};
+use crate::{CodeGenerator, MemoryValue, Value};
 use cool_ast::StructExprAst;
 
 impl<'a> CodeGenerator<'a> {
-    pub fn gen_struct_expr(&mut self, expr: &StructExprAst) -> Value<'a> {
+    pub fn gen_struct_expr(
+        &mut self,
+        expr: &StructExprAst,
+        memory: Option<MemoryValue<'a>>,
+    ) -> Value<'a> {
         let expr_ty_id = self.resolve[expr.expr_id].ty_id;
-        let struct_ty = self.tys[expr_ty_id].unwrap();
-        let struct_ptr = self.util_gen_alloca(struct_ty);
+
+        let memory = memory.unwrap_or_else(|| {
+            let struct_ty = self.tys[expr_ty_id].unwrap();
+            let struct_ptr = self.util_gen_alloca(struct_ty);
+            MemoryValue::new(struct_ptr, struct_ty)
+        });
 
         for initializer in expr.initializers.iter() {
-            let field_value = self.gen_loaded_expr(&initializer.expr);
-
-            let Some(index) = self
+            let Some(field_index) = self
                 .tys
                 .get_field_map(expr_ty_id)
                 .get(initializer.ident.symbol) else {
+                    self.gen_expr(&initializer.expr, None);
                     continue;
                 };
 
-            let field_ptr = self
-                .builder
-                .build_struct_gep(struct_ty, struct_ptr, index, "")
+            let field_ty = self.resolve[expr_ty_id]
+                .ty
+                .as_struct()
+                .unwrap()
+                .fields
+                .iter()
+                .find(|(symbol, _)| *symbol == initializer.ident.symbol)
+                .and_then(|(_, ty_id)| self.tys[*ty_id])
                 .unwrap();
 
-            self.builder
-                .build_store(field_ptr, field_value.into_basic_value());
+            let field_ptr = self
+                .builder
+                .build_struct_gep(memory.ty, memory.ptr, field_index, "")
+                .unwrap();
+
+            let field_memory = Some(MemoryValue::new(field_ptr, field_ty));
+
+            match self.gen_expr(&initializer.expr, field_memory) {
+                Value::Fn(fn_value) => {
+                    self.builder
+                        .build_store(field_ptr, fn_value.as_global_value().as_pointer_value());
+                }
+                Value::Register(value) => {
+                    self.builder.build_store(field_ptr, value);
+                }
+                _ => (),
+            }
         }
 
-        Value::memory(struct_ptr, struct_ty)
+        Value::Memory(memory)
     }
 }

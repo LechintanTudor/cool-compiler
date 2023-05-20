@@ -18,7 +18,7 @@ impl<'a> CodeGenerator<'a> {
                 self.gen_decl_stmt(decl);
             }
             StmtAst::Expr(expr) => {
-                self.gen_expr(expr);
+                self.gen_expr(expr, None);
             }
         }
     }
