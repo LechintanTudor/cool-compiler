@@ -8,16 +8,14 @@ pub struct Cursor<'a> {
     offset: u32,
 }
 
-impl<'a> From<&'a str> for Cursor<'a> {
-    fn from(source: &'a str) -> Self {
+impl<'a> Cursor<'a> {
+    pub fn new(source: &'a str, offset: u32) -> Self {
         Self {
             chars: source.chars(),
-            offset: 0,
+            offset,
         }
     }
-}
 
-impl Cursor<'_> {
     pub fn bump(&mut self) -> char {
         match self.chars.next() {
             Some(char) => {

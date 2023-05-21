@@ -4,35 +4,22 @@ use crate::tokens::{IntBase, Literal, LiteralKind, Punctuation, Token, TokenKind
 use cool_span::Span;
 
 pub struct Tokenizer<'a> {
-    source: &'a str,
     cursor: Cursor<'a>,
     buffer: String,
 }
 
 impl<'a> Tokenizer<'a> {
     #[inline]
-    pub fn new(source: &'a str) -> Self {
+    pub fn new(source: &'a str, offset: u32) -> Self {
         Self {
-            source,
-            cursor: Cursor::from(source),
+            cursor: Cursor::new(source, offset),
             buffer: Default::default(),
         }
     }
 
     #[inline]
-    pub fn reset(&mut self) {
-        self.cursor = Cursor::from(self.source);
-        self.buffer.clear();
-    }
-
-    #[inline]
     pub fn stream(&'a mut self) -> TokenStream<'a> {
         TokenStream::new(self)
-    }
-
-    #[inline]
-    pub fn source(&self) -> &str {
-        self.source
     }
 
     pub fn next_token(&mut self) -> Token {

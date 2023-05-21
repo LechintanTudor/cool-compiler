@@ -8,6 +8,15 @@ pub struct ModuleContent {
     pub decls: Vec<Decl>,
 }
 
+impl Section for ModuleContent {
+    fn span(&self) -> Span {
+        match (self.decls.first(), self.decls.last()) {
+            (Some(first), Some(last)) => first.span.to(last.span),
+            _ => Span::empty(),
+        }
+    }
+}
+
 #[derive(Clone, From, Debug)]
 pub enum ModuleKind {
     External,

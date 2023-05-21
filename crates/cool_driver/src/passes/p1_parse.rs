@@ -1,17 +1,14 @@
 use crate::paths::ModulePaths;
 use crate::{
     Alias, CompileError, CompileErrorBundle, CompileOptions, CompileResult, Const, ExternFn,
-    Package, SourceFile, Struct,
+    Package, SourceMap, Struct,
 };
-use cool_lexer::lexer::{LexedSourceFile, Tokenizer};
 use cool_lexer::symbols::Symbol;
-use cool_parser::{DeclKind, Item, ModuleContent, ModuleKind, ParseResult, Parser};
+use cool_parser::{DeclKind, Item, ModuleContent, ModuleKind};
 use cool_resolve::{
     ItemPathBuf, ModuleId, Mutability, ResolveContext, ResolveError, ResolveErrorKind,
 };
 use std::collections::VecDeque;
-use std::fs::File;
-use std::io::BufReader;
 use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
@@ -25,6 +22,8 @@ pub struct Import {
 
 pub fn p1_parse(resove: &mut ResolveContext, options: &CompileOptions) -> CompileResult<Package> {
     let mut errors = Vec::<CompileError>::new();
+
+    let mut source_map = SourceMap::default();
     let mut aliases = Vec::<Alias>::new();
     let mut structs = Vec::<Struct>::new();
     let mut extern_fns = Vec::<ExternFn>::new();
@@ -64,11 +63,11 @@ pub fn p1_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
     let mut imports = VecDeque::<Import>::new();
 
     while let Some((module_id, module_paths)) = file_modules.pop_front() {
-        let source_file = match parse_source_file(module_id, &module_paths) {
+        let module_content = match source_map.add_file(module_paths.path.clone()) {
             Ok(source_file) => source_file,
             Err(error) => {
                 errors.push(CompileError {
-                    path: module_paths.path,
+                    path: Default::default(),
                     kind: error.into(),
                 });
                 continue;
@@ -76,7 +75,7 @@ pub fn p1_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
         };
 
         let mut modules = VecDeque::<(ModuleId, ModuleContent)>::new();
-        modules.push_back((module_id, source_file.module));
+        modules.push_back((module_id, module_content));
 
         while let Some((module_id, module)) = modules.pop_front() {
             for decl in module.decls {
@@ -105,7 +104,7 @@ pub fn p1_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
                                     }
                                     ModuleKind::External => {
                                         let child_module_paths = match ModulePaths::for_child(
-                                            &source_file.paths.child_dir,
+                                            &module_paths.child_dir,
                                             item_decl.ident.symbol.as_str(),
                                         ) {
                                             Ok(child_module_paths) => child_module_paths,
@@ -230,7 +229,7 @@ pub fn p1_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
                         let alias = use_decl.alias.map(|alias| alias.symbol);
 
                         imports.push_back(Import {
-                            source_path: source_file.paths.path.clone(),
+                            source_path: module_paths.path.clone(),
                             module_id,
                             is_exported: decl.is_exported,
                             path,
@@ -283,6 +282,7 @@ pub fn p1_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
 
     if errors.is_empty() {
         Ok(Package {
+            source_map,
             aliases,
             structs,
             extern_fns,
@@ -291,23 +291,4 @@ pub fn p1_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
     } else {
         Err(CompileErrorBundle { errors })
     }
-}
-
-fn parse_source_file(module_id: ModuleId, paths: &ModulePaths) -> ParseResult<SourceFile> {
-    let lexed = {
-        let file = File::open(&paths.path).unwrap();
-        let mut buf_reader = BufReader::new(file);
-        LexedSourceFile::from_reader(&mut buf_reader)
-    };
-
-    let mut tokenizer = Tokenizer::new(&lexed.source);
-    let mut parser = Parser::new(&lexed, tokenizer.stream());
-    let module = parser.parse_module_file()?;
-
-    Ok(SourceFile {
-        paths: paths.clone(),
-        lexed,
-        module_id,
-        module,
-    })
 }

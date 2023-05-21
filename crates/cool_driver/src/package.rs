@@ -1,3 +1,4 @@
+use crate::SourceMap;
 use cool_parser::{AliasItem, ConstItem, ExternFnItem, StructItem, Ty};
 use cool_resolve::{ItemId, ModuleId};
 
@@ -16,6 +17,7 @@ pub type Const = Item<ConstItem>;
 
 #[derive(Clone, Debug)]
 pub struct Package {
+    pub source_map: SourceMap,
     pub aliases: Vec<Alias>,
     pub structs: Vec<Struct>,
     pub extern_fns: Vec<ExternFn>,

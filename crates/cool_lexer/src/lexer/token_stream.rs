@@ -8,7 +8,7 @@ pub struct TokenStream<'a> {
 
 impl<'a> TokenStream<'a> {
     #[inline]
-    pub(crate) fn new(tokenizer: &'a mut Tokenizer<'a>) -> Self {
+    pub fn new(tokenizer: &'a mut Tokenizer<'a>) -> Self {
         Self {
             tokenizer,
             peeked: None,

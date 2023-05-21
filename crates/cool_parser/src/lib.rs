@@ -29,20 +29,16 @@ pub use self::path::*;
 pub use self::pattern::*;
 pub use self::stmt::*;
 pub use self::ty::*;
-use cool_lexer::lexer::{LexedSourceFile, TokenStream};
+use cool_lexer::lexer::TokenStream;
 use cool_lexer::tokens::{Token, TokenKind};
 
 pub struct Parser<'a> {
-    lexed: &'a LexedSourceFile,
     token_stream: TokenStream<'a>,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(lexed: &'a LexedSourceFile, token_stream: TokenStream<'a>) -> Self {
-        Self {
-            lexed,
-            token_stream,
-        }
+    pub fn new(token_stream: TokenStream<'a>) -> Self {
+        Self { token_stream }
     }
 
     pub fn bump(&mut self) -> Token {
@@ -76,13 +72,7 @@ impl<'a> Parser<'a> {
     }
 
     pub fn error<T>(&self, found: Token, expected: &'static [TokenKind]) -> ParseResult<T> {
-        let position = self.lexed.line_offsets.to_source_position(found.span.start);
-
-        Err(ParseError {
-            position,
-            found,
-            expected,
-        })
+        Err(ParseError { found, expected })
     }
 
     pub fn peek_error<T>(&mut self, expected: &'static [TokenKind]) -> ParseResult<T> {
