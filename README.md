@@ -103,8 +103,8 @@ some initial type-checking, the parse trees are converted into an abstract
 syntax tree that represents a valid Cool program. This conversion process
 includes name resolution and type-checking for local variables, as well as
 mutability checks for constant objects and pointers to constant objects.
-Finally, the compiler generates LLVM IR by going over the prviously created
-abstract syntax tree and using the LLVM builder API provided by the
+Finally, the compiler generates LLVM IR by traversing the previously created
+abstract syntax tree, using the LLVM builder API provided by the
 [Inkwell](https://crates.io/crates/inkwell) crate.
 
 ## Various Implementation Details
