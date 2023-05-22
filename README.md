@@ -61,7 +61,7 @@ export main :: fn() {
 - File: `libc.cl` or `libc/@module.cl`
 
 ```
-printf :: extern fn(format: *i8, ...) -> i32;
+export printf :: extern fn(format: *i8, ...) -> i32;
 ```
 
 ### Simple type inferrence for functions and variables.
