@@ -5,7 +5,7 @@ Reference compiler for the Cool Programming Language.
 Disclaimer: This project is in development. There are bugs and missing features
 that will be addressed in future releases.
 
-## 🧊 Cool Language
+# 🧊 Cool Language
 
 Cool is a systems programming languge aiming to provide a modern development
 environment for system software while keeping a small core to ensure
@@ -19,9 +19,9 @@ export main :: fn() {
 };
 ```
 
-### Language Design & Features
+## Language Design & Features
 
-#### Readable syntax.
+### Readable syntax.
 
 ```
 printf :: extern fn(format: *i8, ...) -> i32;
@@ -46,7 +46,7 @@ export main :: fn() {
 };
 ```
 
-#### File-based module system.
+### File-based module system.
 
 - File: `main.cl`
 
@@ -64,7 +64,7 @@ export main :: fn() {
 printf :: extern fn(format: *i8, ...) -> i32;
 ```
 
-#### Simple type inferrence for functions and variables.
+### Simple type inferrence for functions and variables.
 
 ```
 sum1 :: fn(a: i32, b: i32) -> i32 {
@@ -80,7 +80,7 @@ sum3: fn(i32, i32) -> i32: fn(a: i32, b: i32) -> i32 {
 };
 ```
 
-#### Blocks are expressions.
+### Blocks are expressions.
 
 ```
 get_sign_str :: fn(n: i32) -> *i8 {
@@ -94,7 +94,7 @@ get_sign_str :: fn(n: i32) -> *i8 {
 };
 ```
 
-## 🧊 Compiler Implementation
+# 🧊 Compiler Implementation
 
 The reference Cool Compiler is written in Rust and targets LLVM. The compiler
 reads UTF-8 encoded source files and transforms them into parse trees using a
@@ -107,11 +107,11 @@ Finally, the compiler generates LLVM IR by going over the prviously created
 abstract syntax tree and using the LLVM builder API provided by the
 [Inkwell](https://crates.io/crates/inkwell) crate.
 
-### Various Implementation Details
+## Various Implementation Details
 
 - The lexer requires 2 characters of lookahead to generate a token.
 - The parser requires 1 token of looahead to parse the token stream.
 
-## 🧊 License
+# 🧊 License
 
 This project is licensed under the [Mozilla Public License 2.0](LICENSE).
