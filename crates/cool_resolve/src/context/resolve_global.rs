@@ -11,8 +11,8 @@ id_newtype!(ModuleId);
 
 impl ModuleId {
     #[inline]
-    pub fn for_builtins() -> Self {
-        Self::new_unwrap(1)
+    pub const fn for_builtins() -> Self {
+        unsafe { Self::new_unchecked(1) }
     }
 }
 

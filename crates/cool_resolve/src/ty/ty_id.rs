@@ -1,5 +1,5 @@
 use crate::tys;
-use cool_collections::id_newtype;
+use cool_collections::{id_newtype, Id};
 
 id_newtype!(TyId);
 

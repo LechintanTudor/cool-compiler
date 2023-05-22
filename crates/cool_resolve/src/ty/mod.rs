@@ -16,7 +16,7 @@ use rustc_hash::FxHashMap;
 #[derive(Debug)]
 pub struct TyContext {
     primitives: PrimitiveTyProps,
-    tys: Arena<TyId, AnyTy>,
+    tys: Arena<'static, TyId, AnyTy>,
     resolve_tys: FxHashMap<TyId, ResolveTy>,
 }
 
@@ -36,7 +36,7 @@ impl TyContext {
     pub fn new(primitives: PrimitiveTyProps) -> Self {
         Self {
             primitives,
-            tys: Default::default(),
+            tys: Arena::new_leak(),
             resolve_tys: Default::default(),
         }
     }

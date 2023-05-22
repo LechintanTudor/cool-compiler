@@ -1,15 +1,20 @@
-use cool_arena::StrArena;
+use cool_arena::{StrArena, UnsafeBump};
 use cool_collections::id_newtype;
 use std::fmt;
 
-id_newtype!(Symbol; nodebug);
+id_newtype!(Symbol);
 
-#[derive(Default)]
-pub struct SymbolTable {
-    symbols: StrArena<Symbol>,
+pub struct SymbolTable<'a> {
+    symbols: StrArena<'a, Symbol>,
 }
 
-impl SymbolTable {
+impl<'a> SymbolTable<'a> {
+    pub(crate) unsafe fn new(bump: &'a UnsafeBump) -> Self {
+        Self {
+            symbols: StrArena::new(bump),
+        }
+    }
+
     #[inline]
     pub(crate) fn insert_known(&mut self, expected_symbol: Symbol, symbol_str: &str) {
         let symbol = self.symbols.insert_if_not_exists(symbol_str).unwrap();
@@ -33,7 +38,7 @@ impl SymbolTable {
     }
 }
 
-impl fmt::Debug for SymbolTable {
+impl fmt::Debug for SymbolTable<'_> {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.symbols, f)

@@ -1,4 +1,5 @@
 use crate::symbols::Symbol;
+use cool_collections::Id;
 use std::fmt;
 
 impl Symbol {
@@ -20,7 +21,7 @@ impl Symbol {
     #[inline]
     pub fn as_str(&self) -> &'static str {
         if *self <= sym::WILDCARD {
-            sym::ALL_REPRS[self.as_usize()]
+            sym::ALL_REPRS[self.index()]
         } else {
             Symbol::as_str_from_symbol_table(*self)
         }
@@ -31,13 +32,6 @@ impl fmt::Display for Symbol {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_str())
-    }
-}
-
-impl fmt::Debug for Symbol {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "\"{}\"", self.as_str())
     }
 }
 

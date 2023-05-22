@@ -4,7 +4,8 @@ use once_cell::sync::Lazy;
 use std::sync::Mutex;
 
 static SYMBOL_TABLE: Lazy<Mutex<SymbolTable>> = Lazy::new(|| {
-    let mut symbols = SymbolTable::default();
+    let bump = Box::leak(Box::default());
+    let mut symbols = unsafe { SymbolTable::new(bump) };
     sym::intern_symbols(&mut symbols);
     Mutex::new(symbols)
 });
