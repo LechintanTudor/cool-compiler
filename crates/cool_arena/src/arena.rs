@@ -78,7 +78,7 @@ where
     }
 
     #[must_use]
-    pub fn get(&self, index: I) -> Option<&T> {
+    pub fn get(&self, index: I) -> Option<&'a T> {
         self.values.get(index.index()).copied()
     }
 
