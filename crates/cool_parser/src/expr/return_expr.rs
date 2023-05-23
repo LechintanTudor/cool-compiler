@@ -6,7 +6,7 @@ use cool_span::{Section, Span};
 #[derive(Clone, Debug)]
 pub struct ReturnExpr {
     pub span: Span,
-    pub expr: Box<Expr>,
+    pub expr: Option<Box<Expr>>,
 }
 
 impl Section for ReturnExpr {
@@ -19,11 +19,20 @@ impl Section for ReturnExpr {
 impl Parser<'_> {
     pub fn parse_return_expr(&mut self) -> ParseResult<ReturnExpr> {
         let start_token = self.bump_expect(&tk::KW_RETURN)?;
-        let expr = self.parse_expr()?;
+
+        let expr = match self.peek().kind {
+            tk::SEMICOLON | tk::COMMA => None,
+            _ => Some(self.parse_expr()?),
+        };
+
+        let end_span = expr
+            .as_ref()
+            .map(|expr| expr.span())
+            .unwrap_or(start_token.span);
 
         Ok(ReturnExpr {
-            span: start_token.span.to(expr.span()),
-            expr: Box::new(expr),
+            span: start_token.span.to(end_span),
+            expr: expr.map(Box::new),
         })
     }
 }

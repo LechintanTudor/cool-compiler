@@ -37,9 +37,6 @@ pub enum AstError {
     ModuleUsedAsExpr(#[from] ModuleUsedAsExpr),
 
     #[error(transparent)]
-    MissingElseBlock(#[from] MissingElseBlock),
-
-    #[error(transparent)]
     AssignToRvalue(#[from] AssignToRvalue),
 
     #[error(transparent)]
@@ -102,10 +99,6 @@ pub struct LiteralUnknownSuffix {
 #[derive(Clone, Error, Debug)]
 #[error("expression evaluates to a module")]
 pub struct ModuleUsedAsExpr;
-
-#[derive(Clone, Error, Debug)]
-#[error("missing else block in non-unit expression")]
-pub struct MissingElseBlock;
 
 #[derive(Clone, Error, Debug)]
 #[error("tried to assign to an rvalue")]

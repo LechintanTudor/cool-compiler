@@ -5,6 +5,7 @@ use derive_more::From;
 pub enum AnyTy {
     Infer(InferTy),
     Value(ValueTy),
+    Diverge,
     Item(ItemTy),
     StructDecl(ItemId),
 }
@@ -36,7 +37,7 @@ pub enum InferTy {
     EmptyArray,
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum ItemTy {
     Module,
     Ty,

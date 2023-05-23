@@ -4,21 +4,12 @@ mod binary_expr;
 mod cond_expr;
 mod fn_call_expr;
 mod literal_expr;
+mod return_expr;
 mod struct_expr;
 mod subscript_expr;
 mod unary_expr;
 mod while_expr;
 
-pub use self::access_expr::*;
-pub use self::array_expr::*;
-pub use self::binary_expr::*;
-pub use self::cond_expr::*;
-pub use self::fn_call_expr::*;
-pub use self::literal_expr::*;
-pub use self::struct_expr::*;
-pub use self::subscript_expr::*;
-pub use self::unary_expr::*;
-pub use self::while_expr::*;
 use crate::{CodeGenerator, LoadedValue, MemoryValue, Value};
 use cool_ast::{BindingExprAst, BlockExprAst, DerefExprAst, ExprAst};
 use inkwell::values::BasicValue;
@@ -35,6 +26,7 @@ impl<'a> CodeGenerator<'a> {
             ExprAst::Deref(e) => self.gen_deref_expr(e),
             ExprAst::FnCall(e) => self.gen_fn_call_expr(e).into(),
             ExprAst::Literal(e) => self.gen_literal_expr(e).into(),
+            ExprAst::Return(e) => self.gen_return_expr(e),
             ExprAst::Struct(e) => self.gen_struct_expr(e, memory),
             ExprAst::StructAccess(e) => self.gen_struct_access_expr(e),
             ExprAst::Subscript(e) => self.gen_subscript_expr(e),

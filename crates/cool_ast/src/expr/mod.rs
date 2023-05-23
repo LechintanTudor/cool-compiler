@@ -7,6 +7,7 @@ mod deref_expr;
 mod fn_call_expr;
 mod ident_expr;
 mod literal_expr;
+mod return_expr;
 mod struct_expr;
 mod subscript_expr;
 mod unary_expr;
@@ -21,6 +22,7 @@ pub use self::deref_expr::*;
 pub use self::fn_call_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
+pub use self::return_expr::*;
 pub use self::struct_expr::*;
 pub use self::subscript_expr::*;
 pub use self::unary_expr::*;
@@ -65,7 +67,6 @@ macro_rules! define_expr_ast {
 }
 
 define_expr_ast! {
-    StructAccess,
     Array,
     ArrayRepeat,
     Binary,
@@ -76,7 +77,9 @@ define_expr_ast! {
     FnCall,
     Literal,
     Module,
+    Return,
     Struct,
+    StructAccess,
     Subscript,
     Ty,
     Unary,
@@ -87,6 +90,14 @@ impl ExprAst {
     #[inline]
     pub fn is_module(&self) -> bool {
         matches!(self, Self::Module(_))
+    }
+
+    #[inline]
+    pub fn is_aggregate(&self) -> bool {
+        matches!(
+            self,
+            Self::Array(_) | Self::ArrayRepeat(_) | Self::Struct(_),
+        )
     }
 
     #[inline]
@@ -139,6 +150,7 @@ impl_gen_expr! {
     Literal,
     Paren,
     Unary,
+    Return,
     Struct,
     Subscript,
     While,

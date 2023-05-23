@@ -202,6 +202,10 @@ impl TyContext {
     }
 
     pub fn resolve_direct_ty_id(&self, found_ty_id: TyId, expected_ty_id: TyId) -> Option<TyId> {
+        if found_ty_id.is_divergent() {
+            return Some(found_ty_id);
+        }
+
         match expected_ty_id {
             tys::INFER => {
                 let ty_id = match found_ty_id {

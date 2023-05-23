@@ -10,6 +10,13 @@ pub struct CondExpr {
     pub else_block: Option<Box<BlockExpr>>,
 }
 
+impl CondExpr {
+    #[inline]
+    pub fn is_exhaustive(&self) -> bool {
+        self.else_block.is_some()
+    }
+}
+
 impl Section for CondExpr {
     #[inline]
     fn span(&self) -> Span {

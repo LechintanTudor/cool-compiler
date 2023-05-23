@@ -8,7 +8,7 @@ impl<'a> CodeGenerator<'a> {
         let lhs = self.gen_expr(&assign.lhs, None);
         let lhs_ty_id = self.resolve[assign.lhs.expr_id()].ty_id;
 
-        if self.resolve.is_ty_id_zst(lhs_ty_id) {
+        if self.resolve.ty_is_zero_sized(lhs_ty_id) {
             self.gen_expr(&assign.rhs, None);
             return;
         }

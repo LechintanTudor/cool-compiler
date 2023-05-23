@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, BlockExprAst};
+use crate::{AstGenerator, AstResult, BlockExprAst, FnState};
 use cool_parser::FnExpr;
 use cool_resolve::{BindingId, FrameId, ItemId, ModuleId, TyId};
 use smallvec::SmallVec;
@@ -56,12 +56,16 @@ impl AstGenerator<'_> {
             binding_ids.push(binding_id);
         }
 
+        self.push_fn_state(FnState { ret: fn_ty.ret });
+        let body = self.gen_block_expr(frame_id, fn_ty.ret, &fn_expr.body);
+        self.pop_fn_state();
+
         Ok(FnAst {
             item_id,
             ty_id,
             frame_id,
             binding_ids,
-            body: self.gen_block_expr(frame_id, fn_ty.ret, &fn_expr.body)?,
+            body: body?,
         })
     }
 }

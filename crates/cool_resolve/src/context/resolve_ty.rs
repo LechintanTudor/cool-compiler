@@ -124,7 +124,7 @@ impl ResolveContext {
     }
 
     #[inline]
-    pub fn is_ty_id_zst(&self, ty_id: TyId) -> bool {
+    pub fn ty_is_zero_sized(&self, ty_id: TyId) -> bool {
         self.tys.get_resolve_ty(ty_id).unwrap().is_zst()
     }
 }

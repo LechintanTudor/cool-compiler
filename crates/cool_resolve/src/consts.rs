@@ -88,9 +88,11 @@ builtins! {
         21: (INFER_FLOAT, AnyTy::Infer(InferTy::Float)),
         22: (INFER_EMPTY_ARRAY, AnyTy::Infer(InferTy::EmptyArray)),
 
-        23: (MODULE, AnyTy::Item(ItemTy::Module)),
-        24: (TY, AnyTy::Item(ItemTy::Ty)),
-        25: (
+        23: (DIVERGE, AnyTy::Diverge),
+
+        24: (MODULE, AnyTy::Item(ItemTy::Module)),
+        25: (TY, AnyTy::Item(ItemTy::Ty)),
+        26: (
             C_STR,
             AnyTy::Value(ValueTy::Ptr(PtrTy { is_mutable: false, pointee: tys::I8 }))
         ),

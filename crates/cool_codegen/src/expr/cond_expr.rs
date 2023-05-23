@@ -1,121 +1,86 @@
 use crate::{CodeGenerator, LoadedValue};
-use cool_ast::{CondBlockAst, CondExprAst};
-use inkwell::basic_block::BasicBlock;
-use inkwell::types::BasicTypeEnum;
-use inkwell::values::{BasicValue, PhiValue};
+use cool_ast::CondExprAst;
 use inkwell::IntPredicate;
+use std::iter;
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_cond_expr(&mut self, expr: &CondExprAst) -> LoadedValue<'a> {
-        let initial_block = self.builder.get_insert_block().unwrap();
-        let end_if_block = self.context.insert_basic_block_after(initial_block, "");
+        let start_block = self.builder.get_insert_block().unwrap();
+        let end_block = self.context.insert_basic_block_after(start_block, "");
 
-        let expr_ty_id = self.resolve[expr.expr_id].ty_id;
+        let phi_value = expr
+            .is_exhaustive()
+            .then(|| {
+                let ty_id = self.resolve[expr.expr_id].ty_id;
 
-        let phi_value = if !self.resolve.is_ty_id_zst(expr_ty_id) {
-            self.builder.position_at_end(end_if_block);
-            let phi_ty: BasicTypeEnum = self.tys[expr_ty_id].unwrap();
-            Some(self.builder.build_phi(phi_ty, ""))
-        } else {
-            None
-        };
+                self.tys[ty_id].map(|ty| {
+                    self.builder.position_at_end(end_block);
+                    self.builder.build_phi(ty, "")
+                })
+            })
+            .flatten();
 
         let else_block = expr
-            .else_block
-            .as_ref()
-            .map(|_| self.context.insert_basic_block_after(initial_block, ""));
+            .is_exhaustive()
+            .then(|| self.context.prepend_basic_block(end_block, ""));
 
-        let cond_block_pairs = {
-            let mut cond_blocks = vec![(Box::as_ref(&expr.if_block), initial_block)];
-            let mut current_block = initial_block;
+        let fallback_block = else_block.unwrap_or(end_block);
 
-            for cond_block_ast in expr.else_if_blocks.iter() {
-                let else_if_block = self.context.insert_basic_block_after(current_block, "");
+        let mut cond_block_pairs = {
+            let else_if_blocks = expr.else_if_blocks.iter().map(|block_ast| {
+                let block = self.context.prepend_basic_block(fallback_block, "");
+                (block_ast, block)
+            });
 
-                cond_blocks.push((cond_block_ast, else_if_block));
-                current_block = else_if_block;
-            }
-
-            cond_blocks
+            iter::once((Box::as_ref(&expr.if_block), start_block))
+                .chain(else_if_blocks)
+                .peekable()
         };
 
-        let cond_fallback_block = else_block.unwrap_or(end_if_block);
-        let mut cond_block_pair_iter = cond_block_pairs.iter().peekable();
-
-        while let Some((cond_block_ast, cond_block)) = cond_block_pair_iter.next() {
-            let else_block = cond_block_pair_iter
+        while let Some((ast_block, block)) = cond_block_pairs.next() {
+            let else_block = cond_block_pairs
                 .peek()
                 .map(|(_, block)| *block)
-                .unwrap_or(cond_fallback_block);
+                .unwrap_or(fallback_block);
 
-            self.builder.position_at_end(*cond_block);
-            self.util_gen_if_then_else_block(cond_block_ast, else_block, end_if_block, phi_value);
-        }
-
-        if let (Some(else_block_ast), Some(else_block)) = (expr.else_block.as_ref(), else_block) {
-            self.builder.position_at_end(else_block);
-            let value = self.gen_block_expr(else_block_ast).into_basic_value();
+            let then_block = self.context.insert_basic_block_after(block, "");
+            self.builder.position_at_end(then_block);
+            let then_value = self.gen_block_expr(&ast_block.expr);
+            self.builder.build_unconditional_branch(end_block);
 
             if let Some(phi_value) = phi_value {
-                let incoming_block =
-                    std::iter::successors(Some(else_block), |block| block.get_next_basic_block())
-                        .take_while(|block| block != &end_if_block)
-                        .last()
-                        .unwrap_or(else_block);
-
-                phi_value.add_incoming(&[(&value as &dyn BasicValue, incoming_block)]);
+                phi_value.add_incoming(&[(then_value.as_basic_value().unwrap(), then_block)]);
             }
 
-            self.builder.build_unconditional_branch(end_if_block);
+            self.builder.position_at_end(block);
+
+            let cond_value = self
+                .gen_loaded_expr(&ast_block.cond)
+                .into_basic_value()
+                .into_int_value();
+
+            let cond_value =
+                self.builder
+                    .build_int_compare(IntPredicate::EQ, cond_value, self.llvm_true, "");
+
+            self.builder
+                .build_conditional_branch(cond_value, then_block, else_block);
         }
 
-        self.builder.position_at_end(end_if_block);
+        if let (Some(else_block_ast), Some(else_block)) = (&expr.else_block, else_block) {
+            self.builder.position_at_end(else_block);
+            let else_value = self.gen_block_expr(else_block_ast);
+            self.builder.build_unconditional_branch(end_block);
+
+            if let Some(phi_value) = phi_value {
+                phi_value.add_incoming(&[(else_value.as_basic_value().unwrap(), else_block)]);
+            }
+        }
+
+        self.builder.position_at_end(end_block);
 
         phi_value
             .map(|value| LoadedValue::Register(value.as_basic_value()))
             .unwrap_or(LoadedValue::Void)
-    }
-
-    fn util_gen_if_then_else_block(
-        &mut self,
-        cond_block_ast: &CondBlockAst,
-        else_block: BasicBlock,
-        end_if_block: BasicBlock,
-        phi_value: Option<PhiValue>,
-    ) {
-        let current_block = self.builder.get_insert_block().unwrap();
-
-        let then_block = self.context.insert_basic_block_after(current_block, "");
-        self.builder.position_at_end(then_block);
-        let value = self.gen_block_expr(&cond_block_ast.expr).into_basic_value();
-
-        if let Some(phi_value) = phi_value {
-            let incoming_block =
-                std::iter::successors(Some(then_block), |block| block.get_next_basic_block())
-                    .take_while(|block| block != &else_block)
-                    .last()
-                    .unwrap_or(then_block);
-
-            phi_value.add_incoming(&[(&value as &dyn BasicValue, incoming_block)]);
-        }
-
-        self.builder.build_unconditional_branch(end_if_block);
-
-        self.builder.position_at_end(current_block);
-
-        let cond_value = self
-            .gen_loaded_expr(&cond_block_ast.cond)
-            .into_basic_value()
-            .into_int_value();
-
-        let cond_value = self.builder.build_int_compare(
-            IntPredicate::EQ,
-            cond_value,
-            self.llvm_true,
-            "cond_expr",
-        );
-
-        self.builder
-            .build_conditional_branch(cond_value, then_block, else_block);
     }
 }

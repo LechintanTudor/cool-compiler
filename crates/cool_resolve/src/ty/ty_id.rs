@@ -10,6 +10,11 @@ impl TyId {
     }
 
     #[inline]
+    pub fn is_divergent(&self) -> bool {
+        *self == tys::DIVERGE
+    }
+
+    #[inline]
     pub fn is_int(&self) -> bool {
         tys::I8.index() <= self.index() && self.index() <= tys::USIZE.index()
     }
