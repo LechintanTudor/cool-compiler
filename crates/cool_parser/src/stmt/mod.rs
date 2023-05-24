@@ -1,10 +1,12 @@
 mod assign_stmt;
 mod decl_stmt;
 mod defer_stmt;
+mod return_stmt;
 
 pub use self::assign_stmt::*;
 pub use self::decl_stmt::*;
 pub use self::defer_stmt::*;
+pub use self::return_stmt::*;
 use crate::{Expr, ParseResult, Parser};
 use cool_lexer::tokens::tk;
 use cool_span::{Section, Span};
@@ -16,6 +18,7 @@ pub enum StmtKind {
     Decl(DeclStmt),
     Defer(DeferStmt),
     Expr(Box<Expr>),
+    Return(ReturnStmt),
 }
 
 impl Section for StmtKind {
@@ -25,6 +28,7 @@ impl Section for StmtKind {
             Self::Decl(stmt) => stmt.span(),
             Self::Defer(stmt) => stmt.span(),
             Self::Expr(expr) => expr.span(),
+            Self::Return(stmt) => stmt.span(),
         }
     }
 }

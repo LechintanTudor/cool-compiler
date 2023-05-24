@@ -10,7 +10,6 @@ mod ident_expr;
 mod literal_expr;
 mod loop_expr;
 mod paren_expr;
-mod return_expr;
 mod struct_expr;
 mod subscript_expr;
 mod tuple_expr;
@@ -29,7 +28,6 @@ pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::loop_expr::*;
 pub use self::paren_expr::*;
-pub use self::return_expr::*;
 pub use self::struct_expr::*;
 pub use self::subscript_expr::*;
 pub use self::tuple_expr::*;
@@ -74,7 +72,6 @@ define_expr! {
     Literal,
     Loop,
     Paren,
-    Return,
     Struct,
     Subscript,
     Tuple,
@@ -190,7 +187,6 @@ impl Parser<'_> {
             tk::KW_IF => self.parse_cond_expr()?.into(),
             tk::KW_LOOP => self.parse_loop_expr()?.into(),
             tk::KW_WHILE => self.parse_while_expr()?.into(),
-            tk::KW_RETURN => self.parse_return_expr()?.into(),
             tk::MINUS | tk::NOT | tk::AND => self.parse_unary_expr()?.into(),
             TokenKind::Ident(_) => self.parse_ident_expr()?.into(),
             TokenKind::Prefix(_) | TokenKind::Literal(_) => self.parse_literal_expr()?.into(),

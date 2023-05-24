@@ -1,8 +1,7 @@
 mod assign_stmt;
 mod decl_stmt;
+mod return_stmt;
 
-pub use self::assign_stmt::*;
-pub use self::decl_stmt::*;
 use crate::CodeGenerator;
 use cool_ast::StmtAst;
 use inkwell::types::BasicType;
@@ -20,6 +19,9 @@ impl<'a> CodeGenerator<'a> {
             StmtAst::Expr(expr) => {
                 self.gen_expr(expr, None);
             }
+            StmtAst::Return(stmt) => {
+                self.gen_return_stmt(stmt);
+            }
         }
     }
 
@@ -35,9 +37,9 @@ impl<'a> CodeGenerator<'a> {
         T: BasicType<'a>,
     {
         let alloca_builder = self.context.create_builder();
-        let entry_block = self.fn_value.unwrap().get_first_basic_block().unwrap();
+        let entry_block = self.get_current_entry_block();
 
-        match self.last_alloca.as_ref() {
+        match self.get_last_alloca() {
             Some(last_alloca) => {
                 match last_alloca.get_next_instruction() {
                     Some(next_instruction) => {
@@ -55,7 +57,7 @@ impl<'a> CodeGenerator<'a> {
         }
 
         let pointer = alloca_builder.build_alloca(ty, name);
-        self.last_alloca = Some(pointer.as_instruction_value().unwrap());
+        self.update_last_alloca(pointer.as_instruction_value().unwrap());
         pointer
     }
 

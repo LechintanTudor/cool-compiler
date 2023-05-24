@@ -15,6 +15,7 @@ pub use self::utils::*;
 pub use self::value::*;
 use cool_ast::PackageAst;
 use cool_resolve::{BindingId, ResolveContext};
+use inkwell::basic_block::BasicBlock;
 use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::module::Module;
@@ -22,6 +23,24 @@ use inkwell::passes::PassManager;
 use inkwell::targets::{InitializationConfig, Target, TargetData, TargetTriple};
 use inkwell::values::{FunctionValue, InstructionValue, IntValue};
 use rustc_hash::FxHashMap;
+
+#[derive(Clone, Debug)]
+struct FnState<'a> {
+    fn_value: FunctionValue<'a>,
+    last_alloca: Option<InstructionValue<'a>>,
+    ret_values: Vec<(LoadedValue<'a>, BasicBlock<'a>)>,
+}
+
+impl<'a> FnState<'a> {
+    #[inline]
+    pub fn new(fn_value: FunctionValue<'a>) -> Self {
+        Self {
+            fn_value,
+            last_alloca: None,
+            ret_values: Default::default(),
+        }
+    }
+}
 
 pub struct CodeGenerator<'a> {
     context: &'a Context,
@@ -33,8 +52,7 @@ pub struct CodeGenerator<'a> {
     module: Module<'a>,
     pass_manager: PassManager<FunctionValue<'a>>,
     builder: Builder<'a>,
-    fn_value: Option<FunctionValue<'a>>,
-    last_alloca: Option<InstructionValue<'a>>,
+    fn_stack: Vec<FnState<'a>>,
 }
 
 impl<'a> CodeGenerator<'a> {
@@ -85,8 +103,7 @@ impl<'a> CodeGenerator<'a> {
             module,
             pass_manager,
             builder,
-            fn_value: None,
-            last_alloca: None,
+            fn_stack: Default::default(),
         }
     }
 
@@ -104,5 +121,30 @@ impl<'a> CodeGenerator<'a> {
         }
 
         self.module
+    }
+
+    pub fn get_current_entry_block(&self) -> BasicBlock<'a> {
+        self.fn_stack
+            .last()
+            .unwrap()
+            .fn_value
+            .get_first_basic_block()
+            .unwrap()
+    }
+
+    pub fn get_last_alloca(&self) -> Option<InstructionValue<'a>> {
+        self.fn_stack.last().unwrap().last_alloca
+    }
+
+    pub fn update_last_alloca(&mut self, alloca: InstructionValue<'a>) {
+        self.fn_stack.last_mut().unwrap().last_alloca = Some(alloca);
+    }
+
+    pub fn add_ret_value(&mut self, value: LoadedValue<'a>, block: BasicBlock<'a>) {
+        self.fn_stack
+            .last_mut()
+            .unwrap()
+            .ret_values
+            .push((value, block))
     }
 }

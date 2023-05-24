@@ -23,6 +23,11 @@ impl<'a> Value<'a> {
             _ => panic!("value is not a function"),
         }
     }
+
+    #[inline]
+    pub fn is_void(&self) -> bool {
+        matches!(self, Self::Void)
+    }
 }
 
 impl<'a> From<LoadedValue<'a>> for Value<'a> {

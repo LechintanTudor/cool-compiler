@@ -7,7 +7,6 @@ mod deref_expr;
 mod fn_call_expr;
 mod ident_expr;
 mod literal_expr;
-mod return_expr;
 mod struct_expr;
 mod subscript_expr;
 mod unary_expr;
@@ -22,7 +21,6 @@ pub use self::deref_expr::*;
 pub use self::fn_call_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
-pub use self::return_expr::*;
 pub use self::struct_expr::*;
 pub use self::subscript_expr::*;
 pub use self::unary_expr::*;
@@ -77,7 +75,6 @@ define_expr_ast! {
     FnCall,
     Literal,
     Module,
-    Return,
     Struct,
     StructAccess,
     Subscript,
@@ -150,7 +147,6 @@ impl_gen_expr! {
     Literal,
     Paren,
     Unary,
-    Return,
     Struct,
     Subscript,
     While,

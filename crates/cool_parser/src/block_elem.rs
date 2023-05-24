@@ -69,6 +69,10 @@ impl Parser<'_> {
                 self.parse_defer_stmt()
                     .map(|defer_stmt| BareBlockElem::Stmt(defer_stmt.into()))
             }
+            tk::KW_RETURN => {
+                self.parse_return_stmt()
+                    .map(|return_stmt| BareBlockElem::Stmt(return_stmt.into()))
+            }
             _ => self.parse_expr_or_decl_or_assign(),
         }
     }

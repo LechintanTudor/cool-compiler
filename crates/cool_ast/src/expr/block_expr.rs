@@ -38,9 +38,14 @@ impl AstGenerator<'_> {
                 (Some(expr), ty_id)
             }
             None => {
-                let ty_id = self
-                    .resolve
-                    .resolve_direct_ty_id(tys::UNIT, expected_ty_id)?;
+                let diverges = stmts.last().map(StmtAst::is_return).is_some();
+
+                let ty_id = if diverges && !expected_ty_id.is_inferred() {
+                    expected_ty_id
+                } else {
+                    self.resolve
+                        .resolve_direct_ty_id(tys::UNIT, expected_ty_id)?
+                };
 
                 (None, ty_id)
             }

@@ -1,6 +1,5 @@
-use crate::{CodeGenerator, LoadedValue};
+use crate::{BuilderExt, CodeGenerator, LoadedValue};
 use cool_ast::CondExprAst;
-use inkwell::IntPredicate;
 use std::iter;
 
 impl<'a> CodeGenerator<'a> {
@@ -46,10 +45,13 @@ impl<'a> CodeGenerator<'a> {
             let then_block = self.context.insert_basic_block_after(block, "");
             self.builder.position_at_end(then_block);
             let then_value = self.gen_block_expr(&ast_block.expr);
-            self.builder.build_unconditional_branch(end_block);
 
-            if let Some(phi_value) = phi_value {
-                phi_value.add_incoming(&[(then_value.as_basic_value().unwrap(), then_block)]);
+            if !self.builder.current_block_diverges() {
+                self.builder.build_unconditional_branch(end_block);
+
+                if let Some(phi_value) = phi_value {
+                    phi_value.add_incoming(&[(then_value.as_basic_value().unwrap(), then_block)]);
+                }
             }
 
             self.builder.position_at_end(block);
@@ -59,9 +61,7 @@ impl<'a> CodeGenerator<'a> {
                 .into_basic_value()
                 .into_int_value();
 
-            let cond_value =
-                self.builder
-                    .build_int_compare(IntPredicate::EQ, cond_value, self.llvm_true, "");
+            let cond_value = self.builder.build_bool(cond_value, "");
 
             self.builder
                 .build_conditional_branch(cond_value, then_block, else_block);
@@ -70,10 +70,13 @@ impl<'a> CodeGenerator<'a> {
         if let (Some(else_block_ast), Some(else_block)) = (&expr.else_block, else_block) {
             self.builder.position_at_end(else_block);
             let else_value = self.gen_block_expr(else_block_ast);
-            self.builder.build_unconditional_branch(end_block);
 
-            if let Some(phi_value) = phi_value {
-                phi_value.add_incoming(&[(else_value.as_basic_value().unwrap(), else_block)]);
+            if !self.builder.current_block_diverges() {
+                self.builder.build_unconditional_branch(end_block);
+
+                if let Some(phi_value) = phi_value {
+                    phi_value.add_incoming(&[(else_value.as_basic_value().unwrap(), else_block)]);
+                }
             }
         }
 

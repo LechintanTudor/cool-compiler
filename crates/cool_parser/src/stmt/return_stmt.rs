@@ -4,12 +4,12 @@ use cool_lexer::tokens::tk;
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
-pub struct ReturnExpr {
+pub struct ReturnStmt {
     pub span: Span,
     pub expr: Option<Box<Expr>>,
 }
 
-impl Section for ReturnExpr {
+impl Section for ReturnStmt {
     #[inline]
     fn span(&self) -> Span {
         self.span
@@ -17,7 +17,7 @@ impl Section for ReturnExpr {
 }
 
 impl Parser<'_> {
-    pub fn parse_return_expr(&mut self) -> ParseResult<ReturnExpr> {
+    pub fn parse_return_stmt(&mut self) -> ParseResult<ReturnStmt> {
         let start_token = self.bump_expect(&tk::KW_RETURN)?;
 
         let expr = match self.peek().kind {
@@ -30,7 +30,7 @@ impl Parser<'_> {
             .map(|expr| expr.span())
             .unwrap_or(start_token.span);
 
-        Ok(ReturnExpr {
+        Ok(ReturnStmt {
             span: start_token.span.to(end_span),
             expr: expr.map(Box::new),
         })

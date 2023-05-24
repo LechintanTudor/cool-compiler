@@ -1,4 +1,4 @@
-use crate::{mangle_item_path, CodeGenerator, LoadedValue, Value};
+use crate::{mangle_item_path, BuilderExt, CodeGenerator, FnState, LoadedValue, Value};
 use cool_ast::{ExternFnAst, FnAst};
 use inkwell::values::BasicValue;
 
@@ -31,7 +31,7 @@ impl CodeGenerator<'_> {
     pub fn gen_fn(&mut self, fn_ast: &FnAst) {
         let binding_id = self.resolve[fn_ast.item_id].as_binding_id().unwrap();
         let fn_value = self.bindings[&binding_id].into_function_value();
-        self.fn_value = Some(fn_value);
+        self.fn_stack.push(FnState::new(fn_value));
 
         let entry_block = self.context.append_basic_block(fn_value, "entry");
         self.builder.position_at_end(entry_block);
@@ -55,15 +55,17 @@ impl CodeGenerator<'_> {
         }
 
         let ret_value = self.gen_block_expr(&fn_ast.body);
-        let ret_value = match &ret_value {
-            LoadedValue::Void => None,
-            LoadedValue::Register(value) => Some(value as &dyn BasicValue),
-        };
 
-        self.builder.build_return(ret_value);
+        if !self.builder.current_block_diverges() {
+            let ret_value = match &ret_value {
+                LoadedValue::Void => None,
+                LoadedValue::Register(value) => Some(value as &dyn BasicValue),
+            };
+
+            self.builder.build_return(ret_value);
+        }
+
         self.pass_manager.run_on(&fn_value);
-
-        self.fn_value = None;
-        self.last_alloca = None;
+        self.fn_stack.pop();
     }
 }

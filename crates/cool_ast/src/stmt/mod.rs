@@ -1,26 +1,38 @@
 mod assign_stmt;
 mod decl_stmt;
+mod return_stmt;
 
 pub use self::assign_stmt::*;
 pub use self::decl_stmt::*;
+pub use self::return_stmt::*;
 use crate::{AstGenerator, AstResult, ExprAst};
 use cool_parser::{Stmt, StmtKind};
 use cool_resolve::{tys, FrameId};
+use derive_more::From;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, From, Debug)]
 pub enum StmtAst {
     Assign(AssignStmtAst),
     Decl(DeclStmtAst),
     Expr(ExprAst),
+    Return(ReturnStmtAst),
+}
+
+impl StmtAst {
+    #[inline]
+    pub fn is_return(&self) -> bool {
+        matches!(self, Self::Return(_))
+    }
 }
 
 impl AstGenerator<'_> {
     pub fn gen_stmt(&mut self, frame_id: FrameId, stmt: &Stmt) -> AstResult<StmtAst> {
         let stmt = match &stmt.kind {
-            StmtKind::Assign(stmt) => StmtAst::Assign(self.gen_assign_stmt(frame_id, stmt)?),
-            StmtKind::Decl(stmt) => StmtAst::Decl(self.gen_decl_stmt(frame_id, stmt)?),
+            StmtKind::Assign(stmt) => self.gen_assign_stmt(frame_id, stmt)?.into(),
+            StmtKind::Decl(stmt) => self.gen_decl_stmt(frame_id, stmt)?.into(),
             StmtKind::Defer(_) => todo!(),
-            StmtKind::Expr(expr) => StmtAst::Expr(self.gen_expr(frame_id, tys::INFER, expr)?),
+            StmtKind::Expr(expr) => self.gen_expr(frame_id, tys::INFER, expr)?.into(),
+            StmtKind::Return(stmt) => self.gen_return_stmt(frame_id, stmt)?.into(),
         };
 
         Ok(stmt)
