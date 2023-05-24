@@ -1,7 +1,9 @@
 mod access_expr;
 mod array_expr;
 mod binary_expr;
+mod block_expr;
 mod cond_expr;
+mod deref_expr;
 mod fn_call_expr;
 mod literal_expr;
 mod struct_expr;
@@ -10,7 +12,7 @@ mod unary_expr;
 mod while_expr;
 
 use crate::{BuilderExt, CodeGenerator, LoadedValue, MemoryValue, Value};
-use cool_ast::{BindingExprAst, BlockExprAst, DerefExprAst, ExprAst};
+use cool_ast::{BindingExprAst, ExprAst};
 use inkwell::values::BasicValue;
 
 impl<'a> CodeGenerator<'a> {
@@ -43,35 +45,8 @@ impl<'a> CodeGenerator<'a> {
         self.gen_loaded_value(value)
     }
 
-    pub fn gen_block_expr(&mut self, block: &BlockExprAst) -> LoadedValue<'a> {
-        if self.builder.current_block_diverges() {
-            return LoadedValue::Void;
-        }
-
-        for stmt in block.stmts.iter() {
-            self.gen_stmt(stmt);
-        }
-
-        match block.expr.as_ref() {
-            Some(expr) => self.gen_loaded_expr(expr),
-            None => LoadedValue::Void,
-        }
-    }
     pub fn gen_ident_expr(&self, expr: &BindingExprAst) -> Value<'a> {
         self.bindings[&expr.binding_id]
-    }
-
-    #[inline]
-    pub fn gen_deref_expr(&mut self, deref_expr: &DerefExprAst) -> Value<'a> {
-        let pointer = self
-            .gen_loaded_expr(&deref_expr.expr)
-            .into_basic_value()
-            .into_pointer_value();
-
-        let expr_ty_id = self.resolve[deref_expr.expr_id].ty_id;
-        let ty = self.tys[expr_ty_id].unwrap();
-
-        Value::memory(pointer, ty)
     }
 
     pub fn gen_loaded_value(&self, value: Value<'a>) -> LoadedValue<'a> {
