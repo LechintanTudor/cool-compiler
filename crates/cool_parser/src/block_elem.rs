@@ -40,7 +40,7 @@ impl Section for BlockElem {
 impl Parser<'_> {
     #[inline]
     pub fn parse_block_elem(&mut self) -> ParseResult<BlockElem> {
-        match self.parse_bare_block_elem(true)? {
+        match self.parse_bare_block_elem(true, true)? {
             BareBlockElem::Expr(expr) => {
                 match self.peek().kind {
                     tk::SEMICOLON => {
@@ -54,12 +54,11 @@ impl Parser<'_> {
         }
     }
 
-    #[inline]
-    pub fn parse_defer_block_elem(&mut self) -> ParseResult<BareBlockElem> {
-        self.parse_bare_block_elem(false)
-    }
-
-    fn parse_bare_block_elem(&mut self, allow_defer_stmt: bool) -> ParseResult<BareBlockElem> {
+    pub fn parse_bare_block_elem(
+        &mut self,
+        allow_defer_stmt: bool,
+        allow_struct_expr: bool,
+    ) -> ParseResult<BareBlockElem> {
         match self.peek().kind {
             tk::KW_MUT => {
                 self.parse_decl_stmt()
@@ -73,12 +72,15 @@ impl Parser<'_> {
                 self.parse_return_stmt()
                     .map(|return_stmt| BareBlockElem::Stmt(return_stmt.into()))
             }
-            _ => self.parse_expr_or_decl_or_assign(),
+            _ => self.parse_expr_or_decl_or_assign(allow_struct_expr),
         }
     }
 
-    fn parse_expr_or_decl_or_assign(&mut self) -> ParseResult<BareBlockElem> {
-        let expr = self.parse_expr()?;
+    fn parse_expr_or_decl_or_assign(
+        &mut self,
+        allow_struct_expr: bool,
+    ) -> ParseResult<BareBlockElem> {
+        let expr = self.parse_expr_full(allow_struct_expr)?;
 
         if let Expr::Ident(ident_expr) = &expr {
             if self.peek().kind == tk::COLON {

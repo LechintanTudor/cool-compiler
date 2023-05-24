@@ -1,4 +1,4 @@
-use crate::{CodeGenerator, Value};
+use crate::{BuilderExt, CodeGenerator, Value};
 use cool_ast::AssignStmtAst;
 use cool_parser::AssignOp;
 use inkwell::values::BasicValue;
@@ -10,6 +10,10 @@ impl<'a> CodeGenerator<'a> {
 
         if self.resolve.ty_is_zero_sized(lhs_ty_id) {
             self.gen_expr(&assign.rhs, None);
+            return;
+        }
+
+        if self.builder.current_block_diverges() {
             return;
         }
 

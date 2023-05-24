@@ -5,6 +5,7 @@ mod block_expr;
 mod cond_expr;
 mod deref_expr;
 mod fn_call_expr;
+mod for_expr;
 mod ident_expr;
 mod literal_expr;
 mod struct_expr;
@@ -19,6 +20,7 @@ pub use self::block_expr::*;
 pub use self::cond_expr::*;
 pub use self::deref_expr::*;
 pub use self::fn_call_expr::*;
+pub use self::for_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::struct_expr::*;
@@ -73,6 +75,7 @@ define_expr_ast! {
     Cond,
     Deref,
     FnCall,
+    For,
     Literal,
     Module,
     Struct,
@@ -142,6 +145,7 @@ impl_gen_expr! {
     Block,
     Cond,
     Deref,
+    For,
     FnCall,
     Ident,
     Literal,

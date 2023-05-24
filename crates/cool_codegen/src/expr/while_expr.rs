@@ -1,6 +1,5 @@
-use crate::{CodeGenerator, LoadedValue};
+use crate::{BuilderExt, CodeGenerator, LoadedValue};
 use cool_ast::WhileExprAst;
-use inkwell::IntPredicate;
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_while_expr(&mut self, expr: &WhileExprAst) -> LoadedValue<'a> {
@@ -17,9 +16,7 @@ impl<'a> CodeGenerator<'a> {
             .into_basic_value()
             .into_int_value();
 
-        let cond_value =
-            self.builder
-                .build_int_compare(IntPredicate::EQ, cond_value, self.llvm_true, "");
+        let cond_value = self.builder.build_bool(cond_value, "");
 
         self.builder
             .build_conditional_branch(cond_value, body_block, end_block);

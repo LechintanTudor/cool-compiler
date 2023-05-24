@@ -17,7 +17,7 @@ impl Section for CondBlock {
 impl Parser<'_> {
     pub fn parse_cond_block(&mut self) -> ParseResult<CondBlock> {
         Ok(CondBlock {
-            cond: self.parse_guard_expr()?,
+            cond: self.parse_expr_full(false)?,
             expr: self.parse_block_expr()?,
         })
     }

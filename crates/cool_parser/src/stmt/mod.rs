@@ -46,6 +46,16 @@ impl Section for Stmt {
     }
 }
 
+impl From<StmtKind> for Stmt {
+    #[inline]
+    fn from(kind: StmtKind) -> Self {
+        Self {
+            span: kind.span(),
+            kind,
+        }
+    }
+}
+
 impl Parser<'_> {
     pub fn continue_parse_stmt(&mut self, kind: StmtKind) -> ParseResult<Stmt> {
         if let Some(end_token) = self.bump_if_eq(tk::SEMICOLON) {

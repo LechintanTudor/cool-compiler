@@ -51,6 +51,11 @@ impl ResolveContext {
 
         self.bindings[binding_id].ty_id = ty_id;
     }
+
+    #[inline]
+    pub fn make_binding_mutable(&mut self, binding_id: BindingId) {
+        self.bindings[binding_id].mutability = Mutability::Mutable
+    }
 }
 
 impl ops::Index<BindingId> for ResolveContext {

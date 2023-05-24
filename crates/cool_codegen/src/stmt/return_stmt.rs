@@ -16,7 +16,6 @@ impl<'a> CodeGenerator<'a> {
 
         let value = value.as_basic_value().map(|value| value as &dyn BasicValue);
         self.builder.build_return(value);
-
         Value::Void
     }
 }

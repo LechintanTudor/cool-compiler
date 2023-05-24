@@ -18,7 +18,7 @@ impl Section for DeferStmt {
 impl Parser<'_> {
     pub fn parse_defer_stmt(&mut self) -> ParseResult<DeferStmt> {
         let start_token = self.bump_expect(&tk::KW_DEFER)?;
-        let elem = self.parse_defer_block_elem()?;
+        let elem = self.parse_bare_block_elem(false, true)?;
 
         Ok(DeferStmt {
             span: start_token.span.to(elem.span()),

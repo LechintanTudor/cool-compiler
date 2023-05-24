@@ -26,8 +26,13 @@ impl StmtAst {
 }
 
 impl AstGenerator<'_> {
+    #[inline]
     pub fn gen_stmt(&mut self, frame_id: FrameId, stmt: &Stmt) -> AstResult<StmtAst> {
-        let stmt = match &stmt.kind {
+        self.gen_stmt_kind(frame_id, &stmt.kind)
+    }
+
+    pub fn gen_stmt_kind(&mut self, frame_id: FrameId, stmt_kind: &StmtKind) -> AstResult<StmtAst> {
+        let stmt = match &stmt_kind {
             StmtKind::Assign(stmt) => self.gen_assign_stmt(frame_id, stmt)?.into(),
             StmtKind::Decl(stmt) => self.gen_decl_stmt(frame_id, stmt)?.into(),
             StmtKind::Defer(_) => todo!(),

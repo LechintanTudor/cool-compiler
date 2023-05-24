@@ -6,6 +6,7 @@ mod cond_expr;
 mod deref_expr;
 mod fn_call_expr;
 mod fn_expr;
+mod for_expr;
 mod ident_expr;
 mod literal_expr;
 mod loop_expr;
@@ -24,6 +25,7 @@ pub use self::cond_expr::*;
 pub use self::deref_expr::*;
 pub use self::fn_call_expr::*;
 pub use self::fn_expr::*;
+pub use self::for_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::loop_expr::*;
@@ -66,6 +68,7 @@ define_expr! {
     Block,
     Cond,
     Deref,
+    For,
     Fn,
     FnCall,
     Ident,
@@ -84,7 +87,7 @@ impl Expr {
     pub fn is_promotable_to_stmt(&self) -> bool {
         matches!(
             self,
-            Self::Block(_) | Self::Cond(_) | Self::Loop(_) | Self::While(_)
+            Self::Block(_) | Self::Cond(_) | Self::For(_) | Self::Loop(_) | Self::While(_),
         )
     }
 }
@@ -111,12 +114,7 @@ impl Parser<'_> {
         self.parse_expr_full(true)
     }
 
-    #[inline]
-    pub fn parse_guard_expr(&mut self) -> ParseResult<Expr> {
-        self.parse_expr_full(false)
-    }
-
-    fn parse_expr_full(&mut self, allow_struct_expr: bool) -> ParseResult<Expr> {
+    pub fn parse_expr_full(&mut self, allow_struct_expr: bool) -> ParseResult<Expr> {
         let expr = self.parse_primary_expr(allow_struct_expr)?;
 
         let (first_bin_op, second_expr) = match BinOp::from_token_kind(self.peek().kind) {
@@ -187,6 +185,7 @@ impl Parser<'_> {
             tk::KW_IF => self.parse_cond_expr()?.into(),
             tk::KW_LOOP => self.parse_loop_expr()?.into(),
             tk::KW_WHILE => self.parse_while_expr()?.into(),
+            tk::KW_FOR => self.parse_for_expr()?.into(),
             tk::MINUS | tk::NOT | tk::AND => self.parse_unary_expr()?.into(),
             TokenKind::Ident(_) => self.parse_ident_expr()?.into(),
             TokenKind::Prefix(_) | TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
