@@ -1,8 +1,11 @@
 mod args;
+mod errors;
 
 use crate::args::Args;
+use crate::errors::*;
+use anyhow::bail;
 use clap::Parser as _;
-use cool_driver::CompileOptions;
+use cool_driver::{CompileErrorKind, CompileOptions};
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
@@ -14,7 +17,25 @@ fn main() -> anyhow::Result<()> {
     let (codegen, mut resolve) = cool_driver::p0_init("x86_64-unknown-linux-gnu")?;
     println!("p0 - init:          success");
 
-    let package = cool_driver::p1_parse(&mut resolve, &options)?;
+    let package = match cool_driver::p1_parse(&mut resolve, &options) {
+        Ok(package) => package,
+        Err((error_bundle, package)) => {
+            println!();
+
+            for error in error_bundle.errors.iter() {
+                match &error.kind {
+                    CompileErrorKind::Parse(error) => {
+                        print_parse_error(error, &package);
+                    }
+                    error => println!("{}\n", error),
+                }
+            }
+
+            println!();
+            bail!("Failed to compile package.");
+        }
+    };
+
     println!("p1 - parse:         success");
 
     cool_driver::p2_define_tys(&package, &mut resolve)?;

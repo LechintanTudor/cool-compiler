@@ -34,6 +34,11 @@ impl Span {
     pub const fn end(&self) -> u32 {
         self.start + self.len
     }
+
+    #[inline]
+    pub const fn is_empty(&self) -> bool {
+        self.len == 0
+    }
 }
 
 impl fmt::Debug for Span {

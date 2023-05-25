@@ -1,13 +1,13 @@
 use crate::paths::ModulePaths;
 use crate::{
-    Alias, CompileError, CompileErrorBundle, CompileOptions, CompileResult, Const, ExternFn,
-    Package, SourceMap, Struct,
+    Alias, CompileError, CompileErrorBundle, CompileOptions, Const, ExternFn, Package, Struct,
 };
 use cool_lexer::symbols::Symbol;
 use cool_parser::{DeclKind, Item, ModuleContent, ModuleKind};
 use cool_resolve::{
     ItemPathBuf, ModuleId, Mutability, ResolveContext, ResolveError, ResolveErrorKind,
 };
+use cool_span::Section;
 use std::collections::VecDeque;
 use std::path::PathBuf;
 
@@ -20,14 +20,12 @@ pub struct Import {
     pub alias: Option<Symbol>,
 }
 
-pub fn p1_parse(resove: &mut ResolveContext, options: &CompileOptions) -> CompileResult<Package> {
+pub fn p1_parse(
+    resove: &mut ResolveContext,
+    options: &CompileOptions,
+) -> Result<Package, (CompileErrorBundle, Package)> {
     let mut errors = Vec::<CompileError>::new();
-
-    let mut source_map = SourceMap::default();
-    let mut aliases = Vec::<Alias>::new();
-    let mut structs = Vec::<Struct>::new();
-    let mut extern_fns = Vec::<ExternFn>::new();
-    let mut consts = Vec::<Const>::new();
+    let mut package = Package::default();
 
     let crate_paths = match ModulePaths::for_root(&options.crate_root_file) {
         Ok(crate_paths) => Some(crate_paths),
@@ -54,7 +52,7 @@ pub fn p1_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
 
     let (crate_paths, crate_module_id) = match (crate_paths, crate_module_id) {
         (Some(crate_paths), Some(crate_module_id)) => (crate_paths, crate_module_id),
-        _ => return Err(CompileErrorBundle { errors }),
+        _ => return Err((CompileErrorBundle { errors }, package)),
     };
 
     let mut file_modules = VecDeque::<(ModuleId, ModulePaths)>::new();
@@ -63,7 +61,7 @@ pub fn p1_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
     let mut imports = VecDeque::<Import>::new();
 
     while let Some((module_id, module_paths)) = file_modules.pop_front() {
-        let module_content = match source_map.add_file(module_paths.path.clone()) {
+        let module_content = match package.source_map.add_file(module_paths.path.clone()) {
             Ok(source_file) => source_file,
             Err(error) => {
                 errors.push(CompileError {
@@ -81,6 +79,8 @@ pub fn p1_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
             for decl in module.decls {
                 match decl.kind {
                     DeclKind::Item(item_decl) => {
+                        let item_decl_span = item_decl.span();
+
                         match item_decl.item {
                             Item::Module(child_module) => {
                                 let child_module_id = match resove.insert_module(
@@ -138,7 +138,8 @@ pub fn p1_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
                                     }
                                 };
 
-                                aliases.push(Alias {
+                                package.aliases.push(Alias {
+                                    span: item_decl_span,
                                     module_id,
                                     item_id,
                                     ty: item_decl.ty,
@@ -161,7 +162,8 @@ pub fn p1_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
                                     }
                                 };
 
-                                structs.push(Struct {
+                                package.structs.push(Struct {
+                                    span: item_decl_span,
                                     module_id,
                                     item_id,
                                     ty: item_decl.ty,
@@ -185,7 +187,8 @@ pub fn p1_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
                                     }
                                 };
 
-                                extern_fns.push(ExternFn {
+                                package.extern_fns.push(ExternFn {
+                                    span: item_decl_span,
                                     module_id,
                                     item_id,
                                     ty: item_decl.ty,
@@ -209,7 +212,8 @@ pub fn p1_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
                                     }
                                 };
 
-                                consts.push(Const {
+                                package.consts.push(Const {
+                                    span: item_decl_span,
                                     module_id,
                                     item_id,
                                     ty: item_decl.ty,
@@ -281,14 +285,8 @@ pub fn p1_parse(resove: &mut ResolveContext, options: &CompileOptions) -> Compil
     }
 
     if errors.is_empty() {
-        Ok(Package {
-            source_map,
-            aliases,
-            structs,
-            extern_fns,
-            consts,
-        })
+        Ok(package)
     } else {
-        Err(CompileErrorBundle { errors })
+        Err((CompileErrorBundle { errors }, package))
     }
 }

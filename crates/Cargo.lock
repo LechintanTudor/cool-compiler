@@ -184,6 +184,7 @@ dependencies = [
  "cool_driver",
  "cool_parser",
  "cool_resolve",
+ "cool_span",
 ]
 
 [[package]]

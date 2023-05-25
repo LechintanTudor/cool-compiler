@@ -8,6 +8,7 @@ cool_codegen = { path = "../cool_codegen" }
 cool_driver = { path = "../cool_driver" }
 cool_parser = { path = "../cool_parser" }
 cool_resolve = { path = "../cool_resolve" }
+cool_span = { path = "../cool_span" }
 
 anyhow = { workspace = true }
 clap = { workspace = true }
