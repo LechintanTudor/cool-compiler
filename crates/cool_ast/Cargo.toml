@@ -14,4 +14,3 @@ derive_more = { workspace = true }
 paste = { workspace = true }
 rustc-hash = { workspace = true }
 smallvec = { workspace = true }
-thiserror = { workspace = true }

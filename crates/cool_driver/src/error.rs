@@ -2,9 +2,9 @@ use crate::ModulePathsError;
 use cool_ast::AstError;
 use cool_parser::ParseError;
 use cool_resolve::{DefineError, ItemPathBuf, ResolveError};
+use derive_more::{Display, Error, From};
 use std::fmt;
 use std::path::PathBuf;
-use thiserror::Error;
 
 pub type CompileResult<T> = Result<T, CompileErrorBundle>;
 
@@ -59,38 +59,25 @@ impl fmt::Display for CompileError {
     }
 }
 
-#[derive(Clone, Error, Debug)]
+#[derive(Clone, Error, From, Display, Debug)]
 pub enum CompileErrorKind {
-    #[error(transparent)]
-    Init(#[from] InitError),
-
-    #[error(transparent)]
-    Path(#[from] ModulePathsError),
-
-    #[error(transparent)]
-    Parse(#[from] ParseError),
-
-    #[error(transparent)]
-    Import(#[from] ImportError),
-
-    #[error(transparent)]
-    Resolve(#[from] ResolveError),
-
-    #[error(transparent)]
-    Define(#[from] DefineError),
-
-    #[error(transparent)]
-    Ast(#[from] AstError),
+    Init(InitError),
+    Path(ModulePathsError),
+    Parse(ParseError),
+    Import(ImportError),
+    Resolve(ResolveError),
+    Define(DefineError),
+    Ast(AstError),
 }
 
-#[derive(Clone, Error, Debug)]
-#[error("failed to initialize compiler: {message}")]
+#[derive(Clone, Error, Display, Debug)]
+#[display(fmt = "failed to initialize compiler: {message}")]
 pub struct InitError {
     pub message: String,
 }
 
-#[derive(Clone, Error, Debug)]
-#[error("failed to import {import_path:?} in module {module_path:?}")]
+#[derive(Clone, Error, Display, Debug)]
+#[display(fmt = "failed to import {import_path:?} in module {module_path:?}")]
 pub struct ImportError {
     pub module_path: ItemPathBuf,
     pub import_path: ItemPathBuf,

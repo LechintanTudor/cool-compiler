@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, ExprAst, TyNotComparable};
+use crate::{AstError, AstGenerator, AstResult, ExprAst};
 use cool_parser::{BinOp, BinaryExpr, BitwiseOp};
 use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId, TyMismatch};
 use cool_span::{Section, Span};
@@ -45,7 +45,7 @@ impl AstGenerator<'_> {
                 let rhs = self.gen_expr(frame_id, lhs_ty_id, &binary_expr.rhs)?;
 
                 if !self.resolve[lhs_ty_id].is_comparable() {
-                    Err(TyNotComparable)?;
+                    Err(AstError::TyNotComparable)?;
                 }
 
                 let ty_id = self

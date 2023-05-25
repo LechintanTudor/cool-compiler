@@ -1,6 +1,6 @@
 use crate::{
-    AstGenerator, AstResult, FnAbiMismatch, FnParamCountMismatch, FnVariadicMismatch,
-    TyHintMissing, TyNotFn,
+    AstError, AstGenerator, AstResult, FnAbiMismatch, FnParamCountMismatch, FnVariadicMismatch,
+    TyNotFn,
 };
 use cool_parser::{FnExternDecl, FnPrototype, Ty};
 use cool_resolve::{
@@ -87,7 +87,7 @@ impl AstGenerator<'_> {
                 let mut param_ty_ids = SmallVec::<[TyId; 4]>::new();
 
                 for param in prototype.param_list.params.iter() {
-                    let param_ty = param.ty.as_ref().ok_or(TyHintMissing)?;
+                    let param_ty = param.ty.as_ref().ok_or(AstError::TyHintMissing)?;
                     let param_ty_id = self.resolve_ty(scope, param_ty)?;
                     param_ty_ids.push(param_ty_id);
                 }

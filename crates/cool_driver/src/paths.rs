@@ -1,15 +1,15 @@
+use derive_more::{Display, Error};
 use std::path::{Path, PathBuf};
-use thiserror::Error;
 
-#[derive(Clone, Error, Debug)]
+#[derive(Clone, Error, Display, Debug)]
 pub enum ModulePathsError {
-    #[error("no module path found")]
+    #[display(fmt = "no module path found")]
     NoPathFound,
 
-    #[error("multiple module paths found")]
+    #[display(fmt = "multiple module paths found")]
     MultiplePathsFound,
 
-    #[error("bad source file extension")]
+    #[display(fmt = "bad file extension")]
     BadExtension,
 }
 

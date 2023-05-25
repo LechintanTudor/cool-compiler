@@ -12,6 +12,6 @@ cool_parser = { path = "../cool_parser" }
 cool_resolve = { path = "../cool_resolve" }
 cool_span = { path = "../cool_span" }
 
+derive_more = { workspace = true }
 inkwell = { workspace = true }
 smallvec = { workspace = true }
-thiserror = { workspace = true }

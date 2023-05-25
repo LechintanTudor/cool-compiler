@@ -23,5 +23,4 @@ paste = "1.0"
 rustc-hash = "1.1"
 smallstr = { version = "0.3", features = ["union"] }
 smallvec = { version = "1.10", features = ["const_generics", "const_new", "union"] }
-thiserror = "1.0"
 unicode-ident = "1.0"

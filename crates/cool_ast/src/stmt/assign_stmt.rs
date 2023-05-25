@@ -1,4 +1,4 @@
-use crate::{AssignToRvalue, AstGenerator, AstResult, ExprAst};
+use crate::{AstError, AstGenerator, AstResult, ExprAst};
 use cool_parser::{AssignOp, AssignStmt};
 use cool_resolve::{tys, FrameId};
 use cool_span::Section;
@@ -28,7 +28,7 @@ impl AstGenerator<'_> {
             .ensure_not_module()?;
 
         if !self.resolve[lhs.expr_id()].is_assignable() {
-            Err(AssignToRvalue)?;
+            Err(AstError::AssignToRvalue)?;
         }
 
         let ty_id = self.resolve[lhs.expr_id()].ty_id;

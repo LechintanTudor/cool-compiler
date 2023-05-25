@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, ExprAst, ExprNotAddressable, ExprNotMutablyAddressable};
+use crate::{AstError, AstGenerator, AstResult, ExprAst};
 use cool_parser::{UnaryExpr, UnaryOp, UnaryOpKind};
 use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId, TyMismatch};
 use cool_span::{Section, Span};
@@ -66,11 +66,11 @@ impl AstGenerator<'_> {
 
                 if is_mutable {
                     if !inner_resolve_expr.is_mutably_addressable() {
-                        Err(ExprNotMutablyAddressable)?
+                        Err(AstError::ExprNotMutablyAddressable)?
                     }
                 } else {
                     if !inner_resolve_expr.is_addressable() {
-                        Err(ExprNotAddressable)?
+                        Err(AstError::ExprNotAddressable)?
                     }
                 }
 
