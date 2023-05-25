@@ -4,9 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0"
-clap = { version = "4.1", features = ["derive"] }
 cool_codegen = { path = "../cool_codegen" }
 cool_driver = { path = "../cool_driver" }
 cool_parser = { path = "../cool_parser" }
 cool_resolve = { path = "../cool_resolve" }
+
+anyhow = { workspace = true }
+clap = { workspace = true }

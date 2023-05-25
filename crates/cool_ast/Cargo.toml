@@ -9,8 +9,9 @@ cool_lexer = { path = "../cool_lexer" }
 cool_parser = { path = "../cool_parser" }
 cool_resolve = { path = "../cool_resolve" }
 cool_span = { path = "../cool_span" }
+
 derive_more = { workspace = true }
-paste = "1.0"
-rustc-hash = "1.1"
+paste = { workspace = true }
+rustc-hash = { workspace = true }
 smallvec = { workspace = true }
-thiserror = "1.0"
+thiserror = { workspace = true }
