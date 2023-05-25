@@ -8,6 +8,7 @@ pub use self::return_stmt::*;
 use crate::{AstGenerator, AstResult, ExprAst};
 use cool_parser::{Stmt, StmtKind};
 use cool_resolve::{tys, FrameId};
+use cool_span::{Section, Span};
 use derive_more::From;
 
 #[derive(Clone, From, Debug)]
@@ -22,6 +23,17 @@ impl StmtAst {
     #[inline]
     pub fn is_return(&self) -> bool {
         matches!(self, Self::Return(_))
+    }
+}
+
+impl Section for StmtAst {
+    fn span(&self) -> Span {
+        match self {
+            Self::Assign(stmt) => stmt.span(),
+            Self::Decl(stmt) => stmt.span(),
+            Self::Expr(expr) => expr.span(),
+            Self::Return(stmt) => stmt.span(),
+        }
     }
 }
 

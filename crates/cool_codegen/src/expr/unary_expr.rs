@@ -9,7 +9,7 @@ impl<'a> CodeGenerator<'a> {
     pub fn gen_unary_expr(&mut self, unary_expr: &UnaryExprAst) -> Value<'a> {
         let ty_id = self.resolve[unary_expr.expr_id].ty_id;
 
-        match unary_expr.op {
+        match unary_expr.op.kind {
             UnaryOpKind::Minus => {
                 let value = self.gen_loaded_expr(&unary_expr.expr).into_basic_value();
 

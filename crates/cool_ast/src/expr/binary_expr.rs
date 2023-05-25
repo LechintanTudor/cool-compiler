@@ -1,6 +1,7 @@
 use crate::{AstGenerator, AstResult, ExprAst, TyNotComparable};
 use cool_parser::{BinOp, BinaryExpr, BitwiseOp};
 use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId, TyMismatch};
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct BinaryExprAst {
@@ -8,6 +9,13 @@ pub struct BinaryExprAst {
     pub bin_op: BinOp,
     pub lhs: Box<ExprAst>,
     pub rhs: Box<ExprAst>,
+}
+
+impl Section for BinaryExprAst {
+    #[inline]
+    fn span(&self) -> Span {
+        self.lhs.span().to(self.rhs.span())
+    }
 }
 
 impl AstGenerator<'_> {

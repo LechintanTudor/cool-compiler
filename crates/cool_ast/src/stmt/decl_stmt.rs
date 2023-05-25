@@ -1,12 +1,21 @@
 use crate::{AstGenerator, AstResult, ExprAst};
 use cool_parser::DeclStmt;
 use cool_resolve::{tys, BindingId, FrameId};
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct DeclStmtAst {
+    pub span: Span,
     pub frame_id: FrameId,
     pub binding_id: BindingId,
     pub expr: Box<ExprAst>,
+}
+
+impl Section for DeclStmtAst {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl AstGenerator<'_> {
@@ -34,6 +43,7 @@ impl AstGenerator<'_> {
         )?;
 
         Ok(DeclStmtAst {
+            span: decl_stmt.span(),
             frame_id,
             binding_id,
             expr: Box::new(expr),

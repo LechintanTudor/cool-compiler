@@ -1,12 +1,20 @@
 use crate::{AssignToRvalue, AstGenerator, AstResult, ExprAst};
 use cool_parser::{AssignOp, AssignStmt};
 use cool_resolve::{tys, FrameId};
+use cool_span::Section;
 
 #[derive(Clone, Debug)]
 pub struct AssignStmtAst {
     pub assign_op: AssignOp,
     pub lhs: ExprAst,
     pub rhs: ExprAst,
+}
+
+impl Section for AssignStmtAst {
+    #[inline]
+    fn span(&self) -> cool_span::Span {
+        self.lhs.span().to(self.rhs.span())
+    }
 }
 
 impl AstGenerator<'_> {

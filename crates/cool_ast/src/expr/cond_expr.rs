@@ -1,9 +1,11 @@
 use crate::{AstGenerator, AstResult, BlockExprAst, CondBlockAst};
 use cool_parser::CondExpr;
 use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct CondExprAst {
+    pub span: Span,
     pub expr_id: ExprId,
     pub if_block: Box<CondBlockAst>,
     pub else_if_blocks: Vec<CondBlockAst>,
@@ -14,6 +16,13 @@ impl CondExprAst {
     #[inline]
     pub fn is_exhaustive(&self) -> bool {
         self.else_block.is_some()
+    }
+}
+
+impl Section for CondExprAst {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
     }
 }
 
@@ -45,6 +54,7 @@ impl AstGenerator<'_> {
             .transpose()?;
 
         Ok(CondExprAst {
+            span: expr.span,
             expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
             if_block: Box::new(if_block),
             else_if_blocks,

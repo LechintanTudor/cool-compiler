@@ -1,12 +1,21 @@
 use crate::{AstGenerator, AstResult, ExprAst, StmtAst};
 use cool_parser::BlockExpr;
 use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct BlockExprAst {
+    pub span: Span,
     pub expr_id: ExprId,
     pub stmts: Vec<StmtAst>,
     pub expr: Option<Box<ExprAst>>,
+}
+
+impl Section for BlockExprAst {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl AstGenerator<'_> {
@@ -52,6 +61,7 @@ impl AstGenerator<'_> {
         };
 
         Ok(BlockExprAst {
+            span: block.span,
             expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
             stmts,
             expr: expr.map(Box::new),

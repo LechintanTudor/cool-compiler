@@ -1,11 +1,20 @@
 use crate::{AstGenerator, AstResult, CondBlockAst};
 use cool_parser::WhileExpr;
 use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct WhileExprAst {
+    pub span: Span,
     pub expr_id: ExprId,
     pub block: Box<CondBlockAst>,
+}
+
+impl Section for WhileExprAst {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl AstGenerator<'_> {
@@ -22,6 +31,7 @@ impl AstGenerator<'_> {
         let block = self.gen_cond_block(frame_id, ty_id, &expr.block)?;
 
         Ok(WhileExprAst {
+            span: expr.span,
             expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
             block: Box::new(block),
         })

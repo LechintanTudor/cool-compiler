@@ -1,6 +1,7 @@
 use crate::{AstGenerator, AstResult, BlockExprAst, FnState};
 use cool_parser::FnExpr;
 use cool_resolve::{BindingId, FrameId, ItemId, ModuleId, TyId};
+use cool_span::{Section, Span};
 use smallvec::SmallVec;
 
 #[derive(Clone, Debug)]
@@ -11,6 +12,7 @@ pub struct ExternFnAst {
 
 #[derive(Clone, Debug)]
 pub struct FnAst {
+    pub span: Span,
     pub item_id: ItemId,
     pub ty_id: TyId,
     pub frame_id: FrameId,
@@ -61,6 +63,7 @@ impl AstGenerator<'_> {
         self.pop_fn_state();
 
         Ok(FnAst {
+            span: fn_expr.span(),
             item_id,
             ty_id,
             frame_id,

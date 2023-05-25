@@ -1,12 +1,20 @@
 use crate::{AstGenerator, AstResult, ExprAst, ExprNotAddressable, ExprNotMutablyAddressable};
-use cool_parser::{UnaryExpr, UnaryOpKind};
+use cool_parser::{UnaryExpr, UnaryOp, UnaryOpKind};
 use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId, TyMismatch};
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct UnaryExprAst {
     pub expr_id: ExprId,
-    pub op: UnaryOpKind,
+    pub op: UnaryOp,
     pub expr: Box<ExprAst>,
+}
+
+impl Section for UnaryExprAst {
+    #[inline]
+    fn span(&self) -> Span {
+        self.op.span.to(self.expr.span())
+    }
 }
 
 impl AstGenerator<'_> {
@@ -25,7 +33,7 @@ impl AstGenerator<'_> {
 
                 UnaryExprAst {
                     expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-                    op: UnaryOpKind::Minus,
+                    op: unary_expr.op,
                     expr: Box::new(expr),
                 }
             }
@@ -42,7 +50,7 @@ impl AstGenerator<'_> {
 
                 UnaryExprAst {
                     expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-                    op: UnaryOpKind::Not,
+                    op: unary_expr.op,
                     expr: Box::new(expr),
                 }
             }
@@ -66,11 +74,13 @@ impl AstGenerator<'_> {
                     }
                 }
 
+                let expr_id = self
+                    .resolve
+                    .add_expr(ResolveExpr::lvalue(ty_id, is_mutable));
+
                 UnaryExprAst {
-                    expr_id: self
-                        .resolve
-                        .add_expr(ResolveExpr::lvalue(ty_id, is_mutable)),
-                    op: UnaryOpKind::Addr { is_mutable },
+                    expr_id,
+                    op: unary_expr.op,
                     expr: Box::new(inner_expr),
                 }
             }

@@ -1,12 +1,21 @@
 use crate::{AstGenerator, AstResult, ExprAst, FnParamCountMismatch, TyNotFn};
 use cool_parser::FnCallExpr;
 use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct FnCallExprAst {
+    pub span: Span,
     pub expr_id: ExprId,
     pub fn_expr: Box<ExprAst>,
     pub arg_exprs: Vec<ExprAst>,
+}
+
+impl Section for FnCallExprAst {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl AstGenerator<'_> {
@@ -56,6 +65,7 @@ impl AstGenerator<'_> {
         let expr_id = self.resolve.add_expr(ResolveExpr::rvalue(ret_ty_id));
 
         Ok(FnCallExprAst {
+            span: fn_call_expr.span,
             expr_id,
             fn_expr: Box::new(fn_expr),
             arg_exprs,

@@ -4,6 +4,7 @@ use cool_lexer::symbols::{sym, Symbol};
 use cool_lexer::tokens::LiteralKind;
 use cool_parser::LiteralExpr;
 use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub enum LiteralExprValue {
@@ -16,6 +17,7 @@ pub enum LiteralExprValue {
 
 #[derive(Clone, Debug)]
 pub struct LiteralExprAst {
+    pub span: Span,
     pub expr_id: ExprId,
     pub value: LiteralExprValue,
 }
@@ -27,6 +29,13 @@ impl LiteralExprAst {
             LiteralExprValue::Int(value) => Some(value),
             _ => None,
         }
+    }
+}
+
+impl Section for LiteralExprAst {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
     }
 }
 
@@ -49,11 +58,13 @@ impl AstGenerator<'_> {
 
                 if ty_id.is_int() {
                     LiteralExprAst {
+                        span: literal_expr.span,
                         expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                         value: LiteralExprValue::Int(value),
                     }
                 } else {
                     LiteralExprAst {
+                        span: literal_expr.span,
                         expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                         value: LiteralExprValue::Float(value as _),
                     }
@@ -64,6 +75,7 @@ impl AstGenerator<'_> {
                 let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
 
                 LiteralExprAst {
+                    span: literal_expr.span,
                     expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                     value: LiteralExprValue::Float(value),
                 }
@@ -75,6 +87,7 @@ impl AstGenerator<'_> {
                     .resolve_direct_ty_id(tys::BOOL, expected_ty_id)?;
 
                 LiteralExprAst {
+                    span: literal_expr.span,
                     expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                     value: LiteralExprValue::Bool(value),
                 }
@@ -86,6 +99,7 @@ impl AstGenerator<'_> {
                     .resolve_direct_ty_id(tys::CHAR, expected_ty_id)?;
 
                 LiteralExprAst {
+                    span: literal_expr.span,
                     expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                     value: LiteralExprValue::Char(value),
                 }
@@ -97,6 +111,7 @@ impl AstGenerator<'_> {
                     .resolve_direct_ty_id(tys::C_STR, expected_ty_id)?;
 
                 LiteralExprAst {
+                    span: literal_expr.span,
                     expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                     value: LiteralExprValue::Cstr(value),
                 }

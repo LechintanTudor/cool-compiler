@@ -1,11 +1,19 @@
 use crate::{AstGenerator, AstResult, BlockExprAst, ExprAst};
 use cool_parser::CondBlock;
 use cool_resolve::{tys, FrameId, TyId};
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct CondBlockAst {
     pub cond: ExprAst,
     pub expr: BlockExprAst,
+}
+
+impl Section for CondBlockAst {
+    #[inline]
+    fn span(&self) -> Span {
+        self.cond.span().to(self.expr.span())
+    }
 }
 
 impl AstGenerator<'_> {

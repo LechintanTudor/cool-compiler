@@ -1,18 +1,35 @@
 use crate::{AstGenerator, AstResult, ExprAst};
 use cool_parser::{ArrayExpr, ArrayRepeatExpr};
 use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct ArrayExprAst {
+    pub span: Span,
     pub expr_id: ExprId,
     pub elems: Vec<ExprAst>,
 }
 
+impl Section for ArrayExprAst {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct ArrayRepeatExprAst {
+    pub span: Span,
     pub expr_id: ExprId,
     pub len: u64,
     pub elem: Box<ExprAst>,
+}
+
+impl Section for ArrayRepeatExprAst {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl AstGenerator<'_> {
@@ -42,6 +59,7 @@ impl AstGenerator<'_> {
         let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
 
         Ok(ArrayExprAst {
+            span: expr.span,
             expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
             elems,
         })
@@ -64,6 +82,7 @@ impl AstGenerator<'_> {
         let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
 
         Ok(ArrayRepeatExprAst {
+            span: expr.span,
             expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
             len,
             elem: Box::new(elem),

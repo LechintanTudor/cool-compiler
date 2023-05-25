@@ -1,11 +1,20 @@
 use crate::{AstGenerator, AstResult, ExprAst, TyNotPointer};
 use cool_parser::DerefExpr;
 use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId, ValueTy};
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct DerefExprAst {
+    pub span: Span,
     pub expr_id: ExprId,
     pub expr: Box<ExprAst>,
+}
+
+impl Section for DerefExprAst {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl AstGenerator<'_> {
@@ -26,10 +35,13 @@ impl AstGenerator<'_> {
             .resolve
             .resolve_direct_ty_id(pointer_ty.pointee, expected_ty_id)?;
 
+        let expr_id = self
+            .resolve
+            .add_expr(ResolveExpr::lvalue(ty_id, pointer_ty.is_mutable));
+
         Ok(DerefExprAst {
-            expr_id: self
-                .resolve
-                .add_expr(ResolveExpr::lvalue(ty_id, pointer_ty.is_mutable)),
+            span: deref_expr.span,
+            expr_id,
             expr: Box::new(expr),
         })
     }

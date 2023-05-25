@@ -2,18 +2,35 @@ use crate::{AstGenerator, AstResult, ExprAst};
 use cool_lexer::symbols::Symbol;
 use cool_parser::{Ident, StructExpr};
 use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
+use cool_span::{Section, Span};
 use rustc_hash::FxHashSet;
 
 #[derive(Clone, Debug)]
 pub struct StructFieldInitializerAst {
+    pub span: Span,
     pub ident: Ident,
     pub expr: Box<ExprAst>,
 }
 
+impl Section for StructFieldInitializerAst {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct StructExprAst {
+    pub span: Span,
     pub expr_id: ExprId,
     pub initializers: Vec<StructFieldInitializerAst>,
+}
+
+impl Section for StructExprAst {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl AstGenerator<'_> {
@@ -58,6 +75,7 @@ impl AstGenerator<'_> {
             let expr = self.gen_expr(frame_id, field_ty_id, &initializer.expr)?;
 
             initializers.push(StructFieldInitializerAst {
+                span: initializer.span(),
                 ident: initializer.ident,
                 expr: Box::new(expr),
             });
@@ -70,6 +88,7 @@ impl AstGenerator<'_> {
         let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
 
         Ok(StructExprAst {
+            span: expr.span,
             expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
             initializers,
         })

@@ -1,12 +1,20 @@
 use crate::{AstGenerator, AstResult, BindingExprAst, ExprAst, ModuleExprAst, TyExprAst};
 use cool_parser::{AccessExpr, Ident};
 use cool_resolve::{tys, ExprId, FrameId, ItemKind, ResolveExpr, TyId, ValueTy};
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct StructAccessExprAst {
     pub expr_id: ExprId,
     pub base: Box<ExprAst>,
     pub ident: Ident,
+}
+
+impl Section for StructAccessExprAst {
+    #[inline]
+    fn span(&self) -> Span {
+        self.base.span().to(self.ident.span())
+    }
 }
 
 impl AstGenerator<'_> {
@@ -39,6 +47,7 @@ impl AstGenerator<'_> {
                             .add_expr(ResolveExpr::lvalue(ty_id, is_mutable));
 
                         BindingExprAst {
+                            span: access_expr.span(),
                             expr_id,
                             binding_id,
                         }
@@ -46,9 +55,10 @@ impl AstGenerator<'_> {
                     }
                     ItemKind::Ty(ty_id) => {
                         self.resolve.resolve_direct_ty_id(tys::TY, expected_ty_id)?;
-
                         let expr_id = self.resolve.add_expr(ResolveExpr::ty());
+
                         TyExprAst {
+                            span: access_expr.span(),
                             expr_id,
                             item_ty_id: ty_id,
                         }
@@ -57,9 +67,14 @@ impl AstGenerator<'_> {
                     ItemKind::Module(module_id) => {
                         self.resolve
                             .resolve_direct_ty_id(tys::MODULE, expected_ty_id)?;
-
                         let expr_id = self.resolve.add_expr(ResolveExpr::module());
-                        ModuleExprAst { expr_id, module_id }.into()
+
+                        ModuleExprAst {
+                            span: access_expr.span(),
+                            expr_id,
+                            module_id,
+                        }
+                        .into()
                     }
                 }
             }

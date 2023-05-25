@@ -30,6 +30,7 @@ pub use self::while_expr::*;
 use crate::{AstGenerator, AstResult, ModuleUsedAsExpr};
 use cool_parser::{Expr, ParenExpr};
 use cool_resolve::{ExprId, FrameId, TyId};
+use cool_span::{Section, Span};
 use derive_more::From;
 use paste::paste;
 
@@ -61,6 +62,16 @@ macro_rules! define_expr_ast {
                         }
                     }
                 )+
+            }
+
+            impl Section for ExprAst {
+                fn span(&self) -> Span {
+                    match self {
+                        $(
+                            Self::$Variant(e) => e.span(),
+                        )+
+                    }
+                }
             }
         }
     };
