@@ -1,4 +1,5 @@
 use crate::{AstGenerator, AstResult, BindingExprAst, ExprAst, ModuleExprAst, TyExprAst};
+use cool_lexer::symbols::sym;
 use cool_parser::{AccessExpr, Ident};
 use cool_resolve::{tys, ExprId, FrameId, ItemKind, ResolveExpr, TyId, ValueTy};
 use cool_span::{Section, Span};
@@ -11,6 +12,20 @@ pub struct StructAccessExprAst {
 }
 
 impl Section for StructAccessExprAst {
+    #[inline]
+    fn span(&self) -> Span {
+        self.base.span().to(self.ident.span())
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct ArrayAccessExprAst {
+    pub expr_id: ExprId,
+    pub base: Box<ExprAst>,
+    pub ident: Ident,
+}
+
+impl Section for ArrayAccessExprAst {
     #[inline]
     fn span(&self) -> Span {
         self.base.span().to(self.ident.span())
@@ -98,6 +113,22 @@ impl AstGenerator<'_> {
 
                         StructAccessExprAst {
                             expr_id,
+                            base: Box::new(base),
+                            ident: access_expr.ident,
+                        }
+                        .into()
+                    }
+                    ValueTy::Array(_) => {
+                        if access_expr.ident.symbol != sym::LEN {
+                            panic!("unknown array access");
+                        }
+
+                        let ty_id = self
+                            .resolve
+                            .resolve_direct_ty_id(tys::USIZE, expected_ty_id)?;
+
+                        ArrayAccessExprAst {
+                            expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                             base: Box::new(base),
                             ident: access_expr.ident,
                         }

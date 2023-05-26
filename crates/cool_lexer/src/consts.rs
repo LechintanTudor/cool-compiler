@@ -184,5 +184,6 @@ define_symbols! {
         44: "Cool" as ABI_COOL,
 
         45: "main" as MAIN,
+        46: "len" as LEN,
     }
 }

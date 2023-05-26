@@ -1,5 +1,7 @@
-use crate::{CodeGenerator, Value};
-use cool_ast::StructAccessExprAst;
+use crate::{BuilderExt, CodeGenerator, LoadedValue, Value};
+use cool_ast::{ArrayAccessExprAst, StructAccessExprAst};
+use cool_lexer::symbols::sym;
+use inkwell::values::BasicValue;
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_struct_access_expr(&mut self, expr: &StructAccessExprAst) -> Value<'a> {
@@ -43,5 +45,24 @@ impl<'a> CodeGenerator<'a> {
             }
             Value::Fn(_) => unreachable!(),
         }
+    }
+
+    pub fn gen_array_access_expr(&mut self, expr: &ArrayAccessExprAst) -> LoadedValue<'a> {
+        assert_eq!(expr.ident.symbol, sym::LEN);
+
+        self.gen_expr(&expr.base, None);
+
+        if self.builder.current_block_diverges() {
+            return LoadedValue::Void;
+        }
+
+        let base_ty_id = self.resolve[expr.base.expr_id()].ty_id;
+        let base_ty = self.resolve[base_ty_id].ty.as_array().unwrap();
+
+        self.tys
+            .isize_ty()
+            .const_int(base_ty.len, false)
+            .as_basic_value_enum()
+            .into()
     }
 }

@@ -79,6 +79,7 @@ macro_rules! define_expr_ast {
 
 define_expr_ast! {
     Array,
+    ArrayAccess,
     ArrayRepeat,
     Binary,
     Binding,

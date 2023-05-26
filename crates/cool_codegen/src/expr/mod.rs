@@ -24,6 +24,7 @@ impl<'a> CodeGenerator<'a> {
 
         match expr {
             ExprAst::Array(e) => self.gen_array_expr(e, memory),
+            ExprAst::ArrayAccess(e) => self.gen_array_access_expr(e).into(),
             ExprAst::ArrayRepeat(e) => self.gen_array_repeat_expr(e, memory),
             ExprAst::Binary(e) => self.gen_binary_expr(e).into(),
             ExprAst::Binding(e) => self.gen_ident_expr(e),
