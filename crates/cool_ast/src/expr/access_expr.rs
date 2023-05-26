@@ -1,4 +1,6 @@
-use crate::{AstGenerator, AstResult, BindingExprAst, ExprAst, ModuleExprAst, TyExprAst};
+use crate::{
+    AstGenerator, AstResult, BindingExprAst, DerefExprAst, ExprAst, ModuleExprAst, TyExprAst,
+};
 use cool_lexer::symbols::sym;
 use cool_parser::{AccessExpr, Ident};
 use cool_resolve::{tys, ExprId, FrameId, ItemKind, ResolveExpr, TyId, ValueTy};
@@ -94,49 +96,95 @@ impl AstGenerator<'_> {
                 }
             }
             base => {
-                let base_expr = self.resolve[base.expr_id()];
+                let base_ty_id = self.resolve[base.expr_id()].ty_id;
 
-                match &self.resolve[base_expr.ty_id].ty {
-                    ValueTy::Struct(struct_ty) => {
-                        let field_ty_id = struct_ty
-                            .fields
-                            .iter()
-                            .find(|(field, _)| *field == access_expr.ident.symbol)
-                            .map(|(_, ty_id)| *ty_id)
-                            .expect("no field found");
+                match self.resolve[base_ty_id].ty {
+                    ValueTy::Ptr(_) => {
+                        let new_base = self.gen_implicit_deref_expr(Box::new(base))?;
 
-                        let ty_id = self
-                            .resolve
-                            .resolve_direct_ty_id(field_ty_id, expected_ty_id)?;
-
-                        let expr_id = self.resolve.add_expr(ResolveExpr { ty_id, ..base_expr });
-
-                        StructAccessExprAst {
-                            expr_id,
-                            base: Box::new(base),
-                            ident: access_expr.ident,
-                        }
-                        .into()
+                        self.gen_value_access_expr(
+                            expected_ty_id,
+                            Box::new(new_base.into()),
+                            access_expr.ident,
+                        )?
                     }
-                    ValueTy::Array(_) => {
-                        if access_expr.ident.symbol != sym::LEN {
-                            panic!("unknown array access");
-                        }
-
-                        let ty_id = self
-                            .resolve
-                            .resolve_direct_ty_id(tys::USIZE, expected_ty_id)?;
-
-                        ArrayAccessExprAst {
-                            expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-                            base: Box::new(base),
-                            ident: access_expr.ident,
-                        }
-                        .into()
+                    _ => {
+                        self.gen_value_access_expr(
+                            expected_ty_id,
+                            Box::new(base),
+                            access_expr.ident,
+                        )?
                     }
-                    _ => todo!(),
                 }
             }
+        };
+
+        Ok(expr)
+    }
+
+    fn gen_implicit_deref_expr(&mut self, base: Box<ExprAst>) -> AstResult<DerefExprAst> {
+        let base_expr = self.resolve[base.expr_id()];
+        let base_ptr_ty = self.resolve[base_expr.ty_id].ty.as_ptr().unwrap();
+
+        let expr_id = self.resolve.add_expr(ResolveExpr::lvalue(
+            base_ptr_ty.pointee,
+            base_ptr_ty.is_mutable,
+        ));
+
+        Ok(DerefExprAst {
+            span: base.span(),
+            expr_id,
+            expr: base,
+        })
+    }
+
+    fn gen_value_access_expr(
+        &mut self,
+        expected_ty_id: TyId,
+        base: Box<ExprAst>,
+        ident: Ident,
+    ) -> AstResult<ExprAst> {
+        let base_expr = self.resolve[base.expr_id()];
+
+        let expr = match &self.resolve[base_expr.ty_id].ty {
+            ValueTy::Struct(struct_ty) => {
+                let field_ty_id = struct_ty
+                    .fields
+                    .iter()
+                    .find(|(field, _)| *field == ident.symbol)
+                    .map(|(_, ty_id)| *ty_id)
+                    .expect("no field found");
+
+                let ty_id = self
+                    .resolve
+                    .resolve_direct_ty_id(field_ty_id, expected_ty_id)?;
+
+                let expr_id = self.resolve.add_expr(ResolveExpr { ty_id, ..base_expr });
+
+                StructAccessExprAst {
+                    expr_id,
+                    base,
+                    ident,
+                }
+                .into()
+            }
+            ValueTy::Array(_) => {
+                if ident.symbol != sym::LEN {
+                    panic!("unknown array access");
+                }
+
+                let ty_id = self
+                    .resolve
+                    .resolve_direct_ty_id(tys::USIZE, expected_ty_id)?;
+
+                ArrayAccessExprAst {
+                    expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                    base,
+                    ident,
+                }
+                .into()
+            }
+            _ => todo!(),
         };
 
         Ok(expr)
