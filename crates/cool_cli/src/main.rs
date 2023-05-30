@@ -37,6 +37,7 @@ fn main() -> anyhow::Result<()> {
     };
 
     println!("p1 - parse:         success");
+    println!("{:#?}", package.consts.first().unwrap());
 
     cool_driver::p2_define_tys(&package, &mut resolve)?;
     println!("p2 - define tys:    success");

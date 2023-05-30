@@ -11,6 +11,7 @@ mod ident_expr;
 mod literal_expr;
 mod loop_expr;
 mod paren_expr;
+mod range_expr;
 mod struct_expr;
 mod subscript_expr;
 mod tuple_expr;
@@ -30,6 +31,7 @@ pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::loop_expr::*;
 pub use self::paren_expr::*;
+pub use self::range_expr::*;
 pub use self::struct_expr::*;
 pub use self::subscript_expr::*;
 pub use self::tuple_expr::*;
@@ -74,6 +76,7 @@ define_expr! {
     Ident,
     Literal,
     Loop,
+    Range,
     Paren,
     Struct,
     Subscript,
@@ -187,6 +190,7 @@ impl Parser<'_> {
             tk::KW_WHILE => self.parse_while_expr()?.into(),
             tk::KW_FOR => self.parse_for_expr()?.into(),
             tk::MINUS | tk::NOT | tk::AND => self.parse_unary_expr()?.into(),
+            tk::DOT_DOT => self.parse_range_expr()?.into(),
             TokenKind::Ident(_) => self.parse_ident_expr()?.into(),
             TokenKind::Prefix(_) | TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
             _ => {

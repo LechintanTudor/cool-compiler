@@ -177,6 +177,14 @@ impl<'a> GeneratedTys<'a> {
                         .as_basic_type_enum(),
                 )
             }
+            ValueTy::ManyPtr(many_ptr_ty) => {
+                Some(
+                    self.insert_ty(context, resolve, many_ptr_ty.pointee)
+                        .map(|pointee_ty| pointee_ty.ptr_type(Default::default()))
+                        .unwrap_or(self.i8_ptr_ty)
+                        .as_basic_type_enum(),
+                )
+            }
             ValueTy::Tuple(tuple_ty) => {
                 let fields = tuple_ty
                     .elems

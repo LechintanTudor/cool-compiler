@@ -3,13 +3,13 @@ use cool_lexer::tokens::{tk, Token};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
-pub struct SliceTy {
+pub struct ManyPtrTy {
     pub span: Span,
     pub is_mutable: bool,
-    pub elem: Box<Ty>,
+    pub pointee: Box<Ty>,
 }
 
-impl Section for SliceTy {
+impl Section for ManyPtrTy {
     #[inline]
     fn span(&self) -> Span {
         self.span
@@ -17,17 +17,18 @@ impl Section for SliceTy {
 }
 
 impl Parser<'_> {
-    pub fn continue_parse_slice_ty(&mut self, open_bracket: Token) -> ParseResult<SliceTy> {
+    pub fn continue_parse_many_ptr_ty(&mut self, open_bracket: Token) -> ParseResult<ManyPtrTy> {
         debug_assert_eq!(open_bracket.kind, tk::OPEN_BRACKET);
+        self.bump_expect(&tk::STAR)?;
         self.bump_expect(&tk::CLOSE_BRACKET)?;
 
         let is_mutable = self.bump_if_eq(tk::KW_MUT).is_some();
-        let elem = self.parse_ty()?;
+        let pointee = self.parse_ty()?;
 
-        Ok(SliceTy {
-            span: open_bracket.span.to(elem.span()),
+        Ok(ManyPtrTy {
+            span: open_bracket.span.to(pointee.span()),
             is_mutable,
-            elem: Box::new(elem),
+            pointee: Box::new(pointee),
         })
     }
 }

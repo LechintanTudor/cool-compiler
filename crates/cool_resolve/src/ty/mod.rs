@@ -149,6 +149,13 @@ impl TyContext {
                     ty,
                 }
             }
+            ValueTy::ManyPtr(_) => {
+                ResolveTy {
+                    size: self.primitives.ptr_size * 2,
+                    align: self.primitives.ptr_align,
+                    ty,
+                }
+            }
             ValueTy::Tuple(tuple_ty) => {
                 let mut offset = 0;
                 let mut align = 1;

@@ -1,16 +1,18 @@
 mod array_ty;
 mod fn_ty;
+mod many_ptr_ty;
 mod module_ty;
 mod path_ty;
-mod pointer_ty;
+mod ptr_ty;
 mod slice_ty;
 mod tuple_ty;
 
 pub use self::array_ty::*;
 pub use self::fn_ty::*;
+pub use self::many_ptr_ty::*;
 pub use self::module_ty::*;
 pub use self::path_ty::*;
-pub use self::pointer_ty::*;
+pub use self::ptr_ty::*;
 pub use self::slice_ty::*;
 pub use self::tuple_ty::*;
 use crate::{ParseResult, Parser};
@@ -22,6 +24,7 @@ use derive_more::From;
 pub enum Ty {
     Array(ArrayTy),
     Fn(FnTy),
+    ManyPtr(ManyPtrTy),
     Module(ModuleTy),
     Path(PathTy),
     Ptr(PtrTy),
@@ -30,11 +33,11 @@ pub enum Ty {
 }
 
 impl Section for Ty {
-    #[inline]
     fn span(&self) -> Span {
         match self {
             Ty::Array(ty) => ty.span(),
             Ty::Fn(ty) => ty.span(),
+            Ty::ManyPtr(ty) => ty.span(),
             Ty::Module(ty) => ty.span(),
             Ty::Path(ty) => ty.span(),
             Ty::Ptr(ty) => ty.span(),
@@ -70,11 +73,12 @@ impl Parser<'_> {
     }
 
     pub fn parse_array_or_slice_ty(&mut self) -> ParseResult<Ty> {
-        let start_token = self.bump_expect(&tk::OPEN_BRACKET)?;
+        let open_bracket = self.bump_expect(&tk::OPEN_BRACKET)?;
 
         let ty = match self.peek().kind {
-            tk::CLOSE_BRACKET => self.continue_parse_slice_ty(start_token)?.into(),
-            _ => self.continue_parse_array_ty(start_token)?.into(),
+            tk::CLOSE_BRACKET => self.continue_parse_slice_ty(open_bracket)?.into(),
+            tk::STAR => self.continue_parse_many_ptr_ty(open_bracket)?.into(),
+            _ => self.continue_parse_array_ty(open_bracket)?.into(),
         };
 
         Ok(ty)

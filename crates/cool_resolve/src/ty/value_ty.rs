@@ -14,6 +14,7 @@ pub enum ValueTy {
     Fn(FnTy),
     Array(ArrayTy),
     Ptr(PtrTy),
+    ManyPtr(ManyPtrTy),
     Slice(SliceTy),
     Tuple(TupleTy),
     Struct(StructTy),
@@ -84,6 +85,12 @@ pub struct ArrayTy {
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct PtrTy {
+    pub is_mutable: bool,
+    pub pointee: TyId,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct ManyPtrTy {
     pub is_mutable: bool,
     pub pointee: TyId,
 }

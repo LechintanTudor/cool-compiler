@@ -26,7 +26,7 @@ impl AstGenerator<'_> {
         expr: &SubscriptExpr,
     ) -> AstResult<SubscriptExprAst> {
         let base = self.gen_expr(frame_id, tys::INFER, &expr.base)?;
-        let index = self.gen_expr(frame_id, tys::USIZE, &expr.index)?;
+        let index = self.gen_expr(frame_id, tys::USIZE, &expr.subscript)?;
 
         let base_resolve_expr = self.resolve[base.expr_id()];
 

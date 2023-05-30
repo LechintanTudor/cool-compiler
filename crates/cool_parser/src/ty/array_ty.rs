@@ -17,13 +17,15 @@ impl Section for ArrayTy {
 }
 
 impl Parser<'_> {
-    pub(crate) fn continue_parse_array_ty(&mut self, start_token: Token) -> ParseResult<ArrayTy> {
+    pub(crate) fn continue_parse_array_ty(&mut self, open_bracket: Token) -> ParseResult<ArrayTy> {
+        debug_assert_eq!(open_bracket.kind, tk::OPEN_BRACKET);
+
         let len = self.parse_literal_expr()?;
         self.bump_expect(&tk::CLOSE_BRACKET)?;
         let elem = self.parse_ty()?;
 
         Ok(ArrayTy {
-            span: start_token.span.to(elem.span()),
+            span: open_bracket.span.to(elem.span()),
             len,
             elem: Box::new(elem),
         })
