@@ -8,6 +8,7 @@ mod fn_call_expr;
 mod for_expr;
 mod ident_expr;
 mod literal_expr;
+mod range_expr;
 mod struct_expr;
 mod subscript_expr;
 mod unary_expr;
@@ -23,6 +24,7 @@ pub use self::fn_call_expr::*;
 pub use self::for_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
+pub use self::range_expr::*;
 pub use self::struct_expr::*;
 pub use self::subscript_expr::*;
 pub use self::unary_expr::*;
@@ -61,6 +63,11 @@ macro_rules! define_expr_ast {
                             _ => None,
                         }
                     }
+
+                    #[inline]
+                    pub fn [<is_ $Variant:snake:lower>](&self) -> bool {
+                        matches!(self, Self::$Variant(_))
+                    }
                 )+
             }
 
@@ -90,6 +97,7 @@ define_expr_ast! {
     For,
     Literal,
     Module,
+    Range,
     Struct,
     StructAccess,
     Subscript,
@@ -99,11 +107,6 @@ define_expr_ast! {
 }
 
 impl ExprAst {
-    #[inline]
-    pub fn is_module(&self) -> bool {
-        matches!(self, Self::Module(_))
-    }
-
     #[inline]
     pub fn is_aggregate(&self) -> bool {
         matches!(
@@ -157,14 +160,15 @@ impl_gen_expr! {
     Block,
     Cond,
     Deref,
-    For,
     FnCall,
+    For,
     Ident,
     Literal,
     Paren,
-    Unary,
+    Range,
     Struct,
     Subscript,
+    Unary,
     While,
 }
 

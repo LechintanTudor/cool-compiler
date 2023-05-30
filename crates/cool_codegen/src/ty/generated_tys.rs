@@ -4,7 +4,7 @@ use cool_resolve::{tys, ResolveContext, StructTy, TyId, ValueTy};
 use inkwell::context::Context;
 use inkwell::targets::TargetData;
 use inkwell::types::{
-    BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType, IntType, PointerType, VoidType,
+    BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType, IntType, VoidType,
 };
 use rustc_hash::FxHashMap;
 use std::ops;
@@ -17,7 +17,6 @@ pub struct GeneratedTys<'a> {
     void_ty: VoidType<'a>,
     i8_ty: IntType<'a>,
     isize_ty: IntType<'a>,
-    i8_ptr_ty: PointerType<'a>,
 }
 
 impl<'a> GeneratedTys<'a> {
@@ -33,7 +32,6 @@ impl<'a> GeneratedTys<'a> {
             void_ty: context.void_type(),
             i8_ty: context.i8_type(),
             isize_ty: context.ptr_sized_int_type(target_data, Default::default()),
-            i8_ptr_ty: context.i8_type().ptr_type(Default::default()),
         };
 
         generated_tys.insert_builtin_tys(context);
@@ -170,21 +168,31 @@ impl<'a> GeneratedTys<'a> {
                     .map(BasicTypeEnum::from)
             }
             ValueTy::Ptr(ptr_ty) => {
-                Some(
-                    self.insert_ty(context, resolve, ptr_ty.pointee)
-                        .map(|pointee_ty| pointee_ty.ptr_type(Default::default()))
-                        .unwrap_or(self.i8_ptr_ty)
-                        .as_basic_type_enum(),
-                )
+                let ty = self
+                    .insert_ty(context, resolve, ptr_ty.pointee)
+                    .map(|pointee| pointee.ptr_type(Default::default()).as_basic_type_enum())
+                    .unwrap_or(self.isize_ty.as_basic_type_enum());
+
+                Some(ty)
             }
             ValueTy::ManyPtr(many_ptr_ty) => {
-                Some(
-                    self.insert_ty(context, resolve, many_ptr_ty.pointee)
-                        .map(|pointee_ty| pointee_ty.ptr_type(Default::default()))
-                        .unwrap_or(self.i8_ptr_ty)
-                        .as_basic_type_enum(),
-                )
+                let ty = self
+                    .insert_ty(context, resolve, many_ptr_ty.pointee)
+                    .map(|pointee| pointee.ptr_type(Default::default()).as_basic_type_enum())
+                    .unwrap_or(self.isize_ty.as_basic_type_enum());
+
+                Some(ty)
             }
+            ValueTy::Slice(slice_ty) => {
+                let elem_ptr_ty = self
+                    .insert_ty(context, resolve, slice_ty.elem)
+                    .map(|elem| elem.ptr_type(Default::default()).as_basic_type_enum())
+                    .unwrap_or(self.isize_ty.as_basic_type_enum());
+
+                let fields = [elem_ptr_ty, self.isize_ty.as_basic_type_enum()];
+                Some(context.struct_type(&fields, false).as_basic_type_enum())
+            }
+            ValueTy::Range => None,
             ValueTy::Tuple(tuple_ty) => {
                 let fields = tuple_ty
                     .elems
@@ -192,11 +200,8 @@ impl<'a> GeneratedTys<'a> {
                     .flat_map(|&elem| self.insert_ty(context, resolve, elem))
                     .collect::<Vec<_>>();
 
-                if fields.is_empty() {
-                    return None;
-                }
-
-                Some(context.struct_type(&fields, false).as_basic_type_enum())
+                (!fields.is_empty())
+                    .then(|| context.struct_type(&fields, false).as_basic_type_enum())
             }
             ty => todo!("Unimplemented ty: {:?}", ty),
         };

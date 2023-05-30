@@ -55,7 +55,11 @@ impl AstGenerator<'_> {
             }
             Ty::Ptr(ptr_ty) => {
                 let pointee = self.resolve_ty(scope, &ptr_ty.pointee)?;
-                self.resolve.mk_pointer(ptr_ty.is_mutable, pointee)
+                self.resolve.mk_ptr(ptr_ty.is_mutable, pointee)
+            }
+            Ty::ManyPtr(many_ptr_ty) => {
+                let pointee = self.resolve_ty(scope, &many_ptr_ty.pointee)?;
+                self.resolve.mk_many_ptr(many_ptr_ty.is_mutable, pointee)
             }
             Ty::Slice(slice_ty) => {
                 let elem = self.resolve_ty(scope, &slice_ty.elem)?;

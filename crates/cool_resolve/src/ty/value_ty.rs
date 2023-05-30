@@ -1,55 +1,58 @@
 use crate::{FnAbi, ItemId, TyId};
 use cool_lexer::symbols::Symbol;
 use derive_more::From;
+use paste::paste;
 use smallvec::SmallVec;
 use std::hash::{Hash, Hasher};
 
-#[derive(Clone, PartialEq, Eq, Hash, From, Debug)]
-pub enum ValueTy {
-    Unit,
-    Int(IntTy),
-    Float(FloatTy),
-    Bool,
-    Char,
-    Fn(FnTy),
-    Array(ArrayTy),
-    Ptr(PtrTy),
-    ManyPtr(ManyPtrTy),
-    Slice(SliceTy),
-    Tuple(TupleTy),
-    Struct(StructTy),
+macro_rules! define_value_ty {
+    { Simple { $($SimpleTy:ident,)* }, Wrapped { $($WrappedTy:ident,)* }, } => {
+        paste! {
+            #[derive(Clone, PartialEq, Eq, Hash, From, Debug)]
+            pub enum ValueTy {
+                $($SimpleTy,)*
+                $($WrappedTy([<$WrappedTy Ty>]),)*
+            }
+
+            impl ValueTy {
+                $(
+                    #[inline]
+                    pub fn [<as_ $WrappedTy:snake:lower>](&self) -> Option<&[<$WrappedTy Ty>]> {
+                        match self {
+                            Self::$WrappedTy(ty) => Some(ty),
+                            _ => None,
+                        }
+                    }
+                )*
+            }
+        }
+    };
+}
+
+define_value_ty! {
+    Simple {
+        Unit,
+        Bool,
+        Char,
+        Range,
+    },
+    Wrapped {
+        Int,
+        Float,
+        Fn,
+        Ptr,
+        ManyPtr,
+        Slice,
+        Array,
+        Tuple,
+        Struct,
+    },
 }
 
 impl ValueTy {
     #[inline]
-    pub fn as_fn(&self) -> Option<&FnTy> {
-        match self {
-            Self::Fn(fn_ty) => Some(fn_ty),
-            _ => None,
-        }
-    }
-
-    #[inline]
-    pub fn as_array(&self) -> Option<&ArrayTy> {
-        match self {
-            Self::Array(array_ty) => Some(array_ty),
-            _ => None,
-        }
-    }
-
-    #[inline]
-    pub fn as_ptr(&self) -> Option<&PtrTy> {
-        match self {
-            Self::Ptr(ptr_ty) => Some(ptr_ty),
-            _ => None,
-        }
-    }
-
-    pub fn as_struct(&self) -> Option<&StructTy> {
-        match self {
-            Self::Struct(struct_ty) => Some(struct_ty),
-            _ => None,
-        }
+    pub fn is_subscriptable(&self) -> bool {
+        matches!(self, Self::ManyPtr(_) | Self::Slice(_) | Self::Array(_))
     }
 }
 

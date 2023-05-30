@@ -58,9 +58,7 @@ impl AstGenerator<'_> {
                 let inner_expr = self.gen_expr(frame_id, tys::INFER, &unary_expr.expr)?;
                 let inner_resolve_expr = self.resolve[inner_expr.expr_id()];
 
-                let ty_id = self
-                    .resolve
-                    .mk_pointer(is_mutable, inner_resolve_expr.ty_id);
+                let ty_id = self.resolve.mk_ptr(is_mutable, inner_resolve_expr.ty_id);
 
                 let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
 

@@ -6,7 +6,7 @@ id_newtype!(TyId);
 impl TyId {
     #[inline]
     pub fn is_inferred(&self) -> bool {
-        tys::INFER.index() <= self.index() && self.index() <= tys::INFER_FLOAT.index()
+        tys::INFER.index() <= self.index() && self.index() <= tys::INFER_EMPTY_ARRAY.index()
     }
 
     #[inline]
@@ -37,5 +37,10 @@ impl TyId {
     #[inline]
     pub fn is_number(&self) -> bool {
         self.is_int() || self.is_float()
+    }
+
+    #[inline]
+    pub fn is_usize_range(&self) -> bool {
+        *self == tys::RANGE_FULL
     }
 }

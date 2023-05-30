@@ -22,7 +22,7 @@ pub struct ResolveTy {
 
 impl ResolveTy {
     #[inline]
-    pub fn is_zst(&self) -> bool {
+    pub fn is_zero_sized(&self) -> bool {
         self.size == 0
     }
 

@@ -79,20 +79,24 @@ builtins! {
 
         16: (BOOL, AnyTy::Value(ValueTy::Bool)),
         17: (CHAR, AnyTy::Value(ValueTy::Char)),
+
     }
 
     Nonitems {
-        18: (INFER, AnyTy::Infer(InferTy::Any)),
-        19: (INFER_NUMBER, AnyTy::Infer(InferTy::Number)),
-        20: (INFER_INT, AnyTy::Infer(InferTy::Int)),
-        21: (INFER_FLOAT, AnyTy::Infer(InferTy::Float)),
-        22: (INFER_EMPTY_ARRAY, AnyTy::Infer(InferTy::EmptyArray)),
+        18: (RANGE_FULL, AnyTy::Value(ValueTy::Range)),
 
-        23: (DIVERGE, AnyTy::Diverge),
+        19: (INFER, AnyTy::Infer(InferTy::Any)),
+        20: (INFER_NUMBER, AnyTy::Infer(InferTy::Number)),
+        21: (INFER_INT, AnyTy::Infer(InferTy::Int)),
+        22: (INFER_FLOAT, AnyTy::Infer(InferTy::Float)),
+        23: (INFER_SUBSCRIPT, AnyTy::Infer(InferTy::Subscript)),
+        24: (INFER_EMPTY_ARRAY, AnyTy::Infer(InferTy::EmptyArray)),
 
-        24: (MODULE, AnyTy::Item(ItemTy::Module)),
-        25: (TY, AnyTy::Item(ItemTy::Ty)),
-        26: (
+        25: (DIVERGE, AnyTy::Diverge),
+
+        26: (MODULE, AnyTy::Item(ItemTy::Module)),
+        27: (TY, AnyTy::Item(ItemTy::Ty)),
+        28: (
             C_STR,
             AnyTy::Value(ValueTy::Ptr(PtrTy { is_mutable: false, pointee: tys::I8 }))
         ),

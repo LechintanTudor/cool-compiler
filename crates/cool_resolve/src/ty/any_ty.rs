@@ -34,6 +34,7 @@ pub enum InferTy {
     Number,
     Int,
     Float,
+    Subscript,
     EmptyArray,
 }
 

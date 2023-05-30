@@ -83,17 +83,6 @@ impl ResolveContext {
     pub fn add_expr(&mut self, expr: ResolveExpr) -> ExprId {
         self.exprs.push(expr)
     }
-
-    #[inline]
-    pub fn set_expr_ty(&mut self, expr_id: ExprId, ty_id: TyId) {
-        let old_ty_id = self.exprs[expr_id].ty_id;
-
-        if old_ty_id != tys::INFER && old_ty_id != ty_id {
-            panic!("cannot set binding type");
-        }
-
-        self.exprs[expr_id].ty_id = ty_id;
-    }
 }
 
 impl ops::Index<ExprId> for ResolveContext {

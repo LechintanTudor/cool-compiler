@@ -151,8 +151,22 @@ impl TyContext {
             }
             ValueTy::ManyPtr(_) => {
                 ResolveTy {
+                    size: self.primitives.ptr_size,
+                    align: self.primitives.ptr_align,
+                    ty,
+                }
+            }
+            ValueTy::Slice(_) => {
+                ResolveTy {
                     size: self.primitives.ptr_size * 2,
                     align: self.primitives.ptr_align,
+                    ty,
+                }
+            }
+            ValueTy::Range => {
+                ResolveTy {
+                    size: 0,
+                    align: 1,
                     ty,
                 }
             }
@@ -192,7 +206,6 @@ impl TyContext {
                     ty: ValueTy::Struct(struct_ty),
                 }
             }
-            _ => todo!(),
         };
 
         Some(ty)
@@ -248,6 +261,16 @@ impl TyContext {
                     tys::INFER_INT => tys::F64,
                     tys::INFER_FLOAT => tys::F64,
                     _ if found_ty_id.is_float() => found_ty_id,
+                    _ => return None,
+                };
+
+                Some(ty_id)
+            }
+            tys::INFER_SUBSCRIPT => {
+                let ty_id = match found_ty_id {
+                    tys::USIZE => tys::USIZE,
+                    tys::RANGE_FULL => tys::RANGE_FULL,
+                    tys::INFER_INT => tys::USIZE,
                     _ => return None,
                 };
 

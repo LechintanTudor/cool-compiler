@@ -1,7 +1,7 @@
 use crate::{
-    tys, AnyTy, ArrayTy, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ModuleElem, ModuleId, PtrTy,
-    ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, ResolveTy, Scope, SliceTy,
-    TupleTy, TyId, TyMismatch, ValueTy,
+    tys, AnyTy, ArrayTy, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ManyPtrTy, ModuleElem, ModuleId,
+    PtrTy, ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, ResolveTy, Scope,
+    SliceTy, TupleTy, TyId, TyMismatch, ValueTy,
 };
 use cool_lexer::symbols::{sym, Symbol};
 use smallvec::SmallVec;
@@ -43,11 +43,21 @@ impl ResolveContext {
     }
 
     #[inline]
-    pub fn mk_pointer(&mut self, is_mutable: bool, pointee: TyId) -> TyId {
+    pub fn mk_ptr(&mut self, is_mutable: bool, pointee: TyId) -> TyId {
         let ty = ValueTy::Ptr(PtrTy {
             is_mutable,
             pointee,
         });
+        self.tys.get_or_insert(ty.into())
+    }
+
+    #[inline]
+    pub fn mk_many_ptr(&mut self, is_mutable: bool, pointee: TyId) -> TyId {
+        let ty = ValueTy::ManyPtr(ManyPtrTy {
+            is_mutable,
+            pointee,
+        });
+
         self.tys.get_or_insert(ty.into())
     }
 
@@ -125,7 +135,7 @@ impl ResolveContext {
 
     #[inline]
     pub fn ty_is_zero_sized(&self, ty_id: TyId) -> bool {
-        self.tys.get_resolve_ty(ty_id).unwrap().is_zst()
+        self.tys.get_resolve_ty(ty_id).unwrap().is_zero_sized()
     }
 }
 

@@ -34,12 +34,13 @@ impl<'a> CodeGenerator<'a> {
             ExprAst::FnCall(e) => self.gen_fn_call_expr(e).into(),
             ExprAst::For(e) => self.gen_for_expr(e).into(),
             ExprAst::Literal(e) => self.gen_literal_expr(e).into(),
+            ExprAst::Range(_) => Value::Void,
             ExprAst::Struct(e) => self.gen_struct_expr(e, memory),
             ExprAst::StructAccess(e) => self.gen_struct_access_expr(e),
             ExprAst::Subscript(e) => self.gen_subscript_expr(e),
             ExprAst::Unary(e) => self.gen_unary_expr(e),
             ExprAst::While(e) => self.gen_while_expr(e).into(),
-            _ => panic!("unsupported operation"),
+            _ => panic!("unsupported codegen operation: {:#?}", expr),
         }
     }
 
