@@ -1,5 +1,5 @@
 use crate::context::ResolveContext;
-use crate::{AnyTy, FloatTy, InferTy, IntTy, ItemTy, PrimitiveTyProps, PtrTy, ValueTy};
+use crate::{AnyTy, FloatTy, InferTy, IntTy, ItemTy, PrimitiveTys, PtrTy, ValueTy};
 use cool_lexer::symbols::sym;
 
 macro_rules! builtins {
@@ -34,7 +34,7 @@ macro_rules! builtins {
         }
 
         impl ResolveContext {
-            pub fn new(primitives: PrimitiveTyProps) -> Self {
+            pub fn new(primitives: PrimitiveTys) -> Self {
                 let mut resolve = ResolveContext::empty(primitives);
                 resolve.insert_root_module(sym::EMPTY).unwrap();
                 resolve.insert_builtin_ty(tys::UNIT, AnyTy::Value(ValueTy::Unit));

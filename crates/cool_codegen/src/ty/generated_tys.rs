@@ -1,5 +1,5 @@
 use crate::{mangle_item_path, BaiscTypeEnumOptionExt, TyFieldMap};
-use cool_lexer::symbols::Symbol;
+use cool_lexer::symbols::{sym, Symbol};
 use cool_resolve::{tys, ResolveContext, StructTy, TyId, ValueTy};
 use inkwell::context::Context;
 use inkwell::targets::TargetData;
@@ -120,9 +120,9 @@ impl<'a> GeneratedTys<'a> {
         struct_ty
             .fields
             .iter()
-            .flat_map(|(symbol, ty_id)| {
-                self.insert_ty(context, resolve, *ty_id)
-                    .map(|ty| (*symbol, ty))
+            .flat_map(|field| {
+                self.insert_ty(context, resolve, field.ty_id)
+                    .map(|ty| (field.symbol, ty))
             })
             .enumerate()
             .for_each(|(i, (symbol, ty))| {
@@ -184,6 +184,11 @@ impl<'a> GeneratedTys<'a> {
                 Some(ty)
             }
             ValueTy::Slice(slice_ty) => {
+                let mut field_map = FxHashMap::<Symbol, u32>::default();
+                field_map.insert(sym::PTR, 0);
+                field_map.insert(sym::LEN, 1);
+                self.field_maps.insert(ty_id, field_map.into());
+
                 let elem_ptr_ty = self
                     .insert_ty(context, resolve, slice_ty.elem)
                     .map(|elem| elem.ptr_type(Default::default()).as_basic_type_enum())
@@ -195,9 +200,9 @@ impl<'a> GeneratedTys<'a> {
             ValueTy::Range => None,
             ValueTy::Tuple(tuple_ty) => {
                 let fields = tuple_ty
-                    .elems
+                    .fields
                     .iter()
-                    .flat_map(|&elem| self.insert_ty(context, resolve, elem))
+                    .flat_map(|field| self.insert_ty(context, resolve, field.ty_id))
                     .collect::<Vec<_>>();
 
                 (!fields.is_empty())

@@ -185,5 +185,6 @@ define_symbols! {
 
         45: "main" as MAIN,
         46: "len" as LEN,
+        47: "ptr" as PTR,
     }
 }

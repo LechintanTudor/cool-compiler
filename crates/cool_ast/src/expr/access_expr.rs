@@ -151,8 +151,8 @@ impl AstGenerator<'_> {
                 let field_ty_id = struct_ty
                     .fields
                     .iter()
-                    .find(|(field, _)| *field == ident.symbol)
-                    .map(|(_, ty_id)| *ty_id)
+                    .find(|field| field.symbol == ident.symbol)
+                    .map(|field| field.ty_id)
                     .expect("no field found");
 
                 let ty_id = self

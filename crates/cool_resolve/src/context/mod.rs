@@ -17,7 +17,7 @@ pub use self::resolve_global::*;
 pub use self::resolve_local::*;
 pub use self::resolve_struct::*;
 pub use self::resolve_ty::*;
-use crate::{Binding, Frame, ItemKind, Module, PrimitiveTyProps, TyContext};
+use crate::{Binding, Frame, ItemKind, Module, PrimitiveTys, TyContext};
 use cool_arena::SliceArena;
 use cool_collections::IdIndexedVec;
 use cool_lexer::symbols::Symbol;
@@ -34,7 +34,7 @@ pub struct ResolveContext {
 }
 
 impl ResolveContext {
-    pub(crate) fn empty(primitives: PrimitiveTyProps) -> Self {
+    pub(crate) fn empty(primitives: PrimitiveTys) -> Self {
         Self {
             paths: SliceArena::new_leak(),
             items: Default::default(),

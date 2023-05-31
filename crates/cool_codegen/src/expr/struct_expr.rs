@@ -30,8 +30,8 @@ impl<'a> CodeGenerator<'a> {
                 .unwrap()
                 .fields
                 .iter()
-                .find(|(symbol, _)| *symbol == initializer.ident.symbol)
-                .and_then(|(_, ty_id)| self.tys[*ty_id])
+                .find(|field| field.symbol == initializer.ident.symbol)
+                .and_then(|field| self.tys[field.ty_id])
                 .unwrap();
 
             let field_ptr = self

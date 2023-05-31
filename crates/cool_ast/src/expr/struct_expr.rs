@@ -59,8 +59,8 @@ impl AstGenerator<'_> {
             let field_ty_id = struct_ty
                 .fields
                 .iter()
-                .find(|(symbol, _)| *symbol == initializer.ident.symbol)
-                .map(|(_, field_ty_id)| *field_ty_id)
+                .find(|field| field.symbol == initializer.ident.symbol)
+                .map(|field| field.ty_id)
                 .expect("unknown struct field in initializer");
 
             let is_duplicate = !used_fields.insert(initializer.ident.symbol);

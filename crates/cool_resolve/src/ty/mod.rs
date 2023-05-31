@@ -9,13 +9,13 @@ pub use self::resolve_ty::*;
 pub use self::ty_error::*;
 pub use self::ty_id::*;
 pub use self::value_ty::*;
-use crate::{tys, ItemId};
+use crate::tys;
 use cool_arena::Arena;
 use rustc_hash::FxHashMap;
 
 #[derive(Debug)]
 pub struct TyContext {
-    primitives: PrimitiveTyProps,
+    primitives: PrimitiveTys,
     tys: Arena<'static, TyId, AnyTy>,
     resolve_tys: FxHashMap<TyId, ResolveTy>,
 }
@@ -33,7 +33,7 @@ pub struct AssignTy {
 }
 
 impl TyContext {
-    pub fn new(primitives: PrimitiveTyProps) -> Self {
+    pub fn new(primitives: PrimitiveTys) -> Self {
         Self {
             primitives,
             tys: Arena::new_leak(),
@@ -60,155 +60,6 @@ impl TyContext {
             }
             _ => self.tys.get_or_insert(ty),
         }
-    }
-
-    pub fn declare_struct(&mut self, item_id: ItemId) -> TyId {
-        self.tys.get_or_insert(AnyTy::StructDecl(item_id))
-    }
-
-    pub fn define_struct(&mut self, struct_ty: StructTy) -> bool {
-        let ty_id = self
-            .tys
-            .get_id(&AnyTy::StructDecl(struct_ty.item_id))
-            .unwrap();
-
-        match self.value_ty_to_resolve_ty(ValueTy::Struct(struct_ty)) {
-            Some(resolve_ty) => {
-                self.resolve_tys.insert(ty_id, resolve_ty);
-                true
-            }
-            None => false,
-        }
-    }
-
-    fn value_ty_to_resolve_ty(&mut self, ty: ValueTy) -> Option<ResolveTy> {
-        let ty: ResolveTy = match ty {
-            ValueTy::Unit => {
-                ResolveTy {
-                    size: 0,
-                    align: 1,
-                    ty: ValueTy::Unit,
-                }
-            }
-            ValueTy::Int(int_ty) => {
-                let mk_int = |size, align| ResolveTy { size, align, ty };
-
-                match int_ty {
-                    IntTy::I8 | IntTy::U8 => mk_int(1, self.primitives.i8_align),
-                    IntTy::I16 | IntTy::U16 => mk_int(2, self.primitives.i16_align),
-                    IntTy::I32 | IntTy::U32 => mk_int(4, self.primitives.i32_align),
-                    IntTy::I64 | IntTy::U64 => mk_int(8, self.primitives.i64_align),
-                    IntTy::I128 | IntTy::U128 => mk_int(16, self.primitives.i128_align),
-                    IntTy::Isize | IntTy::Usize => {
-                        mk_int(self.primitives.ptr_size, self.primitives.ptr_align)
-                    }
-                }
-            }
-            ValueTy::Float(float_ty) => {
-                let mk_float = |size, align| ResolveTy { size, align, ty };
-
-                match float_ty {
-                    FloatTy::F32 => mk_float(4, self.primitives.f32_align),
-                    FloatTy::F64 => mk_float(8, self.primitives.f64_align),
-                }
-            }
-            ValueTy::Bool => {
-                ResolveTy {
-                    size: 1,
-                    align: 1,
-                    ty: ValueTy::Bool,
-                }
-            }
-            ValueTy::Char => {
-                ResolveTy {
-                    size: 4,
-                    align: 4,
-                    ty: ValueTy::Char,
-                }
-            }
-            ValueTy::Fn(_) => {
-                ResolveTy {
-                    size: self.primitives.ptr_size,
-                    align: self.primitives.ptr_align,
-                    ty,
-                }
-            }
-            ValueTy::Array(array_ty) => {
-                let elem = self.get_resolve_ty(array_ty.elem)?;
-
-                ResolveTy {
-                    size: elem.size * array_ty.len,
-                    align: elem.align,
-                    ty: ValueTy::Array(array_ty),
-                }
-            }
-            ValueTy::Ptr(_) => {
-                ResolveTy {
-                    size: self.primitives.ptr_size,
-                    align: self.primitives.ptr_align,
-                    ty,
-                }
-            }
-            ValueTy::ManyPtr(_) => {
-                ResolveTy {
-                    size: self.primitives.ptr_size,
-                    align: self.primitives.ptr_align,
-                    ty,
-                }
-            }
-            ValueTy::Slice(_) => {
-                ResolveTy {
-                    size: self.primitives.ptr_size * 2,
-                    align: self.primitives.ptr_align,
-                    ty,
-                }
-            }
-            ValueTy::Range => {
-                ResolveTy {
-                    size: 0,
-                    align: 1,
-                    ty,
-                }
-            }
-            ValueTy::Tuple(tuple_ty) => {
-                let mut offset = 0;
-                let mut align = 1;
-
-                for elem_ty_id in tuple_ty.elems.iter() {
-                    let elem_ty = self.get_resolve_ty(*elem_ty_id)?;
-                    offset += compute_padding_for_align(offset, elem_ty.align) + elem_ty.size;
-                    align = align.max(elem_ty.align);
-                }
-
-                let size = offset + compute_padding_for_align(offset, align);
-
-                ResolveTy {
-                    size,
-                    align,
-                    ty: ValueTy::Tuple(tuple_ty),
-                }
-            }
-            ValueTy::Struct(struct_ty) => {
-                let mut offset = 0;
-                let mut align = 1;
-
-                for (_, field_ty_id) in struct_ty.fields.iter() {
-                    let field_ty = self.get_resolve_ty(*field_ty_id)?;
-                    offset += compute_padding_for_align(offset, field_ty.align) + field_ty.size;
-                    align = align.max(field_ty.align);
-                }
-
-                let size = offset + compute_padding_for_align(offset, align);
-
-                ResolveTy {
-                    size,
-                    align,
-                    ty: ValueTy::Struct(struct_ty),
-                }
-            }
-        };
-
-        Some(ty)
     }
 
     #[inline]
@@ -307,15 +158,5 @@ impl TyContext {
                 }
             }
         }
-    }
-}
-
-fn compute_padding_for_align(offset: u64, align: u64) -> u64 {
-    let misalign = offset % align;
-
-    if misalign > 0 {
-        align - misalign
-    } else {
-        0
     }
 }

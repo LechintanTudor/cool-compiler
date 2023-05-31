@@ -1,7 +1,7 @@
 use crate::{
-    tys, AnyTy, ArrayTy, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ManyPtrTy, ModuleElem, ModuleId,
-    PtrTy, ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, ResolveTy, Scope,
-    SliceTy, TupleTy, TyId, TyMismatch, ValueTy,
+    tys, AnyTy, ArrayTy, Field, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ManyPtrTy, ModuleElem,
+    ModuleId, PtrTy, ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, ResolveTy,
+    Scope, SliceTy, TupleTy, TyId, TyMismatch, ValueTy,
 };
 use cool_lexer::symbols::{sym, Symbol};
 use smallvec::SmallVec;
@@ -67,17 +67,27 @@ impl ResolveContext {
         self.tys.get_or_insert(ty.into())
     }
 
-    pub fn mk_tuple<E>(&mut self, elems: E) -> TyId
+    pub fn mk_tuple<F>(&mut self, field_tys: F) -> TyId
     where
-        E: IntoIterator<Item = TyId>,
+        F: IntoIterator<Item = TyId>,
     {
-        let elems = SmallVec::from_iter(elems);
+        let fields = field_tys
+            .into_iter()
+            .enumerate()
+            .map(|(i, ty_id)| {
+                Field {
+                    offset: 0,
+                    symbol: Symbol::insert_u32(i as u32),
+                    ty_id,
+                }
+            })
+            .collect::<Vec<_>>();
 
-        if elems.is_empty() {
+        if fields.is_empty() {
             return tys::UNIT;
         }
 
-        let ty = ValueTy::Tuple(TupleTy { elems });
+        let ty = ValueTy::Tuple(TupleTy { fields });
         self.tys.get_or_insert(ty.into())
     }
 

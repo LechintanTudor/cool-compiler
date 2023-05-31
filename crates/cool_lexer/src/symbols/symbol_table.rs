@@ -28,12 +28,12 @@ impl<'a> SymbolTable<'a> {
     }
 
     #[inline]
-    pub fn get(&self, symbol: Symbol) -> &str {
-        &self.symbols[symbol]
+    pub fn get(&self, symbol: Symbol) -> &'a str {
+        self.symbols.get(symbol).unwrap()
     }
 
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item = &str> {
+    pub fn iter(&self) -> impl Iterator<Item = &'a str> + '_ {
         self.symbols.iter()
     }
 }

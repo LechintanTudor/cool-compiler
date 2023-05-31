@@ -1,5 +1,5 @@
 use crate::{CodeGeneratorContext, CompileError, CompileResult, InitError};
-use cool_resolve::{PrimitiveTyProps, ResolveContext};
+use cool_resolve::{PrimitiveTys, ResolveContext};
 use inkwell::context::Context;
 use inkwell::targets::{CodeModel, InitializationConfig, RelocMode, Target, TargetTriple};
 use inkwell::OptimizationLevel;
@@ -41,7 +41,7 @@ pub fn p0_init(target_triple: &str) -> CompileResult<(CodeGeneratorContext, Reso
     let target_data = target_machine.get_target_data();
     let ptr_type = context.ptr_sized_int_type(&target_data, None);
 
-    let primitives = PrimitiveTyProps {
+    let primitives = PrimitiveTys {
         i8_align: target_data.get_preferred_alignment(&context.i8_type()) as _,
         i16_align: target_data.get_preferred_alignment(&context.i16_type()) as _,
         i32_align: target_data.get_preferred_alignment(&context.i32_type()) as _,

@@ -43,8 +43,8 @@ impl ResolveContext {
             .as_ty_id()
             .expect("item is not a type");
 
-        for field_ty_id in struct_ty.fields.iter().map(|(_, field_ty_id)| *field_ty_id) {
-            match self.ty_contains_ty(field_ty_id, ty_id) {
+        for field in struct_ty.fields.iter() {
+            match self.ty_contains_ty(field.ty_id, ty_id) {
                 Some(true) => {
                     return Err(StructHasInfiniteSize {
                         path: self.paths[struct_ty.item_id].into(),
@@ -55,8 +55,7 @@ impl ResolveContext {
             }
         }
 
-        self.tys.define_struct(struct_ty);
-        Ok(true)
+        Ok(self.tys.define_struct(struct_ty))
     }
 
     fn ty_contains_ty(&self, haysack_ty_id: TyId, needle_ty_id: TyId) -> Option<bool> {
@@ -70,10 +69,11 @@ impl ResolveContext {
 
             match &self.tys.get_resolve_ty(ty_id)?.ty {
                 ValueTy::Array(array_ty) => tys_to_check.push(array_ty.elem),
-                ValueTy::Tuple(tuple_ty) => tys_to_check.extend(tuple_ty.elems.iter().copied()),
+                ValueTy::Tuple(tuple_ty) => {
+                    tys_to_check.extend(tuple_ty.fields.iter().map(|field| field.ty_id))
+                }
                 ValueTy::Struct(struct_ty) => {
-                    tys_to_check
-                        .extend(struct_ty.fields.iter().map(|(_, field_ty_id)| *field_ty_id))
+                    tys_to_check.extend(struct_ty.fields.iter().map(|field| field.ty_id))
                 }
                 _ => (),
             }
