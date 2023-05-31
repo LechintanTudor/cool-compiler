@@ -83,6 +83,11 @@ impl ResolveContext {
     pub fn add_expr(&mut self, expr: ResolveExpr) -> ExprId {
         self.exprs.push(expr)
     }
+
+    #[inline]
+    pub fn get_expr_ty_id(&self, expr_id: ExprId) -> TyId {
+        self.exprs[expr_id].ty_id
+    }
 }
 
 impl ops::Index<ExprId> for ResolveContext {

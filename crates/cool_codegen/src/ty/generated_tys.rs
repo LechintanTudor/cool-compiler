@@ -199,14 +199,28 @@ impl<'a> GeneratedTys<'a> {
             }
             ValueTy::Range => None,
             ValueTy::Tuple(tuple_ty) => {
-                let fields = tuple_ty
+                let defined_fields = tuple_ty
                     .fields
                     .iter()
-                    .flat_map(|field| self.insert_ty(context, resolve, field.ty_id))
+                    .flat_map(|field| {
+                        self.insert_ty(context, resolve, field.ty_id)
+                            .map(|ty| (field, ty))
+                    })
                     .collect::<Vec<_>>();
 
-                (!fields.is_empty())
-                    .then(|| context.struct_type(&fields, false).as_basic_type_enum())
+                let field_map: TyFieldMap = defined_fields
+                    .iter()
+                    .enumerate()
+                    .map(|(i, (field, _))| (field.symbol, i as u32))
+                    .collect::<FxHashMap<_, _>>()
+                    .into();
+
+                self.field_maps.insert(ty_id, field_map);
+
+                let field_tys = defined_fields.iter().map(|(_, ty)| *ty).collect::<Vec<_>>();
+
+                (!field_tys.is_empty())
+                    .then(|| context.struct_type(&field_tys, false).as_basic_type_enum())
             }
             ty => todo!("Unimplemented ty: {:?}", ty),
         };

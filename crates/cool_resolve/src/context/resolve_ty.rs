@@ -110,6 +110,11 @@ impl ResolveContext {
         self.tys.get_or_insert(AnyTy::StructDecl(item_id))
     }
 
+    #[inline]
+    pub fn get_resolve_ty(&self, ty_id: TyId) -> Option<&ResolveTy> {
+        self.tys.get_resolve_ty(ty_id)
+    }
+
     pub fn resolve_ty_from_path<'a, P>(&self, scope: Scope, path: P) -> ResolveResult<TyId>
     where
         P: Into<ItemPath<'a>>,

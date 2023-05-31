@@ -9,6 +9,7 @@ mod for_expr;
 mod literal_expr;
 mod struct_expr;
 mod subscript_expr;
+mod tuple_expr;
 mod unary_expr;
 mod while_expr;
 
@@ -37,6 +38,7 @@ impl<'a> CodeGenerator<'a> {
             ExprAst::Range(_) => Value::Void,
             ExprAst::Struct(e) => self.gen_struct_expr(e, memory),
             ExprAst::StructAccess(e) => self.gen_struct_access_expr(e),
+            ExprAst::Tuple(e) => self.gen_tuple_expr(e, memory),
             ExprAst::Subscript(e) => self.gen_subscript_expr(e),
             ExprAst::Unary(e) => self.gen_unary_expr(e),
             ExprAst::While(e) => self.gen_while_expr(e).into(),

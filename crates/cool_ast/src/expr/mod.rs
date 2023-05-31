@@ -11,6 +11,7 @@ mod literal_expr;
 mod range_expr;
 mod struct_expr;
 mod subscript_expr;
+mod tuple_expr;
 mod unary_expr;
 mod while_expr;
 
@@ -27,6 +28,7 @@ pub use self::literal_expr::*;
 pub use self::range_expr::*;
 pub use self::struct_expr::*;
 pub use self::subscript_expr::*;
+pub use self::tuple_expr::*;
 pub use self::unary_expr::*;
 pub use self::while_expr::*;
 use crate::{AstError, AstGenerator, AstResult};
@@ -101,6 +103,7 @@ define_expr_ast! {
     Struct,
     StructAccess,
     Subscript,
+    Tuple,
     Ty,
     Unary,
     While,
@@ -168,6 +171,7 @@ impl_gen_expr! {
     Range,
     Struct,
     Subscript,
+    Tuple,
     Unary,
     While,
 }
