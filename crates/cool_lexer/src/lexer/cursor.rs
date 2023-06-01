@@ -37,14 +37,8 @@ impl<'a> Cursor<'a> {
         }
     }
 
-    pub fn first(&self) -> char {
+    pub fn peek(&self) -> char {
         self.chars.clone().next().unwrap_or(EOF_CHAR)
-    }
-
-    pub fn second(&self) -> char {
-        let mut chars = self.chars.clone();
-        chars.next();
-        chars.next().unwrap_or(EOF_CHAR)
     }
 
     pub fn is_eof(&self) -> bool {
@@ -59,7 +53,7 @@ impl<'a> Cursor<'a> {
     where
         P: FnOnce(char) -> bool,
     {
-        if !predicate(self.first()) || self.is_eof() {
+        if !predicate(self.peek()) || self.is_eof() {
             return false;
         }
 
@@ -71,8 +65,19 @@ impl<'a> Cursor<'a> {
     where
         P: FnMut(char) -> bool,
     {
-        while predicate(self.first()) && !self.is_eof() {
+        while predicate(self.peek()) && !self.is_eof() {
             self.bump();
+        }
+    }
+
+    pub fn consume_for<P, F>(&mut self, predicate: P, mut function: F)
+    where
+        P: Fn(char) -> bool,
+        F: FnMut(char),
+    {
+        while predicate(self.peek()) && !self.is_eof() {
+            let char = self.bump();
+            function(char);
         }
     }
 }

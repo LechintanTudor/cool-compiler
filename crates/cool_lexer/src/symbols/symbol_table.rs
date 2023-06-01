@@ -1,46 +1,65 @@
-use cool_arena::{StrArena, UnsafeBump};
-use cool_collections::id_newtype;
+use crate::symbols::sym;
+use cool_arena::StrArena;
+use cool_collections::{id_newtype, Id, SmallString};
+use once_cell::sync::Lazy;
 use std::fmt;
+use std::fmt::Write;
+use std::sync::Mutex;
 
 id_newtype!(Symbol);
 
-pub struct SymbolTable<'a> {
-    symbols: StrArena<'a, Symbol>,
-}
+pub(crate) type SymbolTable<'a> = StrArena<'a, Symbol>;
 
-impl<'a> SymbolTable<'a> {
-    pub(crate) unsafe fn new(bump: &'a UnsafeBump) -> Self {
-        Self {
-            symbols: StrArena::new(bump),
+static SYMBOL_TABLE: Lazy<Mutex<SymbolTable<'static>>> = Lazy::new(|| {
+    let mut symbols = SymbolTable::new_leak();
+    sym::intern_symbols(&mut symbols);
+    Mutex::new(symbols)
+});
+
+impl Symbol {
+    #[inline]
+    pub fn insert(symbol_str: &str) -> Symbol {
+        SYMBOL_TABLE.lock().unwrap().get_or_insert(symbol_str)
+    }
+
+    pub fn insert_u32(value: u32) -> Symbol {
+        if value <= 9 {
+            return sym::ALL_DIGITS[value as usize];
+        }
+
+        let mut value_str = SmallString::new();
+        write!(&mut value_str, "{}", value).unwrap();
+        Self::insert(&value_str)
+    }
+
+    #[inline]
+    pub fn is_keyword(&self) -> bool {
+        *self <= sym::KW_WHILE
+    }
+
+    #[inline]
+    pub fn is_bool_literal(&self) -> bool {
+        *self == sym::KW_FALSE || *self == sym::KW_TRUE
+    }
+
+    #[inline]
+    pub fn is_known_suffix(&self) -> bool {
+        *self >= sym::I8 && *self <= sym::F64
+    }
+
+    #[inline]
+    pub fn as_str(&self) -> &'static str {
+        if *self <= sym::WILDCARD {
+            sym::ALL_REPRS[self.index()]
+        } else {
+            SYMBOL_TABLE.lock().unwrap().get(*self).unwrap()
         }
     }
-
-    #[inline]
-    pub(crate) fn insert_known(&mut self, expected_symbol: Symbol, symbol_str: &str) {
-        let symbol = self.symbols.insert_if_not_exists(symbol_str).unwrap();
-
-        assert_eq!(symbol, expected_symbol);
-    }
-
-    #[inline]
-    pub fn insert(&mut self, symbol_str: &str) -> Symbol {
-        self.symbols.get_or_insert(symbol_str)
-    }
-
-    #[inline]
-    pub fn get(&self, symbol: Symbol) -> &'a str {
-        self.symbols.get(symbol).unwrap()
-    }
-
-    #[inline]
-    pub fn iter(&self) -> impl Iterator<Item = &'a str> + '_ {
-        self.symbols.iter()
-    }
 }
 
-impl fmt::Debug for SymbolTable<'_> {
+impl fmt::Display for Symbol {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(&self.symbols, f)
+        f.write_str(self.as_str())
     }
 }

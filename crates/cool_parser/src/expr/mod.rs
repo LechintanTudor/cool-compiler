@@ -199,8 +199,8 @@ impl Parser<'_> {
                     tk::OPEN_BRACE,
                     tk::OPEN_PAREN,
                     tk::KW_RETURN,
-                    tk::ANY_IDENT,
-                    tk::ANY_LITERAL,
+                    tk::DIAG_IDENT,
+                    tk::DIAG_LITERAL,
                 ]);
             }
         };
@@ -264,7 +264,7 @@ impl Parser<'_> {
                 }
                 .into()
             }
-            _ => self.error(next_token, &[tk::ANY_IDENT, tk::STAR])?,
+            _ => self.error(next_token, &[tk::DIAG_IDENT, tk::STAR])?,
         };
 
         Ok(expr)

@@ -27,7 +27,7 @@ impl Parser<'_> {
                 let next_token = self.bump();
 
                 let TokenKind::Literal(literal) = next_token.kind else {
-                    return self.error(next_token, &[tk::ANY_LITERAL]);
+                    return self.error(next_token, &[tk::DIAG_LITERAL]);
                 };
 
                 (Some(symbol), literal, next_token)
@@ -61,7 +61,7 @@ impl Parser<'_> {
                     (None, literal, start_token)
                 }
             }
-            _ => return self.error(start_token, &[tk::ANY_IDENT, tk::ANY_LITERAL]),
+            _ => return self.error(start_token, &[tk::DIAG_IDENT, tk::DIAG_LITERAL]),
         };
 
         Ok(LiteralExpr {

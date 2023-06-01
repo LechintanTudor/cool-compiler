@@ -1,16 +1,9 @@
-use std::error::Error;
+use derive_more::{Display, Error};
 use std::fmt;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Error, Display, Debug)]
+#[display(fmt = "invalid punctuation")]
 pub struct InvalidPunctuation;
-
-impl Error for InvalidPunctuation {}
-
-impl fmt::Display for InvalidPunctuation {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "invalid punctuation")
-    }
-}
 
 macro_rules! Punctuation {
     { $($variant:ident: $display:literal $(from $source:literal)?,)+ } => {

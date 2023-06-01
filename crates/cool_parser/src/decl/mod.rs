@@ -51,7 +51,7 @@ impl Parser<'_> {
         let kind = match self.peek().kind {
             TokenKind::Ident(_) => DeclKind::Item(self.parse_item_decl()?),
             tk::KW_USE => DeclKind::Use(self.parse_use_decl()?),
-            _ => self.peek_error(&[tk::KW_USE, tk::ANY_IDENT])?,
+            _ => self.peek_error(&[tk::KW_USE, tk::DIAG_IDENT])?,
         };
 
         let end_token = self.bump_expect(&tk::SEMICOLON)?;

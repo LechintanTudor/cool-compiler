@@ -20,7 +20,7 @@ impl Parser<'_> {
     pub fn parse_ident(&mut self) -> ParseResult<Ident> {
         let token = self.bump();
         let TokenKind::Ident(symbol) = token.kind else {
-            return self.error(token, &[tk::ANY_IDENT]);
+            return self.error(token, &[tk::DIAG_IDENT]);
         };
 
         Ok(Ident {
@@ -39,7 +39,7 @@ impl Parser<'_> {
             _ => {
                 self.error(
                     token,
-                    &[tk::ANY_IDENT, tk::KW_CRATE, tk::KW_SUPER, tk::KW_SELF],
+                    &[tk::DIAG_IDENT, tk::KW_CRATE, tk::KW_SUPER, tk::KW_SELF],
                 )?
             }
         };

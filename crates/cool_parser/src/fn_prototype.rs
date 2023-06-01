@@ -62,7 +62,7 @@ impl Parser<'_> {
                     },
                 )
             }
-            _ => self.error(start_token, &[tk::KW_MUT, tk::ANY_IDENT])?,
+            _ => self.error(start_token, &[tk::KW_MUT, tk::DIAG_IDENT])?,
         };
 
         let ty = if self.bump_if_eq(tk::COLON).is_some() {

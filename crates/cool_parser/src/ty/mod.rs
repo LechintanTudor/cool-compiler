@@ -61,7 +61,7 @@ impl Parser<'_> {
                     tk::KW_MODULE,
                     tk::KW_EXTERN,
                     tk::KW_FN,
-                    tk::ANY_IDENT,
+                    tk::DIAG_IDENT,
                     tk::STAR,
                     tk::OPEN_PAREN,
                     tk::OPEN_BRACKET,

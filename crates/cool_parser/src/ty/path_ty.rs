@@ -37,7 +37,7 @@ impl Parser<'_> {
             _ => {
                 return self.error(
                     token,
-                    &[tk::ANY_IDENT, tk::KW_CRATE, tk::KW_SUPER, tk::KW_SELF],
+                    &[tk::DIAG_IDENT, tk::KW_CRATE, tk::KW_SUPER, tk::KW_SELF],
                 )
             }
         };

@@ -41,7 +41,7 @@ impl AstGenerator<'_> {
     ) -> AstResult<ArrayExprAst> {
         let (ty_id, elems) = match expr.elems.split_first() {
             Some((first_elem, other_elems)) => {
-                let expected_elem_ty_id = self.get_expected_elem_ty_id(expected_ty_id);
+                let expected_elem_ty_id = self.get_expected_array_elem_ty_id(expected_ty_id);
                 let first_elem = self.gen_expr(frame_id, expected_elem_ty_id, first_elem)?;
                 let elem_ty_id = self.resolve[first_elem.expr_id()].ty_id;
 
@@ -74,7 +74,7 @@ impl AstGenerator<'_> {
         let len_expr = self.gen_literal_expr(frame_id, tys::USIZE, &expr.len)?;
         let len = len_expr.as_int_value().unwrap() as u64;
 
-        let expected_elem_ty_id = self.get_expected_elem_ty_id(expected_ty_id);
+        let expected_elem_ty_id = self.get_expected_array_elem_ty_id(expected_ty_id);
         let elem = self.gen_expr(frame_id, expected_elem_ty_id, &expr.elem)?;
         let elem_ty_id = self.resolve[elem.expr_id()].ty_id;
 
@@ -89,15 +89,15 @@ impl AstGenerator<'_> {
         })
     }
 
-    fn get_expected_elem_ty_id(&self, expected_array_ty_id: TyId) -> TyId {
-        (!expected_array_ty_id.is_inferred())
-            .then(|| {
-                self.resolve[expected_array_ty_id]
-                    .ty
-                    .as_array()
-                    .map(|array_ty| array_ty.elem)
-                    .unwrap_or(tys::INFER)
-            })
+    fn get_expected_array_elem_ty_id(&self, expected_array_ty_id: TyId) -> TyId {
+        if expected_array_ty_id.is_inferred() {
+            return tys::INFER;
+        }
+
+        self.resolve[expected_array_ty_id]
+            .ty
+            .as_array()
+            .map(|array_ty| array_ty.elem)
             .unwrap_or(tys::INFER)
     }
 }

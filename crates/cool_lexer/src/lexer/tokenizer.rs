@@ -25,7 +25,7 @@ impl<'a> Tokenizer<'a> {
     pub fn next_token(&mut self) -> Token {
         let (offset, first_char) = self.cursor.bump_with_offset();
 
-        let token_kind = if first_char == '/' && self.cursor.first() == '/' {
+        let token_kind = if first_char == '/' && self.cursor.peek() == '/' {
             self.cursor.bump();
             self.line_comment()
         } else if is_ident_start(first_char) {
@@ -36,7 +36,7 @@ impl<'a> Tokenizer<'a> {
         } else if first_char.is_ascii_digit() {
             self.buffer.push(first_char);
 
-            match self.cursor.first() {
+            match self.cursor.peek() {
                 'b' => {
                     self.buffer.push(self.cursor.bump());
                     self.binary_number()
@@ -70,14 +70,8 @@ impl<'a> Tokenizer<'a> {
     }
 
     fn identifier(&mut self) -> TokenKind {
-        self.cursor.consume_while(|char| {
-            if !is_ident_continue(char) {
-                return false;
-            }
-
-            self.buffer.push(char);
-            true
-        });
+        self.cursor
+            .consume_for(is_ident_continue, |char| self.buffer.push(char));
 
         let symbol = Symbol::insert(&self.buffer);
 
@@ -91,7 +85,7 @@ impl<'a> Tokenizer<'a> {
                 TokenKind::Keyword(symbol)
             }
         } else {
-            if can_have_prefix(self.cursor.first()) {
+            if can_have_prefix(self.cursor.peek()) {
                 TokenKind::Prefix(symbol)
             } else {
                 TokenKind::Ident(symbol)
@@ -105,7 +99,7 @@ impl<'a> Tokenizer<'a> {
     fn punctuation(&mut self, start: Punctuation) -> TokenKind {
         let mut punctuation = start;
 
-        while let Ok(next) = Punctuation::try_from(self.cursor.first()) {
+        while let Ok(next) = Punctuation::try_from(self.cursor.peek()) {
             match punctuation.join(next) {
                 Ok(joined) => {
                     self.cursor.bump();
@@ -172,14 +166,10 @@ impl<'a> Tokenizer<'a> {
     where
         F: Fn(char) -> bool,
     {
-        self.cursor.consume_while(|char| {
-            if is_digit_allowed(char) || char == '_' {
-                self.buffer.push(char);
-                true
-            } else {
-                false
-            }
-        });
+        self.cursor.consume_for(
+            |char| is_digit_allowed(char) || char == '_',
+            |char| self.buffer.push(char),
+        );
 
         let has_suffix = self.cursor.consume_if(|char| {
             if is_ident_start(char) {
@@ -191,14 +181,8 @@ impl<'a> Tokenizer<'a> {
         });
 
         if has_suffix {
-            self.cursor.consume_while(|char| {
-                if is_ident_continue(char) {
-                    self.buffer.push(char);
-                    true
-                } else {
-                    false
-                }
-            });
+            self.cursor
+                .consume_for(is_ident_continue, |char| self.buffer.push(char));
         }
 
         let symbol = Symbol::insert(&self.buffer);
@@ -269,7 +253,7 @@ impl<'a> Tokenizer<'a> {
 
     fn whitespace(&mut self) -> TokenKind {
         loop {
-            let char = self.cursor.first();
+            let char = self.cursor.peek();
 
             if !char.is_whitespace() {
                 break;
