@@ -1,5 +1,5 @@
 use crate::{mangle_item_path, BaiscTypeEnumOptionExt, TyFieldMap};
-use cool_lexer::symbols::{sym, Symbol};
+use cool_lexer::{sym, Symbol};
 use cool_resolve::{tys, ResolveContext, StructTy, TyId, ValueTy};
 use inkwell::context::Context;
 use inkwell::targets::TargetData;

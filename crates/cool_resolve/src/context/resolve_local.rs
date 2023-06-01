@@ -1,6 +1,6 @@
 use crate::context::{FrameId, ItemKind, ModuleId, ResolveContext, ResolveError, ResolveResult};
 use crate::{ResolveErrorKind, Scope};
-use cool_lexer::symbols::Symbol;
+use cool_lexer::Symbol;
 
 impl ResolveContext {
     pub fn resolve_local(&self, frame_id: FrameId, symbol: Symbol) -> ResolveResult<ItemKind> {

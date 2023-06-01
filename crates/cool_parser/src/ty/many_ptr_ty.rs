@@ -1,5 +1,5 @@
 use crate::{ParseResult, Parser, Ty};
-use cool_lexer::tokens::{tk, Token};
+use cool_lexer::{tk, Token};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]

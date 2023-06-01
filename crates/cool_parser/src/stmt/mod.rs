@@ -8,7 +8,7 @@ pub use self::decl_stmt::*;
 pub use self::defer_stmt::*;
 pub use self::return_stmt::*;
 use crate::{Expr, ParseResult, Parser};
-use cool_lexer::tokens::tk;
+use cool_lexer::tk;
 use cool_span::{Section, Span};
 use derive_more::From;
 

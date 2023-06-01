@@ -29,8 +29,7 @@ pub use self::path::*;
 pub use self::pattern::*;
 pub use self::stmt::*;
 pub use self::ty::*;
-use cool_lexer::lexer::TokenStream;
-use cool_lexer::tokens::{Token, TokenKind};
+use cool_lexer::{Token, TokenKind, TokenStream};
 
 pub struct Parser<'a> {
     token_stream: TokenStream<'a>,

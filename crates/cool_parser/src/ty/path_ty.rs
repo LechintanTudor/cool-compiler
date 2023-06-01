@@ -1,6 +1,5 @@
 use crate::{Ident, IdentVec, ParseResult, Parser};
-use cool_lexer::symbols::sym;
-use cool_lexer::tokens::{tk, TokenKind};
+use cool_lexer::{sym, tk, TokenKind};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]

@@ -3,7 +3,7 @@ use crate::{
     ModuleId, PtrTy, ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, ResolveTy,
     Scope, SliceTy, TupleTy, TyId, TyMismatch, ValueTy,
 };
-use cool_lexer::symbols::{sym, Symbol};
+use cool_lexer::{sym, Symbol};
 use smallvec::SmallVec;
 use std::ops;
 

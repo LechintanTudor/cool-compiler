@@ -9,7 +9,18 @@ pub trait Id: Copy + Eq + From<NonZeroU32> {
 #[macro_export]
 macro_rules! id_newtype {
     ($Wrapper:ident) => {
-        #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+        id_newtype!($Wrapper; no_debug);
+
+        impl std::fmt::Debug for $Wrapper {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.debug_tuple(stringify!($Wrapper))
+                    .field(&self.0)
+                    .finish()
+            }
+        }
+    };
+    ($Wrapper:ident; no_debug) => {
+        #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
         pub struct $Wrapper(std::num::NonZeroU32);
 
         impl $Wrapper {
@@ -20,7 +31,7 @@ macro_rules! id_newtype {
 
             #[inline]
             pub const fn dummy() -> Self {
-                unsafe { Self(std::num::NonZeroU32::new_unchecked(u32::MAX)) }
+                Self(std::num::NonZeroU32::MAX)
             }
         }
 
@@ -37,7 +48,7 @@ macro_rules! id_newtype {
                 (self.0.get() - 1) as usize
             }
         }
-    };
+    }
 }
 
 #[derive(Clone)]

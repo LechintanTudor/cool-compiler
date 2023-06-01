@@ -1,6 +1,6 @@
 use crate::{BuilderExt, CodeGenerator, LoadedValue, Value};
 use cool_ast::{ArrayAccessExprAst, StructAccessExprAst};
-use cool_lexer::symbols::sym;
+use cool_lexer::sym;
 use inkwell::values::BasicValue;
 
 impl<'a> CodeGenerator<'a> {

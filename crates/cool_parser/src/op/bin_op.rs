@@ -1,4 +1,4 @@
-use cool_lexer::tokens::{Punctuation, TokenKind};
+use cool_lexer::{Punctuation, TokenKind};
 use derive_more::From;
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]

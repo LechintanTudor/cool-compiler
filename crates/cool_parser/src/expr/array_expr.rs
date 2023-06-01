@@ -1,6 +1,6 @@
 use crate::expr::Expr;
 use crate::{LiteralExpr, ParseResult, Parser};
-use cool_lexer::tokens::{tk, Token};
+use cool_lexer::{tk, Token};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]

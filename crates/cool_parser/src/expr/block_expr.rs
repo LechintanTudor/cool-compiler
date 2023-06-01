@@ -1,5 +1,5 @@
 use crate::{BlockElem, Expr, ParseResult, Parser, Stmt};
-use cool_lexer::tokens::tk;
+use cool_lexer::tk;
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]

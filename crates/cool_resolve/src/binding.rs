@@ -1,5 +1,5 @@
 use crate::TyId;
-use cool_lexer::symbols::Symbol;
+use cool_lexer::Symbol;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Mutability {

@@ -1,7 +1,7 @@
 use crate::{
     AstGenerator, AstResult, BindingExprAst, DerefExprAst, ExprAst, ModuleExprAst, TyExprAst,
 };
-use cool_lexer::symbols::sym;
+use cool_lexer::sym;
 use cool_parser::{AccessExpr, Ident};
 use cool_resolve::{tys, ExprId, FrameId, ItemKind, ResolveExpr, TyId, ValueTy};
 use cool_span::{Section, Span};

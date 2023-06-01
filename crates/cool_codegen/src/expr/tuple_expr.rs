@@ -1,6 +1,6 @@
 use crate::{CodeGenerator, MemoryValue, Value};
 use cool_ast::TupleExprAst;
-use cool_lexer::symbols::Symbol;
+use cool_lexer::Symbol;
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_tuple_expr(

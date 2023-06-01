@@ -2,7 +2,7 @@ use crate::paths::ModulePaths;
 use crate::{
     Alias, CompileError, CompileErrorBundle, CompileOptions, Const, ExternFn, Package, Struct,
 };
-use cool_lexer::symbols::Symbol;
+use cool_lexer::Symbol;
 use cool_parser::{DeclKind, Item, ModuleContent, ModuleKind};
 use cool_resolve::{
     ItemPathBuf, ModuleId, Mutability, ResolveContext, ResolveError, ResolveErrorKind,

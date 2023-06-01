@@ -1,4 +1,4 @@
-use cool_lexer::symbols::Symbol;
+use cool_lexer::Symbol;
 use cool_resolve::{FnAbi, ResolveError, TyId, TyMismatch};
 use derive_more::{Display, Error, From};
 

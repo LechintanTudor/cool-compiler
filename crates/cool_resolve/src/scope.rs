@@ -1,6 +1,6 @@
 use crate::{BindingId, FrameId, ModuleId};
 use cool_collections::SmallVecMap;
-use cool_lexer::symbols::Symbol;
+use cool_lexer::Symbol;
 use derive_more::From;
 
 #[derive(Clone, Copy, From, Debug)]

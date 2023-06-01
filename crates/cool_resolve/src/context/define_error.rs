@@ -1,5 +1,5 @@
 use crate::ItemPathBuf;
-use cool_lexer::symbols::Symbol;
+use cool_lexer::Symbol;
 use derive_more::{Display, Error, From};
 
 #[derive(Clone, Error, From, Display, Debug)]

@@ -3,7 +3,7 @@ use crate::{
     ResolveError, ResolveErrorKind, ResolveResult, Scope,
 };
 use cool_collections::id_newtype;
-use cool_lexer::symbols::{sym, Symbol};
+use cool_lexer::{sym, Symbol};
 use std::ops;
 
 id_newtype!(ItemId);

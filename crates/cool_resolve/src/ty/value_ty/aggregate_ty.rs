@@ -1,5 +1,5 @@
 use crate::{ItemId, TyId};
-use cool_lexer::symbols::Symbol;
+use cool_lexer::Symbol;
 use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Copy, Eq, Debug)]

@@ -4,7 +4,7 @@ mod use_decl;
 pub use self::item_decl::*;
 pub use self::use_decl::*;
 use crate::{ParseResult, Parser};
-use cool_lexer::tokens::{tk, TokenKind};
+use cool_lexer::{tk, TokenKind};
 use cool_span::{Section, Span};
 use derive_more::From;
 

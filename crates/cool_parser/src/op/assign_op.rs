@@ -1,4 +1,4 @@
-use cool_lexer::tokens::{Punctuation, TokenKind};
+use cool_lexer::{Punctuation, TokenKind};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum AssignOp {

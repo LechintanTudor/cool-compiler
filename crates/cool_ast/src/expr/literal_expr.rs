@@ -1,7 +1,6 @@
 use crate::{AstGenerator, AstResult, LiteralIntOutOfRange, LiteralUnknownSuffix};
 use cool_collections::SmallString;
-use cool_lexer::symbols::{sym, Symbol};
-use cool_lexer::tokens::LiteralKind;
+use cool_lexer::{sym, LiteralKind, Symbol};
 use cool_parser::LiteralExpr;
 use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
 use cool_span::{Section, Span};

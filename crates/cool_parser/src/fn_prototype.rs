@@ -1,5 +1,5 @@
 use crate::{FnExternDecl, Ident, ParseResult, Parser, Ty};
-use cool_lexer::tokens::{tk, TokenKind};
+use cool_lexer::{tk, TokenKind};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]

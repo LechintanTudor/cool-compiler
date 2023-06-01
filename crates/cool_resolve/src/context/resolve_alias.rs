@@ -2,7 +2,7 @@ use crate::{
     tys, ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveErrorKind,
     ResolveResult, TyId,
 };
-use cool_lexer::symbols::Symbol;
+use cool_lexer::Symbol;
 
 impl ResolveContext {
     pub fn declare_alias(

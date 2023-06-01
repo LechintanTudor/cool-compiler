@@ -3,7 +3,7 @@ use crate::{
     Scope, TyId,
 };
 use cool_collections::id_newtype;
-use cool_lexer::symbols::Symbol;
+use cool_lexer::Symbol;
 use std::ops;
 
 id_newtype!(FrameId);

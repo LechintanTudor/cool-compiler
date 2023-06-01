@@ -1,4 +1,4 @@
-use cool_lexer::tokens::{Token, TokenKind};
+use cool_lexer::{Token, TokenKind};
 use std::error::Error;
 use std::fmt;
 

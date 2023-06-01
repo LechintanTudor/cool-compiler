@@ -16,7 +16,7 @@ pub use self::ptr_ty::*;
 pub use self::slice_ty::*;
 pub use self::tuple_ty::*;
 use crate::{ParseResult, Parser};
-use cool_lexer::tokens::{tk, TokenKind};
+use cool_lexer::{tk, TokenKind};
 use cool_span::{Section, Span};
 use derive_more::From;
 

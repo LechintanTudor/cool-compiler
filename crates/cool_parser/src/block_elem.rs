@@ -1,7 +1,7 @@
 use crate::expr::Expr;
 use crate::stmt::Stmt;
 use crate::{AssignOp, ParseResult, Parser, StmtKind};
-use cool_lexer::tokens::tk;
+use cool_lexer::tk;
 use cool_span::{Section, Span};
 use derive_more::From;
 

@@ -1,6 +1,6 @@
 use crate::context::ResolveContext;
 use crate::{AnyTy, FloatTy, InferTy, IntTy, ItemTy, PrimitiveTys, PtrTy, ValueTy};
-use cool_lexer::symbols::sym;
+use cool_lexer::sym;
 
 macro_rules! builtins {
     {

@@ -2,7 +2,7 @@ use crate::{
     ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveErrorKind,
     ResolveResult, StructHasInfiniteSize, StructTy, TyId, ValueTy,
 };
-use cool_lexer::symbols::Symbol;
+use cool_lexer::Symbol;
 use smallvec::SmallVec;
 
 impl ResolveContext {

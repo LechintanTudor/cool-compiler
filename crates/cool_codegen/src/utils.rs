@@ -1,5 +1,5 @@
 use cool_collections::SmallString;
-use cool_lexer::symbols::sym;
+use cool_lexer::sym;
 use cool_resolve::ItemPath;
 
 pub fn mangle_item_path<'a, P>(path: P) -> SmallString

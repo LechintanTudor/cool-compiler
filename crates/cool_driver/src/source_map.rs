@@ -1,4 +1,4 @@
-use cool_lexer::lexer::{TokenStream, Tokenizer};
+use cool_lexer::{TokenStream, Tokenizer};
 use cool_parser::{ModuleContent, ParseResult, Parser};
 use cool_span::{SourcePosition, Span};
 use std::fs::File;

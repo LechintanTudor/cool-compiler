@@ -1,5 +1,5 @@
 use crate::{AstGenerator, AstResult, ExprAst};
-use cool_lexer::symbols::Symbol;
+use cool_lexer::Symbol;
 use cool_parser::TupleExpr;
 use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TupleTy, TyId};
 use cool_span::{Section, Span};

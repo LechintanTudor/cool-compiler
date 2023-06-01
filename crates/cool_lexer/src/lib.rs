@@ -1,5 +1,8 @@
-pub mod lexer;
-pub mod symbols;
-pub mod tokens;
-
 mod consts;
+mod lexer;
+mod symbols;
+mod tokens;
+
+pub use self::lexer::*;
+pub use self::symbols::*;
+pub use self::tokens::*;

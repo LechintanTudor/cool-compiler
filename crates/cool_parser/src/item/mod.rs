@@ -10,7 +10,7 @@ pub use self::extern_fn_item::*;
 pub use self::module_item::*;
 pub use self::struct_item::*;
 use crate::{AbstractFn, ParseResult, Parser};
-use cool_lexer::tokens::tk;
+use cool_lexer::tk;
 use cool_span::{Section, Span};
 use derive_more::From;
 use paste::paste;

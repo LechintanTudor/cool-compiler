@@ -1,4 +1,4 @@
-use cool_lexer::symbols::Symbol;
+use cool_lexer::Symbol;
 use rustc_hash::FxHashMap;
 
 #[derive(Clone, Debug)]

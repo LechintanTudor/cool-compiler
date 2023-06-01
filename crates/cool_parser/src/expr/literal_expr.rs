@@ -1,7 +1,6 @@
 use crate::{ParseResult, Parser};
 use cool_collections::SmallString;
-use cool_lexer::symbols::Symbol;
-use cool_lexer::tokens::{tk, Literal, LiteralKind, TokenKind};
+use cool_lexer::{tk, Literal, LiteralKind, Symbol, TokenKind};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]

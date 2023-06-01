@@ -20,7 +20,7 @@ pub use self::resolve_ty::*;
 use crate::{Binding, Frame, ItemKind, Module, PrimitiveTys, TyContext};
 use cool_arena::SliceArena;
 use cool_collections::IdIndexedVec;
-use cool_lexer::symbols::Symbol;
+use cool_lexer::Symbol;
 
 #[derive(Debug)]
 pub struct ResolveContext {

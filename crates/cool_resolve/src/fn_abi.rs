@@ -1,4 +1,4 @@
-use cool_lexer::symbols::{sym, Symbol};
+use cool_lexer::{sym, Symbol};
 use derive_more::{Display, Error};
 use std::fmt;
 

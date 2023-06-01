@@ -38,7 +38,7 @@ pub use self::tuple_expr::*;
 pub use self::unary_expr::*;
 pub use self::while_expr::*;
 use crate::{BinOp, Ident, ParseResult, Parser};
-use cool_lexer::tokens::{tk, TokenKind};
+use cool_lexer::{tk, TokenKind};
 use cool_span::{Section, Span};
 use derive_more::From;
 use paste::paste;
