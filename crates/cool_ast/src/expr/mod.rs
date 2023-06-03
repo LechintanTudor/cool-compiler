@@ -87,8 +87,9 @@ macro_rules! define_expr_ast {
 }
 
 define_expr_ast! {
+    Access,
     Array,
-    ArrayAccess,
+    ArrayLen,
     ArrayRepeat,
     Binary,
     Binding,
@@ -101,7 +102,6 @@ define_expr_ast! {
     Module,
     Range,
     Struct,
-    StructAccess,
     Subscript,
     Tuple,
     Ty,

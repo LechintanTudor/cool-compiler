@@ -1,10 +1,9 @@
 use crate::{BuilderExt, CodeGenerator, LoadedValue, Value};
-use cool_ast::{ArrayAccessExprAst, StructAccessExprAst};
-use cool_lexer::sym;
+use cool_ast::{AccessExprAst, ArrayLenExprAst};
 use inkwell::values::BasicValue;
 
 impl<'a> CodeGenerator<'a> {
-    pub fn gen_struct_access_expr(&mut self, expr: &StructAccessExprAst) -> Value<'a> {
+    pub fn gen_access_expr(&mut self, expr: &AccessExprAst) -> Value<'a> {
         match self.gen_expr(&expr.base, None) {
             Value::Void => Value::Void,
             Value::Memory(memory) => {
@@ -47,9 +46,7 @@ impl<'a> CodeGenerator<'a> {
         }
     }
 
-    pub fn gen_array_access_expr(&mut self, expr: &ArrayAccessExprAst) -> LoadedValue<'a> {
-        assert_eq!(expr.ident.symbol, sym::LEN);
-
+    pub fn gen_array_len_expr(&mut self, expr: &ArrayLenExprAst) -> LoadedValue<'a> {
         self.gen_expr(&expr.base, None);
 
         if self.builder.current_block_diverges() {

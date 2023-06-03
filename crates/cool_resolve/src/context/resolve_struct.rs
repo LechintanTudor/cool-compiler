@@ -1,6 +1,6 @@
 use crate::{
-    ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveErrorKind,
-    ResolveResult, StructHasInfiniteSize, StructTy, TyId, ValueTy,
+    Field, ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveErrorKind,
+    ResolveResult, StructHasInfiniteSize, TyId, ValueTy,
 };
 use cool_lexer::Symbol;
 use smallvec::SmallVec;
@@ -38,16 +38,18 @@ impl ResolveContext {
     }
 
     // TODO: Separate error type for ty definitions
-    pub fn define_struct(&mut self, struct_ty: StructTy) -> Result<bool, StructHasInfiniteSize> {
-        let ty_id = self.items[struct_ty.item_id]
-            .as_ty_id()
-            .expect("item is not a type");
+    pub fn define_struct(
+        &mut self,
+        item_id: ItemId,
+        fields: Vec<Field>,
+    ) -> Result<bool, StructHasInfiniteSize> {
+        let ty_id = self.items[item_id].as_ty_id().expect("item is not a type");
 
-        for field in struct_ty.fields.iter() {
+        for field in fields.iter() {
             match self.ty_contains_ty(field.ty_id, ty_id) {
                 Some(true) => {
                     return Err(StructHasInfiniteSize {
-                        path: self.paths[struct_ty.item_id].into(),
+                        path: self.paths[item_id].into(),
                     })
                 }
                 Some(false) => (),
@@ -55,7 +57,7 @@ impl ResolveContext {
             }
         }
 
-        Ok(self.tys.define_struct(struct_ty))
+        Ok(self.tys.define_struct(item_id, fields))
     }
 
     fn ty_contains_ty(&self, haysack_ty_id: TyId, needle_ty_id: TyId) -> Option<bool> {
@@ -69,11 +71,8 @@ impl ResolveContext {
 
             match &self.tys.get_resolve_ty(ty_id)?.ty {
                 ValueTy::Array(array_ty) => tys_to_check.push(array_ty.elem),
-                ValueTy::Tuple(tuple_ty) => {
-                    tys_to_check.extend(tuple_ty.fields.iter().map(|field| field.ty_id))
-                }
-                ValueTy::Struct(struct_ty) => {
-                    tys_to_check.extend(struct_ty.fields.iter().map(|field| field.ty_id))
+                ValueTy::Aggregate(aggregate_ty) => {
+                    tys_to_check.extend(aggregate_ty.fields.iter().map(|field| field.ty_id));
                 }
                 _ => (),
             }

@@ -1,6 +1,6 @@
 use crate::{CompileError, CompileErrorBundle, CompileErrorKind, CompileResult, Package};
 use cool_ast::AstGenerator;
-use cool_resolve::{Field, ResolveContext, StructHasDuplicatedField, StructTy, TyCannotBeDefined};
+use cool_resolve::{Field, ResolveContext, StructHasDuplicatedField, TyCannotBeDefined};
 use std::collections::VecDeque;
 
 pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> CompileResult<()> {
@@ -45,11 +45,8 @@ pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
 
     let mut resolve_fail_count = 0;
     'struct_loop: while let Some((module_id, item_id, struct_item)) = structs.pop_front() {
-        let struct_ty = {
-            let mut struct_ty = StructTy {
-                item_id,
-                fields: Default::default(),
-            };
+        let fields = {
+            let mut fields = Vec::<Field>::new();
 
             for field in struct_item.fields.iter() {
                 let ty_id = match ast.resolve_ty(module_id.into(), &field.ty) {
@@ -63,8 +60,7 @@ pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
                     }
                 };
 
-                let is_duplicated = struct_ty
-                    .fields
+                let is_duplicated = fields
                     .iter()
                     .any(|ty_field| ty_field.symbol == field.ident.symbol);
 
@@ -82,17 +78,17 @@ pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
                     continue 'struct_loop;
                 }
 
-                struct_ty.fields.push(Field {
+                fields.push(Field {
                     offset: 0,
                     symbol: field.ident.symbol,
                     ty_id,
                 });
             }
 
-            struct_ty
+            fields
         };
 
-        match ast.resolve.define_struct(struct_ty) {
+        match ast.resolve.define_struct(item_id, fields) {
             Ok(true) => resolve_fail_count = 0,
             Ok(false) => {
                 structs.push_back((module_id, item_id, struct_item));

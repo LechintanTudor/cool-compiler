@@ -1,11 +1,10 @@
 use crate::{BuilderExt, CodeGenerator, Value};
 use cool_ast::SubscriptExprAst;
-use cool_resolve::{tys, TyId, ValueTy};
-use inkwell::types::BasicType;
-use inkwell::values::{BasicValue, BasicValueEnum};
+use cool_resolve::{tys, ValueTy};
+use inkwell::values::BasicValue;
 
-const SLICE_PTR_FIELD_INDEX: u32 = 0;
-const SLICE_LEN_FIELD_INDEX: u32 = 1;
+const SLICE_PTR_FIELD_OFFSET: u32 = 0;
+const SLICE_LEN_FIELD_OFFSET: u32 = 1;
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_subscript_expr(&mut self, expr: &SubscriptExprAst) -> Value<'a> {
@@ -17,18 +16,11 @@ impl<'a> CodeGenerator<'a> {
                 if subscript_ty_id == tys::USIZE {
                     self.gen_array_elem_subscript_expr(expr)
                 } else {
-                    self.gen_array_slice_subscript_expr(expr)
+                    self.gen_array_full_slice_subscript_expr(expr)
                 }
             }
             ValueTy::ManyPtr(_) => {
                 todo!()
-            }
-            ValueTy::Slice(_) => {
-                if subscript_ty_id == tys::USIZE {
-                    self.gen_slice_elem_subscript_expr(expr)
-                } else {
-                    todo!()
-                }
             }
             _ => unreachable!("unsuported subscript operation"),
         }
@@ -71,7 +63,7 @@ impl<'a> CodeGenerator<'a> {
         }
     }
 
-    fn gen_array_slice_subscript_expr(&mut self, expr: &SubscriptExprAst) -> Value<'a> {
+    fn gen_array_full_slice_subscript_expr(&mut self, expr: &SubscriptExprAst) -> Value<'a> {
         let base = self.gen_expr(&expr.base, None);
         if self.builder.current_block_diverges() {
             return Value::Void;
@@ -82,97 +74,42 @@ impl<'a> CodeGenerator<'a> {
             return Value::Void;
         }
 
-        let array_ty_id = self.resolve[expr.base.expr_id()].ty_id;
-        let array_ty = self.resolve[array_ty_id].ty.as_array().unwrap();
-
-        let expr_ty_id = self.resolve[expr.expr_id].ty_id;
-        let elem_ty_id = self.resolve[expr_ty_id].ty.as_slice().unwrap().elem;
-
-        match base {
+        let ptr_value = match base {
             Value::Void => todo!(),
-            Value::Memory(memory) => {
-                let elem_ty = self.tys[elem_ty_id].unwrap();
-                let index = self.tys.isize_ty().const_zero();
-
-                let ptr = unsafe { self.builder.build_gep(elem_ty, memory.ptr, &[index], "") }
-                    .as_basic_value_enum();
-
-                let len = self
-                    .tys
-                    .isize_ty()
-                    .const_int(array_ty.len, false)
-                    .as_basic_value_enum();
-
-                self.util_gen_slice(expr_ty_id, ptr, len)
-            }
+            Value::Memory(memory) => memory.ptr,
             Value::Register(_) => todo!(),
             Value::Fn(_) => unreachable!(),
-        }
-    }
+        };
 
-    fn gen_slice_elem_subscript_expr(&mut self, expr: &SubscriptExprAst) -> Value<'a> {
-        let base = self.gen_expr(&expr.base, None);
-        if self.builder.current_block_diverges() {
-            return Value::Void;
-        }
+        let len = self
+            .resolve
+            .get_expr_ty(expr.base.expr_id())
+            .ty
+            .as_array()
+            .unwrap()
+            .len;
 
-        self.gen_loaded_expr(&expr.subscript);
-        if self.builder.current_block_diverges() {
-            return Value::Void;
-        }
+        let len_value = self
+            .tys
+            .isize_ty()
+            .const_int(len, false)
+            .as_basic_value_enum();
 
-        let slice_ty_id = self.resolve[expr.base.expr_id()].ty_id;
-        let _slice_ty = self.resolve[slice_ty_id].ty.as_slice().unwrap();
-
-        let expr_ty_id = self.resolve[expr.expr_id].ty_id;
-        let _elem_ty_id = self.resolve[expr_ty_id].ty.as_slice().unwrap().elem;
-
-        match base {
-            Value::Void => todo!(),
-            Value::Memory(_memory) => {
-                todo!()
-            }
-            Value::Register(_) => todo!(),
-            Value::Fn(_) => unreachable!(),
-        }
-    }
-
-    fn util_gen_dangling_ptr(&mut self, pointee_ty_id: TyId) -> BasicValueEnum<'a> {
-        let pointee_ty = &self.resolve[pointee_ty_id];
-        let ptr_int_value = self.tys.isize_ty().const_int(pointee_ty.align, false);
-
-        match self.tys[pointee_ty_id] {
-            Some(pointee_ty) => {
-                let ptr_ty = pointee_ty.ptr_type(Default::default());
-
-                self.builder
-                    .build_int_to_ptr(ptr_int_value, ptr_ty, "")
-                    .as_basic_value_enum()
-            }
-            None => ptr_int_value.as_basic_value_enum(),
-        }
-    }
-
-    fn util_gen_slice(
-        &mut self,
-        slice_ty_id: TyId,
-        ptr: BasicValueEnum<'a>,
-        len: BasicValueEnum<'a>,
-    ) -> Value<'a> {
+        let slice_ty_id = self.resolve.get_expr_ty_id(expr.expr_id);
         let slice_ty = self.tys[slice_ty_id].unwrap();
         let slice_ptr = self.util_gen_alloca(slice_ty);
 
         let ptr_ptr = self
             .builder
-            .build_struct_gep(slice_ty, slice_ptr, SLICE_PTR_FIELD_INDEX, "")
+            .build_struct_gep(slice_ty, slice_ptr, SLICE_PTR_FIELD_OFFSET, "")
             .unwrap();
-        self.builder.build_store(ptr_ptr, ptr);
+        self.builder.build_store(ptr_ptr, ptr_value);
 
         let len_ptr = self
             .builder
-            .build_struct_gep(slice_ty, slice_ptr, SLICE_LEN_FIELD_INDEX, "")
+            .build_struct_gep(slice_ty, slice_ptr, SLICE_LEN_FIELD_OFFSET, "")
             .unwrap();
-        self.builder.build_store(len_ptr, len);
+        self.builder.build_store(len_ptr, len_value);
 
         Value::memory(slice_ptr, slice_ty)
     }

@@ -1,4 +1,4 @@
-use crate::{tys, ResolveContext, TyId};
+use crate::{tys, ResolveContext, ResolveTy, TyId};
 use cool_collections::id_newtype;
 use std::ops;
 
@@ -87,6 +87,11 @@ impl ResolveContext {
     #[inline]
     pub fn get_expr_ty_id(&self, expr_id: ExprId) -> TyId {
         self.exprs[expr_id].ty_id
+    }
+
+    #[inline]
+    pub fn get_expr_ty(&self, expr_id: ExprId) -> &ResolveTy {
+        &self[self.exprs[expr_id].ty_id]
     }
 }
 

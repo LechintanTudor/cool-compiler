@@ -24,8 +24,9 @@ impl<'a> CodeGenerator<'a> {
         }
 
         match expr {
+            ExprAst::Access(e) => self.gen_access_expr(e),
             ExprAst::Array(e) => self.gen_array_expr(e, memory),
-            ExprAst::ArrayAccess(e) => self.gen_array_access_expr(e).into(),
+            ExprAst::ArrayLen(e) => self.gen_array_len_expr(e).into(),
             ExprAst::ArrayRepeat(e) => self.gen_array_repeat_expr(e, memory),
             ExprAst::Binary(e) => self.gen_binary_expr(e).into(),
             ExprAst::Binding(e) => self.gen_ident_expr(e),
@@ -37,9 +38,8 @@ impl<'a> CodeGenerator<'a> {
             ExprAst::Literal(e) => self.gen_literal_expr(e).into(),
             ExprAst::Range(_) => Value::Void,
             ExprAst::Struct(e) => self.gen_struct_expr(e, memory),
-            ExprAst::StructAccess(e) => self.gen_struct_access_expr(e),
-            ExprAst::Tuple(e) => self.gen_tuple_expr(e, memory),
             ExprAst::Subscript(e) => self.gen_subscript_expr(e),
+            ExprAst::Tuple(e) => self.gen_tuple_expr(e, memory),
             ExprAst::Unary(e) => self.gen_unary_expr(e),
             ExprAst::While(e) => self.gen_while_expr(e).into(),
             _ => panic!("unsupported codegen operation: {:#?}", expr),

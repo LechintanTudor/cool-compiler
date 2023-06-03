@@ -257,6 +257,16 @@ impl Parser<'_> {
                 }
                 .into()
             }
+            TokenKind::Literal(literal) => {
+                AccessExpr {
+                    base,
+                    ident: Ident {
+                        span: next_token.span,
+                        symbol: literal.symbol,
+                    },
+                }
+                .into()
+            }
             tk::STAR => {
                 DerefExpr {
                     span: base.span().to(next_token.span),

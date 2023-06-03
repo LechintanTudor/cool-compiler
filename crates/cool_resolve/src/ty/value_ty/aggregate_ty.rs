@@ -26,29 +26,48 @@ impl Hash for Field {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub enum AggregateKind {
+    Struct(ItemId),
+    Tuple,
+    Slice,
+}
+
 #[derive(Clone, Eq, Debug)]
-pub struct StructTy {
-    pub item_id: ItemId,
+pub struct AggregateTy {
+    pub kind: AggregateKind,
     pub fields: Vec<Field>,
 }
 
-impl PartialEq for StructTy {
+impl AggregateTy {
     #[inline]
-    fn eq(&self, other: &Self) -> bool {
-        self.item_id == other.item_id
+    pub fn get_field_ty_id(&self, symbol: Symbol) -> Option<TyId> {
+        self.fields
+            .iter()
+            .find(|field| field.symbol == symbol)
+            .map(|field| field.ty_id)
     }
 }
 
-impl Hash for StructTy {
+impl PartialEq for AggregateTy {
+    fn eq(&self, other: &Self) -> bool {
+        match (&self.kind, &other.kind) {
+            (AggregateKind::Struct(i1), AggregateKind::Struct(i2)) => i1 == i2,
+            _ => self.fields == other.fields,
+        }
+    }
+}
+
+impl Hash for AggregateTy {
     fn hash<H>(&self, state: &mut H)
     where
         H: Hasher,
     {
-        self.item_id.hash(state);
+        match self.kind {
+            AggregateKind::Struct(item_id) => item_id.hash(state),
+            _ => {
+                self.fields.hash(state);
+            }
+        }
     }
-}
-
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TupleTy {
-    pub fields: Vec<Field>,
 }

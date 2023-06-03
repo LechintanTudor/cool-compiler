@@ -1,19 +1,11 @@
 use cool_lexer::{Token, TokenKind};
-use std::error::Error;
-use std::fmt;
+use derive_more::{Display, Error};
 
 pub type ParseResult<T> = Result<T, ParseError>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Error, Display, Debug)]
+#[display(fmt = "unexpected token: {}", "self.found.kind")]
 pub struct ParseError {
     pub found: Token,
     pub expected: &'static [TokenKind],
-}
-
-impl Error for ParseError {}
-
-impl fmt::Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "Unexpected token: {}", self.found.kind)
-    }
 }

@@ -7,13 +7,13 @@ use cool_resolve::{tys, ExprId, FrameId, ItemKind, ResolveExpr, TyId, ValueTy};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
-pub struct StructAccessExprAst {
+pub struct AccessExprAst {
     pub expr_id: ExprId,
     pub base: Box<ExprAst>,
     pub ident: Ident,
 }
 
-impl Section for StructAccessExprAst {
+impl Section for AccessExprAst {
     #[inline]
     fn span(&self) -> Span {
         self.base.span().to(self.ident.span())
@@ -21,13 +21,13 @@ impl Section for StructAccessExprAst {
 }
 
 #[derive(Clone, Debug)]
-pub struct ArrayAccessExprAst {
+pub struct ArrayLenExprAst {
     pub expr_id: ExprId,
     pub base: Box<ExprAst>,
     pub ident: Ident,
 }
 
-impl Section for ArrayAccessExprAst {
+impl Section for ArrayLenExprAst {
     #[inline]
     fn span(&self) -> Span {
         self.base.span().to(self.ident.span())
@@ -102,14 +102,14 @@ impl AstGenerator<'_> {
                     ValueTy::Ptr(_) => {
                         let new_base = self.gen_implicit_deref_expr(Box::new(base))?;
 
-                        self.gen_value_access_expr(
+                        self.gen_aggregate_access_expr(
                             expected_ty_id,
                             Box::new(new_base.into()),
                             access_expr.ident,
                         )?
                     }
                     _ => {
-                        self.gen_value_access_expr(
+                        self.gen_aggregate_access_expr(
                             expected_ty_id,
                             Box::new(base),
                             access_expr.ident,
@@ -132,13 +132,13 @@ impl AstGenerator<'_> {
         ));
 
         Ok(DerefExprAst {
-            span: base.span(),
+            span: Span::new(base.span().start, 0),
             expr_id,
             expr: base,
         })
     }
 
-    fn gen_value_access_expr(
+    fn gen_aggregate_access_expr(
         &mut self,
         expected_ty_id: TyId,
         base: Box<ExprAst>,
@@ -147,12 +147,9 @@ impl AstGenerator<'_> {
         let base_expr = self.resolve[base.expr_id()];
 
         let expr = match &self.resolve[base_expr.ty_id].ty {
-            ValueTy::Struct(struct_ty) => {
-                let field_ty_id = struct_ty
-                    .fields
-                    .iter()
-                    .find(|field| field.symbol == ident.symbol)
-                    .map(|field| field.ty_id)
+            ValueTy::Aggregate(aggregate_ty) => {
+                let field_ty_id = aggregate_ty
+                    .get_field_ty_id(ident.symbol)
                     .expect("no field found");
 
                 let ty_id = self
@@ -161,7 +158,7 @@ impl AstGenerator<'_> {
 
                 let expr_id = self.resolve.add_expr(ResolveExpr { ty_id, ..base_expr });
 
-                StructAccessExprAst {
+                AccessExprAst {
                     expr_id,
                     base,
                     ident,
@@ -177,7 +174,7 @@ impl AstGenerator<'_> {
                     .resolve
                     .resolve_direct_ty_id(tys::USIZE, expected_ty_id)?;
 
-                ArrayAccessExprAst {
+                ArrayLenExprAst {
                     expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                     base,
                     ident,

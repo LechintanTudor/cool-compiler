@@ -1,7 +1,7 @@
 use crate::{AstGenerator, AstResult, ExprAst};
 use cool_lexer::Symbol;
 use cool_parser::TupleExpr;
-use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TupleTy, TyId};
+use cool_resolve::{tys, AggregateTy, ExprId, FrameId, ResolveExpr, TyId};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -67,7 +67,7 @@ impl AstGenerator<'_> {
     fn gen_tuple_elems_with_type(
         &mut self,
         frame_id: FrameId,
-        tuple_ty: &TupleTy,
+        tuple_ty: &AggregateTy,
         expr: &TupleExpr,
     ) -> AstResult<Vec<ExprAst>> {
         if expr.elems.len() != tuple_ty.fields.len() {

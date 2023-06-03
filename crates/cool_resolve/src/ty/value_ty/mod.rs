@@ -5,7 +5,7 @@ mod int_ty;
 pub use self::aggregate_ty::*;
 pub use self::float_ty::*;
 pub use self::int_ty::*;
-use crate::{FnAbi, TyId};
+use crate::{FnAbi, ItemId, TyId};
 use derive_more::From;
 use paste::paste;
 use smallvec::SmallVec;
@@ -48,17 +48,51 @@ define_value_ty! {
         Fn,
         Ptr,
         ManyPtr,
-        Slice,
         Array,
-        Tuple,
-        Struct,
+        Aggregate,
     },
 }
 
 impl ValueTy {
     #[inline]
     pub fn is_subscriptable(&self) -> bool {
-        matches!(self, Self::ManyPtr(_) | Self::Slice(_) | Self::Array(_))
+        matches!(
+            self,
+            Self::ManyPtr(_)
+                | Self::Array(_)
+                | Self::Aggregate(AggregateTy {
+                    kind: AggregateKind::Slice,
+                    ..
+                }),
+        )
+    }
+
+    #[inline]
+    pub fn as_struct(&self) -> Option<&AggregateTy> {
+        self.as_aggregate()
+            .filter(|aggregate| matches!(aggregate.kind, AggregateKind::Struct(_)))
+    }
+
+    #[inline]
+    pub fn as_struct_parts(&self) -> Option<(ItemId, &[Field])> {
+        let aggregate = self.as_aggregate()?;
+
+        match aggregate.kind {
+            AggregateKind::Struct(item_id) => Some((item_id, &aggregate.fields)),
+            _ => None,
+        }
+    }
+
+    #[inline]
+    pub fn as_tuple(&self) -> Option<&AggregateTy> {
+        self.as_aggregate()
+            .filter(|aggregate| matches!(aggregate.kind, AggregateKind::Tuple))
+    }
+
+    #[inline]
+    pub fn as_slice(&self) -> Option<&AggregateTy> {
+        self.as_aggregate()
+            .filter(|aggregate| matches!(aggregate.kind, AggregateKind::Slice))
     }
 }
 
@@ -78,12 +112,6 @@ pub struct PtrTy {
 pub struct ManyPtrTy {
     pub is_mutable: bool,
     pub pointee: TyId,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub struct SliceTy {
-    pub is_mutable: bool,
-    pub elem: TyId,
 }
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]

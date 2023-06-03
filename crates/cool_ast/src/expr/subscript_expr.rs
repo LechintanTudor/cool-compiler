@@ -53,25 +53,6 @@ impl AstGenerator<'_> {
                     )
                 }
             }
-            ValueTy::Slice(slice_ty) => {
-                if subscript_ty_id == tys::USIZE {
-                    (
-                        slice_ty.elem,
-                        ResolveExprKind::Lvalue {
-                            is_mutable: slice_ty.is_mutable,
-                        },
-                    )
-                } else {
-                    if !slice_ty.is_mutable {
-                        assert!(!expr.is_mutable);
-                    }
-
-                    (
-                        self.resolve.mk_slice(expr.is_mutable, slice_ty.elem),
-                        ResolveExprKind::Rvalue,
-                    )
-                }
-            }
             ValueTy::Array(array_ty) => {
                 if subscript_ty_id == tys::USIZE {
                     (array_ty.elem, base_expr.kind)

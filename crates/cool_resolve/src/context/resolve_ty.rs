@@ -1,7 +1,7 @@
 use crate::{
-    tys, AnyTy, ArrayTy, Field, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ManyPtrTy, ModuleElem,
-    ModuleId, PtrTy, ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, ResolveTy,
-    Scope, SliceTy, TupleTy, TyId, TyMismatch, ValueTy,
+    tys, AggregateKind, AggregateTy, AnyTy, ArrayTy, Field, FnAbi, FnTy, ItemId, ItemKind,
+    ItemPath, ManyPtrTy, ModuleElem, ModuleId, PtrTy, ResolveContext, ResolveError,
+    ResolveErrorKind, ResolveResult, ResolveTy, Scope, TyId, TyMismatch, ValueTy,
 };
 use cool_lexer::{sym, Symbol};
 use smallvec::SmallVec;
@@ -63,7 +63,22 @@ impl ResolveContext {
 
     #[inline]
     pub fn mk_slice(&mut self, is_mutable: bool, elem: TyId) -> TyId {
-        let ty = ValueTy::Slice(SliceTy { is_mutable, elem });
+        let ty = ValueTy::Aggregate(AggregateTy {
+            kind: AggregateKind::Slice,
+            fields: vec![
+                Field {
+                    offset: 0,
+                    symbol: sym::PTR,
+                    ty_id: self.mk_many_ptr(is_mutable, elem),
+                },
+                Field {
+                    offset: 0,
+                    symbol: sym::LEN,
+                    ty_id: tys::USIZE,
+                },
+            ],
+        });
+
         self.tys.get_or_insert(ty.into())
     }
 
@@ -87,7 +102,11 @@ impl ResolveContext {
             return tys::UNIT;
         }
 
-        let ty = ValueTy::Tuple(TupleTy { fields });
+        let ty = ValueTy::Aggregate(AggregateTy {
+            kind: AggregateKind::Tuple,
+            fields,
+        });
+
         self.tys.get_or_insert(ty.into())
     }
 

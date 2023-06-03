@@ -1,4 +1,4 @@
-use crate::{AnyTy, Field, ItemId, ManyPtrTy, StructTy, TupleTy, TyContext, TyId, ValueTy};
+use crate::{AggregateKind, AggregateTy, AnyTy, Field, ItemId, TyContext, TyId, ValueTy};
 use std::cmp::Reverse;
 
 #[derive(Clone, Copy, Debug)]
@@ -46,13 +46,15 @@ impl TyContext {
     }
 
     #[must_use]
-    pub fn define_struct(&mut self, struct_ty: StructTy) -> bool {
-        let ty_id = self
-            .tys
-            .get_id(&AnyTy::StructDecl(struct_ty.item_id))
-            .unwrap();
+    pub fn define_struct(&mut self, item_id: ItemId, fields: Vec<Field>) -> bool {
+        let ty_id = self.tys.get_id(&AnyTy::StructDecl(item_id)).unwrap();
 
-        match self.value_ty_to_resolve_ty(ValueTy::Struct(struct_ty)) {
+        let aggregate_ty = AggregateTy {
+            kind: AggregateKind::Struct(item_id),
+            fields,
+        };
+
+        match self.value_ty_to_resolve_ty(aggregate_ty.into()) {
             Some(resolve_ty) => {
                 self.resolve_tys.insert(ty_id, resolve_ty);
                 true
@@ -95,22 +97,9 @@ impl TyContext {
                     ty: ValueTy::Array(array_ty),
                 }
             }
-            ValueTy::Ptr(_) | ValueTy::ManyPtr(_) | ValueTy::Fn(_) => {
+            ty @ (ValueTy::Ptr(_) | ValueTy::ManyPtr(_) | ValueTy::Fn(_)) => {
                 ResolveTy {
                     size: self.primitives.ptr_size,
-                    align: self.primitives.ptr_align,
-                    ty,
-                }
-            }
-            ValueTy::Slice(slice_ptr_ty) => {
-                self.tys
-                    .get_or_insert(AnyTy::Value(ValueTy::ManyPtr(ManyPtrTy {
-                        is_mutable: slice_ptr_ty.is_mutable,
-                        pointee: slice_ptr_ty.elem,
-                    })));
-
-                ResolveTy {
-                    size: self.primitives.ptr_size * 2,
                     align: self.primitives.ptr_align,
                     ty,
                 }
@@ -119,26 +108,17 @@ impl TyContext {
                 ResolveTy {
                     size: 0,
                     align: 1,
-                    ty,
+                    ty: ValueTy::Range,
                 }
             }
-            ValueTy::Tuple(tuple_ty) => {
-                let (size, align, fields) = self.resolve_size_align_fields(&tuple_ty.fields)?;
+            ValueTy::Aggregate(aggregate_ty) => {
+                let (size, align, fields) = self.resolve_size_align_fields(&aggregate_ty.fields)?;
 
                 ResolveTy {
                     size,
                     align,
-                    ty: ValueTy::Tuple(TupleTy { fields }),
-                }
-            }
-            ValueTy::Struct(struct_ty) => {
-                let (size, align, fields) = self.resolve_size_align_fields(&struct_ty.fields)?;
-
-                ResolveTy {
-                    size,
-                    align,
-                    ty: ValueTy::Struct(StructTy {
-                        item_id: struct_ty.item_id,
+                    ty: ValueTy::Aggregate(AggregateTy {
+                        kind: aggregate_ty.kind,
                         fields,
                     }),
                 }
