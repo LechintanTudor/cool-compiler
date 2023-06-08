@@ -82,7 +82,7 @@ impl<'a> CodeGenerator<'a> {
     }
 
     pub fn util_gen_loaded_field(
-        &mut self,
+        &self,
         struct_ty_id: TyId,
         struct_ptr: PointerValue<'a>,
         field: Symbol,
