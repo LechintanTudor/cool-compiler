@@ -11,6 +11,17 @@ pub enum RangeKindAst {
     FromTo((Box<ExprAst>, Box<ExprAst>)),
 }
 
+impl RangeKindAst {
+    pub fn as_from_to_pair(&self) -> (Option<&ExprAst>, Option<&ExprAst>) {
+        match self {
+            Self::Full => (None, None),
+            Self::From(from) => (Some(from), None),
+            Self::To(to) => (None, Some(to)),
+            Self::FromTo((from, to)) => (Some(from), Some(to)),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct RangeExprAst {
     pub span: Span,

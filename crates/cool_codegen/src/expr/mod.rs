@@ -8,6 +8,7 @@ mod fn_call_expr;
 mod for_expr;
 mod index_expr;
 mod literal_expr;
+mod range_expr;
 mod struct_expr;
 mod tuple_expr;
 mod unary_expr;
@@ -15,7 +16,9 @@ mod while_expr;
 
 use crate::{BuilderExt, CodeGenerator, LoadedValue, MemoryValue, Value};
 use cool_ast::{BindingExprAst, ExprAst};
-use inkwell::values::BasicValue;
+use cool_lexer::Symbol;
+use cool_resolve::TyId;
+use inkwell::values::{BasicValue, PointerValue};
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_expr(&mut self, expr: &ExprAst, memory: Option<MemoryValue<'a>>) -> Value<'a> {
@@ -37,6 +40,7 @@ impl<'a> CodeGenerator<'a> {
             ExprAst::For(e) => self.gen_for_expr(e).into(),
             ExprAst::Index(e) => self.gen_index_expr(e),
             ExprAst::Literal(e) => self.gen_literal_expr(e).into(),
+            ExprAst::Range(e) => self.gen_range_expr(e, memory),
             ExprAst::Struct(e) => self.gen_struct_expr(e, memory),
             ExprAst::Tuple(e) => self.gen_tuple_expr(e, memory),
             ExprAst::Unary(e) => self.gen_unary_expr(e),
@@ -75,5 +79,33 @@ impl<'a> CodeGenerator<'a> {
             }
             Value::Register(value) => LoadedValue::Register(value),
         }
+    }
+
+    pub fn util_gen_loaded_field(
+        &mut self,
+        struct_ty_id: TyId,
+        struct_ptr: PointerValue<'a>,
+        field: Symbol,
+    ) -> LoadedValue<'a> {
+        let field_ty_id = self.resolve[struct_ty_id]
+            .ty
+            .as_aggregate()
+            .unwrap()
+            .get_field_ty_id(field)
+            .unwrap();
+
+        if self.resolve.ty_is_zero_sized(field_ty_id) {
+            return LoadedValue::Void;
+        }
+
+        let struct_ty = self.tys[struct_ty_id].unwrap().into_struct_type();
+        let field_index = self.tys.get_field_map(struct_ty_id)[field];
+        let field_ptr = self
+            .builder
+            .build_struct_gep(struct_ty, struct_ptr, field_index, "")
+            .unwrap();
+
+        let field_ty = self.tys[field_ty_id].unwrap();
+        self.builder.build_load(field_ty, field_ptr, "").into()
     }
 }

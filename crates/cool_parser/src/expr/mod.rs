@@ -219,8 +219,9 @@ impl Parser<'_> {
                 | Expr::Cond(_)
                 | Expr::Deref(_)
                 | Expr::FnCall(_)
+                | Expr::Index(_)
                 | Expr::Paren(_)
-                | Expr::Index(_) => {
+                | Expr::Range(_) => {
                     match self.peek().kind {
                         tk::DOT => self.continue_parse_access_or_deref_expr(Box::new(expr))?,
                         tk::OPEN_PAREN => self.continue_parse_fn_call_expr(Box::new(expr))?.into(),

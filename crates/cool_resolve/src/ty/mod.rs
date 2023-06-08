@@ -13,6 +13,9 @@ use crate::tys;
 use cool_arena::Arena;
 use rustc_hash::FxHashMap;
 
+pub const SLICE_PTR_FIELD_INDEX: u32 = 0;
+pub const SLICE_LEN_FIELD_INDEX: u32 = 1;
+
 #[derive(Debug)]
 pub struct TyContext {
     primitives: PrimitiveTys,
