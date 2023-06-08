@@ -6,9 +6,9 @@ mod cond_expr;
 mod deref_expr;
 mod fn_call_expr;
 mod for_expr;
+mod index_expr;
 mod literal_expr;
 mod struct_expr;
-mod subscript_expr;
 mod tuple_expr;
 mod unary_expr;
 mod while_expr;
@@ -35,10 +35,9 @@ impl<'a> CodeGenerator<'a> {
             ExprAst::Deref(e) => self.gen_deref_expr(e),
             ExprAst::FnCall(e) => self.gen_fn_call_expr(e).into(),
             ExprAst::For(e) => self.gen_for_expr(e).into(),
+            ExprAst::Index(e) => self.gen_index_expr(e),
             ExprAst::Literal(e) => self.gen_literal_expr(e).into(),
-            ExprAst::Range(_) => Value::Void,
             ExprAst::Struct(e) => self.gen_struct_expr(e, memory),
-            ExprAst::Subscript(e) => self.gen_subscript_expr(e),
             ExprAst::Tuple(e) => self.gen_tuple_expr(e, memory),
             ExprAst::Unary(e) => self.gen_unary_expr(e),
             ExprAst::While(e) => self.gen_while_expr(e).into(),

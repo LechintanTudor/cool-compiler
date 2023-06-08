@@ -11,7 +11,6 @@ mod ident_expr;
 mod literal_expr;
 mod loop_expr;
 mod paren_expr;
-mod range_expr;
 mod struct_expr;
 mod subscript_expr;
 mod tuple_expr;
@@ -31,7 +30,6 @@ pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::loop_expr::*;
 pub use self::paren_expr::*;
-pub use self::range_expr::*;
 pub use self::struct_expr::*;
 pub use self::subscript_expr::*;
 pub use self::tuple_expr::*;
@@ -70,16 +68,16 @@ define_expr! {
     Block,
     Cond,
     Deref,
-    For,
     Fn,
     FnCall,
+    For,
     Ident,
+    Index,
     Literal,
     Loop,
-    Range,
     Paren,
+    Range,
     Struct,
-    Subscript,
     Tuple,
     Unary,
     While,
@@ -190,7 +188,6 @@ impl Parser<'_> {
             tk::KW_WHILE => self.parse_while_expr()?.into(),
             tk::KW_FOR => self.parse_for_expr()?.into(),
             tk::MINUS | tk::NOT | tk::AND => self.parse_unary_expr()?.into(),
-            tk::DOT_DOT => self.parse_range_expr()?.into(),
             TokenKind::Ident(_) => self.parse_ident_expr()?.into(),
             TokenKind::Prefix(_) | TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
             _ => {
@@ -214,9 +211,7 @@ impl Parser<'_> {
                             self.continue_parse_struct_expr(Box::new(expr))?.into()
                         }
                         tk::OPEN_PAREN => self.continue_parse_fn_call_expr(Box::new(expr))?.into(),
-                        tk::OPEN_BRACKET => {
-                            self.continue_parse_subscript_expr(Box::new(expr))?.into()
-                        }
+                        tk::OPEN_BRACKET => self.continue_parse_subscript_expr(Box::new(expr))?,
                         _ => break,
                     }
                 }
@@ -225,13 +220,11 @@ impl Parser<'_> {
                 | Expr::Deref(_)
                 | Expr::FnCall(_)
                 | Expr::Paren(_)
-                | Expr::Subscript(_) => {
+                | Expr::Index(_) => {
                     match self.peek().kind {
                         tk::DOT => self.continue_parse_access_or_deref_expr(Box::new(expr))?,
                         tk::OPEN_PAREN => self.continue_parse_fn_call_expr(Box::new(expr))?.into(),
-                        tk::OPEN_BRACKET => {
-                            self.continue_parse_subscript_expr(Box::new(expr))?.into()
-                        }
+                        tk::OPEN_BRACKET => self.continue_parse_subscript_expr(Box::new(expr))?,
                         _ => break,
                     }
                 }
