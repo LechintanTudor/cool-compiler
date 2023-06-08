@@ -9,6 +9,7 @@ mod for_expr;
 mod ident_expr;
 mod index_expr;
 mod literal_expr;
+mod range_expr;
 mod struct_expr;
 mod tuple_expr;
 mod unary_expr;
@@ -25,6 +26,7 @@ pub use self::for_expr::*;
 pub use self::ident_expr::*;
 pub use self::index_expr::*;
 pub use self::literal_expr::*;
+pub use self::range_expr::*;
 pub use self::struct_expr::*;
 pub use self::tuple_expr::*;
 pub use self::unary_expr::*;
@@ -99,6 +101,7 @@ define_expr_ast! {
     Index,
     Literal,
     Module,
+    Range,
     Struct,
     Tuple,
     Ty,
@@ -166,6 +169,7 @@ impl_gen_expr! {
     Index,
     Literal,
     Paren,
+    Range,
     Struct,
     Tuple,
     Unary,

@@ -44,7 +44,6 @@ impl AstGenerator<'_> {
             ValueTy::Aggregate(AggregateTy {
                 kind: AggregateKind::Slice,
                 fields,
-                ..
             }) => {
                 let many_ptr_ty = self.resolve[fields[0].ty_id].ty.as_many_ptr().unwrap();
 
