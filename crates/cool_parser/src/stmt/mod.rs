@@ -21,6 +21,25 @@ pub enum StmtKind {
     Return(ReturnStmt),
 }
 
+impl StmtKind {
+    #[inline]
+    pub fn as_expr(&self) -> Option<&Expr> {
+        match self {
+            Self::Expr(expr) => Some(expr),
+            _ => None,
+        }
+    }
+
+    #[inline]
+    pub fn is_promotable_to_stmt(&self) -> bool {
+        match self {
+            Self::Defer(_) => true,
+            Self::Expr(expr) => expr.is_promotable_to_stmt(),
+            _ => false,
+        }
+    }
+}
+
 impl Section for StmtKind {
     fn span(&self) -> Span {
         match self {
@@ -65,15 +84,13 @@ impl Parser<'_> {
             });
         }
 
-        if let StmtKind::Expr(expr) = &kind {
-            if expr.is_promotable_to_stmt() {
-                return Ok(Stmt {
-                    span: expr.span(),
-                    kind,
-                });
-            }
+        if !kind.is_promotable_to_stmt() {
+            return self.peek_error(&[tk::SEMICOLON]);
         }
 
-        self.peek_error(&[tk::SEMICOLON])
+        Ok(Stmt {
+            span: kind.span(),
+            kind,
+        })
     }
 }

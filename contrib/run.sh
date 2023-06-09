@@ -2,7 +2,7 @@
 
 set -e
 
-cargo run -- --crate-name test ../programs/main.cl
+cargo run -- --crate-name "$1" "../programs/$1.cl"
 echo
 
 echo "Compiling LLVM IR..."

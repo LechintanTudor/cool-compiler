@@ -6,6 +6,8 @@ use cool_span::{Section, Span};
 #[derive(Clone, Debug)]
 pub struct BlockExprAst {
     pub span: Span,
+    pub first_frame_id: FrameId,
+    pub last_frame_id: FrameId,
     pub expr_id: ExprId,
     pub stmts: Vec<StmtAst>,
     pub expr: Option<Box<ExprAst>>,
@@ -25,13 +27,14 @@ impl AstGenerator<'_> {
         expected_ty_id: TyId,
         block: &BlockExpr,
     ) -> AstResult<BlockExprAst> {
+        let first_frame_id = frame_id;
         let mut stmts = Vec::<StmtAst>::new();
 
         for stmt in block.stmts.iter() {
             let stmt = self.gen_stmt(frame_id, stmt)?;
 
-            if let StmtAst::Decl(decl) = &stmt {
-                frame_id = decl.frame_id;
+            if let Some(new_frame_id) = stmt.get_new_frame_id() {
+                frame_id = new_frame_id;
             }
 
             stmts.push(stmt);
@@ -62,6 +65,8 @@ impl AstGenerator<'_> {
 
         Ok(BlockExprAst {
             span: block.span,
+            first_frame_id,
+            last_frame_id: frame_id,
             expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
             stmts,
             expr: expr.map(Box::new),

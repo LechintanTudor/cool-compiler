@@ -15,6 +15,14 @@ impl ResolveContext {
         self.frames.push(Frame::new(parent))
     }
 
+    #[inline]
+    pub fn get_parent_frame(&self, frame_id: FrameId) -> Option<FrameId> {
+        match self.frames[frame_id].parent {
+            Scope::Frame(parent) => Some(parent),
+            Scope::Module(_) => None,
+        }
+    }
+
     pub fn insert_local_binding(
         &mut self,
         frame_id: FrameId,

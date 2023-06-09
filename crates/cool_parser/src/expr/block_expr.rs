@@ -1,4 +1,4 @@
-use crate::{BlockElem, Expr, ParseResult, Parser, Stmt};
+use crate::{Expr, ExprOrStmt, ParseResult, Parser, Stmt};
 use cool_lexer::tk;
 use cool_span::{Section, Span};
 
@@ -18,39 +18,30 @@ impl Section for BlockExpr {
 
 impl Parser<'_> {
     pub fn parse_block_expr(&mut self) -> ParseResult<BlockExpr> {
-        let start_token = self.bump_expect(&tk::OPEN_BRACE)?;
-
-        if let Some(end_token) = self.bump_if_eq(tk::CLOSE_BRACE) {
-            return Ok(BlockExpr {
-                span: start_token.span.to(end_token.span),
-                stmts: vec![],
-                expr: None,
-            });
-        }
-
+        let open_brace = self.bump_expect(&tk::OPEN_BRACE)?;
         let mut stmts = Vec::<Stmt>::new();
 
-        let (end_token, expr) = loop {
-            match self.parse_block_elem()? {
-                BlockElem::Expr(expr) => {
+        let (end_brace, expr) = loop {
+            if let Some(end_token) = self.bump_if_eq(tk::CLOSE_BRACE) {
+                break (end_token, None);
+            }
+
+            match self.parse_bare_expr_or_stmt(true, true)? {
+                ExprOrStmt::Expr(expr) => {
                     if let Some(end_token) = self.bump_if_eq(tk::CLOSE_BRACE) {
                         break (end_token, Some(expr));
                     } else {
                         stmts.push(self.continue_parse_stmt(Box::new(expr).into())?);
                     }
                 }
-                BlockElem::Stmt(stmt) => {
-                    stmts.push(stmt);
-
-                    if let Some(end_token) = self.bump_if_eq(tk::CLOSE_BRACE) {
-                        break (end_token, None);
-                    }
+                ExprOrStmt::Stmt(stmt) => {
+                    stmts.push(self.continue_parse_stmt(stmt)?);
                 }
             }
         };
 
         Ok(BlockExpr {
-            span: start_token.span.to(end_token.span),
+            span: open_brace.span.to(end_brace.span),
             stmts,
             expr: expr.map(Box::new),
         })

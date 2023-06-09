@@ -14,7 +14,7 @@ pub use self::ty::*;
 pub use self::utils::*;
 pub use self::value::*;
 use cool_ast::PackageAst;
-use cool_resolve::{BindingId, ResolveContext};
+use cool_resolve::{BindingId, FrameId, ResolveContext};
 use inkwell::basic_block::BasicBlock;
 use inkwell::builder::Builder;
 use inkwell::context::Context;
@@ -44,9 +44,10 @@ impl<'a> FnState<'a> {
 
 pub struct CodeGenerator<'a> {
     context: &'a Context,
+    package: &'a PackageAst,
+    resolve: &'a ResolveContext,
     llvm_true: IntValue<'a>,
     llvm_false: IntValue<'a>,
-    resolve: &'a ResolveContext,
     tys: GeneratedTys<'a>,
     bindings: FxHashMap<BindingId, Value<'a>>,
     module: Module<'a>,
@@ -75,6 +76,7 @@ impl<'a> CodeGenerator<'a> {
         context: &'a Context,
         target_triple: &TargetTriple,
         target_data: &TargetData,
+        package: &'a PackageAst,
         resolve: &'a ResolveContext,
         crate_name: &str,
         crate_root_file: &str,
@@ -95,9 +97,10 @@ impl<'a> CodeGenerator<'a> {
 
         Self {
             context,
+            package,
+            resolve,
             llvm_true,
             llvm_false,
-            resolve,
             tys,
             bindings: Default::default(),
             module,
@@ -107,20 +110,32 @@ impl<'a> CodeGenerator<'a> {
         }
     }
 
-    pub fn gen_module(mut self, package: &PackageAst) -> Module<'a> {
-        for extern_fn_ast in package.extern_fns.iter() {
+    pub fn gen_module(mut self) -> Module<'a> {
+        for extern_fn_ast in self.package.extern_fns.iter() {
             self.add_extern_fn(extern_fn_ast);
         }
 
-        for fn_ast in package.fns.iter() {
+        for fn_ast in self.package.fns.iter() {
             self.add_fn(fn_ast);
         }
 
-        for fn_ast in package.fns.iter() {
+        for fn_ast in self.package.fns.iter() {
             self.gen_fn(fn_ast);
         }
 
         self.module
+    }
+
+    pub fn gen_defers(&mut self, first_frame_id: FrameId, last_frame_id: FrameId) {
+        let mut current_frame_id = last_frame_id;
+
+        while current_frame_id != first_frame_id {
+            if let Some(stmt) = self.package.defer_stmts.get(current_frame_id) {
+                self.gen_stmt(stmt);
+            }
+
+            current_frame_id = self.resolve.get_parent_frame(current_frame_id).unwrap();
+        }
     }
 
     pub fn get_current_entry_block(&self) -> BasicBlock<'a> {

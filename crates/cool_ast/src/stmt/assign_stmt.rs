@@ -6,8 +6,8 @@ use cool_span::Section;
 #[derive(Clone, Debug)]
 pub struct AssignStmtAst {
     pub assign_op: AssignOp,
-    pub lhs: ExprAst,
-    pub rhs: ExprAst,
+    pub lhs: Box<ExprAst>,
+    pub rhs: Box<ExprAst>,
 }
 
 impl Section for AssignStmtAst {
@@ -39,8 +39,8 @@ impl AstGenerator<'_> {
 
         Ok(AssignStmtAst {
             assign_op: assign_stmt.assign_op,
-            lhs,
-            rhs,
+            lhs: Box::new(lhs),
+            rhs: Box::new(rhs),
         })
     }
 }

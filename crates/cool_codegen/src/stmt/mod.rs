@@ -16,6 +16,7 @@ impl<'a> CodeGenerator<'a> {
             StmtAst::Decl(decl) => {
                 self.gen_decl_stmt(decl);
             }
+            StmtAst::Defer(_) => (),
             StmtAst::Expr(expr) => {
                 self.gen_expr(expr, None);
             }

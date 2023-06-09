@@ -47,7 +47,11 @@ pub fn p4_gen_ast(package: &Package, resolve: &mut ResolveContext) -> CompileRes
     }
 
     if errors.is_empty() {
-        Ok(PackageAst { fns, extern_fns })
+        Ok(PackageAst {
+            fns,
+            extern_fns,
+            defer_stmts: ast.defer_codes,
+        })
     } else {
         Err(CompileErrorBundle { errors })
     }

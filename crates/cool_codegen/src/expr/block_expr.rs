@@ -11,9 +11,17 @@ impl<'a> CodeGenerator<'a> {
             self.gen_stmt(stmt);
         }
 
-        match block.expr.as_ref() {
+        let value = match block.expr.as_ref() {
             Some(expr) => self.gen_loaded_expr(expr),
             None => LoadedValue::Void,
-        }
+        };
+
+        self.gen_defers(block.first_frame_id, block.last_frame_id);
+
+        if self.builder.current_block_diverges() {
+            return LoadedValue::Void;
+        };
+
+        value
     }
 }

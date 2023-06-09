@@ -1,4 +1,4 @@
-use crate::{BareBlockElem, BlockExpr, DeclStmt, Expr, ParseResult, Parser};
+use crate::{BlockExpr, DeclStmt, Expr, ExprOrStmt, ParseResult, Parser};
 use cool_lexer::tk;
 use cool_span::{Section, Span};
 
@@ -7,7 +7,7 @@ pub struct ForExpr {
     pub span: Span,
     pub decl: Box<DeclStmt>,
     pub cond: Box<Expr>,
-    pub after: Box<BareBlockElem>,
+    pub after: Box<ExprOrStmt>,
     pub body: Box<BlockExpr>,
 }
 
@@ -28,7 +28,7 @@ impl Parser<'_> {
         let cond = self.parse_expr()?;
         self.bump_expect(&tk::SEMICOLON)?;
 
-        let after = self.parse_bare_block_elem(true, false)?;
+        let after = self.parse_bare_expr_or_stmt(true, false)?;
         let body = self.parse_block_expr()?;
 
         Ok(ForExpr {

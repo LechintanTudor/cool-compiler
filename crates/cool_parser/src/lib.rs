@@ -1,9 +1,9 @@
 mod abstract_fn;
-mod block_elem;
 mod cond_block;
 mod decl;
 mod error;
 mod expr;
+mod expr_or_stmt;
 mod fn_extern_decl;
 mod fn_prototype;
 mod ident;
@@ -15,11 +15,11 @@ mod stmt;
 mod ty;
 
 pub use self::abstract_fn::*;
-pub use self::block_elem::*;
 pub use self::cond_block::*;
 pub use self::decl::*;
 pub use self::error::*;
 pub use self::expr::*;
+pub use self::expr_or_stmt::*;
 pub use self::fn_extern_decl::*;
 pub use self::fn_prototype::*;
 pub use self::ident::*;

@@ -5,8 +5,8 @@ use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct CondBlockAst {
-    pub cond: ExprAst,
-    pub expr: BlockExprAst,
+    pub cond: Box<ExprAst>,
+    pub expr: Box<BlockExprAst>,
 }
 
 impl Section for CondBlockAst {
@@ -23,9 +23,12 @@ impl AstGenerator<'_> {
         expected_ty_id: TyId,
         block: &CondBlock,
     ) -> AstResult<CondBlockAst> {
+        let cond = self.gen_expr(frame_id, tys::BOOL, &block.cond)?;
+        let expr = self.gen_block_expr(frame_id, expected_ty_id, &block.expr)?;
+
         Ok(CondBlockAst {
-            cond: self.gen_expr(frame_id, tys::BOOL, &block.cond)?,
-            expr: self.gen_block_expr(frame_id, expected_ty_id, &block.expr)?,
+            cond: Box::new(cond),
+            expr: Box::new(expr),
         })
     }
 }

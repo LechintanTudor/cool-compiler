@@ -1,5 +1,5 @@
 use crate::{AstGenerator, AstResult, BlockExprAst, DeclStmtAst, ExprAst, StmtAst};
-use cool_parser::{BareBlockElem, ForExpr};
+use cool_parser::{ExprOrStmt, ForExpr};
 use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
 use cool_span::{Section, Span};
 
@@ -34,8 +34,8 @@ impl AstGenerator<'_> {
         let cond = self.gen_expr(frame_id, tys::BOOL, &expr.cond)?;
 
         let after: StmtAst = match expr.after.as_ref() {
-            BareBlockElem::Expr(expr) => self.gen_expr(frame_id, tys::INFER, expr)?.into(),
-            BareBlockElem::Stmt(stmt) => self.gen_stmt_kind(frame_id, stmt)?,
+            ExprOrStmt::Expr(expr) => self.gen_expr(frame_id, tys::INFER, expr)?.into(),
+            ExprOrStmt::Stmt(stmt) => self.gen_stmt_kind(frame_id, stmt)?,
         };
 
         let body = self.gen_block_expr(frame_id, tys::UNIT, &expr.body)?;

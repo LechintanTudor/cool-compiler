@@ -1,14 +1,18 @@
 mod cond_block;
+mod defer_code_map;
 mod error;
 mod expr;
+mod expr_or_stmt;
 mod function;
 mod package;
 mod resolve;
 mod stmt;
 
 pub use self::cond_block::*;
+pub use self::defer_code_map::*;
 pub use self::error::*;
 pub use self::expr::*;
+pub use self::expr_or_stmt::*;
 pub use self::function::*;
 pub use self::package::*;
 pub use self::resolve::*;
@@ -22,6 +26,7 @@ pub struct FnState {
 
 pub struct AstGenerator<'a> {
     pub resolve: &'a mut ResolveContext,
+    pub defer_codes: DeferStmtMap,
     fn_state_stack: Vec<FnState>,
 }
 
@@ -30,6 +35,7 @@ impl<'a> AstGenerator<'a> {
     pub fn new(resolve: &'a mut ResolveContext) -> Self {
         Self {
             resolve,
+            defer_codes: Default::default(),
             fn_state_stack: Default::default(),
         }
     }
