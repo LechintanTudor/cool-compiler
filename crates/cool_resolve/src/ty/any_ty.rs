@@ -1,5 +1,6 @@
 use crate::{InferTy, ItemTy, PrimitiveTyData, ResolveTy, ValueTy};
 use derive_more::From;
+use std::fmt;
 
 #[derive(Clone, Eq, PartialEq, Hash, From, Debug)]
 pub enum AnyTy {
@@ -63,6 +64,17 @@ impl AnyTy {
                 }
             }
             Self::Value(value_ty) => value_ty.to_resolve_ty(primitives),
+        }
+    }
+}
+
+impl fmt::Display for AnyTy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Infer(infer_ty) => write!(f, "{infer_ty}"),
+            Self::Item(item_ty) => write!(f, "{item_ty}"),
+            Self::Value(value_ty) => write!(f, "{value_ty}"),
+            Self::Diverge => write!(f, "<diverge>"),
         }
     }
 }

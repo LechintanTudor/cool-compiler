@@ -1,4 +1,5 @@
 use crate::{AnyTy, ResolveTy, ValueTy};
+use std::fmt;
 
 #[derive(Clone, Copy, Debug)]
 pub struct PrimitiveTyData {
@@ -61,6 +62,27 @@ impl IntTy {
     }
 }
 
+impl fmt::Display for IntTy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let display_str = match self {
+            Self::I8 => "i8",
+            Self::I16 => "i16",
+            Self::I32 => "i32",
+            Self::I64 => "i64",
+            Self::I128 => "i128",
+            Self::Isize => "isize",
+            Self::U8 => "u8",
+            Self::U16 => "u16",
+            Self::U32 => "u32",
+            Self::U64 => "u64",
+            Self::U128 => "u128",
+            Self::Usize => "usize",
+        };
+
+        write!(f, "{}", display_str)
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum FloatTy {
     F32,
@@ -79,5 +101,16 @@ impl FloatTy {
             align,
             ty: AnyTy::Value(ValueTy::Float(*self)),
         }
+    }
+}
+
+impl fmt::Display for FloatTy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let display_str = match self {
+            Self::F32 => "f32",
+            Self::F64 => "f64",
+        };
+
+        write!(f, "{}", display_str)
     }
 }

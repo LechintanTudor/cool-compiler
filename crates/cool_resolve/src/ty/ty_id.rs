@@ -7,7 +7,7 @@ pub struct TyId(&'static ResolveTy);
 
 impl fmt::Display for TyId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(self, f)
+        write!(f, "{}", self.0.ty)
     }
 }
 

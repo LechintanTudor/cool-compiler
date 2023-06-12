@@ -5,6 +5,7 @@ use crate::{
 use cool_lexer::Symbol;
 use derive_more::From;
 use paste::paste;
+use std::fmt;
 
 macro_rules! define_value_ty {
     { Simple { $($SimpleTy:ident,)* }, Wrapped { $($WrappedTy:ident,)* }, } => {
@@ -209,6 +210,25 @@ impl ValueTy {
                     ty: AnyTy::Value(self),
                 }
             }
+        }
+    }
+}
+
+impl fmt::Display for ValueTy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Unit => write!(f, "()"),
+            Self::Bool => write!(f, "bool"),
+            Self::Char => write!(f, "char"),
+            Self::Int(int_ty) => write!(f, "{int_ty}"),
+            Self::Float(float_ty) => write!(f, "{float_ty}"),
+            Self::Array(array_ty) => write!(f, "{array_ty}"),
+            Self::Tuple(tuple_ty) => write!(f, "{tuple_ty}"),
+            Self::Struct(struct_ty) => write!(f, "{struct_ty}"),
+            Self::Fn(fn_ty) => write!(f, "{fn_ty}"),
+            Self::Ptr(ptr_ty) => write!(f, "{ptr_ty}"),
+            Self::ManyPtr(many_ptr_ty) => write!(f, "{many_ptr_ty}"),
+            Self::Slice(slice_ty) => write!(f, "{slice_ty}"),
         }
     }
 }

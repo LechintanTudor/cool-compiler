@@ -1,4 +1,5 @@
 use crate::{Field, ItemId};
+use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::sync::{Arc, Mutex};
 
@@ -23,6 +24,12 @@ impl Hash for StructTy {
         H: Hasher,
     {
         self.item_id.hash(state);
+    }
+}
+
+impl fmt::Display for StructTy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "struct")
     }
 }
 
