@@ -43,6 +43,10 @@ impl fmt::Display for FnTy {
             }
         }
 
-        write!(f, ") -> {}", self.ret)
+        if self.ret.is_unit() {
+            write!(f, ")")
+        } else {
+            write!(f, ") -> {}", self.ret)
+        }
     }
 }
