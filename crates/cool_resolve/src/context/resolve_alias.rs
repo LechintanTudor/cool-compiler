@@ -1,5 +1,5 @@
 use crate::{
-    tys, ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveErrorKind,
+    ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveErrorKind,
     ResolveResult, TyId,
 };
 use cool_lexer::Symbol;

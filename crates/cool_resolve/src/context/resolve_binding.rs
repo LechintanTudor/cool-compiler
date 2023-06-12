@@ -1,5 +1,5 @@
 use crate::{
-    tys, Binding, Frame, Mutability, ResolveContext, ResolveError, ResolveErrorKind, ResolveResult,
+    Binding, Frame, Mutability, ResolveContext, ResolveError, ResolveErrorKind, ResolveResult,
     Scope, TyId,
 };
 use cool_collections::id_newtype;
