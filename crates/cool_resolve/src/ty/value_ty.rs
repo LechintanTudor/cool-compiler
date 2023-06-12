@@ -1,7 +1,8 @@
 use crate::{
-    resolve_fields_size_align, AnyTy, ArrayTy, FloatTy, FnTy, IntTy, ManyPtrTy, PrimitiveTyData,
-    PtrTy, ResolveTy, SliceTy, StructTy, TupleTy,
+    resolve_fields_size_align, AnyTy, ArrayTy, Field, FloatTy, FnTy, IntTy, ManyPtrTy,
+    PrimitiveTyData, PtrTy, ResolveTy, SliceTy, StructTy, TupleTy,
 };
+use cool_lexer::Symbol;
 use derive_more::From;
 use paste::paste;
 
@@ -32,6 +33,30 @@ macro_rules! define_value_ty {
                     pub fn [<as_ $WrappedTy:snake:lower>](&self) -> Option<&[<$WrappedTy Ty>]> {
                         match self {
                             Self::$WrappedTy(ty) => Some(ty),
+                            _ => None,
+                        }
+                    }
+                )*
+            }
+
+            impl AnyTy {
+                $(
+                    #[inline]
+                    pub fn [<is_ $SimpleTy:snake:lower>](&self) -> bool {
+                        matches!(self, Self::Value(ValueTy::$SimpleTy))
+                    }
+                )*
+
+                $(
+                    #[inline]
+                    pub fn [<is_ $WrappedTy:snake:lower>](&self) -> bool {
+                        matches!(self, Self::Value(ValueTy::$WrappedTy(_)))
+                    }
+
+                    #[inline]
+                    pub fn [<as_ $WrappedTy:snake:lower>](&self) -> Option<&[<$WrappedTy Ty>]> {
+                        match self {
+                            Self::Value(ValueTy::$WrappedTy(ty)) => Some(ty),
                             _ => None,
                         }
                     }
@@ -72,6 +97,31 @@ impl ValueTy {
             self,
             Self::Int(_) | Self::Float(_) | Self::Ptr(_) | Self::ManyPtr(_),
         )
+    }
+
+    pub fn get_aggregate_field(&self, symbol: Symbol) -> Option<Field> {
+        match self {
+            Self::Tuple(tuple_ty) => {
+                tuple_ty
+                    .fields
+                    .iter()
+                    .find(|field| field.symbol == symbol)
+                    .cloned()
+            }
+            Self::Struct(struct_ty) => {
+                let def = struct_ty.def.lock().unwrap();
+                let fields: &[_] = &def.as_ref().unwrap().fields;
+                fields.iter().find(|field| field.symbol == symbol).cloned()
+            }
+            Self::Slice(slice_ty) => {
+                slice_ty
+                    .fields
+                    .iter()
+                    .find(|field| field.symbol == symbol)
+                    .cloned()
+            }
+            _ => None,
+        }
     }
 
     pub fn to_resolve_ty(self, primitives: &PrimitiveTyData) -> ResolveTy {

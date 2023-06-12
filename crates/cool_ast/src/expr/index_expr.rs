@@ -29,7 +29,11 @@ impl AstGenerator<'_> {
         let index = self.gen_expr(frame_id, self.tys().usize, &expr.index)?;
 
         let base_expr = self.resolve[base.expr_id()];
-        let (ty_id, kind) = match &self.resolve[base_expr.ty_id].ty {
+        let Some(base_ty) = base_expr.ty_id.as_value() else {
+            panic!("type is not a value type");
+        };
+
+        let (ty_id, kind) = match base_ty {
             ValueTy::Array(array_ty) => (array_ty.elem, base_expr.kind),
             ValueTy::ManyPtr(many_ptr_ty) => {
                 (
@@ -39,11 +43,8 @@ impl AstGenerator<'_> {
                     },
                 )
             }
-            ValueTy::Aggregate(AggregateTy {
-                kind: AggregateKind::Slice,
-                fields,
-            }) => {
-                let many_ptr_ty = self.resolve[fields[0].ty_id].ty.as_many_ptr().unwrap();
+            ValueTy::Slice(slice_ty) => {
+                let many_ptr_ty = slice_ty.ptr_ty();
 
                 (
                     many_ptr_ty.pointee,

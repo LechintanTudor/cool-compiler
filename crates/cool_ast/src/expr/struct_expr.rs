@@ -1,7 +1,7 @@
 use crate::{AstGenerator, AstResult, ExprAst};
 use cool_lexer::Symbol;
 use cool_parser::{Ident, StructExpr};
-use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
+use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId};
 use cool_span::{Section, Span};
 use rustc_hash::FxHashSet;
 
@@ -41,13 +41,12 @@ impl AstGenerator<'_> {
         expr: &StructExpr,
     ) -> AstResult<StructExprAst> {
         let ty_id = self
-            .gen_expr(frame_id, self.tys().TY, &expr.base)?
+            .gen_expr(frame_id, self.tys().ty, &expr.base)?
             .as_ty()
             .expect("struct base is not a type")
             .item_ty_id;
 
-        let struct_ty = self.resolve[ty_id]
-            .ty
+        let struct_ty = ty_id
             .as_struct()
             .expect("struct base is not a struct type")
             .clone();
@@ -55,9 +54,11 @@ impl AstGenerator<'_> {
         let mut initializers = Vec::<StructFieldInitializerAst>::new();
         let mut used_fields = FxHashSet::<Symbol>::default();
 
+        let struct_def = struct_ty.def.lock().unwrap();
+        let fields: &[_] = &struct_def.as_ref().unwrap().fields;
+
         for initializer in expr.initializers.iter() {
-            let field_ty_id = struct_ty
-                .fields
+            let field_ty_id = fields
                 .iter()
                 .find(|field| field.symbol == initializer.ident.symbol)
                 .map(|field| field.ty_id)
@@ -81,7 +82,7 @@ impl AstGenerator<'_> {
             });
         }
 
-        if initializers.len() < struct_ty.fields.len() {
+        if initializers.len() < fields.len() {
             panic!("missing struct fields");
         }
 

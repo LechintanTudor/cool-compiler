@@ -152,16 +152,19 @@ impl AstGenerator<'_> {
         ident: Ident,
     ) -> AstResult<ExprAst> {
         let base_expr = self.resolve[base.expr_id()];
+        let Some(base_ty) = base_expr.ty_id.as_value() else {
+            panic!("type is not a value type");
+        };
 
-        let expr = match &*base_expr.ty_id {
-            AnyTy::Value(ValueTy::Aggregate(aggregate_ty)) => {
-                let field_ty_id = aggregate_ty
-                    .get_field_ty_id(ident.symbol)
+        let expr = match base_ty {
+            ValueTy::Tuple(_) | ValueTy::Struct(_) | ValueTy::Slice(_) => {
+                let field = base_ty
+                    .get_aggregate_field(ident.symbol)
                     .expect("no field found");
 
                 let ty_id = self
                     .resolve
-                    .resolve_direct_ty_id(field_ty_id, expected_ty_id)?;
+                    .resolve_direct_ty_id(field.ty_id, expected_ty_id)?;
 
                 let expr_id = self.resolve.add_expr(ResolveExpr { ty_id, ..base_expr });
 
@@ -172,7 +175,7 @@ impl AstGenerator<'_> {
                 }
                 .into()
             }
-            AnyTy::Value(ValueTy::Array(_)) => {
+            ValueTy::Array(_) => {
                 if ident.symbol != sym::LEN {
                     panic!("unknown array access");
                 }

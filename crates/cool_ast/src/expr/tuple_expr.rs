@@ -1,7 +1,7 @@
 use crate::{AstGenerator, AstResult, ExprAst};
 use cool_lexer::Symbol;
 use cool_parser::TupleExpr;
-use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId};
+use cool_resolve::{ExprId, FrameId, ResolveExpr, TupleTy, TyId};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -25,13 +25,7 @@ impl AstGenerator<'_> {
         expected_ty_id: TyId,
         expr: &TupleExpr,
     ) -> AstResult<TupleExprAst> {
-        let tuple_ty = self
-            .resolve
-            .get_resolve_ty(expected_ty_id)
-            .and_then(|resolve_ty| resolve_ty.ty.as_tuple())
-            .cloned();
-
-        let elems = match tuple_ty {
+        let elems = match expected_ty_id.as_tuple() {
             Some(tuple_ty) => self.gen_tuple_elems_with_type(frame_id, &tuple_ty, expr)?,
             None => self.gen_tuple_elems_without_type(frame_id, expr)?,
         };
@@ -67,7 +61,7 @@ impl AstGenerator<'_> {
     fn gen_tuple_elems_with_type(
         &mut self,
         frame_id: FrameId,
-        tuple_ty: &AggregateTy,
+        tuple_ty: &TupleTy,
         expr: &TupleExpr,
     ) -> AstResult<Vec<ExprAst>> {
         if expr.elems.len() != tuple_ty.fields.len() {

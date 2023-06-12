@@ -1,6 +1,6 @@
 use crate::{AstError, AstGenerator, AstResult, ExprAst};
 use cool_parser::{UnaryExpr, UnaryOp, UnaryOpKind};
-use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId, TyMismatch};
+use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId, TyMismatch};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -29,7 +29,7 @@ impl AstGenerator<'_> {
                 let expr = self.gen_expr(frame_id, expected_ty_id, &unary_expr.expr)?;
                 let ty_id = self.resolve.resolve_direct_ty_id(
                     self.resolve[expr.expr_id()].ty_id,
-                    self.tys().infer_NUMBER,
+                    self.tys().infer_number,
                 )?;
 
                 UnaryExprAst {
@@ -45,7 +45,7 @@ impl AstGenerator<'_> {
                 if !ty_id.is_number() && ty_id != self.tys().bool {
                     Err(TyMismatch {
                         found_ty_id: ty_id,
-                        expected_ty_id: self.tys().infer_NUMBER,
+                        expected_ty_id: self.tys().infer_number,
                     })?
                 }
 

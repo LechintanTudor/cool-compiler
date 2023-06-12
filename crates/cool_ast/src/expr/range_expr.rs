@@ -64,7 +64,12 @@ impl AstGenerator<'_> {
         };
 
         let base_expr = &self.resolve[base.expr_id()];
-        let elem_ty_id = match &self.resolve[base_expr.ty_id].ty {
+
+        let Some(value_ty) = base_expr.ty_id.as_value() else {
+            panic!("type is not a value type");
+        };
+
+        let elem_ty_id = match value_ty {
             ValueTy::Array(array_ty) => {
                 if expr.is_mutable {
                     assert!(base_expr.is_assignable());
@@ -72,11 +77,8 @@ impl AstGenerator<'_> {
 
                 array_ty.elem
             }
-            ValueTy::Aggregate(AggregateTy {
-                kind: AggregateKind::Slice,
-                fields,
-            }) => {
-                let many_ptr_ty = self.resolve[fields[0].ty_id].ty.as_many_ptr().unwrap();
+            ValueTy::Slice(slice_ty) => {
+                let many_ptr_ty = slice_ty.ptr_ty();
 
                 if expr.is_mutable {
                     assert!(many_ptr_ty.is_mutable)
