@@ -1,7 +1,7 @@
 use crate::{BuilderExt, CodeGenerator, LoadedValue, Value};
 use cool_ast::IndexExprAst;
 use cool_lexer::sym;
-use cool_resolve::{AggregateKind, AggregateTy, ValueTy, SLICE_PTR_FIELD_INDEX};
+use cool_resolve::{SliceTy, ValueTy};
 use inkwell::values::IntValue;
 
 impl<'a> CodeGenerator<'a> {
@@ -18,13 +18,10 @@ impl<'a> CodeGenerator<'a> {
 
         let index = index.as_basic_value().unwrap().into_int_value();
 
-        match &self.resolve.get_expr_ty(expr.base.expr_id()).ty {
+        match self.resolve[expr.base.expr_id()].ty_id.as_value().unwrap() {
             ValueTy::Array(_) => self.continue_gen_array_index_expr(expr, base, index),
             ValueTy::ManyPtr(_) => self.continue_gen_many_ptr_index_expr(expr, base, index),
-            ValueTy::Aggregate(AggregateTy {
-                kind: AggregateKind::Slice,
-                ..
-            }) => self.continue_gen_slice_index_expr(expr, base, index),
+            ValueTy::Slice(_) => self.continue_gen_slice_index_expr(expr, base, index),
             _ => unreachable!(),
         }
     }
@@ -59,7 +56,7 @@ impl<'a> CodeGenerator<'a> {
         index: IntValue<'a>,
     ) -> Value<'a> {
         let ptr_ty_id = self.resolve.get_expr_ty_id(expr.base.expr_id());
-        let elem_ty_id = self.resolve[ptr_ty_id].ty.as_many_ptr().unwrap().pointee;
+        let elem_ty_id = ptr_ty_id.as_many_ptr().unwrap().pointee;
         let elem_ty = self.tys[elem_ty_id].unwrap();
 
         match self.gen_loaded_value(base) {
@@ -79,8 +76,8 @@ impl<'a> CodeGenerator<'a> {
         index: IntValue<'a>,
     ) -> Value<'a> {
         let slice_ty_id = self.resolve.get_expr_ty_id(expr.base.expr_id());
-        let ptr_ty_id = self.resolve[slice_ty_id].ty.as_slice().unwrap().fields[0].ty_id;
-        let elem_ty_id = self.resolve[ptr_ty_id].ty.as_many_ptr().unwrap().pointee;
+        let ptr_ty_id = slice_ty_id.as_slice().unwrap().fields[0].ty_id;
+        let elem_ty_id = ptr_ty_id.as_many_ptr().unwrap().pointee;
         let elem_ty = self.tys[elem_ty_id].unwrap();
 
         match base {
@@ -99,7 +96,7 @@ impl<'a> CodeGenerator<'a> {
 
                 let ptr_value = self
                     .builder
-                    .build_extract_value(slice_value, SLICE_PTR_FIELD_INDEX, "")
+                    .build_extract_value(slice_value, SliceTy::PTR_FIELD_INDEX, "")
                     .unwrap()
                     .into_pointer_value();
 

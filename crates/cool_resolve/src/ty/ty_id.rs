@@ -6,8 +6,8 @@ use std::{fmt, ops};
 pub struct TyId(&'static ResolveTy);
 
 impl fmt::Display for TyId {
-    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        todo!()
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
     }
 }
 
@@ -42,6 +42,11 @@ impl TyId {
         }
     }
 
+    #[inline]
+    pub fn is_zero_sized(&self) -> bool {
+        self.get_size() == 0
+    }
+
     pub fn define_struct(&self, mut fields: Vec<Field>) {
         let AnyTy::Value(ValueTy::Struct(struct_ty)) = &self.0.ty else {
             panic!("type is not a struct");
@@ -66,7 +71,7 @@ impl TyId {
 impl PartialEq for TyId {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self, other)
+        std::ptr::eq(self.0, other.0)
     }
 }
 
@@ -77,7 +82,7 @@ impl Hash for TyId {
     where
         H: Hasher,
     {
-        std::ptr::hash(self, state);
+        std::ptr::hash(self.0, state);
     }
 }
 

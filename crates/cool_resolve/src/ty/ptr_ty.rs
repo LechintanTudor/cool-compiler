@@ -18,14 +18,17 @@ pub struct SliceTy {
 }
 
 impl SliceTy {
+    pub const PTR_FIELD_INDEX: u32 = 0;
+    pub const LEN_FIELD_INDEX: u32 = 1;
+
     #[inline]
     pub fn ptr_field(&self) -> &Field {
-        &self.fields[0]
+        &self.fields[Self::PTR_FIELD_INDEX as usize]
     }
 
     #[inline]
     pub fn len_field(&self) -> &Field {
-        &self.fields[1]
+        &self.fields[Self::LEN_FIELD_INDEX as usize]
     }
 
     #[inline]

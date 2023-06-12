@@ -1,9 +1,7 @@
 use crate::{BuilderExt, CodeGenerator, LoadedValue, MemoryValue, Value};
 use cool_ast::RangeExprAst;
 use cool_lexer::sym;
-use cool_resolve::{
-    AggregateKind, AggregateTy, ValueTy, SLICE_LEN_FIELD_INDEX, SLICE_PTR_FIELD_INDEX,
-};
+use cool_resolve::{SliceTy, ValueTy};
 use inkwell::values::{IntValue, PointerValue};
 
 impl<'a> CodeGenerator<'a> {
@@ -47,12 +45,9 @@ impl<'a> CodeGenerator<'a> {
             MemoryValue::new(slice_ptr, slice_ty)
         });
 
-        match &self.resolve.get_expr_ty(expr.base.expr_id()).ty {
+        match self.resolve[expr.base.expr_id()].ty_id.as_value().unwrap() {
             ValueTy::Array(_) => self.gen_array_range_expr(expr, base, from, to, memory),
-            ValueTy::Aggregate(AggregateTy {
-                kind: AggregateKind::Slice,
-                ..
-            }) => self.gen_slice_range_expr(expr, base, from, to, memory),
+            ValueTy::Slice(_) => self.gen_slice_range_expr(expr, base, from, to, memory),
             _ => unreachable!(),
         }
     }
@@ -86,10 +81,8 @@ impl<'a> CodeGenerator<'a> {
         let to = match to {
             LoadedValue::Register(value) => value.into_int_value(),
             LoadedValue::Void => {
-                let base_len = self
-                    .resolve
-                    .get_expr_ty(expr.base.expr_id())
-                    .ty
+                let base_len = self.resolve[expr.base.expr_id()]
+                    .ty_id
                     .as_array()
                     .unwrap()
                     .len;
@@ -112,8 +105,8 @@ impl<'a> CodeGenerator<'a> {
         memory: MemoryValue<'a>,
     ) -> Value<'a> {
         let slice_ty_id = self.resolve.get_expr_ty_id(expr.base.expr_id());
-        let ptr_ty_id = self.resolve[slice_ty_id].ty.as_slice().unwrap().fields[0].ty_id;
-        let elem_ty_id = self.resolve[ptr_ty_id].ty.as_many_ptr().unwrap().pointee;
+        let ptr_ty_id = slice_ty_id.as_slice().unwrap().ptr_field().ty_id;
+        let elem_ty_id = ptr_ty_id.as_many_ptr().unwrap().pointee;
         let elem_ty = self.tys[elem_ty_id].unwrap();
 
         let (ptr_value, len_value) = match base {
@@ -124,7 +117,7 @@ impl<'a> CodeGenerator<'a> {
 
                 let ptr_value = self
                     .builder
-                    .build_extract_value(slice_value, SLICE_PTR_FIELD_INDEX, "")
+                    .build_extract_value(slice_value, SliceTy::PTR_FIELD_INDEX, "")
                     .unwrap()
                     .into_pointer_value();
 
@@ -132,7 +125,7 @@ impl<'a> CodeGenerator<'a> {
 
                 let len_value = self
                     .builder
-                    .build_extract_value(slice_value, SLICE_LEN_FIELD_INDEX, "")
+                    .build_extract_value(slice_value, SliceTy::LEN_FIELD_INDEX, "")
                     .unwrap()
                     .into_int_value();
 
@@ -181,14 +174,14 @@ impl<'a> CodeGenerator<'a> {
     ) {
         let ptr_ptr = self
             .builder
-            .build_struct_gep(memory.ty, memory.ptr, SLICE_PTR_FIELD_INDEX, "")
+            .build_struct_gep(memory.ty, memory.ptr, SliceTy::PTR_FIELD_INDEX, "")
             .unwrap();
 
         self.builder.build_store(ptr_ptr, ptr_value);
 
         let len_ptr = self
             .builder
-            .build_struct_gep(memory.ty, memory.ptr, SLICE_LEN_FIELD_INDEX, "")
+            .build_struct_gep(memory.ty, memory.ptr, SliceTy::LEN_FIELD_INDEX, "")
             .unwrap();
 
         self.builder.build_store(len_ptr, len_value);

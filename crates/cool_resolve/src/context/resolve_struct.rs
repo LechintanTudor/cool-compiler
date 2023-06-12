@@ -1,6 +1,6 @@
 use crate::{
-    AnyTy, Field, ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError,
-    ResolveErrorKind, ResolveResult, StructHasInfiniteSize, TyId, ValueTy,
+    Field, ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveErrorKind,
+    ResolveResult, StructHasInfiniteSize, TyId, ValueTy,
 };
 use cool_lexer::Symbol;
 use smallvec::SmallVec;
@@ -74,22 +74,17 @@ impl ResolveContext {
                 return None;
             }
 
-            match &*ty_id {
-                AnyTy::Value(value_ty) => {
-                    match value_ty {
-                        ValueTy::Array(array_ty) => {
-                            tys_to_check.push(array_ty.elem);
-                        }
-                        ValueTy::Tuple(tuple_ty) => {
-                            tys_to_check.extend(tuple_ty.fields.iter().map(|field| field.ty_id));
-                        }
-                        ValueTy::Struct(struct_ty) => {
-                            let struct_def = struct_ty.def.lock().unwrap();
-                            let struct_fields = &struct_def.as_ref().unwrap().fields;
-                            tys_to_check.extend(struct_fields.iter().map(|field| field.ty_id));
-                        }
-                        _ => (),
-                    }
+            match ty_id.as_value().unwrap() {
+                ValueTy::Array(array_ty) => {
+                    tys_to_check.push(array_ty.elem);
+                }
+                ValueTy::Tuple(tuple_ty) => {
+                    tys_to_check.extend(tuple_ty.fields.iter().map(|field| field.ty_id));
+                }
+                ValueTy::Struct(struct_ty) => {
+                    let struct_def = struct_ty.def.lock().unwrap();
+                    let struct_fields = &struct_def.as_ref().unwrap().fields;
+                    tys_to_check.extend(struct_fields.iter().map(|field| field.ty_id));
                 }
                 _ => (),
             }

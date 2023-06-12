@@ -1,6 +1,6 @@
 use crate::{mangle_item_path, BaiscTypeEnumOptionExt, TyFieldMap};
 use cool_lexer::Symbol;
-use cool_resolve::{tys, Field, ItemId, ResolveContext, TyId, ValueTy};
+use cool_resolve::{Field, ItemId, ResolveContext, TyId, ValueTy};
 use inkwell::context::Context;
 use inkwell::targets::TargetData;
 use inkwell::types::{
@@ -34,37 +34,39 @@ impl<'a> GeneratedTys<'a> {
             isize_ty: context.ptr_sized_int_type(target_data, Default::default()),
         };
 
-        generated_tys.insert_builtin_tys(context);
+        generated_tys.insert_builtin_tys(context, resolve);
         generated_tys.insert_derived_tys(context, resolve);
         generated_tys
     }
 
-    fn insert_builtin_tys(&mut self, context: &'a Context) {
-        self.tys.insert(tys::UNIT, None);
+    fn insert_builtin_tys(&mut self, context: &'a Context, resolve: &'a ResolveContext) {
+        let tys = resolve.ty_consts();
+
+        self.tys.insert(tys.unit, None);
 
         let ty_mappings = [
             // Integers
-            (tys::I8, context.i8_type().as_basic_type_enum()),
-            (tys::I16, context.i16_type().as_basic_type_enum()),
-            (tys::I32, context.i32_type().as_basic_type_enum()),
-            (tys::I64, context.i64_type().as_basic_type_enum()),
-            (tys::I128, context.i128_type().as_basic_type_enum()),
-            (tys::ISIZE, self.isize_ty.as_basic_type_enum()),
+            (tys.i8, context.i8_type().as_basic_type_enum()),
+            (tys.i16, context.i16_type().as_basic_type_enum()),
+            (tys.i32, context.i32_type().as_basic_type_enum()),
+            (tys.i64, context.i64_type().as_basic_type_enum()),
+            (tys.i128, context.i128_type().as_basic_type_enum()),
+            (tys.isize, self.isize_ty.as_basic_type_enum()),
             // Unsigned integers
-            (tys::U8, context.i8_type().as_basic_type_enum()),
-            (tys::U16, context.i16_type().as_basic_type_enum()),
-            (tys::U32, context.i32_type().as_basic_type_enum()),
-            (tys::U64, context.i64_type().as_basic_type_enum()),
-            (tys::U128, context.i128_type().as_basic_type_enum()),
-            (tys::USIZE, self.isize_ty.as_basic_type_enum()),
+            (tys.u8, context.i8_type().as_basic_type_enum()),
+            (tys.u16, context.i16_type().as_basic_type_enum()),
+            (tys.u32, context.i32_type().as_basic_type_enum()),
+            (tys.u64, context.i64_type().as_basic_type_enum()),
+            (tys.u128, context.i128_type().as_basic_type_enum()),
+            (tys.usize, self.isize_ty.as_basic_type_enum()),
             // Floats
-            (tys::F32, context.f32_type().as_basic_type_enum()),
-            (tys::F64, context.f64_type().as_basic_type_enum()),
+            (tys.f32, context.f32_type().as_basic_type_enum()),
+            (tys.f64, context.f64_type().as_basic_type_enum()),
             // Other
-            (tys::BOOL, context.i8_type().as_basic_type_enum()),
-            (tys::CHAR, context.i32_type().as_basic_type_enum()),
+            (tys.bool, context.i8_type().as_basic_type_enum()),
+            (tys.char, context.i32_type().as_basic_type_enum()),
             (
-                tys::C_STR,
+                tys.c_str,
                 context
                     .i8_type()
                     .ptr_type(Default::default())
@@ -78,8 +80,8 @@ impl<'a> GeneratedTys<'a> {
 
     fn insert_derived_tys(&mut self, context: &'a Context, resolve: &'a ResolveContext) {
         for ty_id in resolve.iter_value_ty_ids() {
-            if let Some((item_id, _)) = resolve[ty_id].ty.as_struct_parts() {
-                self.declare_struct_ty(context, resolve, ty_id, item_id);
+            if let Some(struct_ty) = ty_id.as_struct() {
+                self.declare_struct_ty(context, resolve, ty_id, struct_ty.item_id);
             }
         }
 
@@ -88,7 +90,9 @@ impl<'a> GeneratedTys<'a> {
         }
 
         for ty_id in resolve.iter_value_ty_ids() {
-            if let Some((_, fields)) = resolve[ty_id].ty.as_struct_parts() {
+            if let Some(struct_ty) = ty_id.as_struct() {
+                let struct_def = struct_ty.def.lock().unwrap();
+                let fields: &[_] = &struct_def.as_ref().unwrap().fields;
                 self.define_struct_ty(context, resolve, ty_id, fields.into());
             }
         }
@@ -143,7 +147,7 @@ impl<'a> GeneratedTys<'a> {
             return ty;
         }
 
-        let ty: Option<BasicTypeEnum> = match &resolve[ty_id].ty {
+        let ty: Option<BasicTypeEnum> = match ty_id.as_value().unwrap() {
             ValueTy::Fn(fn_ty) => {
                 let params = fn_ty
                     .params
@@ -166,6 +170,17 @@ impl<'a> GeneratedTys<'a> {
                     .map(|elem_ty| elem_ty.array_type(array_ty.len as u32))
                     .map(BasicTypeEnum::from)
             }
+            ValueTy::Tuple(tuple_ty) => {
+                self.insert_aggregate_ty(context, resolve, ty_id, &tuple_ty.fields)
+            }
+            ValueTy::Struct(struct_ty) => {
+                let struct_def = struct_ty.def.lock().unwrap();
+                let fields: &[_] = &struct_def.as_ref().unwrap().fields;
+                self.insert_aggregate_ty(context, resolve, ty_id, fields)
+            }
+            ValueTy::Slice(slice_ty) => {
+                self.insert_aggregate_ty(context, resolve, ty_id, &slice_ty.fields)
+            }
             ValueTy::Ptr(ptr_ty) => {
                 let ty = self
                     .insert_ty(context, resolve, ptr_ty.pointee)
@@ -182,36 +197,38 @@ impl<'a> GeneratedTys<'a> {
 
                 Some(ty)
             }
-            ValueTy::Range => None,
-            ValueTy::Aggregate(aggregate_ty) => {
-                let defined_fields = aggregate_ty
-                    .fields
-                    .iter()
-                    .flat_map(|field| {
-                        self.insert_ty(context, resolve, field.ty_id)
-                            .map(|ty| (field, ty))
-                    })
-                    .collect::<Vec<_>>();
-
-                let field_map: TyFieldMap = defined_fields
-                    .iter()
-                    .enumerate()
-                    .map(|(i, (field, _))| (field.symbol, i as u32))
-                    .collect::<FxHashMap<_, _>>()
-                    .into();
-
-                self.field_maps.insert(ty_id, field_map);
-
-                let field_tys = defined_fields.iter().map(|(_, ty)| *ty).collect::<Vec<_>>();
-
-                (!field_tys.is_empty())
-                    .then(|| context.struct_type(&field_tys, false).as_basic_type_enum())
-            }
             ty => todo!("Unimplemented ty: {:?}", ty),
         };
 
         self.tys.insert(ty_id, ty);
         ty
+    }
+
+    fn insert_aggregate_ty(
+        &mut self,
+        context: &'a Context,
+        resolve: &'a ResolveContext,
+        ty_id: TyId,
+        fields: &[Field],
+    ) -> Option<BasicTypeEnum<'a>> {
+        let non_zst_fields = fields
+            .iter()
+            .flat_map(|field| {
+                self.insert_ty(context, resolve, ty_id)
+                    .map(|ty| (field, ty))
+            })
+            .collect::<Vec<_>>();
+
+        let field_map: TyFieldMap = non_zst_fields
+            .iter()
+            .enumerate()
+            .map(|(i, (field, _))| (field.symbol, i as u32))
+            .collect::<FxHashMap<_, _>>()
+            .into();
+
+        self.field_maps.insert(ty_id, field_map);
+        let field_tys = non_zst_fields.iter().map(|(_, ty)| *ty).collect::<Vec<_>>();
+        (!field_tys.is_empty()).then(|| context.struct_type(&field_tys, false).as_basic_type_enum())
     }
 
     #[inline]

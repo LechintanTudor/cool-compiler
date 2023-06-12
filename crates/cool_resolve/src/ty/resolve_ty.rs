@@ -1,4 +1,4 @@
-use crate::{AnyTy, InferTy, ItemTy};
+use crate::AnyTy;
 use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Debug)]

@@ -1,16 +1,16 @@
 use crate::{
-    AnyTy, ArrayTy, Field, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ManyPtrTy, ModuleElem,
-    ModuleId, PtrTy, ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, Scope, SliceTy,
-    StructTy, TupleTy, TyId,
+    ArrayTy, Field, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ManyPtrTy, ModuleElem, ModuleId,
+    PtrTy, ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, Scope, SliceTy, StructTy,
+    TupleTy, TyConsts, TyId, TyMismatch,
 };
 use cool_lexer::{sym, Symbol};
 use smallvec::SmallVec;
 
 impl ResolveContext {
-    pub fn insert_builtin_ty_item(&mut self, symbol: Symbol, item_id: ItemId, ty_kind: AnyTy) {
-        self.paths
+    pub fn insert_primitive_item_ty(&mut self, symbol: Symbol, ty_id: TyId) {
+        let item_id = self
+            .paths
             .insert_if_not_exists(&[sym::EMPTY, symbol])
-            .filter(|&i| i == item_id)
             .unwrap();
 
         self.modules[ModuleId::for_builtins()].elems.insert(
@@ -21,8 +21,7 @@ impl ResolveContext {
             },
         );
 
-        let ty_id = self.tys.get_or_insert(ty_kind);
-        self.items.push_checked(item_id, ItemKind::Ty(ty_id));
+        self.items.push(ItemKind::Ty(ty_id));
     }
 
     pub fn mk_array(&mut self, len: u64, elem: TyId) -> TyId {
@@ -119,6 +118,20 @@ impl ResolveContext {
         })?;
 
         Ok(ty_id)
+    }
+
+    #[inline]
+    pub fn resolve_direct_ty_id(
+        &self,
+        found_ty_id: TyId,
+        expected_ty_id: TyId,
+    ) -> Result<TyId, TyMismatch> {
+        self.tys.resolve_direct_ty_id(found_ty_id, expected_ty_id)
+    }
+
+    #[inline]
+    pub fn ty_consts(&self) -> &TyConsts {
+        self.tys.consts()
     }
 
     #[inline]

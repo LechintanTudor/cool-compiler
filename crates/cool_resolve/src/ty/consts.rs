@@ -53,9 +53,9 @@ impl TyConsts {
             TyId::new(tys.get(internal_ty_id).unwrap())
         };
 
-        let char = insert_ty(AnyTy::Value(ValueTy::Bool));
+        let i8_ty = insert_ty(AnyTy::Value(IntTy::I8.into()));
         let c_str = insert_ty(AnyTy::Value(ValueTy::ManyPtr(ManyPtrTy {
-            pointee: char,
+            pointee: i8_ty,
             is_mutable: false,
         })));
 
@@ -74,7 +74,7 @@ impl TyConsts {
             // Non-number primitives
             unit: insert_ty(AnyTy::Value(ValueTy::Unit)),
             bool: insert_ty(AnyTy::Value(ValueTy::Bool)),
-            char,
+            char: insert_ty(AnyTy::Value(ValueTy::Char)),
             c_str,
 
             // Signed integers

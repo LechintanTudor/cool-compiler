@@ -30,6 +30,19 @@ pub enum IntTy {
 }
 
 impl IntTy {
+    #[inline]
+    pub fn is_signed(&self) -> bool {
+        matches!(
+            self,
+            Self::I8 | Self::I16 | Self::I32 | Self::I64 | Self::I128 | Self::Isize,
+        )
+    }
+
+    #[inline]
+    pub fn is_unsigned(&self) -> bool {
+        !self.is_signed()
+    }
+
     pub fn to_resolve_ty(&self, primitives: &PrimitiveTyData) -> ResolveTy {
         let (size, align) = match self {
             Self::I8 | Self::U8 => (1, primitives.i8_align),

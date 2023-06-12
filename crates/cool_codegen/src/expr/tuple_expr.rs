@@ -26,8 +26,7 @@ impl<'a> CodeGenerator<'a> {
                     continue;
                 };
 
-            let field_ty = self.resolve[expr_ty_id]
-                .ty
+            let field_ty = expr_ty_id
                 .as_tuple()
                 .unwrap()
                 .fields

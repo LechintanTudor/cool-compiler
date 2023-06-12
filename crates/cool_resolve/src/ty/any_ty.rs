@@ -31,6 +31,16 @@ impl AnyTy {
     }
 
     #[inline]
+    pub fn is_signed_int(&self) -> bool {
+        self.as_value().is_some_and(ValueTy::is_signed_int)
+    }
+
+    #[inline]
+    pub fn is_unsigned_int(&self) -> bool {
+        self.as_value().is_some_and(ValueTy::is_unsigned_int)
+    }
+
+    #[inline]
     pub fn is_comparable(&self) -> bool {
         self.as_value().is_some_and(ValueTy::is_comparable)
     }

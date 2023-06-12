@@ -15,6 +15,9 @@ impl<'a> CodeGenerator<'a> {
             MemoryValue::new(struct_ptr, struct_ty)
         });
 
+        let struct_def = expr_ty_id.as_struct().unwrap().def.lock().unwrap();
+        let fields: &[_] = &struct_def.as_ref().unwrap().fields;
+
         for initializer in expr.initializers.iter() {
             let Some(field_index) = self
                 .tys
@@ -24,11 +27,7 @@ impl<'a> CodeGenerator<'a> {
                     continue;
                 };
 
-            let field_ty = self.resolve[expr_ty_id]
-                .ty
-                .as_struct()
-                .unwrap()
-                .fields
+            let field_ty = fields
                 .iter()
                 .find(|field| field.symbol == initializer.ident.symbol)
                 .and_then(|field| self.tys[field.ty_id])

@@ -92,6 +92,16 @@ impl ValueTy {
     }
 
     #[inline]
+    pub fn is_signed_int(&self) -> bool {
+        self.as_int().is_some_and(IntTy::is_signed)
+    }
+
+    #[inline]
+    pub fn is_unsigned_int(&self) -> bool {
+        self.as_int().is_some_and(IntTy::is_unsigned)
+    }
+
+    #[inline]
     pub fn is_comparable(&self) -> bool {
         matches!(
             self,
@@ -147,8 +157,8 @@ impl ValueTy {
                     ty: AnyTy::Value(self),
                 }
             }
-            ValueTy::Int(int_ty) => int_ty.to_resolve_ty(&primitives),
-            ValueTy::Float(float_ty) => float_ty.to_resolve_ty(&primitives),
+            ValueTy::Int(int_ty) => int_ty.to_resolve_ty(primitives),
+            ValueTy::Float(float_ty) => float_ty.to_resolve_ty(primitives),
             ValueTy::Array(array_ty) => {
                 let elem_size = array_ty.elem.get_size();
                 let elem_align = array_ty.elem.get_align();

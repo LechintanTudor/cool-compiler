@@ -17,12 +17,10 @@ pub use self::resolve_global::*;
 pub use self::resolve_local::*;
 pub use self::resolve_struct::*;
 pub use self::resolve_ty::*;
-use crate::{
-    Binding, Frame, ItemKind, Module, PrimitiveTyData, TyConsts, TyContext, TyId, TyMismatch,
-};
+use crate::{Binding, Frame, ItemKind, Module, PrimitiveTyData, TyContext};
 use cool_arena::SliceArena;
 use cool_collections::IdIndexedVec;
-use cool_lexer::Symbol;
+use cool_lexer::{sym, Symbol};
 
 #[derive(Debug)]
 pub struct ResolveContext {
@@ -37,6 +35,13 @@ pub struct ResolveContext {
 
 impl ResolveContext {
     pub fn new(primitives: PrimitiveTyData) -> Self {
+        let mut resolve = Self::empty(primitives);
+        resolve.insert_root_module(sym::EMPTY).unwrap();
+        resolve.init_primitive_item_tys();
+        resolve
+    }
+
+    fn empty(primitives: PrimitiveTyData) -> Self {
         Self {
             paths: SliceArena::new_leak(),
             items: Default::default(),
@@ -48,85 +53,29 @@ impl ResolveContext {
         }
     }
 
-    #[inline]
-    pub fn ty_consts(&self) -> &TyConsts {
-        self.tys.consts()
-    }
+    fn init_primitive_item_tys(&mut self) {
+        // Non-number primitives
+        self.insert_primitive_item_ty(sym::BOOL, self.ty_consts().bool);
+        self.insert_primitive_item_ty(sym::CHAR, self.ty_consts().char);
 
-    pub fn resolve_direct_ty_id(
-        &self,
-        found_ty_id: TyId,
-        expected_ty_id: TyId,
-    ) -> Result<TyId, TyMismatch> {
-        self.resolve_direct_ty_id_inner(found_ty_id, expected_ty_id)
-            .ok_or_else(|| {
-                TyMismatch {
-                    found_ty_id,
-                    expected_ty_id,
-                }
-            })
-    }
+        // Signed integers
+        self.insert_primitive_item_ty(sym::I8, self.ty_consts().i8);
+        self.insert_primitive_item_ty(sym::I16, self.ty_consts().i16);
+        self.insert_primitive_item_ty(sym::I32, self.ty_consts().i32);
+        self.insert_primitive_item_ty(sym::I64, self.ty_consts().i64);
+        self.insert_primitive_item_ty(sym::I128, self.ty_consts().i128);
+        self.insert_primitive_item_ty(sym::ISIZE, self.ty_consts().isize);
 
-    fn resolve_direct_ty_id_inner(&self, found_ty_id: TyId, expected_ty_id: TyId) -> Option<TyId> {
-        if found_ty_id.is_diverge() {
-            return Some(expected_ty_id);
-        }
+        // Unsigned integers
+        self.insert_primitive_item_ty(sym::U8, self.ty_consts().u8);
+        self.insert_primitive_item_ty(sym::U16, self.ty_consts().u16);
+        self.insert_primitive_item_ty(sym::U32, self.ty_consts().u32);
+        self.insert_primitive_item_ty(sym::U64, self.ty_consts().u64);
+        self.insert_primitive_item_ty(sym::U128, self.ty_consts().u128);
+        self.insert_primitive_item_ty(sym::USIZE, self.ty_consts().usize);
 
-        let tys = self.ty_consts();
-
-        let ty_id = if expected_ty_id == tys.infer {
-            if found_ty_id == tys.infer_int {
-                tys.i32
-            } else if found_ty_id == tys.infer_float {
-                tys.f64
-            } else if !found_ty_id.is_infer() {
-                found_ty_id
-            } else {
-                return None;
-            }
-        } else if expected_ty_id == tys.infer_number {
-            if found_ty_id == tys.infer_int {
-                tys.i32
-            } else if found_ty_id == tys.infer_float {
-                tys.f32
-            } else if found_ty_id.is_number() {
-                found_ty_id
-            } else {
-                return None;
-            }
-        } else if expected_ty_id == tys.infer_int {
-            if found_ty_id == tys.infer_int {
-                tys.i32
-            } else if found_ty_id.is_int() {
-                found_ty_id
-            } else {
-                return None;
-            }
-        } else if expected_ty_id == tys.infer_float {
-            if found_ty_id == tys.infer_int {
-                tys.f64
-            } else if found_ty_id == tys.infer_float {
-                tys.f64
-            } else if found_ty_id.is_float() {
-                found_ty_id
-            } else {
-                return None;
-            }
-        } else {
-            let can_resolve_directly = (found_ty_id == expected_ty_id)
-                || (found_ty_id == tys.infer)
-                || (found_ty_id == tys.infer_number && expected_ty_id.is_number())
-                || (found_ty_id == tys.infer_int && expected_ty_id.is_number())
-                || (found_ty_id == tys.infer_float && expected_ty_id.is_float())
-                || (found_ty_id == tys.infer_empty_array && expected_ty_id.is_array());
-
-            if !can_resolve_directly {
-                return None;
-            }
-
-            expected_ty_id
-        };
-
-        Some(ty_id)
+        // Floats
+        self.insert_primitive_item_ty(sym::F32, self.ty_consts().f32);
+        self.insert_primitive_item_ty(sym::F64, self.ty_consts().f64);
     }
 }

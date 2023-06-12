@@ -1,7 +1,6 @@
 use crate::{CodeGenerator, Value};
 use cool_ast::UnaryExprAst;
 use cool_parser::UnaryOpKind;
-use cool_resolve::tys;
 use inkwell::values::BasicValue;
 use inkwell::IntPredicate;
 
@@ -39,8 +38,6 @@ impl<'a> CodeGenerator<'a> {
                         .as_basic_value_enum()
                         .into()
                 } else {
-                    debug_assert!(ty_id == tys::BOOL);
-
                     let value =
                         self.builder
                             .build_int_compare(IntPredicate::EQ, value, self.llvm_true, "");

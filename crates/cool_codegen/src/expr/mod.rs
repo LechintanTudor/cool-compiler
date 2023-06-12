@@ -87,14 +87,14 @@ impl<'a> CodeGenerator<'a> {
         struct_ptr: PointerValue<'a>,
         field: Symbol,
     ) -> LoadedValue<'a> {
-        let field_ty_id = self.resolve[struct_ty_id]
-            .ty
-            .as_aggregate()
+        let field_ty_id = struct_ty_id
+            .as_value()
             .unwrap()
-            .get_field_ty_id(field)
-            .unwrap();
+            .get_aggregate_field(field)
+            .unwrap()
+            .ty_id;
 
-        if self.resolve.ty_is_zero_sized(field_ty_id) {
+        if field_ty_id.is_zero_sized() {
             return LoadedValue::Void;
         }
 
