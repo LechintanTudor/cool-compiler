@@ -9,7 +9,7 @@ pub use self::defer_stmt::*;
 pub use self::return_stmt::*;
 use crate::{AstGenerator, AstResult, ExprAst};
 use cool_parser::{Stmt, StmtKind};
-use cool_resolve::{tys, FrameId};
+use cool_resolve::FrameId;
 use cool_span::{Section, Span};
 use derive_more::From;
 
@@ -62,7 +62,7 @@ impl AstGenerator<'_> {
             StmtKind::Assign(stmt) => self.gen_assign_stmt(frame_id, stmt)?.into(),
             StmtKind::Decl(stmt) => self.gen_decl_stmt(frame_id, stmt)?.into(),
             StmtKind::Defer(stmt) => self.gen_defer_stmt(frame_id, stmt)?.into(),
-            StmtKind::Expr(expr) => self.gen_expr(frame_id, tys::INFER, expr)?.into(),
+            StmtKind::Expr(expr) => self.gen_expr(frame_id, self.tys().infer, expr)?.into(),
             StmtKind::Return(stmt) => self.gen_return_stmt(frame_id, stmt)?.into(),
         };
 

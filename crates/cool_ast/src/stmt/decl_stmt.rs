@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, ExprAst};
 use cool_parser::DeclStmt;
-use cool_resolve::{tys, BindingId, FrameId};
+use cool_resolve::{BindingId, FrameId};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -26,7 +26,7 @@ impl AstGenerator<'_> {
     ) -> AstResult<DeclStmtAst> {
         let expected_ty_id = match decl_stmt.ty.as_ref() {
             Some(ty) => self.resolve_ty(frame_id.into(), ty)?,
-            None => tys::INFER,
+            None => self.tys().infer,
         };
 
         let expr = self

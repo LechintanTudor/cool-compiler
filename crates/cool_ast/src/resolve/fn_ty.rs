@@ -4,7 +4,7 @@ use crate::{
 };
 use cool_parser::{FnExternDecl, FnPrototype, Ty};
 use cool_resolve::{
-    tys, FnAbi, ModuleId, ResolveError, ResolveErrorKind, ResolveResult, Scope, TyId, TyMismatch,
+    FnAbi, ModuleId, ResolveError, ResolveErrorKind, ResolveResult, Scope, TyId, TyMismatch,
 };
 use smallvec::SmallVec;
 
@@ -24,11 +24,7 @@ impl AstGenerator<'_> {
 
         match explicit_ty_id {
             Some(ty_id) => {
-                let fn_ty = self.resolve[ty_id]
-                    .ty
-                    .as_fn()
-                    .ok_or(TyNotFn { found: ty_id })?
-                    .clone();
+                let fn_ty = ty_id.as_fn().ok_or(TyNotFn { found: ty_id })?.clone();
 
                 if let Some(abi) = resolve_explicit_fn_abi(&prototype.extern_decl)? {
                     if abi != fn_ty.abi {
@@ -94,7 +90,7 @@ impl AstGenerator<'_> {
 
                 let ret_ty_id = match prototype.ret_ty.as_ref() {
                     Some(ret_ty) => self.resolve_ty(scope, ret_ty)?,
-                    None => tys::UNIT,
+                    None => self.tys().unit,
                 };
 
                 Ok(self.resolve.mk_fn(

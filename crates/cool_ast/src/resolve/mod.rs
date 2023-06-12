@@ -2,7 +2,7 @@ use crate::resolve::fn_ty::resolve_fn_abi;
 use crate::AstGenerator;
 use cool_parser::Ty;
 use cool_resolve::{
-    tys, FrameId, ItemPathBuf, ResolveError, ResolveErrorKind, ResolveResult, Scope, TyId,
+    FrameId, ItemPathBuf, ResolveError, ResolveErrorKind, ResolveResult, Scope, TyId,
 };
 mod fn_ty;
 use smallvec::SmallVec;
@@ -20,7 +20,7 @@ impl AstGenerator<'_> {
 
                 let ret_ty_id = match &fn_ty.ret_ty {
                     Some(ret_ty) => self.resolve_ty(scope, ret_ty)?,
-                    None => tys::UNIT,
+                    None => self.tys().unit,
                 };
 
                 self.resolve
@@ -37,7 +37,7 @@ impl AstGenerator<'_> {
 
                 self.resolve[item_id]
                     .as_ty_id()
-                    .filter(|ty_id| !ty_id.is_inferred())
+                    .filter(|ty_id| !ty_id.is_infer())
                     .ok_or(ResolveError {
                         symbol: path.last(),
                         kind: ResolveErrorKind::SymbolNotTy,
@@ -45,7 +45,7 @@ impl AstGenerator<'_> {
             }
             Ty::Array(array_ty) => {
                 let len = self
-                    .gen_literal_expr(FrameId::dummy(), tys::USIZE, &array_ty.len)
+                    .gen_literal_expr(FrameId::dummy(), self.tys().usize, &array_ty.len)
                     .unwrap()
                     .as_int_value()
                     .unwrap() as u64;

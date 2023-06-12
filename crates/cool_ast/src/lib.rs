@@ -17,7 +17,7 @@ pub use self::function::*;
 pub use self::package::*;
 pub use self::resolve::*;
 pub use self::stmt::*;
-use cool_resolve::{ResolveContext, TyId};
+use cool_resolve::{ResolveContext, TyConsts, TyId};
 
 #[derive(Clone, Debug)]
 pub struct FnState {
@@ -38,6 +38,11 @@ impl<'a> AstGenerator<'a> {
             defer_codes: Default::default(),
             fn_state_stack: Default::default(),
         }
+    }
+
+    #[inline]
+    pub fn tys(&self) -> &TyConsts {
+        self.resolve.ty_consts()
     }
 
     #[inline]

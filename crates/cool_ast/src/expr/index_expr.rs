@@ -1,8 +1,6 @@
 use crate::{AstGenerator, AstResult, ExprAst};
 use cool_parser::IndexExpr;
-use cool_resolve::{
-    tys, AggregateKind, AggregateTy, ExprId, FrameId, ResolveExpr, ResolveExprKind, TyId, ValueTy,
-};
+use cool_resolve::{ExprId, FrameId, ResolveExpr, ResolveExprKind, TyId, ValueTy};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -27,8 +25,8 @@ impl AstGenerator<'_> {
         expected_ty_id: TyId,
         expr: &IndexExpr,
     ) -> AstResult<IndexExprAst> {
-        let base = self.gen_expr(frame_id, tys::INFER, &expr.base)?;
-        let index = self.gen_expr(frame_id, tys::USIZE, &expr.index)?;
+        let base = self.gen_expr(frame_id, self.tys().infer, &expr.base)?;
+        let index = self.gen_expr(frame_id, self.tys().usize, &expr.index)?;
 
         let base_expr = self.resolve[base.expr_id()];
         let (ty_id, kind) = match &self.resolve[base_expr.ty_id].ty {

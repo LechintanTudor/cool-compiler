@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, ExprAst};
 use cool_parser::IdentExpr;
-use cool_resolve::{tys, BindingId, ExprId, FrameId, ItemKind, ModuleId, ResolveExpr, TyId};
+use cool_resolve::{BindingId, ExprId, FrameId, ItemKind, ModuleId, ResolveExpr, TyId};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -76,8 +76,12 @@ impl AstGenerator<'_> {
                 .into()
             }
             ItemKind::Ty(ty_id) => {
-                self.resolve.resolve_direct_ty_id(tys::TY, expected_ty_id)?;
-                let expr_id = self.resolve.add_expr(ResolveExpr::ty());
+                self.resolve
+                    .resolve_direct_ty_id(self.tys().ty, expected_ty_id)?;
+
+                let expr_id = self
+                    .resolve
+                    .add_expr(ResolveExpr::lvalue(self.tys().ty, false));
 
                 TyExprAst {
                     span: ident_expr.span(),
@@ -88,8 +92,11 @@ impl AstGenerator<'_> {
             }
             ItemKind::Module(module_id) => {
                 self.resolve
-                    .resolve_direct_ty_id(tys::MODULE, expected_ty_id)?;
-                let expr_id = self.resolve.add_expr(ResolveExpr::module());
+                    .resolve_direct_ty_id(self.tys().module, expected_ty_id)?;
+
+                let expr_id = self
+                    .resolve
+                    .add_expr(ResolveExpr::lvalue(self.tys().module, false));
 
                 ModuleExprAst {
                     span: ident_expr.span(),

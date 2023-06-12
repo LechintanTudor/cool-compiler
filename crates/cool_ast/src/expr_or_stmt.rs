@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, ExprAst, StmtAst};
 use cool_parser::ExprOrStmt;
-use cool_resolve::{tys, FrameId};
+use cool_resolve::FrameId;
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -27,7 +27,7 @@ impl AstGenerator<'_> {
     ) -> AstResult<ExprOrStmtAst> {
         match expr_or_stmt {
             ExprOrStmt::Expr(expr) => {
-                let expr = self.gen_expr(frame_id, tys::INFER, expr)?;
+                let expr = self.gen_expr(frame_id, self.tys().infer, expr)?;
                 Ok(ExprOrStmtAst::Expr(Box::new(expr)))
             }
             ExprOrStmt::Stmt(stmt) => {

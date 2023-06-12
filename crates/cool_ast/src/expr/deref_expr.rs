@@ -1,6 +1,6 @@
 use crate::{AstError, AstGenerator, AstResult, ExprAst};
 use cool_parser::DerefExpr;
-use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId, ValueTy};
+use cool_resolve::{AnyTy, ExprId, FrameId, ResolveExpr, TyId, ValueTy};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -27,7 +27,7 @@ impl AstGenerator<'_> {
         let expr = self.gen_expr(frame_id, expected_ty_id, &deref_expr.expr)?;
         let expr_ty_id = self.resolve[expr.expr_id()].ty_id;
 
-        let ValueTy::Ptr(pointer_ty) = self.resolve[expr_ty_id].ty else {
+        let AnyTy::Value(ValueTy::Ptr(pointer_ty)) = &*expr_ty_id else {
             Err(AstError::TyNotPointer)?
         };
 

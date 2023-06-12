@@ -17,11 +17,6 @@ impl TyId {
         Self(resolve_ty)
     }
 
-    #[inline]
-    pub fn is_inferred(&self) -> bool {
-        matches!(self.0.ty, AnyTy::Infer(_))
-    }
-
     pub fn get_size(&self) -> u64 {
         match &self.0.ty {
             AnyTy::Value(ValueTy::Struct(struct_ty)) => {

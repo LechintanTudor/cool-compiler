@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, ExprAst, StmtAst};
 use cool_parser::BlockExpr;
-use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
+use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -52,11 +52,11 @@ impl AstGenerator<'_> {
             None => {
                 let diverges = stmts.last().map(StmtAst::is_return).is_some();
 
-                let ty_id = if diverges && !expected_ty_id.is_inferred() {
+                let ty_id = if diverges && !expected_ty_id.is_infer() {
                     expected_ty_id
                 } else {
                     self.resolve
-                        .resolve_direct_ty_id(tys::UNIT, expected_ty_id)?
+                        .resolve_direct_ty_id(self.tys().unit, expected_ty_id)?
                 };
 
                 (None, ty_id)

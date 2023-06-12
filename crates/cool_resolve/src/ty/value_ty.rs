@@ -3,28 +3,97 @@ use crate::{
     PtrTy, ResolveTy, SliceTy, StructTy, TupleTy,
 };
 use derive_more::From;
+use paste::paste;
 
-#[derive(Clone, Eq, PartialEq, Hash, From, Debug)]
-pub enum ValueTy {
-    Unit,
-    Int(IntTy),
-    Float(FloatTy),
-    Array(ArrayTy),
-    Tuple(TupleTy),
-    Struct(StructTy),
-    Fn(FnTy),
-    Ptr(PtrTy),
-    ManyPtr(ManyPtrTy),
-    Slice(SliceTy),
+macro_rules! define_value_ty {
+    { Simple { $($SimpleTy:ident,)* }, Wrapped { $($WrappedTy:ident,)* }, } => {
+        paste! {
+            #[derive(Clone, PartialEq, Eq, Hash, From, Debug)]
+            pub enum ValueTy {
+                $($SimpleTy,)*
+                $($WrappedTy([<$WrappedTy Ty>]),)*
+            }
+
+            impl ValueTy {
+                $(
+                    #[inline]
+                    pub fn [<is_ $SimpleTy:snake:lower>](&self) -> bool {
+                        matches!(self, Self::$SimpleTy)
+                    }
+                )*
+
+                $(
+                    #[inline]
+                    pub fn [<is_ $WrappedTy:snake:lower>](&self) -> bool {
+                        matches!(self, Self::$WrappedTy(_))
+                    }
+
+                    #[inline]
+                    pub fn [<as_ $WrappedTy:snake:lower>](&self) -> Option<&[<$WrappedTy Ty>]> {
+                        match self {
+                            Self::$WrappedTy(ty) => Some(ty),
+                            _ => None,
+                        }
+                    }
+                )*
+            }
+        }
+    };
+}
+
+define_value_ty! {
+    Simple {
+        Unit,
+        Bool,
+        Char,
+    },
+    Wrapped {
+        Int,
+        Float,
+        Array,
+        Tuple,
+        Struct,
+        Fn,
+        Ptr,
+        ManyPtr,
+        Slice,
+    },
 }
 
 impl ValueTy {
+    #[inline]
+    pub fn is_number(&self) -> bool {
+        matches!(self, Self::Int(_) | Self::Float(_))
+    }
+
+    #[inline]
+    pub fn is_comparable(&self) -> bool {
+        matches!(
+            self,
+            Self::Int(_) | Self::Float(_) | Self::Ptr(_) | Self::ManyPtr(_),
+        )
+    }
+
     pub fn to_resolve_ty(self, primitives: &PrimitiveTyData) -> ResolveTy {
         match self {
             ValueTy::Unit => {
                 ResolveTy {
                     size: 0,
                     align: 1,
+                    ty: AnyTy::Value(self),
+                }
+            }
+            ValueTy::Bool => {
+                ResolveTy {
+                    size: 1,
+                    align: 1,
+                    ty: AnyTy::Value(self),
+                }
+            }
+            ValueTy::Char => {
+                ResolveTy {
+                    size: 4,
+                    align: primitives.i32_align,
                     ty: AnyTy::Value(self),
                 }
             }

@@ -1,6 +1,6 @@
 use crate::{AstError, AstGenerator, AstResult, ExprAst};
 use cool_parser::{AssignOp, AssignStmt};
-use cool_resolve::{tys, FrameId};
+use cool_resolve::FrameId;
 use cool_span::Section;
 
 #[derive(Clone, Debug)]
@@ -24,7 +24,7 @@ impl AstGenerator<'_> {
         assign_stmt: &AssignStmt,
     ) -> AstResult<AssignStmtAst> {
         let lhs = self
-            .gen_expr(frame_id, tys::INFER, &assign_stmt.lhs)?
+            .gen_expr(frame_id, self.tys().infer, &assign_stmt.lhs)?
             .ensure_not_module()?;
 
         if !self.resolve[lhs.expr_id()].is_assignable() {

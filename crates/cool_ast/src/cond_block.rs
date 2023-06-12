@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, BlockExprAst, ExprAst};
 use cool_parser::CondBlock;
-use cool_resolve::{tys, FrameId, TyId};
+use cool_resolve::{FrameId, TyId};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -23,7 +23,7 @@ impl AstGenerator<'_> {
         expected_ty_id: TyId,
         block: &CondBlock,
     ) -> AstResult<CondBlockAst> {
-        let cond = self.gen_expr(frame_id, tys::BOOL, &block.cond)?;
+        let cond = self.gen_expr(frame_id, self.tys().bool, &block.cond)?;
         let expr = self.gen_block_expr(frame_id, expected_ty_id, &block.expr)?;
 
         Ok(CondBlockAst {

@@ -41,7 +41,7 @@ impl AstGenerator<'_> {
         expr: &StructExpr,
     ) -> AstResult<StructExprAst> {
         let ty_id = self
-            .gen_expr(frame_id, tys::TY, &expr.base)?
+            .gen_expr(frame_id, self.tys().TY, &expr.base)?
             .as_ty()
             .expect("struct base is not a type")
             .item_ty_id;

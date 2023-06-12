@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, ExprAst};
 use cool_parser::{RangeExpr, RangeKind};
-use cool_resolve::{tys, AggregateKind, AggregateTy, ExprId, FrameId, ResolveExpr, TyId, ValueTy};
+use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId, ValueTy};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -44,21 +44,21 @@ impl AstGenerator<'_> {
         expected_ty_id: TyId,
         expr: &RangeExpr,
     ) -> AstResult<RangeExprAst> {
-        let base = self.gen_expr(frame_id, tys::INFER, &expr.base)?;
+        let base = self.gen_expr(frame_id, self.tys().infer, &expr.base)?;
 
         let kind = match &expr.kind {
             RangeKind::Full => RangeKindAst::Full,
             RangeKind::From(from) => {
-                let from = self.gen_expr(frame_id, tys::USIZE, from)?;
+                let from = self.gen_expr(frame_id, self.tys().usize, from)?;
                 RangeKindAst::From(Box::new(from))
             }
             RangeKind::To(to) => {
-                let to = self.gen_expr(frame_id, tys::USIZE, to)?;
+                let to = self.gen_expr(frame_id, self.tys().usize, to)?;
                 RangeKindAst::To(Box::new(to))
             }
             RangeKind::FromTo((from, to)) => {
-                let from = self.gen_expr(frame_id, tys::USIZE, from)?;
-                let to = self.gen_expr(frame_id, tys::USIZE, to)?;
+                let from = self.gen_expr(frame_id, self.tys().usize, from)?;
+                let to = self.gen_expr(frame_id, self.tys().usize, to)?;
                 RangeKindAst::FromTo((Box::new(from), Box::new(to)))
             }
         };

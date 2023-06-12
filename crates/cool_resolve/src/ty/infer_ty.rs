@@ -4,4 +4,5 @@ pub enum InferTy {
     Int,
     Float,
     Number,
+    EmptyArray,
 }

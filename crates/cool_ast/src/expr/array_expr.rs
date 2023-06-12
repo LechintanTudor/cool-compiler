@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, ExprAst};
 use cool_parser::{ArrayExpr, ArrayRepeatExpr};
-use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
+use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -53,7 +53,7 @@ impl AstGenerator<'_> {
                 let ty_id = self.resolve.mk_array(elems.len() as u64, elem_ty_id);
                 (ty_id, elems)
             }
-            None => (tys::INFER_EMPTY_ARRAY, vec![]),
+            None => (self.tys().infer_empty_array, vec![]),
         };
 
         let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
@@ -71,7 +71,7 @@ impl AstGenerator<'_> {
         expected_ty_id: TyId,
         expr: &ArrayRepeatExpr,
     ) -> AstResult<ArrayRepeatExprAst> {
-        let len_expr = self.gen_literal_expr(frame_id, tys::USIZE, &expr.len)?;
+        let len_expr = self.gen_literal_expr(frame_id, self.tys().usize, &expr.len)?;
         let len = len_expr.as_int_value().unwrap() as u64;
 
         let expected_elem_ty_id = self.get_expected_array_elem_ty_id(expected_ty_id);
@@ -90,14 +90,13 @@ impl AstGenerator<'_> {
     }
 
     fn get_expected_array_elem_ty_id(&self, expected_array_ty_id: TyId) -> TyId {
-        if expected_array_ty_id.is_inferred() {
-            return tys::INFER;
+        if expected_array_ty_id.is_infer() {
+            return self.tys().infer;
         }
 
-        self.resolve[expected_array_ty_id]
-            .ty
+        expected_array_ty_id
             .as_array()
             .map(|array_ty| array_ty.elem)
-            .unwrap_or(tys::INFER)
+            .unwrap_or(self.tys().infer)
     }
 }

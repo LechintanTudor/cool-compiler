@@ -33,7 +33,7 @@ impl AstGenerator<'_> {
         fn_expr: &FnExpr,
     ) -> AstResult<FnAst> {
         let frame_id = self.resolve.add_frame(module_id.into());
-        let fn_ty = self.resolve[ty_id].ty.as_fn().unwrap().clone();
+        let fn_ty = ty_id.as_fn().unwrap().clone();
 
         let param_ty_iter = fn_expr
             .prototype

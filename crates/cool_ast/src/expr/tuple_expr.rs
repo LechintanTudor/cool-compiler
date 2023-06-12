@@ -1,7 +1,7 @@
 use crate::{AstGenerator, AstResult, ExprAst};
 use cool_lexer::Symbol;
 use cool_parser::TupleExpr;
-use cool_resolve::{tys, AggregateTy, ExprId, FrameId, ResolveExpr, TyId};
+use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -60,7 +60,7 @@ impl AstGenerator<'_> {
     ) -> AstResult<Vec<ExprAst>> {
         expr.elems
             .iter()
-            .map(|elem| self.gen_expr(frame_id, tys::INFER, elem))
+            .map(|elem| self.gen_expr(frame_id, self.tys().infer, elem))
             .collect::<Result<Vec<_>, _>>()
     }
 

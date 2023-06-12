@@ -2,7 +2,7 @@ use crate::{AstGenerator, AstResult, LiteralIntOutOfRange, LiteralUnknownSuffix}
 use cool_collections::SmallString;
 use cool_lexer::{sym, LiteralKind, Symbol};
 use cool_parser::LiteralExpr;
-use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
+use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId, TyConsts};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -45,13 +45,14 @@ impl AstGenerator<'_> {
         expected_ty_id: TyId,
         literal_expr: &LiteralExpr,
     ) -> AstResult<LiteralExprAst> {
+        let tys = self.tys();
         let symbol = literal_expr.literal.symbol;
         let expr = match literal_expr.literal.kind {
             LiteralKind::Int { .. } => {
                 let (value, ty_id) = parse_int(symbol)?;
                 let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
 
-                if !is_int_in_range(value, ty_id) {
+                if !is_int_in_range(tys, value, ty_id) {
                     Err(LiteralIntOutOfRange { ty_id, symbol })?;
                 }
 
@@ -83,7 +84,7 @@ impl AstGenerator<'_> {
                 let value = symbol == sym::KW_TRUE;
                 let ty_id = self
                     .resolve
-                    .resolve_direct_ty_id(tys::BOOL, expected_ty_id)?;
+                    .resolve_direct_ty_id(self.tys().bool, expected_ty_id)?;
 
                 LiteralExprAst {
                     span: literal_expr.span,
@@ -95,7 +96,7 @@ impl AstGenerator<'_> {
                 let value = parse_char(symbol);
                 let ty_id = self
                     .resolve
-                    .resolve_direct_ty_id(tys::CHAR, expected_ty_id)?;
+                    .resolve_direct_ty_id(self.tys().char, expected_ty_id)?;
 
                 LiteralExprAst {
                     span: literal_expr.span,
@@ -107,7 +108,7 @@ impl AstGenerator<'_> {
                 let value = parse_str(symbol);
                 let ty_id = self
                     .resolve
-                    .resolve_direct_ty_id(tys::C_STR, expected_ty_id)?;
+                    .resolve_direct_ty_id(tys.c_str, expected_ty_id)?;
 
                 LiteralExprAst {
                     span: literal_expr.span,
@@ -151,7 +152,7 @@ fn parse_binary_int(symbol: Symbol) -> AstResult<(u128, TyId)> {
             '0' | '1' => {
                 let digit = char as u32 - '0' as u32;
                 value = append_digit(value, 2, digit).ok_or(LiteralIntOutOfRange {
-                    ty_id: tys::U128,
+                    ty_id: self.tys().U128,
                     symbol,
                 })?;
             }
@@ -183,7 +184,7 @@ fn parse_octal_int(symbol: Symbol) -> AstResult<(u128, TyId)> {
             '0'..='7' => {
                 let digit = char as u32 - '0' as u32;
                 value = append_digit(value, 8, digit).ok_or(LiteralIntOutOfRange {
-                    ty_id: tys::U128,
+                    ty_id: self.tys().U128,
                     symbol,
                 })?;
             }
@@ -215,21 +216,21 @@ fn parse_hexadecimal_int(symbol: Symbol) -> AstResult<(u128, TyId)> {
             '0'..='9' => {
                 let digit = char as u32 - '0' as u32;
                 value = append_digit(value, 16, digit).ok_or(LiteralIntOutOfRange {
-                    ty_id: tys::U128,
+                    ty_id: self.tys().U128,
                     symbol,
                 })?;
             }
             'a'..='f' => {
                 let digit = char as u32 - 'a' as u32 + 10;
                 value = append_digit(value, 16, digit).ok_or(LiteralIntOutOfRange {
-                    ty_id: tys::U128,
+                    ty_id: self.tys().U128,
                     symbol,
                 })?;
             }
             'A'..='F' => {
                 let digit = char as u32 - 'A' as u32 + 10;
                 value = append_digit(value, 16, digit).ok_or(LiteralIntOutOfRange {
-                    ty_id: tys::U128,
+                    ty_id: self.tys().U128,
                     symbol,
                 })?;
             }
@@ -257,7 +258,7 @@ fn parse_decimal_int(symbol: Symbol) -> AstResult<(u128, TyId)> {
             '0'..='9' => {
                 let digit = char as u32 - '0' as u32;
                 value = append_digit(value, 10, digit).ok_or(LiteralIntOutOfRange {
-                    ty_id: tys::U128,
+                    ty_id: self.tys().U128,
                     symbol,
                 })?;
             }
@@ -279,21 +280,21 @@ fn append_digit(value: u128, base: u128, digit: u32) -> Option<u128> {
         .and_then(|value| value.checked_add(digit as u128))
 }
 
-fn parse_int_suffix(suffix: &str) -> AstResult<TyId> {
+fn parse_int_suffix(tys: &TyConsts, suffix: &str) -> AstResult<TyId> {
     let ty_id = match suffix {
-        "" => tys::INFER_INT,
-        "i8" => tys::I8,
-        "i16" => tys::I16,
-        "i32" => tys::I32,
-        "i64" => tys::I64,
-        "i128" => tys::I128,
-        "isize" => tys::ISIZE,
-        "u8" => tys::U8,
-        "u16" => tys::U16,
-        "u32" => tys::U32,
-        "u64" => tys::U64,
-        "u128" => tys::U128,
-        "usize" => tys::USIZE,
+        "" => tys.infer_int,
+        "i8" => tys.i8,
+        "i16" => tys.i16,
+        "i32" => tys.i32,
+        "i64" => tys.i64,
+        "i128" => tys.i128,
+        "isize" => tys.isize,
+        "u8" => tys.u8,
+        "u16" => tys.u16,
+        "u32" => tys.u32,
+        "u64" => tys.u64,
+        "u128" => tys.u128,
+        "usize" => tys.usize,
         _ => {
             Err(LiteralUnknownSuffix {
                 suffix: Symbol::insert(suffix),
@@ -304,11 +305,11 @@ fn parse_int_suffix(suffix: &str) -> AstResult<TyId> {
     Ok(ty_id)
 }
 
-pub fn parse_decimal_suffix(suffix: &str) -> AstResult<TyId> {
+pub fn parse_decimal_suffix(tys: &TyConsts, suffix: &str) -> AstResult<TyId> {
     let ty_id = match suffix {
-        "" => tys::INFER_FLOAT,
-        "f32" => tys::F32,
-        "f64" => tys::F64,
+        "" => tys.infer_float,
+        "f32" => tys.f32,
+        "f64" => tys.f64,
         _ => {
             Err(LiteralUnknownSuffix {
                 suffix: Symbol::insert(suffix),
@@ -319,23 +320,23 @@ pub fn parse_decimal_suffix(suffix: &str) -> AstResult<TyId> {
     Ok(ty_id)
 }
 
-pub fn parse_number_suffix(suffix: &str) -> AstResult<TyId> {
+pub fn parse_number_suffix(tys: &TyConsts, suffix: &str) -> AstResult<TyId> {
     let ty_id = match suffix {
-        "" => tys::INFER_INT,
-        "i8" => tys::I8,
-        "i16" => tys::I16,
-        "i32" => tys::I32,
-        "i64" => tys::I64,
-        "i128" => tys::I128,
-        "isize" | "i" => tys::ISIZE,
-        "u8" => tys::U8,
-        "u16" => tys::U16,
-        "u32" => tys::U32,
-        "u64" => tys::U64,
-        "u128" => tys::U128,
-        "usize" | "u" => tys::USIZE,
-        "f32" => tys::F32,
-        "f64" => tys::F64,
+        "" => tys.infer_int,
+        "i8" => tys.i8,
+        "i16" => tys.i16,
+        "i32" => tys.i32,
+        "i64" => tys.i64,
+        "i128" => tys.i128,
+        "isize" | "i" => tys.isize,
+        "u8" => tys.u8,
+        "u16" => tys.u16,
+        "u32" => tys.u32,
+        "u64" => tys.u64,
+        "u128" => tys.u128,
+        "usize" | "u" => tys.usize,
+        "f32" => tys.f32,
+        "f64" => tys.f64,
         _ => {
             Err(LiteralUnknownSuffix {
                 suffix: Symbol::insert(suffix),
@@ -346,21 +347,21 @@ pub fn parse_number_suffix(suffix: &str) -> AstResult<TyId> {
     Ok(ty_id)
 }
 
-fn is_int_in_range(value: u128, ty_id: TyId) -> bool {
+fn is_int_in_range(tys: &TyConsts, value: u128, ty_id: TyId) -> bool {
     match ty_id {
-        tys::INFER_INT => true,
-        tys::I8 => value <= i8::MAX as _,
-        tys::I16 => value <= i16::MAX as _,
-        tys::I32 => value <= i32::MAX as _,
-        tys::I64 => value <= i64::MAX as _,
-        tys::I128 => value <= i128::MAX as _,
-        tys::U8 => value <= u8::MAX as _,
-        tys::U16 => value <= u16::MAX as _,
-        tys::U32 => value <= u32::MAX as _,
-        tys::U64 => value <= u64::MAX as _,
-        tys::U128 => value <= u128::MAX as _,
-        tys::F32 => value <= f32::MAX as _,
-        tys::F64 => value <= f64::MAX as _,
+        tys.infer_int => true,
+        tys.i8 => value <= i8::MAX as _,
+        tys.i16 => value <= i16::MAX as _,
+        tys.i32 => value <= i32::MAX as _,
+        tys.i64 => value <= i64::MAX as _,
+        tys.i128 => value <= i128::MAX as _,
+        tys.u8 => value <= u8::MAX as _,
+        tys.u16 => value <= u16::MAX as _,
+        tys.u32 => value <= u32::MAX as _,
+        tys.u64 => value <= u64::MAX as _,
+        tys.u128 => value <= u128::MAX as _,
+        tys.f32 => value <= f32::MAX as _,
+        tys.f64 => value <= f64::MAX as _,
         // TODO: Check range for usize and isize
         _ => true,
     }

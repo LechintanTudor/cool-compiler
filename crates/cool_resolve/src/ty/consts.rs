@@ -1,4 +1,6 @@
-use crate::{AnyTy, FloatTy, InferTy, IntTy, ItemTy, PrimitiveTyData, TyArena, TyId, ValueTy};
+use crate::{
+    AnyTy, FloatTy, InferTy, IntTy, ItemTy, ManyPtrTy, PrimitiveTyData, TyArena, TyId, ValueTy,
+};
 
 #[derive(Clone, Copy, Debug)]
 pub struct TyConsts {
@@ -7,12 +9,17 @@ pub struct TyConsts {
     pub infer_number: TyId,
     pub infer_int: TyId,
     pub infer_float: TyId,
+    pub infer_empty_array: TyId,
 
     // Items
     pub module: TyId,
     pub ty: TyId,
 
+    // Non-number primitives
     pub unit: TyId,
+    pub bool: TyId,
+    pub char: TyId,
+    pub c_str: TyId,
 
     // Signed integers
     pub i8: TyId,
@@ -33,6 +40,9 @@ pub struct TyConsts {
     // Floats
     pub f32: TyId,
     pub f64: TyId,
+
+    // Diverge
+    pub diverge: TyId,
 }
 
 impl TyConsts {
@@ -43,18 +53,29 @@ impl TyConsts {
             TyId::new(tys.get(internal_ty_id).unwrap())
         };
 
+        let char = insert_ty(AnyTy::Value(ValueTy::Bool));
+        let c_str = insert_ty(AnyTy::Value(ValueTy::ManyPtr(ManyPtrTy {
+            pointee: char,
+            is_mutable: false,
+        })));
+
         Self {
             // Inferred
             infer: insert_ty(AnyTy::Infer(InferTy::Any)),
             infer_number: insert_ty(AnyTy::Infer(InferTy::Number)),
             infer_int: insert_ty(AnyTy::Infer(InferTy::Int)),
             infer_float: insert_ty(AnyTy::Infer(InferTy::Float)),
+            infer_empty_array: insert_ty(AnyTy::Infer(InferTy::EmptyArray)),
 
             // Items
             module: insert_ty(AnyTy::Item(ItemTy::Module)),
             ty: insert_ty(AnyTy::Item(ItemTy::Ty)),
 
+            // Non-number primitives
             unit: insert_ty(AnyTy::Value(ValueTy::Unit)),
+            bool: insert_ty(AnyTy::Value(ValueTy::Bool)),
+            char,
+            c_str,
 
             // Signed integers
             i8: insert_ty(AnyTy::Value(IntTy::I8.into())),
@@ -75,6 +96,9 @@ impl TyConsts {
             // Floats
             f32: insert_ty(AnyTy::Value(FloatTy::F32.into())),
             f64: insert_ty(AnyTy::Value(FloatTy::F64.into())),
+
+            // Diverge
+            diverge: insert_ty(AnyTy::Diverge),
         }
     }
 }

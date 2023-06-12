@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, CondBlockAst};
 use cool_parser::WhileExpr;
-use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
+use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -26,7 +26,7 @@ impl AstGenerator<'_> {
     ) -> AstResult<WhileExprAst> {
         let ty_id = self
             .resolve
-            .resolve_direct_ty_id(tys::UNIT, expected_ty_id)?;
+            .resolve_direct_ty_id(self.tys().unit, expected_ty_id)?;
 
         let block = self.gen_cond_block(frame_id, ty_id, &expr.block)?;
 

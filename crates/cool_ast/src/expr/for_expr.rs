@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, BlockExprAst, DeclStmtAst, ExprAst, StmtAst};
 use cool_parser::{ExprOrStmt, ForExpr};
-use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
+use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -31,18 +31,18 @@ impl AstGenerator<'_> {
         self.resolve.make_binding_mutable(decl.binding_id);
         let frame_id = decl.frame_id;
 
-        let cond = self.gen_expr(frame_id, tys::BOOL, &expr.cond)?;
+        let cond = self.gen_expr(frame_id, self.tys().bool, &expr.cond)?;
 
         let after: StmtAst = match expr.after.as_ref() {
-            ExprOrStmt::Expr(expr) => self.gen_expr(frame_id, tys::INFER, expr)?.into(),
+            ExprOrStmt::Expr(expr) => self.gen_expr(frame_id, self.tys().infer, expr)?.into(),
             ExprOrStmt::Stmt(stmt) => self.gen_stmt_kind(frame_id, stmt)?,
         };
 
-        let body = self.gen_block_expr(frame_id, tys::UNIT, &expr.body)?;
+        let body = self.gen_block_expr(frame_id, self.tys().unit, &expr.body)?;
 
         let ty_id = self
             .resolve
-            .resolve_direct_ty_id(tys::UNIT, expected_ty_id)?;
+            .resolve_direct_ty_id(self.tys().unit, expected_ty_id)?;
 
         Ok(ForExprAst {
             span: expr.span,

@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, BlockExprAst, CondBlockAst};
 use cool_parser::CondExpr;
-use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId};
+use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -34,7 +34,10 @@ impl AstGenerator<'_> {
         expr: &CondExpr,
     ) -> AstResult<CondExprAst> {
         let expected_ty_id = (!expr.is_exhaustive())
-            .then(|| self.resolve.resolve_direct_ty_id(tys::UNIT, expected_ty_id))
+            .then(|| {
+                self.resolve
+                    .resolve_direct_ty_id(self.tys().unit, expected_ty_id)
+            })
             .transpose()?
             .unwrap_or(expected_ty_id);
 

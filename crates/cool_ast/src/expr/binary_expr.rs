@@ -1,6 +1,6 @@
 use crate::{AstError, AstGenerator, AstResult, ExprAst};
 use cool_parser::{BinOp, BinaryExpr, BitwiseOp};
-use cool_resolve::{tys, ExprId, FrameId, ResolveExpr, TyId, TyMismatch};
+use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId, TyMismatch};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -35,22 +35,22 @@ impl AstGenerator<'_> {
 
                 let ty_id = self
                     .resolve
-                    .resolve_direct_ty_id(lhs_ty_id, tys::INFER_NUMBER)?;
+                    .resolve_direct_ty_id(lhs_ty_id, self.tys().infer_number)?;
 
                 (ty_id, lhs, rhs)
             }
             BinOp::Comparison(_) => {
-                let lhs = self.gen_expr(frame_id, tys::INFER, &binary_expr.lhs)?;
+                let lhs = self.gen_expr(frame_id, self.tys().infer, &binary_expr.lhs)?;
                 let lhs_ty_id = self.resolve[lhs.expr_id()].ty_id;
                 let rhs = self.gen_expr(frame_id, lhs_ty_id, &binary_expr.rhs)?;
 
-                if !self.resolve[lhs_ty_id].is_comparable() {
+                if !lhs_ty_id.is_comparable() {
                     Err(AstError::TyNotComparable)?;
                 }
 
                 let ty_id = self
                     .resolve
-                    .resolve_direct_ty_id(tys::BOOL, expected_ty_id)?;
+                    .resolve_direct_ty_id(self.tys().bool, expected_ty_id)?;
 
                 (ty_id, lhs, rhs)
             }
@@ -58,24 +58,24 @@ impl AstGenerator<'_> {
                 let lhs = self.gen_expr(frame_id, expected_ty_id, &binary_expr.lhs)?;
                 let lhs_ty_id = self.resolve[lhs.expr_id()].ty_id;
 
-                let rhs_expected_ty_id = if lhs_ty_id == tys::BOOL {
+                let rhs_expected_ty_id = if lhs_ty_id == self.tys().bool {
                     if matches!(bitwise_op, BitwiseOp::Shl | BitwiseOp::Shr) {
                         Err(TyMismatch {
-                            found_ty_id: tys::BOOL,
-                            expected_ty_id: tys::INFER_INT,
+                            found_ty_id: self.tys().bool,
+                            expected_ty_id: self.tys().infer_int,
                         })?;
                     }
 
-                    tys::BOOL
+                    self.tys().bool
                 } else if lhs_ty_id.is_int() {
                     match bitwise_op {
-                        BitwiseOp::Shl | BitwiseOp::Shr => tys::INFER_INT,
+                        BitwiseOp::Shl | BitwiseOp::Shr => self.tys().infer_int,
                         _ => lhs_ty_id,
                     }
                 } else {
                     Err(TyMismatch {
                         found_ty_id: lhs_ty_id,
-                        expected_ty_id: tys::INFER_INT,
+                        expected_ty_id: self.tys().infer_int,
                     })?
                 };
 
@@ -84,12 +84,12 @@ impl AstGenerator<'_> {
                 (lhs_ty_id, lhs, rhs)
             }
             BinOp::Logical(_) => {
-                let lhs = self.gen_expr(frame_id, tys::BOOL, &binary_expr.lhs)?;
-                let rhs = self.gen_expr(frame_id, tys::BOOL, &binary_expr.rhs)?;
+                let lhs = self.gen_expr(frame_id, self.tys().bool, &binary_expr.lhs)?;
+                let rhs = self.gen_expr(frame_id, self.tys().bool, &binary_expr.rhs)?;
 
                 let ty_id = self
                     .resolve
-                    .resolve_direct_ty_id(tys::BOOL, expected_ty_id)?;
+                    .resolve_direct_ty_id(self.tys().bool, expected_ty_id)?;
 
                 (ty_id, lhs, rhs)
             }
