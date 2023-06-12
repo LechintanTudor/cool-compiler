@@ -1,8 +1,15 @@
 use crate::{resolve_fields_size_align, AnyTy, Field, ResolveTy, StructTyDef, ValueTy};
 use std::hash::{Hash, Hasher};
+use std::{fmt, ops};
 
 #[derive(Clone, Copy, Debug)]
 pub struct TyId(&'static ResolveTy);
+
+impl fmt::Display for TyId {
+    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        todo!()
+    }
+}
 
 impl TyId {
     #[inline]
@@ -16,23 +23,32 @@ impl TyId {
     }
 
     pub fn get_size(&self) -> u64 {
-        match self.0.ty {
-            AnyTy::Value(ValueTy::Struct(struct_ty)) => struct_ty.def.lock().unwrap().unwrap().size,
+        match &self.0.ty {
+            AnyTy::Value(ValueTy::Struct(struct_ty)) => {
+                struct_ty.def.lock().unwrap().as_ref().unwrap().size
+            }
             _ => self.0.size,
         }
     }
 
     pub fn get_align(&self) -> u64 {
-        match self.0.ty {
+        match &self.0.ty {
             AnyTy::Value(ValueTy::Struct(struct_ty)) => {
-                struct_ty.def.lock().unwrap().unwrap().align
+                struct_ty.def.lock().unwrap().as_ref().unwrap().align
             }
             _ => self.0.align,
         }
     }
 
+    pub fn is_defined(&self) -> bool {
+        match &self.0.ty {
+            AnyTy::Value(ValueTy::Struct(struct_ty)) => struct_ty.def.lock().unwrap().is_some(),
+            _ => true,
+        }
+    }
+
     pub fn define_struct(&self, mut fields: Vec<Field>) {
-        let AnyTy::Value(ValueTy::Struct(struct_ty)) = self.0.ty else {
+        let AnyTy::Value(ValueTy::Struct(struct_ty)) = &self.0.ty else {
             panic!("type is not a struct");
         };
 
@@ -67,5 +83,14 @@ impl Hash for TyId {
         H: Hasher,
     {
         std::ptr::hash(self, state);
+    }
+}
+
+impl ops::Deref for TyId {
+    type Target = AnyTy;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.0.ty
     }
 }

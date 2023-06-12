@@ -1,4 +1,4 @@
-use crate::{tys, ResolveContext, ResolveTy, TyId};
+use crate::{ResolveContext, TyId};
 use cool_collections::id_newtype;
 use std::ops;
 
@@ -34,47 +34,18 @@ impl ResolveExpr {
     }
 
     #[inline]
-    pub const fn module() -> Self {
-        Self {
-            ty_id: tys::MODULE,
-            kind: ResolveExprKind::Lvalue { is_mutable: false },
-        }
-    }
-
-    #[inline]
-    pub const fn ty() -> Self {
-        Self {
-            ty_id: tys::TY,
-            kind: ResolveExprKind::Lvalue { is_mutable: false },
-        }
-    }
-
-    #[inline]
     pub fn is_assignable(&self) -> bool {
-        self.ty_id != tys::MODULE
-            && self.ty_id != tys::TY
-            && matches!(self.kind, ResolveExprKind::Lvalue { is_mutable: true })
+        matches!(self.kind, ResolveExprKind::Lvalue { is_mutable: true })
     }
 
     #[inline]
     pub fn is_addressable(&self) -> bool {
-        self.ty_id != tys::MODULE && self.ty_id != tys::TY
+        true
     }
 
     #[inline]
     pub fn is_mutably_addressable(&self) -> bool {
-        self.ty_id != tys::MODULE
-            && self.ty_id != tys::TY
-            && !matches!(self.kind, ResolveExprKind::Lvalue { is_mutable: false })
-    }
-}
-
-impl Default for ResolveExpr {
-    fn default() -> Self {
-        Self {
-            ty_id: tys::UNIT,
-            kind: ResolveExprKind::Rvalue,
-        }
+        !matches!(self.kind, ResolveExprKind::Lvalue { is_mutable: false })
     }
 }
 
@@ -87,11 +58,6 @@ impl ResolveContext {
     #[inline]
     pub fn get_expr_ty_id(&self, expr_id: ExprId) -> TyId {
         self.exprs[expr_id].ty_id
-    }
-
-    #[inline]
-    pub fn get_expr_ty(&self, expr_id: ExprId) -> &ResolveTy {
-        &self[self.exprs[expr_id].ty_id]
     }
 }
 

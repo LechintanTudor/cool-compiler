@@ -77,17 +77,17 @@ impl<'a> GeneratedTys<'a> {
     }
 
     fn insert_derived_tys(&mut self, context: &'a Context, resolve: &'a ResolveContext) {
-        for ty_id in resolve.iter_resolve_ty_ids() {
+        for ty_id in resolve.iter_value_ty_ids() {
             if let Some((item_id, _)) = resolve[ty_id].ty.as_struct_parts() {
                 self.declare_struct_ty(context, resolve, ty_id, item_id);
             }
         }
 
-        for ty_id in resolve.iter_resolve_ty_ids() {
+        for ty_id in resolve.iter_value_ty_ids() {
             self.insert_ty(context, resolve, ty_id);
         }
 
-        for ty_id in resolve.iter_resolve_ty_ids() {
+        for ty_id in resolve.iter_value_ty_ids() {
             if let Some((_, fields)) = resolve[ty_id].ty.as_struct_parts() {
                 self.define_struct_ty(context, resolve, ty_id, fields.into());
             }

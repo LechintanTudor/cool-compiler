@@ -1,5 +1,5 @@
 use crate::{
-    tys, Binding, ItemKind, ItemPath, ItemPathBuf, Module, ModuleElem, Mutability, ResolveContext,
+    Binding, ItemKind, ItemPath, ItemPathBuf, Module, ModuleElem, Mutability, ResolveContext,
     ResolveError, ResolveErrorKind, ResolveResult, Scope,
 };
 use cool_collections::id_newtype;
@@ -91,7 +91,7 @@ impl ResolveContext {
         let binding_id = self.bindings.push(Binding {
             symbol,
             mutability,
-            ty_id: tys::INFER,
+            ty_id: self.tys.consts().infer,
         });
 
         self.items

@@ -1,6 +1,6 @@
 use crate::{
-    resolve_fields_size_align, AnyTy, ArrayTy, FloatTy, IntTy, ManyPtrTy, PrimitiveTyData, PtrTy,
-    ResolveTy, SliceTy, StructTy, TupleTy,
+    resolve_fields_size_align, AnyTy, ArrayTy, FloatTy, FnTy, IntTy, ManyPtrTy, PrimitiveTyData,
+    PtrTy, ResolveTy, SliceTy, StructTy, TupleTy,
 };
 use derive_more::From;
 
@@ -12,6 +12,7 @@ pub enum ValueTy {
     Array(ArrayTy),
     Tuple(TupleTy),
     Struct(StructTy),
+    Fn(FnTy),
     Ptr(PtrTy),
     ManyPtr(ManyPtrTy),
     Slice(SliceTy),
@@ -36,10 +37,18 @@ impl ValueTy {
                 ResolveTy {
                     size: elem_size * array_ty.len,
                     align: elem_align,
-                    ty: AnyTy::Value(self),
+                    ty: AnyTy::Value(ValueTy::Array(array_ty)),
                 }
             }
             ValueTy::Tuple(mut tuple_ty) => {
+                if tuple_ty.fields.is_empty() {
+                    return ResolveTy {
+                        size: 0,
+                        align: 1,
+                        ty: AnyTy::Value(ValueTy::Unit),
+                    };
+                }
+
                 let (size, align) = resolve_fields_size_align(&mut tuple_ty.fields);
 
                 ResolveTy {
@@ -55,7 +64,7 @@ impl ValueTy {
                     ty: AnyTy::Value(self),
                 }
             }
-            ValueTy::Ptr(_) | ValueTy::ManyPtr(_) => {
+            ValueTy::Fn(_) | ValueTy::Ptr(_) | ValueTy::ManyPtr(_) => {
                 ResolveTy {
                     size: primitives.ptr_size,
                     align: primitives.ptr_align,

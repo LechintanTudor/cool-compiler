@@ -1,7 +1,9 @@
 mod any_ty;
 mod array_ty;
 mod consts;
+mod error;
 mod field;
+mod fn_ty;
 mod infer_ty;
 mod item_ty;
 mod primitive_ty;
@@ -15,7 +17,9 @@ mod value_ty;
 pub use self::any_ty::*;
 pub use self::array_ty::*;
 pub use self::consts::*;
+pub use self::error::*;
 pub use self::field::*;
+pub use self::fn_ty::*;
 pub use self::infer_ty::*;
 pub use self::item_ty::*;
 pub use self::primitive_ty::*;
@@ -25,6 +29,7 @@ pub use self::struct_ty::*;
 pub use self::tuple_ty::*;
 pub use self::ty_id::*;
 pub use self::value_ty::*;
+use crate::ItemId;
 use cool_arena::Arena;
 use cool_collections::id_newtype;
 
@@ -51,19 +56,34 @@ impl TyContext {
         }
     }
 
-    pub fn get_or_insert(&mut self, ty: AnyTy) -> TyId {
-        let ty: ResolveTy = match ty {
-            AnyTy::Infer(ty) => ty.into(),
-            AnyTy::Item(ty) => ty.into(),
-            AnyTy::Value(ty) => ty.to_resolve_ty(&self.primitives),
-        };
+    pub fn declare_struct(&mut self, item_id: ItemId) -> TyId {
+        self.get_or_insert(AnyTy::Value(ValueTy::Struct(StructTy {
+            item_id,
+            def: Default::default(),
+        })))
+    }
 
+    pub fn get_or_insert(&mut self, ty: AnyTy) -> TyId {
+        let ty = ty.to_resolve_ty(&self.primitives);
         let internal_ty_id = self.tys.get_or_insert(ty);
         TyId::new(self.tys.get(internal_ty_id).unwrap())
+    }
+
+    pub fn get_or_insert_value<T>(&mut self, ty: T) -> TyId
+    where
+        T: Into<ValueTy>,
+    {
+        let ty: ValueTy = ty.into();
+        self.get_or_insert(ty.into())
     }
 
     #[inline]
     pub fn consts(&self) -> &TyConsts {
         &self.consts
+    }
+
+    #[inline]
+    pub fn iter_value_ty_ids(&self) -> impl Iterator<Item = TyId> + '_ {
+        self.tys.iter().filter(|ty| ty.ty.is_value()).map(TyId::new)
     }
 }

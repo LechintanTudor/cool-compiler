@@ -8,28 +8,6 @@ pub struct ResolveTy {
     pub ty: AnyTy,
 }
 
-impl From<InferTy> for ResolveTy {
-    #[inline]
-    fn from(ty: InferTy) -> Self {
-        Self {
-            size: 0,
-            align: 1,
-            ty: AnyTy::Infer(ty),
-        }
-    }
-}
-
-impl From<ItemTy> for ResolveTy {
-    #[inline]
-    fn from(ty: ItemTy) -> Self {
-        Self {
-            size: 0,
-            align: 1,
-            ty: AnyTy::Item(ty),
-        }
-    }
-}
-
 impl PartialEq for ResolveTy {
     #[inline]
     fn eq(&self, other: &Self) -> bool {

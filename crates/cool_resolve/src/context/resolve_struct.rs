@@ -1,6 +1,6 @@
 use crate::{
-    Field, ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveErrorKind,
-    ResolveResult, StructHasInfiniteSize, TyId, ValueTy,
+    AnyTy, Field, ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError,
+    ResolveErrorKind, ResolveResult, StructHasInfiniteSize, TyId, ValueTy,
 };
 use cool_lexer::Symbol;
 use smallvec::SmallVec;
@@ -57,11 +57,12 @@ impl ResolveContext {
             }
         }
 
-        Ok(self.tys.define_struct(item_id, fields))
+        ty_id.define_struct(fields);
+        Ok(true)
     }
 
     fn ty_contains_ty(&self, haysack_ty_id: TyId, needle_ty_id: TyId) -> Option<bool> {
-        let mut tys_to_check = SmallVec::<[TyId; 6]>::new();
+        let mut tys_to_check = SmallVec::<[TyId; 7]>::new();
         tys_to_check.push(haysack_ty_id);
 
         while let Some(ty_id) = tys_to_check.pop() {
@@ -69,10 +70,26 @@ impl ResolveContext {
                 return Some(true);
             }
 
-            match &self.tys.get_resolve_ty(ty_id)?.ty {
-                ValueTy::Array(array_ty) => tys_to_check.push(array_ty.elem),
-                ValueTy::Aggregate(aggregate_ty) => {
-                    tys_to_check.extend(aggregate_ty.fields.iter().map(|field| field.ty_id));
+            if !ty_id.is_defined() {
+                return None;
+            }
+
+            match &*ty_id {
+                AnyTy::Value(value_ty) => {
+                    match value_ty {
+                        ValueTy::Array(array_ty) => {
+                            tys_to_check.push(array_ty.elem);
+                        }
+                        ValueTy::Tuple(tuple_ty) => {
+                            tys_to_check.extend(tuple_ty.fields.iter().map(|field| field.ty_id));
+                        }
+                        ValueTy::Struct(struct_ty) => {
+                            let struct_def = struct_ty.def.lock().unwrap();
+                            let struct_fields = &struct_def.as_ref().unwrap().fields;
+                            tys_to_check.extend(struct_fields.iter().map(|field| field.ty_id));
+                        }
+                        _ => (),
+                    }
                 }
                 _ => (),
             }
