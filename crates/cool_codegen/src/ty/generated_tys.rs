@@ -214,7 +214,7 @@ impl<'a> GeneratedTys<'a> {
         let non_zst_fields = fields
             .iter()
             .flat_map(|field| {
-                self.insert_ty(context, resolve, ty_id)
+                self.insert_ty(context, resolve, field.ty_id)
                     .map(|ty| (field, ty))
             })
             .collect::<Vec<_>>();
