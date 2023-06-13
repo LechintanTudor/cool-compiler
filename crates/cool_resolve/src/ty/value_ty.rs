@@ -104,10 +104,7 @@ impl ValueTy {
 
     #[inline]
     pub fn is_usize(&self) -> bool {
-        match self {
-            Self::Int(IntTy::Usize) => true,
-            _ => false,
-        }
+        matches!(self, Self::Int(IntTy::Usize))
     }
 
     #[inline]

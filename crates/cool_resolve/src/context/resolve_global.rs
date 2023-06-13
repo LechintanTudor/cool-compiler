@@ -160,27 +160,34 @@ impl ResolveContext {
         let module = &self.modules[module_id];
 
         let path: ItemPath = path.into();
-        let mut path_iter = path.as_symbol_slice().iter();
+        let first_symbol = path.first();
+        let mut symbol_iter = path.as_symbol_slice().iter();
 
-        let mut resolved_path: ItemPathBuf = match *path_iter.next().unwrap() {
-            sym::KW_CRATE => module.path.first().into(),
+        let mut resolved_path: ItemPathBuf = match first_symbol {
+            sym::KW_CRATE => {
+                let _ = symbol_iter.next();
+                module.path.first().into()
+            }
             sym::KW_SUPER => {
+                let _ = symbol_iter.next();
                 module.path.try_pop().ok_or(ResolveError {
                     symbol: path.last(),
                     kind: ResolveErrorKind::TooManySuperKeywords,
                 })?
             }
-            sym::KW_SELF => module.path.clone(),
+            sym::KW_SELF => {
+                let _ = symbol_iter.next();
+                module.path.clone()
+            }
             symbol => {
                 if module.elems.contains_key(&symbol) {
-                    // Check local module
-                    module.path.append(symbol)
+                    module.path.clone()
                 } else if self.paths.contains(&[symbol]) {
                     // Check other crates
                     ItemPathBuf::from(symbol)
                 } else if self.paths.contains(&[sym::EMPTY, symbol]) {
                     // Check builtins
-                    ItemPathBuf::from([sym::EMPTY, symbol].as_slice())
+                    ItemPathBuf::from(sym::EMPTY)
                 } else {
                     return Err(ResolveError {
                         symbol,
@@ -190,7 +197,7 @@ impl ResolveContext {
             }
         };
 
-        for &symbol in path_iter {
+        for &symbol in symbol_iter {
             let current_module = self.get_module_by_path(&resolved_path)?;
 
             let current_item = current_module.elems.get(&symbol).ok_or(ResolveError {
@@ -205,7 +212,7 @@ impl ResolveContext {
                 });
             }
 
-            resolved_path = resolved_path.append(symbol);
+            resolved_path = self.paths[current_item.item_id].into();
         }
 
         self.get_item_id_by_path(&resolved_path)

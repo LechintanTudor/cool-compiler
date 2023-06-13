@@ -55,18 +55,23 @@ define_ty! {
 impl Parser<'_> {
     pub fn parse_ty(&mut self) -> ParseResult<Ty> {
         let ty: Ty = match self.peek().kind {
+            tk::KW_CRATE | tk::KW_SUPER | tk::KW_SELF | TokenKind::Ident(_) => {
+                self.parse_path_ty()?.into()
+            }
             tk::KW_EXTERN | tk::KW_FN => self.parse_fn_ty()?.into(),
             tk::KW_MODULE | tk::KW_TYPE => self.parse_item_ty()?.into(),
-            TokenKind::Ident(_) => self.parse_path_ty()?.into(),
-            tk::STAR => self.parse_ptr_ty()?.into(),
-            tk::OPEN_PAREN => self.parse_tuple_ty()?,
             tk::OPEN_BRACKET => self.parse_array_or_slice_ty()?,
+            tk::OPEN_PAREN => self.parse_tuple_ty()?,
+            tk::STAR => self.parse_ptr_ty()?.into(),
             _ => {
                 return self.peek_error(&[
                     tk::DIAG_IDENT,
+                    tk::KW_CRATE,
                     tk::KW_EXTERN,
                     tk::KW_FN,
                     tk::KW_MODULE,
+                    tk::KW_SELF,
+                    tk::KW_SUPER,
                     tk::KW_TYPE,
                     tk::OPEN_BRACKET,
                     tk::OPEN_PAREN,

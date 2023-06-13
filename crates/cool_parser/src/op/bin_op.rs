@@ -72,7 +72,7 @@ impl BinOp {
             }
             Self::Comparison(_) => BinOpPrecedence::Low,
             Self::Bitwise(_) => BinOpPrecedence::Medium,
-            Self::Logical(_) => BinOpPrecedence::Medium,
+            Self::Logical(_) => BinOpPrecedence::Lowest,
         }
     }
 }
