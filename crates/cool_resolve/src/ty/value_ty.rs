@@ -103,6 +103,14 @@ impl ValueTy {
     }
 
     #[inline]
+    pub fn is_usize(&self) -> bool {
+        match self {
+            Self::Int(IntTy::Usize) => true,
+            _ => false,
+        }
+    }
+
+    #[inline]
     pub fn is_comparable(&self) -> bool {
         matches!(
             self,

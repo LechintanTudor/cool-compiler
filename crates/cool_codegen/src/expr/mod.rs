@@ -2,6 +2,7 @@ mod access_expr;
 mod array_expr;
 mod binary_expr;
 mod block_expr;
+mod cast_expr;
 mod cond_expr;
 mod deref_expr;
 mod fn_call_expr;
@@ -34,6 +35,7 @@ impl<'a> CodeGenerator<'a> {
             ExprAst::Binary(e) => self.gen_binary_expr(e).into(),
             ExprAst::Binding(e) => self.gen_ident_expr(e),
             ExprAst::Block(e) => self.gen_block_expr(e).into(),
+            ExprAst::Cast(e) => self.gen_cast_expr(e).into(),
             ExprAst::Cond(e) => self.gen_cond_expr(e).into(),
             ExprAst::Deref(e) => self.gen_deref_expr(e),
             ExprAst::FnCall(e) => self.gen_fn_call_expr(e).into(),

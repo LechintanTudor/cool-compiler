@@ -2,6 +2,7 @@ mod access_expr;
 mod array_expr;
 mod binary_expr;
 mod block_expr;
+mod cast_expr;
 mod cond_expr;
 mod deref_expr;
 mod fn_call_expr;
@@ -19,6 +20,7 @@ pub use self::access_expr::*;
 pub use self::array_expr::*;
 pub use self::binary_expr::*;
 pub use self::block_expr::*;
+pub use self::cast_expr::*;
 pub use self::cond_expr::*;
 pub use self::deref_expr::*;
 pub use self::fn_call_expr::*;
@@ -94,6 +96,7 @@ define_expr_ast! {
     Binary,
     Binding,
     Block,
+    Cast,
     Cond,
     Deref,
     FnCall,
@@ -161,6 +164,7 @@ impl_gen_expr! {
     ArrayRepeat,
     Binary,
     Block,
+    Cast,
     Cond,
     Deref,
     FnCall,

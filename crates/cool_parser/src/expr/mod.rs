@@ -2,15 +2,14 @@ mod access_expr;
 mod array_expr;
 mod binary_expr;
 mod block_expr;
+mod cast_expr;
 mod cond_expr;
-mod deref_expr;
 mod fn_call_expr;
 mod fn_expr;
 mod for_expr;
 mod ident_expr;
 mod literal_expr;
 mod loop_expr;
-mod paren_expr;
 mod struct_expr;
 mod subscript_expr;
 mod tuple_expr;
@@ -21,21 +20,20 @@ pub use self::access_expr::*;
 pub use self::array_expr::*;
 pub use self::binary_expr::*;
 pub use self::block_expr::*;
+pub use self::cast_expr::*;
 pub use self::cond_expr::*;
-pub use self::deref_expr::*;
 pub use self::fn_call_expr::*;
 pub use self::fn_expr::*;
 pub use self::for_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::loop_expr::*;
-pub use self::paren_expr::*;
 pub use self::struct_expr::*;
 pub use self::subscript_expr::*;
 pub use self::tuple_expr::*;
 pub use self::unary_expr::*;
 pub use self::while_expr::*;
-use crate::{BinOp, Ident, ParseResult, Parser};
+use crate::{BinOp, ParseResult, Parser};
 use cool_lexer::{tk, TokenKind};
 use cool_span::{Section, Span};
 use derive_more::From;
@@ -66,6 +64,7 @@ define_expr! {
     ArrayRepeat,
     Binary,
     Block,
+    Cast,
     Cond,
     Deref,
     Fn,
@@ -180,24 +179,24 @@ impl Parser<'_> {
 
     fn parse_primary_expr(&mut self, allow_struct_expr: bool) -> ParseResult<Expr> {
         let mut expr: Expr = match self.peek().kind {
-            tk::OPEN_BRACKET => self.parse_array_expr()?,
-            tk::OPEN_BRACE => self.parse_block_expr()?.into(),
-            tk::OPEN_PAREN => self.parse_paren_or_tuple_expr()?,
+            TokenKind::Ident(_) => self.parse_ident_expr()?.into(),
+            TokenKind::Prefix(_) | TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
+            tk::KW_FOR => self.parse_for_expr()?.into(),
             tk::KW_IF => self.parse_cond_expr()?.into(),
             tk::KW_LOOP => self.parse_loop_expr()?.into(),
             tk::KW_WHILE => self.parse_while_expr()?.into(),
-            tk::KW_FOR => self.parse_for_expr()?.into(),
             tk::MINUS | tk::NOT | tk::AND => self.parse_unary_expr()?.into(),
-            TokenKind::Ident(_) => self.parse_ident_expr()?.into(),
-            TokenKind::Prefix(_) | TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
+            tk::OPEN_BRACE => self.parse_block_expr()?.into(),
+            tk::OPEN_BRACKET => self.parse_array_expr()?,
+            tk::OPEN_PAREN => self.parse_tuple_expr()?,
             _ => {
                 return self.peek_error(&[
-                    tk::OPEN_BRACKET,
-                    tk::OPEN_BRACE,
-                    tk::OPEN_PAREN,
-                    tk::KW_RETURN,
                     tk::DIAG_IDENT,
                     tk::DIAG_LITERAL,
+                    tk::KW_RETURN,
+                    tk::OPEN_BRACE,
+                    tk::OPEN_BRACKET,
+                    tk::OPEN_PAREN,
                 ]);
             }
         };
@@ -206,7 +205,8 @@ impl Parser<'_> {
             expr = match &expr {
                 Expr::Access(_) | Expr::Ident(_) => {
                     match self.peek().kind {
-                        tk::DOT => self.continue_parse_access_or_deref_expr(Box::new(expr))?,
+                        tk::DOT => self.continue_parse_access_expr(Box::new(expr))?,
+                        tk::KW_AS => self.continue_parse_cast_expr(Box::new(expr))?.into(),
                         tk::OPEN_BRACE if allow_struct_expr => {
                             self.continue_parse_struct_expr(Box::new(expr))?.into()
                         }
@@ -215,7 +215,15 @@ impl Parser<'_> {
                         _ => break,
                     }
                 }
-                Expr::Block(_)
+                Expr::Cast(_) => {
+                    match self.peek().kind {
+                        tk::KW_AS => self.continue_parse_cast_expr(Box::new(expr))?.into(),
+                        _ => break,
+                    }
+                }
+                Expr::Array(_)
+                | Expr::ArrayRepeat(_)
+                | Expr::Block(_)
                 | Expr::Cond(_)
                 | Expr::Deref(_)
                 | Expr::FnCall(_)
@@ -223,7 +231,8 @@ impl Parser<'_> {
                 | Expr::Paren(_)
                 | Expr::Range(_) => {
                     match self.peek().kind {
-                        tk::DOT => self.continue_parse_access_or_deref_expr(Box::new(expr))?,
+                        tk::DOT => self.continue_parse_access_expr(Box::new(expr))?,
+                        tk::KW_AS => self.continue_parse_cast_expr(Box::new(expr))?.into(),
                         tk::OPEN_PAREN => self.continue_parse_fn_call_expr(Box::new(expr))?.into(),
                         tk::OPEN_BRACKET => self.continue_parse_subscript_expr(Box::new(expr))?,
                         _ => break,
@@ -232,86 +241,6 @@ impl Parser<'_> {
                 _ => break,
             }
         }
-
-        Ok(expr)
-    }
-
-    fn continue_parse_access_or_deref_expr(&mut self, base: Box<Expr>) -> ParseResult<Expr> {
-        self.bump_expect(&tk::DOT)?;
-        let next_token = self.bump();
-
-        let expr: Expr = match next_token.kind {
-            TokenKind::Ident(symbol) => {
-                AccessExpr {
-                    base,
-                    ident: Ident {
-                        span: next_token.span,
-                        symbol,
-                    },
-                }
-                .into()
-            }
-            TokenKind::Literal(literal) => {
-                AccessExpr {
-                    base,
-                    ident: Ident {
-                        span: next_token.span,
-                        symbol: literal.symbol,
-                    },
-                }
-                .into()
-            }
-            tk::STAR => {
-                DerefExpr {
-                    span: base.span().to(next_token.span),
-                    expr: base,
-                }
-                .into()
-            }
-            _ => self.error(next_token, &[tk::DIAG_IDENT, tk::STAR])?,
-        };
-
-        Ok(expr)
-    }
-
-    fn parse_paren_or_tuple_expr(&mut self) -> ParseResult<Expr> {
-        let start_token = self.bump_expect(&tk::OPEN_PAREN)?;
-        let mut exprs = Vec::<Expr>::new();
-
-        let (end_token, has_trailing_comma) = match self.peek().kind {
-            tk::CLOSE_PAREN => (self.bump(), false),
-            _ => {
-                loop {
-                    exprs.push(self.parse_expr()?);
-
-                    if self.bump_if_eq(tk::COMMA).is_some() {
-                        if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
-                            break (end_token, true);
-                        }
-                    } else if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
-                        break (end_token, false);
-                    } else {
-                        return self.peek_error(&[tk::COMMA, tk::CLOSE_PAREN]);
-                    }
-                }
-            }
-        };
-
-        let span = start_token.span.to(end_token.span);
-        let expr: Expr = if exprs.len() == 1 && !has_trailing_comma {
-            ParenExpr {
-                span,
-                inner: Box::new(exprs.remove(0)),
-            }
-            .into()
-        } else {
-            TupleExpr {
-                span,
-                elems: exprs,
-                has_trailing_comma,
-            }
-            .into()
-        };
 
         Ok(expr)
     }

@@ -15,6 +15,7 @@ pub enum AstError {
     FnVariadicMismatch(FnVariadicMismatch),
     LiteralIntOutOfRange(LiteralIntOutOfRange),
     LiteralUnknownSuffix(LiteralUnknownSuffix),
+    UnsupportedCast(UnsupportedCast),
 
     #[display(fmt = "expected expression and found module")]
     ModuleUsedAsExpr,
@@ -73,4 +74,11 @@ pub struct LiteralIntOutOfRange {
 #[display(fmt = "unknown literal suffix: {suffix}")]
 pub struct LiteralUnknownSuffix {
     pub suffix: Symbol,
+}
+
+#[derive(Clone, Error, Display, Debug)]
+#[display(fmt = "unsupported cast from '{from_ty}' to '{to_ty}'")]
+pub struct UnsupportedCast {
+    pub from_ty: TyId,
+    pub to_ty: TyId,
 }
