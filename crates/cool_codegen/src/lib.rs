@@ -89,11 +89,11 @@ impl<'a> CodeGenerator<'a> {
         module.set_triple(target_triple);
 
         let pass_manager = PassManager::create(&module);
-        pass_manager.add_promote_memory_to_register_pass();
-        pass_manager.add_instruction_combining_pass();
-        pass_manager.add_reassociate_pass();
-        pass_manager.add_gvn_pass();
-        pass_manager.add_cfg_simplification_pass();
+        //pass_manager.add_promote_memory_to_register_pass();
+        //pass_manager.add_instruction_combining_pass();
+        //pass_manager.add_reassociate_pass();
+        //pass_manager.add_gvn_pass();
+        //pass_manager.add_cfg_simplification_pass();
         pass_manager.initialize();
 
         let builder = context.create_builder();

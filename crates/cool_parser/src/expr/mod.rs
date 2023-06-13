@@ -221,11 +221,15 @@ impl Parser<'_> {
                         _ => break,
                     }
                 }
-                Expr::Array(_)
-                | Expr::ArrayRepeat(_)
-                | Expr::Block(_)
-                | Expr::Cond(_)
-                | Expr::Deref(_)
+                Expr::Array(_) | Expr::ArrayRepeat(_) | Expr::Block(_) | Expr::Cond(_) => {
+                    match self.peek().kind {
+                        tk::DOT => self.continue_parse_access_expr(Box::new(expr))?,
+                        tk::KW_AS => self.continue_parse_cast_expr(Box::new(expr))?.into(),
+                        tk::OPEN_BRACKET => self.continue_parse_subscript_expr(Box::new(expr))?,
+                        _ => break,
+                    }
+                }
+                Expr::Deref(_)
                 | Expr::FnCall(_)
                 | Expr::Index(_)
                 | Expr::Paren(_)
