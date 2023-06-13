@@ -17,7 +17,7 @@ impl Section for AliasItem {
 
 impl Parser<'_> {
     pub fn parse_alias_item(&mut self) -> ParseResult<AliasItem> {
-        let start_token = self.bump_expect(&tk::KW_ALIAS)?;
+        let start_token = self.bump_expect(&tk::KW_TYPE)?;
         let ty = self.parse_ty()?;
 
         Ok(AliasItem {

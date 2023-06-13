@@ -55,17 +55,17 @@ impl From<AbstractFn> for Item {
 impl Parser<'_> {
     pub fn parse_item(&mut self) -> ParseResult<Item> {
         let item: Item = match self.peek().kind {
-            tk::KW_ALIAS => self.parse_alias_item()?.into(),
             tk::KW_EXTERN | tk::KW_FN => self.parse_fn_or_extern_fn_item()?.into(),
             tk::KW_MODULE => self.parse_module_item()?.into(),
             tk::KW_STRUCT => self.parse_struct_item()?.into(),
+            tk::KW_TYPE => self.parse_alias_item()?.into(),
             _ => {
                 self.peek_error(&[
-                    tk::KW_ALIAS,
                     tk::KW_EXTERN,
                     tk::KW_FN,
                     tk::KW_MODULE,
                     tk::KW_STRUCT,
+                    tk::KW_TYPE,
                 ])?
             }
         };

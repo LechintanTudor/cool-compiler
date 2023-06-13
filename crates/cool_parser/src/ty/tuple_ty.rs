@@ -3,6 +3,19 @@ use cool_lexer::tk;
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
+pub struct ParenTy {
+    pub span: Span,
+    pub inner: Box<Ty>,
+}
+
+impl Section for ParenTy {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct TupleTy {
     pub span: Span,
     pub elems: Vec<Ty>,
@@ -17,42 +30,46 @@ impl Section for TupleTy {
 }
 
 impl Parser<'_> {
-    pub fn parse_tuple_ty(&mut self) -> ParseResult<TupleTy> {
-        let start_token = self.bump_expect(&tk::OPEN_PAREN)?;
+    pub fn parse_tuple_ty(&mut self) -> ParseResult<Ty> {
+        let open_paren = self.bump_expect(&tk::OPEN_PAREN)?;
 
-        let mut elems = Vec::<Ty>::new();
+        if let Some(close_paren) = self.bump_if_eq(tk::CLOSE_PAREN) {
+            return Ok(Ty::Tuple(TupleTy {
+                span: open_paren.span.to(close_paren.span),
+                elems: vec![],
+                has_trailing_comma: false,
+            }));
+        }
 
-        let (end_token, has_trailing_comma) = match self.bump_if_eq(tk::CLOSE_PAREN) {
-            Some(end_token) => (end_token, false),
-            None => {
-                loop {
-                    elems.push(self.parse_ty()?);
+        let first_elem = self.parse_ty()?;
 
-                    let next_token = self.bump();
+        if let Some(close_paren) = self.bump_if_eq(tk::CLOSE_PAREN) {
+            return Ok(Ty::Paren(ParenTy {
+                span: open_paren.span.to(close_paren.span),
+                inner: Box::new(first_elem),
+            }));
+        }
 
-                    match next_token.kind {
-                        tk::COMMA => {
-                            if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
-                                break (end_token, true);
-                            }
-                        }
-                        tk::CLOSE_PAREN => {
-                            if elems.len() == 1 {
-                                return self.error(next_token, &[tk::COMMA]);
-                            }
+        let mut elems = vec![first_elem];
 
-                            break (next_token, false);
-                        }
-                        _ => return self.error(next_token, &[tk::COMMA, tk::CLOSE_PAREN]),
-                    }
-                }
+        let (close_paren, has_trailing_comma) = loop {
+            self.bump_expect(&tk::COMMA)?;
+
+            if let Some(close_paren) = self.bump_if_eq(tk::CLOSE_PAREN) {
+                break (close_paren, true);
+            }
+
+            elems.push(self.parse_ty()?);
+
+            if let Some(close_paren) = self.bump_if_eq(tk::CLOSE_PAREN) {
+                break (close_paren, false);
             }
         };
 
-        Ok(TupleTy {
-            span: start_token.span.to(end_token.span),
+        Ok(Ty::Tuple(TupleTy {
+            span: open_paren.span.to(close_paren.span),
             elems,
             has_trailing_comma,
-        })
+        }))
     }
 }

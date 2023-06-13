@@ -1,6 +1,6 @@
 use crate::resolve::fn_ty::resolve_fn_abi;
 use crate::AstGenerator;
-use cool_parser::Ty;
+use cool_parser::{ItemKind, Ty};
 use cool_resolve::{
     FrameId, ItemPathBuf, ResolveError, ResolveErrorKind, ResolveResult, Scope, TyId,
 };
@@ -10,6 +10,16 @@ use smallvec::SmallVec;
 impl AstGenerator<'_> {
     pub fn resolve_ty(&mut self, scope: Scope, ty: &Ty) -> ResolveResult<TyId> {
         let ty_id = match ty {
+            Ty::Array(array_ty) => {
+                let len = self
+                    .gen_literal_expr(FrameId::dummy(), self.tys().usize, &array_ty.len)
+                    .unwrap()
+                    .as_int_value()
+                    .unwrap() as u64;
+
+                let elem = self.resolve_ty(scope, &array_ty.elem)?;
+                self.resolve.mk_array(len, elem)
+            }
             Ty::Fn(fn_ty) => {
                 let abi = resolve_fn_abi(&fn_ty.extern_decl)?;
                 let mut param_ty_ids = SmallVec::<[TyId; 6]>::new();
@@ -26,8 +36,19 @@ impl AstGenerator<'_> {
                 self.resolve
                     .mk_fn(abi, param_ty_ids, fn_ty.param_list.is_variadic, ret_ty_id)
             }
-            Ty::Path(path) => {
-                let path = path
+            Ty::Item(item_ty) => {
+                match item_ty.kind {
+                    ItemKind::Module => self.tys().module,
+                    ItemKind::Ty => self.tys().ty,
+                }
+            }
+            Ty::ManyPtr(many_ptr_ty) => {
+                let pointee = self.resolve_ty(scope, &many_ptr_ty.pointee)?;
+                self.resolve.mk_many_ptr(many_ptr_ty.is_mutable, pointee)
+            }
+            Ty::Paren(paren_ty) => self.resolve_ty(scope, &paren_ty.inner)?,
+            Ty::Path(path_ty) => {
+                let path = path_ty
                     .idents
                     .iter()
                     .map(|ident| ident.symbol)
@@ -43,23 +64,9 @@ impl AstGenerator<'_> {
                         kind: ResolveErrorKind::SymbolNotTy,
                     })?
             }
-            Ty::Array(array_ty) => {
-                let len = self
-                    .gen_literal_expr(FrameId::dummy(), self.tys().usize, &array_ty.len)
-                    .unwrap()
-                    .as_int_value()
-                    .unwrap() as u64;
-
-                let elem = self.resolve_ty(scope, &array_ty.elem)?;
-                self.resolve.mk_array(len, elem)
-            }
             Ty::Ptr(ptr_ty) => {
                 let pointee = self.resolve_ty(scope, &ptr_ty.pointee)?;
                 self.resolve.mk_ptr(ptr_ty.is_mutable, pointee)
-            }
-            Ty::ManyPtr(many_ptr_ty) => {
-                let pointee = self.resolve_ty(scope, &many_ptr_ty.pointee)?;
-                self.resolve.mk_many_ptr(many_ptr_ty.is_mutable, pointee)
             }
             Ty::Slice(slice_ty) => {
                 let elem = self.resolve_ty(scope, &slice_ty.elem)?;
@@ -74,7 +81,6 @@ impl AstGenerator<'_> {
 
                 self.resolve.mk_tuple(elem_tys)
             }
-            _ => todo!(),
         };
 
         Ok(ty_id)
