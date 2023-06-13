@@ -30,10 +30,7 @@ pub fn p1_parse(
     let crate_paths = match ModulePaths::for_root(&options.crate_root_file) {
         Ok(crate_paths) => Some(crate_paths),
         Err(error) => {
-            errors.push(CompileError {
-                path: options.crate_root_file.clone(),
-                kind: error.into(),
-            });
+            errors.push(CompileError::from_error(error));
             None
         }
     };
@@ -42,10 +39,7 @@ pub fn p1_parse(
     let crate_module_id = match resove.insert_root_module(crate_symbol) {
         Ok(crate_module_id) => Some(crate_module_id),
         Err(error) => {
-            errors.push(CompileError {
-                path: options.crate_root_file.clone(),
-                kind: error.into(),
-            });
+            errors.push(CompileError::from_error(error));
             None
         }
     };
@@ -64,10 +58,7 @@ pub fn p1_parse(
         let module_content = match package.source_map.add_file(module_paths.path.clone()) {
             Ok(source_file) => source_file,
             Err(error) => {
-                errors.push(CompileError {
-                    path: Default::default(),
-                    kind: error.into(),
-                });
+                errors.push(CompileError::from_error(error));
                 continue;
             }
         };
@@ -90,10 +81,7 @@ pub fn p1_parse(
                                 ) {
                                     Ok(child_module_id) => child_module_id,
                                     Err(error) => {
-                                        errors.push(CompileError {
-                                            path: module_paths.path.clone(),
-                                            kind: error.into(),
-                                        });
+                                        errors.push(CompileError::from_error(error));
                                         continue;
                                     }
                                 };
@@ -109,10 +97,7 @@ pub fn p1_parse(
                                         ) {
                                             Ok(child_module_paths) => child_module_paths,
                                             Err(error) => {
-                                                errors.push(CompileError {
-                                                    path: module_paths.path.clone(),
-                                                    kind: error.into(),
-                                                });
+                                                errors.push(CompileError::from_error(error));
                                                 continue;
                                             }
                                         };
@@ -130,10 +115,7 @@ pub fn p1_parse(
                                 ) {
                                     Ok(item_id) => item_id,
                                     Err(error) => {
-                                        errors.push(CompileError {
-                                            path: module_paths.path.clone(),
-                                            kind: error.into(),
-                                        });
+                                        errors.push(CompileError::from_error(error));
                                         continue;
                                     }
                                 };
@@ -154,10 +136,7 @@ pub fn p1_parse(
                                 ) {
                                     Ok(item_id) => item_id,
                                     Err(error) => {
-                                        errors.push(CompileError {
-                                            path: module_paths.path.clone(),
-                                            kind: error.into(),
-                                        });
+                                        errors.push(CompileError::from_error(error));
                                         continue;
                                     }
                                 };
@@ -179,10 +158,7 @@ pub fn p1_parse(
                                 ) {
                                     Ok(item_id) => item_id,
                                     Err(error) => {
-                                        errors.push(CompileError {
-                                            path: module_paths.path.clone(),
-                                            kind: error.into(),
-                                        });
+                                        errors.push(CompileError::from_error(error));
                                         continue;
                                     }
                                 };
@@ -204,10 +180,7 @@ pub fn p1_parse(
                                 ) {
                                     Ok(item_id) => item_id,
                                     Err(error) => {
-                                        errors.push(CompileError {
-                                            path: module_paths.path.clone(),
-                                            kind: error.into(),
-                                        });
+                                        errors.push(CompileError::from_error(error));
                                         continue;
                                     }
                                 };
@@ -260,10 +233,7 @@ pub fn p1_parse(
                 if error.kind == ResolveErrorKind::SymbolNotFound {
                     imports.push_back(import);
                 } else {
-                    errors.push(CompileError {
-                        path: import.source_path,
-                        kind: error.into(),
-                    });
+                    errors.push(CompileError::from_error(error));
                 }
 
                 if import_fail_count >= imports.len() {
@@ -274,14 +244,10 @@ pub fn p1_parse(
     }
 
     for import in imports.drain(..) {
-        errors.push(CompileError {
-            path: import.source_path,
-            kind: ResolveError {
-                symbol: import.path.last(),
-                kind: ResolveErrorKind::SymbolNotFound,
-            }
-            .into(),
-        });
+        errors.push(CompileError::from_error(ResolveError {
+            symbol: import.path.last(),
+            kind: ResolveErrorKind::SymbolNotFound,
+        }));
     }
 
     if errors.is_empty() {

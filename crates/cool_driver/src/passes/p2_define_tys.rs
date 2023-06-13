@@ -1,6 +1,8 @@
-use crate::{CompileError, CompileErrorBundle, CompileErrorKind, CompileResult, Package};
+use crate::{CompileError, CompileErrorBundle, CompileResult, Package};
 use cool_ast::AstGenerator;
-use cool_resolve::{Field, ResolveContext, StructHasDuplicatedField, TyCannotBeDefined};
+use cool_resolve::{
+    DefineError, Field, ResolveContext, StructHasDuplicatedField, TyCannotBeDefined,
+};
 use std::collections::VecDeque;
 
 pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> CompileResult<()> {
@@ -52,10 +54,7 @@ pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
                 let ty_id = match ast.resolve_ty(module_id.into(), &field.ty) {
                     Ok(ty_id) => ty_id,
                     Err(error) => {
-                        errors.push(CompileError {
-                            path: Default::default(),
-                            kind: error.into(),
-                        });
+                        errors.push(CompileError::from_error(error));
                         continue 'struct_loop;
                     }
                 };
@@ -65,16 +64,12 @@ pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
                     .any(|ty_field| ty_field.symbol == field.ident.symbol);
 
                 if is_duplicated {
-                    errors.push(CompileError {
-                        path: Default::default(),
-                        kind: CompileErrorKind::Define(
-                            StructHasDuplicatedField {
-                                path: ast.resolve.get_path_by_item_id(item_id).to_path_buf(),
-                                field: field.ident.symbol,
-                            }
-                            .into(),
-                        ),
-                    });
+                    errors.push(CompileError::from_error(DefineError::from(
+                        StructHasDuplicatedField {
+                            path: ast.resolve.get_path_by_item_id(item_id).to_path_buf(),
+                            field: field.ident.symbol,
+                        },
+                    )));
                     continue 'struct_loop;
                 }
 
@@ -99,36 +94,25 @@ pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
                 }
             }
             Err(error) => {
-                errors.push(CompileError {
-                    path: Default::default(),
-                    kind: CompileErrorKind::Define(error.into()),
-                });
+                errors.push(CompileError::from_error(DefineError::from(error)));
             }
         }
     }
 
     while let Some((_, item_id, _)) = aliases.pop_front() {
-        errors.push(CompileError {
-            path: Default::default(),
-            kind: CompileErrorKind::Define(
-                TyCannotBeDefined {
-                    path: ast.resolve.get_path_by_item_id(item_id).to_path_buf(),
-                }
-                .into(),
-            ),
-        });
+        errors.push(CompileError::from_error(DefineError::from(
+            TyCannotBeDefined {
+                path: ast.resolve.get_path_by_item_id(item_id).to_path_buf(),
+            },
+        )));
     }
 
     while let Some((_, item_id, _)) = structs.pop_front() {
-        errors.push(CompileError {
-            path: Default::default(),
-            kind: CompileErrorKind::Define(
-                TyCannotBeDefined {
-                    path: ast.resolve.get_path_by_item_id(item_id).to_path_buf(),
-                }
-                .into(),
-            ),
-        });
+        errors.push(CompileError::from_error(DefineError::from(
+            TyCannotBeDefined {
+                path: ast.resolve.get_path_by_item_id(item_id).to_path_buf(),
+            },
+        )));
     }
 
     if errors.is_empty() {

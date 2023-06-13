@@ -15,10 +15,7 @@ pub fn p4_gen_ast(package: &Package, resolve: &mut ResolveContext) -> CompileRes
         let extern_fn_ast = match ast.gen_extern_fn(extern_fn.item_id, extern_fn_ty_id) {
             Ok(extern_fn_ast) => extern_fn_ast,
             Err(error) => {
-                errors.push(CompileError {
-                    path: Default::default(),
-                    kind: error.into(),
-                });
+                errors.push(CompileError::from_error(error));
                 continue;
             }
         };
@@ -34,10 +31,7 @@ pub fn p4_gen_ast(package: &Package, resolve: &mut ResolveContext) -> CompileRes
                 match ast.gen_fn(const_item.item_id, const_item.module_id, fn_ty_id, fn_expr) {
                     Ok(fn_ast) => fn_ast,
                     Err(error) => {
-                        errors.push(CompileError {
-                            path: Default::default(),
-                            kind: error.into(),
-                        });
+                        errors.push(CompileError::from_error(error));
                         continue;
                     }
                 };

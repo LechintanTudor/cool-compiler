@@ -41,7 +41,7 @@ impl fmt::Display for ResolveError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.symbol {
             sym::EMPTY => write!(f, "{}", self.kind.message()),
-            _ => write!(f, "{} {}", self.symbol, self.kind.message()),
+            _ => write!(f, "'{}' {}", self.symbol, self.kind.message()),
         }
     }
 }

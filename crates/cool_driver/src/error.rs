@@ -2,9 +2,9 @@ use crate::ModulePathsError;
 use cool_ast::AstError;
 use cool_parser::ParseError;
 use cool_resolve::{DefineError, ItemPathBuf, ResolveError};
+use cool_span::Span;
 use derive_more::{Display, Error, From};
 use std::fmt;
-use std::path::PathBuf;
 
 pub type CompileResult<T> = Result<T, CompileErrorBundle>;
 
@@ -34,28 +34,22 @@ impl fmt::Display for CompileErrorBundle {
     }
 }
 
-#[derive(Clone, Error, Debug)]
+#[derive(Clone, Error, Display, Debug)]
+#[display(fmt = "{kind}")]
 pub struct CompileError {
-    pub path: PathBuf,
+    pub span: Option<Span>,
     pub kind: CompileErrorKind,
 }
 
 impl CompileError {
-    pub fn from_kind<K>(kind: K) -> Self
+    pub fn from_error<K>(kind: K) -> Self
     where
         K: Into<CompileErrorKind>,
     {
         Self {
-            path: Default::default(),
+            span: None,
             kind: kind.into(),
         }
-    }
-}
-
-impl fmt::Display for CompileError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "error in file {}:", self.path.display())?;
-        write!(f, " -> {}", self.kind)
     }
 }
 
