@@ -21,7 +21,7 @@ impl<'a> CodeGenerator<'a> {
             .into_basic_value()
             .into_int_value();
 
-        let cond_value = self.builder.build_bool(cond_value, "");
+        let cond_value = self.builder.build_bool(cond_value);
         self.builder
             .build_conditional_branch(cond_value, body_block, end_block);
 

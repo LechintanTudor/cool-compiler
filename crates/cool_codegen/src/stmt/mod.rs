@@ -38,7 +38,7 @@ impl<'a> CodeGenerator<'a> {
         T: BasicType<'a>,
     {
         let alloca_builder = self.context.create_builder();
-        let entry_block = self.get_current_entry_block();
+        let entry_block = self.get_fn_entry_block();
 
         match self.get_last_alloca() {
             Some(last_alloca) => {

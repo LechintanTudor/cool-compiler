@@ -89,11 +89,11 @@ impl<'a> CodeGenerator<'a> {
         module.set_triple(target_triple);
 
         let pass_manager = PassManager::create(&module);
-        //pass_manager.add_promote_memory_to_register_pass();
-        //pass_manager.add_instruction_combining_pass();
-        //pass_manager.add_reassociate_pass();
-        //pass_manager.add_gvn_pass();
-        //pass_manager.add_cfg_simplification_pass();
+        pass_manager.add_promote_memory_to_register_pass();
+        pass_manager.add_instruction_combining_pass();
+        pass_manager.add_reassociate_pass();
+        pass_manager.add_gvn_pass();
+        pass_manager.add_cfg_simplification_pass();
         pass_manager.initialize();
 
         let builder = context.create_builder();
@@ -142,7 +142,18 @@ impl<'a> CodeGenerator<'a> {
         }
     }
 
-    pub fn get_current_entry_block(&self) -> BasicBlock<'a> {
+    #[inline]
+    pub fn append_block_after(&self, block: BasicBlock<'a>) -> BasicBlock<'a> {
+        self.context.insert_basic_block_after(block, "")
+    }
+
+    #[inline]
+    pub fn append_block_after_current_block(&self) -> BasicBlock<'a> {
+        let current_block = self.builder.current_block();
+        self.context.insert_basic_block_after(current_block, "")
+    }
+
+    pub fn get_fn_entry_block(&self) -> BasicBlock<'a> {
         self.fn_stack
             .last()
             .unwrap()

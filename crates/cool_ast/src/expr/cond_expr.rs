@@ -7,8 +7,7 @@ use cool_span::{Section, Span};
 pub struct CondExprAst {
     pub span: Span,
     pub expr_id: ExprId,
-    pub if_block: Box<CondBlockAst>,
-    pub else_if_blocks: Vec<CondBlockAst>,
+    pub cond_blocks: Vec<CondBlockAst>,
     pub else_block: Option<Box<BlockExprAst>>,
 }
 
@@ -44,11 +43,10 @@ impl AstGenerator<'_> {
         let if_block = self.gen_cond_block(frame_id, expected_ty_id, &expr.if_block)?;
         let ty_id = self.resolve[if_block.expr.expr_id].ty_id;
 
-        let else_if_blocks = expr
-            .else_if_blocks
-            .iter()
-            .map(|block| self.gen_cond_block(frame_id, ty_id, block))
-            .collect::<Result<Vec<_>, _>>()?;
+        let mut cond_blocks = vec![if_block];
+        for cond_block in expr.else_if_blocks.iter() {
+            cond_blocks.push(self.gen_cond_block(frame_id, ty_id, cond_block)?);
+        }
 
         let else_block = expr
             .else_block
@@ -59,8 +57,7 @@ impl AstGenerator<'_> {
         Ok(CondExprAst {
             span: expr.span,
             expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-            if_block: Box::new(if_block),
-            else_if_blocks,
+            cond_blocks,
             else_block: else_block.map(Box::new),
         })
     }

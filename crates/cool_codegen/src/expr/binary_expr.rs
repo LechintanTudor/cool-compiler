@@ -230,7 +230,7 @@ impl<'a> CodeGenerator<'a> {
             .gen_loaded_expr(lhs)
             .into_basic_value()
             .into_int_value();
-        let lhs_cond_value = self.builder.build_bool(lhs_value, "");
+        let lhs_cond_value = self.builder.build_bool(lhs_value);
 
         let lhs_block = self.builder.get_insert_block().unwrap();
         let rhs_block = self.context.insert_basic_block_after(lhs_block, "");
@@ -258,7 +258,7 @@ impl<'a> CodeGenerator<'a> {
             .gen_loaded_expr(lhs)
             .into_basic_value()
             .into_int_value();
-        let lhs_cond_value = self.builder.build_bool(lhs_value, "");
+        let lhs_cond_value = self.builder.build_bool(lhs_value);
 
         let lhs_block = self.builder.get_insert_block().unwrap();
         let rhs_block = self.context.insert_basic_block_after(lhs_block, "");
