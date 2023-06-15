@@ -6,6 +6,7 @@ use cool_span::{Section, Span};
 #[derive(Clone, Debug)]
 pub struct ReturnStmtAst {
     pub span: Span,
+    pub frame_id: FrameId,
     pub expr: Option<Box<ExprAst>>,
 }
 
@@ -30,6 +31,7 @@ impl AstGenerator<'_> {
 
         Ok(ReturnStmtAst {
             span: stmt.span,
+            frame_id,
             expr: expr.map(Box::new),
         })
     }

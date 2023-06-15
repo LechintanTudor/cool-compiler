@@ -14,6 +14,11 @@ impl<'a> CodeGenerator<'a> {
             return Value::Void;
         }
 
+        self.gen_return_defers(stmt.frame_id);
+        if self.builder.current_block_diverges() {
+            return Value::Void;
+        }
+
         let value = value.as_basic_value().map(|value| value as &dyn BasicValue);
         self.builder.build_return(value);
         Value::Void

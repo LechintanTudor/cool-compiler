@@ -22,7 +22,7 @@ use inkwell::module::Module;
 use inkwell::passes::PassManager;
 use inkwell::targets::{InitializationConfig, Target, TargetData, TargetTriple};
 use inkwell::values::{FunctionValue, InstructionValue, IntValue};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 #[derive(Clone, Debug)]
 struct FnState<'a> {
@@ -54,6 +54,7 @@ pub struct CodeGenerator<'a> {
     pass_manager: PassManager<FunctionValue<'a>>,
     builder: Builder<'a>,
     fn_stack: Vec<FnState<'a>>,
+    visited_defers: FxHashSet<FrameId>,
 }
 
 impl<'a> CodeGenerator<'a> {
@@ -89,11 +90,11 @@ impl<'a> CodeGenerator<'a> {
         module.set_triple(target_triple);
 
         let pass_manager = PassManager::create(&module);
-        pass_manager.add_promote_memory_to_register_pass();
-        pass_manager.add_instruction_combining_pass();
-        pass_manager.add_reassociate_pass();
-        pass_manager.add_gvn_pass();
-        pass_manager.add_cfg_simplification_pass();
+        //pass_manager.add_promote_memory_to_register_pass();
+        //pass_manager.add_instruction_combining_pass();
+        //pass_manager.add_reassociate_pass();
+        //pass_manager.add_gvn_pass();
+        //pass_manager.add_cfg_simplification_pass();
         pass_manager.initialize();
 
         let builder = context.create_builder();
@@ -111,6 +112,7 @@ impl<'a> CodeGenerator<'a> {
             pass_manager,
             builder,
             fn_stack: Default::default(),
+            visited_defers: Default::default(),
         }
     }
 
@@ -135,11 +137,36 @@ impl<'a> CodeGenerator<'a> {
 
         while current_frame_id != first_frame_id {
             if let Some(stmt) = self.package.defer_stmts.get(current_frame_id) {
-                self.gen_stmt(stmt);
+                // Generate defers only if they were not generated before
+                if self.visited_defers.insert(current_frame_id) {
+                    self.gen_stmt(stmt);
+                }
             }
 
             current_frame_id = self.resolve.get_parent_frame(current_frame_id).unwrap();
         }
+
+        self.visited_defers.clear();
+    }
+
+    pub fn gen_return_defers(&mut self, return_frame_id: FrameId) {
+        let mut current_frame_id = return_frame_id;
+
+        loop {
+            if let Some(stmt) = self.package.defer_stmts.get(current_frame_id) {
+                // Generate defers only if they were not generated before
+                if self.visited_defers.insert(current_frame_id) {
+                    self.gen_stmt(stmt);
+                }
+            }
+
+            current_frame_id = match self.resolve.get_parent_frame(current_frame_id) {
+                Some(frame_id) => frame_id,
+                None => break,
+            }
+        }
+
+        self.visited_defers.clear();
     }
 
     #[inline]
