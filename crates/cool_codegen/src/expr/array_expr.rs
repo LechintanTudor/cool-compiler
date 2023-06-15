@@ -1,4 +1,4 @@
-use crate::{CodeGenerator, LoadedValue, MemoryValue, Value};
+use crate::{BuilderExt, CodeGenerator, LoadedValue, MemoryValue, Value};
 use cool_ast::{ArrayExprAst, ArrayRepeatExprAst};
 use inkwell::IntPredicate;
 
@@ -21,7 +21,15 @@ impl<'a> CodeGenerator<'a> {
 
         for (i, elem) in expr.elems.iter().enumerate() {
             let elem_index = index_ty.const_int(i as u64, false);
-            let elem_value = self.gen_loaded_expr(elem).into_basic_value();
+
+            let elem_value = {
+                let elem_value = self.gen_loaded_expr(elem);
+                if self.builder.current_block_diverges() {
+                    return Value::Void;
+                }
+
+                elem_value.into_basic_value()
+            };
 
             let elem_pointer = unsafe {
                 self.builder
@@ -105,7 +113,6 @@ impl<'a> CodeGenerator<'a> {
 
         // End block
         self.builder.position_at_end(end_block);
-
         Value::Memory(memory)
     }
 }

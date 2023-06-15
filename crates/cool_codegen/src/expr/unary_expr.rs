@@ -1,4 +1,4 @@
-use crate::{CodeGenerator, Value};
+use crate::{BuilderExt, CodeGenerator, Value};
 use cool_ast::UnaryExprAst;
 use cool_parser::UnaryOpKind;
 use inkwell::values::BasicValue;
@@ -10,7 +10,14 @@ impl<'a> CodeGenerator<'a> {
 
         match unary_expr.op.kind {
             UnaryOpKind::Minus => {
-                let value = self.gen_loaded_expr(&unary_expr.expr).into_basic_value();
+                let value = {
+                    let value = self.gen_loaded_expr(&unary_expr.expr);
+                    if self.builder.current_block_diverges() {
+                        return Value::Void;
+                    }
+
+                    value.into_basic_value()
+                };
 
                 if ty_id.is_int() {
                     self.builder
@@ -27,10 +34,14 @@ impl<'a> CodeGenerator<'a> {
                 }
             }
             UnaryOpKind::Not => {
-                let value = self
-                    .gen_loaded_expr(&unary_expr.expr)
-                    .into_basic_value()
-                    .into_int_value();
+                let value = {
+                    let value = self.gen_loaded_expr(&unary_expr.expr);
+                    if self.builder.current_block_diverges() {
+                        return Value::Void;
+                    }
+
+                    value.into_basic_value().into_int_value()
+                };
 
                 if ty_id.is_int() {
                     self.builder

@@ -1,15 +1,31 @@
-use crate::{CallableValue, CodeGenerator, LoadedValue};
+use crate::{BuilderExt, CallableValue, CodeGenerator, LoadedValue};
 use cool_ast::FnCallExprAst;
+use inkwell::values::BasicMetadataValueEnum;
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_fn_call_expr(&mut self, expr: &FnCallExprAst) -> LoadedValue<'a> {
-        let fn_value = self.gen_loaded_expr(&expr.fn_expr).into_callable_value();
+        // Function
+        let fn_value = {
+            let fn_value = self.gen_loaded_expr(&expr.fn_expr);
+            if self.builder.current_block_diverges() {
+                return LoadedValue::Void;
+            }
 
-        let arg_values = expr
-            .arg_exprs
-            .iter()
-            .map(|arg| self.gen_loaded_expr(arg).into_basic_value().into())
-            .collect::<Vec<_>>();
+            fn_value.into_callable_value()
+        };
+
+        // Arguments
+        let mut arg_values = Vec::<BasicMetadataValueEnum<'a>>::new();
+        for arg_expr in expr.arg_exprs.iter() {
+            let arg_value = self.gen_loaded_expr(arg_expr);
+            if self.builder.current_block_diverges() {
+                return LoadedValue::Void;
+            }
+
+            if let LoadedValue::Register(arg_value) = arg_value {
+                arg_values.push(arg_value.into())
+            }
+        }
 
         let ret_value = match fn_value {
             CallableValue::Fn(fn_value) => {

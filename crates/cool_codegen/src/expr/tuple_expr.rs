@@ -1,4 +1,4 @@
-use crate::{CodeGenerator, MemoryValue, Value};
+use crate::{BuilderExt, CodeGenerator, MemoryValue, Value};
 use cool_ast::TupleExprAst;
 use cool_lexer::Symbol;
 
@@ -16,13 +16,13 @@ impl<'a> CodeGenerator<'a> {
             MemoryValue::new(struct_ptr, struct_ty)
         });
 
-        for (i, elem) in expr.elems.iter().enumerate() {
+        for (i, elem_initializer) in expr.elems.iter().enumerate() {
             let symbol = Symbol::insert_u32(i as u32);
             let Some(field_index) = self
                 .tys
                 .get_field_map(expr_ty_id)
                 .get(symbol) else {
-                    self.gen_expr(elem, None);
+                    self.gen_expr(elem_initializer, None);
                     continue;
                 };
 
@@ -42,7 +42,12 @@ impl<'a> CodeGenerator<'a> {
 
             let field_memory = Some(MemoryValue::new(field_ptr, field_ty));
 
-            match self.gen_expr(elem, field_memory) {
+            let elem_expr = self.gen_expr(elem_initializer, field_memory);
+            if self.builder.current_block_diverges() {
+                return Value::Void;
+            }
+
+            match elem_expr {
                 Value::Fn(fn_value) => {
                     self.builder
                         .build_store(field_ptr, fn_value.as_global_value().as_pointer_value());

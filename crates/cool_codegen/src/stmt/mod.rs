@@ -2,13 +2,17 @@ mod assign_stmt;
 mod decl_stmt;
 mod return_stmt;
 
-use crate::CodeGenerator;
+use crate::{BuilderExt, CodeGenerator};
 use cool_ast::StmtAst;
 use inkwell::types::BasicType;
 use inkwell::values::{BasicValue, PointerValue};
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_stmt(&mut self, stmt: &StmtAst) {
+        if self.builder.current_block_diverges() {
+            return;
+        }
+
         match stmt {
             StmtAst::Assign(assign) => {
                 self.gen_assign_stmt(assign);

@@ -1,4 +1,4 @@
-use crate::{CodeGenerator, MemoryValue, Value};
+use crate::{BuilderExt, CodeGenerator, MemoryValue, Value};
 use cool_ast::StructExprAst;
 
 impl<'a> CodeGenerator<'a> {
@@ -40,7 +40,12 @@ impl<'a> CodeGenerator<'a> {
 
             let field_memory = Some(MemoryValue::new(field_ptr, field_ty));
 
-            match self.gen_expr(&initializer.expr, field_memory) {
+            let field_expr = self.gen_expr(&initializer.expr, field_memory);
+            if self.builder.current_block_diverges() {
+                return Value::Void;
+            }
+
+            match field_expr {
                 Value::Fn(fn_value) => {
                     self.builder
                         .build_store(field_ptr, fn_value.as_global_value().as_pointer_value());

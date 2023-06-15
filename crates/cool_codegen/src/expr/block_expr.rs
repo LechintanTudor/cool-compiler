@@ -9,12 +9,17 @@ impl<'a> CodeGenerator<'a> {
 
         for stmt in block.stmts.iter() {
             self.gen_stmt(stmt);
+
+            if self.builder.current_block_diverges() {
+                return LoadedValue::Void;
+            }
         }
 
-        let value = match block.expr.as_ref() {
-            Some(expr) => self.gen_loaded_expr(expr),
-            None => LoadedValue::Void,
-        };
+        let value = block
+            .expr
+            .as_ref()
+            .map(|expr| self.gen_loaded_expr(expr))
+            .unwrap_or(LoadedValue::Void);
 
         self.gen_defers(block.first_frame_id, block.last_frame_id);
 
