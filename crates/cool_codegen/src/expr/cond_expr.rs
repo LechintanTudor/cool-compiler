@@ -26,10 +26,10 @@ impl<'a> CodeGenerator<'a> {
             let bool_cond_value = self.builder.build_bool(cond_value);
 
             let body_block = self.append_block_after_current_block();
-            let next_block = if else_expr.is_some() {
-                self.append_block_after(body_block)
-            } else {
+            let next_block = if i + 1 == expr.cond_blocks.len() && else_expr.is_none() {
                 end_block
+            } else {
+                self.append_block_after(body_block)
             };
 
             self.builder
