@@ -3,10 +3,22 @@ use std::fmt;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum IntBase {
-    Two,
-    Eight,
-    Ten,
-    Sixteen,
+    B2,
+    B8,
+    B10,
+    B16,
+}
+
+impl IntBase {
+    #[inline]
+    pub fn as_int(&self) -> u32 {
+        match self {
+            Self::B2 => 2,
+            Self::B8 => 8,
+            Self::B10 => 10,
+            Self::B16 => 16,
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -30,7 +42,7 @@ impl LiteralKind {
         matches!(
             self,
             Self::Int {
-                base: IntBase::Ten,
+                base: IntBase::B10,
                 has_suffix: false
             }
         )
@@ -41,7 +53,7 @@ impl LiteralKind {
         matches!(
             self,
             Self::Int {
-                base: IntBase::Ten,
+                base: IntBase::B10,
                 ..
             }
         )

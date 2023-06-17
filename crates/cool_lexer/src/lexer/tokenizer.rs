@@ -117,7 +117,7 @@ impl<'a> Tokenizer<'a> {
 
         TokenKind::Literal(Literal {
             kind: LiteralKind::Int {
-                base: IntBase::Two,
+                base: IntBase::B2,
                 has_suffix,
             },
             symbol,
@@ -129,7 +129,7 @@ impl<'a> Tokenizer<'a> {
 
         TokenKind::Literal(Literal {
             kind: LiteralKind::Int {
-                base: IntBase::Eight,
+                base: IntBase::B8,
                 has_suffix,
             },
             symbol,
@@ -141,7 +141,7 @@ impl<'a> Tokenizer<'a> {
 
         TokenKind::Literal(Literal {
             kind: LiteralKind::Int {
-                base: IntBase::Ten,
+                base: IntBase::B10,
                 has_suffix,
             },
             symbol,
@@ -155,7 +155,7 @@ impl<'a> Tokenizer<'a> {
 
         TokenKind::Literal(Literal {
             kind: LiteralKind::Int {
-                base: IntBase::Sixteen,
+                base: IntBase::B16,
                 has_suffix,
             },
             symbol,

@@ -1,6 +1,6 @@
 use crate::{AstError, AstGenerator, AstResult, AstResultExt, LiteralError, LiteralErrorKind};
 use cool_collections::SmallString;
-use cool_lexer::{sym, LiteralKind, Symbol};
+use cool_lexer::{sym, IntBase, LiteralKind, Symbol};
 use cool_parser::LiteralExpr;
 use cool_resolve::{ExprId, FrameId, ResolveExpr, TyConsts, TyId};
 use cool_span::{Section, Span};
@@ -129,206 +129,62 @@ impl AstGenerator<'_> {
 }
 
 fn parse_int(tys: &TyConsts, expr: &LiteralExpr) -> AstResult<(u128, TyId)> {
-    let literal_str = expr.literal.symbol.as_str();
-
-    if literal_str.starts_with("0b") {
-        parse_binary_int(tys, expr)
-    } else if literal_str.starts_with("0o") {
-        parse_octal_int(tys, expr)
-    } else if literal_str.starts_with("0x") {
-        parse_hexadecimal_int(tys, expr)
-    } else {
-        parse_decimal_int(tys, expr)
-    }
-}
-
-fn parse_binary_int(tys: &TyConsts, expr: &LiteralExpr) -> AstResult<(u128, TyId)> {
-    let literal_str = expr.literal.symbol.as_str();
-    let mut char_iter = literal_str.chars();
-
-    // Skip "0b" prefix
-    char_iter.next();
-    char_iter.next();
-
-    let mut value = 0;
-    let mut suffix = SmallString::new();
-
-    for char in char_iter.by_ref() {
-        match char {
-            '0' | '1' => {
-                let digit = char as u32 - '0' as u32;
-                value = append_digit(value, 2, digit).ok_or_else(|| {
-                    AstError::new(
-                        expr.span(),
-                        LiteralError {
-                            literal: expr.literal.symbol,
-                            kind: LiteralErrorKind::IntOutOfRange { ty_id: tys.i128 },
-                        },
-                    )
-                })?;
-            }
-            '_' => (),
-            _ => {
-                suffix.push(char);
-                suffix.extend(char_iter);
-                break;
+    let (skip_chars, base, kind) = match expr.literal.kind {
+        LiteralKind::Int { base, .. } => {
+            match base {
+                IntBase::B2 => (2, 2, NumberKind::Int),
+                IntBase::B8 => (2, 8, NumberKind::Int),
+                IntBase::B10 => (0, 10, NumberKind::Any),
+                IntBase::B16 => (2, 16, NumberKind::Int),
             }
         }
-    }
-
-    let Some(suffix) = parse_int_suffix(tys, &suffix) else {
-        return AstResult::error(expr.span(), LiteralError {
-                literal: expr.literal.symbol,
-                kind: LiteralErrorKind::UnknownSuffix {
-                    suffix: Symbol::insert(&suffix),
-                },
-            }) ;
+        _ => (2, 10, NumberKind::Any),
     };
 
-    Ok((value, suffix))
-}
-
-fn parse_octal_int(tys: &TyConsts, expr: &LiteralExpr) -> AstResult<(u128, TyId)> {
-    let literal_str = expr.literal.symbol.as_str();
-    let mut char_iter = literal_str.chars();
-
-    // Skip "0o" prefix
-    char_iter.next();
-    char_iter.next();
+    let mut char_iter = expr.literal.symbol.as_str().chars();
+    for _ in 0..skip_chars {
+        char_iter.next();
+    }
 
     let mut value = 0;
     let mut suffix = String::new();
 
     for char in char_iter.by_ref() {
-        match char {
-            '0'..='7' => {
-                let digit = char as u32 - '0' as u32;
-                value = append_digit(value, 8, digit).ok_or_else(|| {
-                    AstError::new(
-                        expr.span(),
-                        LiteralError {
-                            literal: expr.literal.symbol,
-                            kind: LiteralErrorKind::IntOutOfRange { ty_id: tys.i128 },
-                        },
-                    )
-                })?;
-            }
-            '_' => (),
+        let digit = match char {
+            '0'..='1' if base >= 2 => char as u32 - '0' as u32,
+            '2'..='7' if base >= 8 => char as u32 - '0' as u32,
+            '8'..='9' if base >= 10 => char as u32 - '0' as u32,
+            'a'..='f' if base >= 16 => char as u32 - 'a' as u32,
+            'A'..='F' if base >= 16 => char as u32 - 'A' as u32,
+            '_' => continue,
             _ => {
                 suffix.push(char);
                 suffix.extend(char_iter);
                 break;
             }
-        }
+        };
+
+        value = append_digit(value, base, digit).ok_or_else(|| {
+            AstError::new(
+                expr.span(),
+                LiteralError {
+                    literal: expr.literal.symbol,
+                    kind: LiteralErrorKind::IntOutOfRange { ty_id: tys.i128 },
+                },
+            )
+        })?
     }
 
-    let Some(suffix) = parse_int_suffix(tys, &suffix) else {
+    let Some(ty_id) = parse_suffix(tys, &suffix, kind) else {
         return AstResult::error(expr.span(), LiteralError {
-                literal: expr.literal.symbol,
-                kind: LiteralErrorKind::UnknownSuffix {
-                    suffix: Symbol::insert(&suffix),
-                },
-            }) ;
-    };
-
-    Ok((value, suffix))
-}
-
-fn parse_hexadecimal_int(tys: &TyConsts, expr: &LiteralExpr) -> AstResult<(u128, TyId)> {
-    let literal_str = expr.literal.symbol.as_str();
-    let mut char_iter = literal_str.chars();
-
-    // Skip "0x" prefix
-    char_iter.next();
-    char_iter.next();
-
-    let mut value = 0;
-    let mut suffix = String::new();
-
-    let int_out_of_range = || {
-        AstError::new(
-            expr.span(),
-            LiteralError {
-                literal: expr.literal.symbol,
-                kind: LiteralErrorKind::IntOutOfRange { ty_id: tys.i128 },
+            literal: expr.literal.symbol,
+            kind: LiteralErrorKind::UnknownSuffix {
+                suffix: Symbol::insert(&suffix),
             },
-        )
+        });
     };
 
-    for char in char_iter.by_ref() {
-        match char {
-            '0'..='9' => {
-                let digit = char as u32 - '0' as u32;
-                value = append_digit(value, 16, digit).ok_or_else(int_out_of_range)?;
-            }
-            'a'..='f' => {
-                let digit = char as u32 - 'a' as u32 + 10;
-                value = append_digit(value, 16, digit).ok_or_else(int_out_of_range)?;
-            }
-            'A'..='F' => {
-                let digit = char as u32 - 'A' as u32 + 10;
-                value = append_digit(value, 16, digit).ok_or_else(int_out_of_range)?;
-            }
-            '_' => (),
-            _ => {
-                suffix.push(char);
-                suffix.extend(char_iter);
-                break;
-            }
-        }
-    }
-
-    let Some(suffix) = parse_int_suffix(tys, &suffix) else {
-        return AstResult::error(expr.span(), LiteralError {
-                literal: expr.literal.symbol,
-                kind: LiteralErrorKind::UnknownSuffix {
-                    suffix: Symbol::insert(&suffix),
-                },
-            }) ;
-    };
-
-    Ok((value, suffix))
-}
-
-fn parse_decimal_int(tys: &TyConsts, expr: &LiteralExpr) -> AstResult<(u128, TyId)> {
-    let literal_str = expr.literal.symbol.as_str();
-    let mut char_iter = literal_str.chars();
-
-    let mut value = 0;
-    let mut suffix = String::new();
-
-    for char in char_iter.by_ref() {
-        match char {
-            '0'..='9' => {
-                let digit = char as u32 - '0' as u32;
-                value = append_digit(value, 10, digit).ok_or_else(|| {
-                    AstError::new(
-                        expr.span(),
-                        LiteralError {
-                            literal: expr.literal.symbol,
-                            kind: LiteralErrorKind::IntOutOfRange { ty_id: tys.i128 },
-                        },
-                    )
-                })?;
-            }
-            '_' => (),
-            _ => {
-                suffix.push(char);
-                break;
-            }
-        }
-    }
-
-    let Some(suffix) = parse_int_suffix(tys, &suffix) else {
-        return AstResult::error(expr.span(), LiteralError {
-                literal: expr.literal.symbol,
-                kind: LiteralErrorKind::UnknownSuffix {
-                    suffix: Symbol::insert(&suffix),
-                },
-        }) ;
-    };
-
-    Ok((value, suffix))
+    Ok((value, ty_id))
 }
 
 fn append_digit(value: u128, base: u128, digit: u32) -> Option<u128> {
@@ -337,41 +193,24 @@ fn append_digit(value: u128, base: u128, digit: u32) -> Option<u128> {
         .and_then(|value| value.checked_add(digit as u128))
 }
 
-fn parse_int_suffix(tys: &TyConsts, suffix: &str) -> Option<TyId> {
-    let ty_id = match suffix {
-        "" => tys.infer_int,
-        "i8" => tys.i8,
-        "i16" => tys.i16,
-        "i32" => tys.i32,
-        "i64" => tys.i64,
-        "i128" => tys.i128,
-        "isize" | "i" => tys.isize,
-        "u8" => tys.u8,
-        "u16" => tys.u16,
-        "u32" => tys.u32,
-        "u64" => tys.u64,
-        "u128" => tys.u128,
-        "usize" | "u" => tys.usize,
-        _ => return None,
-    };
-
-    Some(ty_id)
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+enum NumberKind {
+    Any,
+    Int,
+    Decimal,
 }
 
-pub fn parse_decimal_suffix(tys: &TyConsts, suffix: &str) -> Option<TyId> {
-    let ty_id = match suffix {
-        "" => tys.infer_float,
-        "f32" => tys.f32,
-        "f64" => tys.f64,
-        _ => return None,
-    };
+fn parse_suffix(tys: &TyConsts, suffix: &str, kind: NumberKind) -> Option<TyId> {
+    if suffix.is_empty() {
+        let ty_id = match kind {
+            NumberKind::Any | NumberKind::Int => tys.infer_int,
+            NumberKind::Decimal => tys.infer_float,
+        };
 
-    Some(ty_id)
-}
+        return Some(ty_id);
+    }
 
-pub fn parse_number_suffix(tys: &TyConsts, suffix: &str) -> Option<TyId> {
     let ty_id = match suffix {
-        "" => tys.infer_int,
         "i8" => tys.i8,
         "i16" => tys.i16,
         "i32" => tys.i32,
@@ -388,6 +227,14 @@ pub fn parse_number_suffix(tys: &TyConsts, suffix: &str) -> Option<TyId> {
         "f64" => tys.f64,
         _ => return None,
     };
+
+    if kind == NumberKind::Int && !ty_id.is_int() {
+        return None;
+    }
+
+    if kind == NumberKind::Decimal && !ty_id.is_float() {
+        return None;
+    }
 
     Some(ty_id)
 }
@@ -429,8 +276,7 @@ fn is_int_in_range(tys: &TyConsts, value: u128, ty_id: TyId) -> bool {
 }
 
 fn parse_decimal(tys: &TyConsts, expr: &LiteralExpr) -> AstResult<(f64, TyId)> {
-    let value_str = expr.literal.symbol.as_str();
-    let mut char_iter = value_str.chars();
+    let mut char_iter = expr.literal.symbol.as_str().chars();
 
     let mut value = 0.0;
     let mut divider = 10.0;
@@ -460,16 +306,16 @@ fn parse_decimal(tys: &TyConsts, expr: &LiteralExpr) -> AstResult<(f64, TyId)> {
         }
     }
 
-    let Some(suffix) = parse_decimal_suffix(tys, &suffix) else {
+    let Some(ty_id) = parse_suffix(tys, &suffix, NumberKind::Decimal) else {
         return AstResult::error(expr.span(), LiteralError {
-                literal: expr.literal.symbol,
-                kind: LiteralErrorKind::UnknownSuffix {
-                    suffix: Symbol::insert(&suffix),
-                },
-        }) ;
+            literal: expr.literal.symbol,
+            kind: LiteralErrorKind::UnknownSuffix {
+                suffix: Symbol::insert(&suffix),
+            },
+        });
     };
 
-    Ok((value, suffix))
+    Ok((value, ty_id))
 }
 
 fn parse_char(symbol: Symbol) -> u32 {
