@@ -12,3 +12,5 @@ cool_span = { path = "../cool_span" }
 
 anyhow = { workspace = true }
 clap = { workspace = true }
+colored = { workspace = true }
+inkwell = { workspace = true }

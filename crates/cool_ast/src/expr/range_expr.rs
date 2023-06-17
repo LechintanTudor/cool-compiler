@@ -90,7 +90,7 @@ impl AstGenerator<'_> {
         };
 
         let ty_id = self.resolve.mk_slice(expr.is_mutable, elem_ty_id);
-        let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
+        let ty_id = self.resolve_direct_ty_id(expr.span(), ty_id, expected_ty_id)?;
 
         Ok(RangeExprAst {
             span: expr.span,

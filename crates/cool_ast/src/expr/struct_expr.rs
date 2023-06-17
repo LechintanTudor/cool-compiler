@@ -86,7 +86,7 @@ impl AstGenerator<'_> {
             panic!("missing struct fields");
         }
 
-        let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
+        let ty_id = self.resolve_direct_ty_id(expr.span(), ty_id, expected_ty_id)?;
 
         Ok(StructExprAst {
             span: expr.span,

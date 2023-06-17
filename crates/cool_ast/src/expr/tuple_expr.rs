@@ -37,7 +37,7 @@ impl AstGenerator<'_> {
                 .collect::<Vec<_>>();
 
             let ty_id = self.resolve.mk_tuple(elem_ty_ids);
-            self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?
+            self.resolve_direct_ty_id(expr.span(), ty_id, expected_ty_id)?
         };
 
         Ok(TupleExprAst {

@@ -62,9 +62,7 @@ impl AstGenerator<'_> {
             return unsupported_cast();
         };
 
-        let ty_id = self
-            .resolve
-            .resolve_direct_ty_id(expr_ty_id, expected_ty_id)?;
+        let ty_id = self.resolve_direct_ty_id(expr.span(), expr_ty_id, expected_ty_id)?;
 
         Ok(CastExprAst {
             span: expr.span(),

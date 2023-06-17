@@ -39,10 +39,7 @@ impl AstGenerator<'_> {
         };
 
         let body = self.gen_block_expr(frame_id, self.tys().unit, &expr.body)?;
-
-        let ty_id = self
-            .resolve
-            .resolve_direct_ty_id(self.tys().unit, expected_ty_id)?;
+        let ty_id = self.resolve_direct_ty_id(expr.span(), self.tys().unit, expected_ty_id)?;
 
         Ok(ForExprAst {
             span: expr.span,

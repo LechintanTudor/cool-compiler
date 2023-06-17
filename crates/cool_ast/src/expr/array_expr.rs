@@ -56,7 +56,7 @@ impl AstGenerator<'_> {
             None => (self.tys().infer_empty_array, vec![]),
         };
 
-        let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
+        let ty_id = self.resolve_direct_ty_id(expr.span(), ty_id, expected_ty_id)?;
 
         Ok(ArrayExprAst {
             span: expr.span,
@@ -79,7 +79,7 @@ impl AstGenerator<'_> {
         let elem_ty_id = self.resolve[elem.expr_id()].ty_id;
 
         let ty_id = self.resolve.mk_array(len, elem_ty_id);
-        let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
+        let ty_id = self.resolve_direct_ty_id(expr.span(), ty_id, expected_ty_id)?;
 
         Ok(ArrayRepeatExprAst {
             span: expr.span,

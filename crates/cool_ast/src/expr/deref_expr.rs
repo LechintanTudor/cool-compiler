@@ -37,9 +37,8 @@ impl AstGenerator<'_> {
             );
         };
 
-        let ty_id = self
-            .resolve
-            .resolve_direct_ty_id(pointer_ty.pointee, expected_ty_id)?;
+        let ty_id =
+            self.resolve_direct_ty_id(deref_expr.span(), pointer_ty.pointee, expected_ty_id)?;
 
         let expr_id = self
             .resolve

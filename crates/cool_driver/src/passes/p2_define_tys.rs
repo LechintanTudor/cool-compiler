@@ -54,7 +54,7 @@ pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
                 let ty_id = match ast.resolve_ty(module_id.into(), &field.ty) {
                     Ok(ty_id) => ty_id,
                     Err(error) => {
-                        errors.push(CompileError::from_error(error));
+                        errors.push(error.into());
                         continue 'struct_loop;
                     }
                 };
@@ -64,12 +64,13 @@ pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
                     .any(|ty_field| ty_field.symbol == field.ident.symbol);
 
                 if is_duplicated {
-                    errors.push(CompileError::from_error(DefineError::from(
-                        StructHasDuplicatedField {
+                    errors.push(
+                        DefineError::from(StructHasDuplicatedField {
                             path: ast.resolve.get_path_by_item_id(item_id).to_path_buf(),
                             field: field.ident.symbol,
-                        },
-                    )));
+                        })
+                        .into(),
+                    );
                     continue 'struct_loop;
                 }
 
@@ -94,25 +95,27 @@ pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
                 }
             }
             Err(error) => {
-                errors.push(CompileError::from_error(DefineError::from(error)));
+                errors.push(DefineError::from(error).into());
             }
         }
     }
 
     while let Some((_, item_id, _)) = aliases.pop_front() {
-        errors.push(CompileError::from_error(DefineError::from(
-            TyCannotBeDefined {
+        errors.push(
+            DefineError::from(TyCannotBeDefined {
                 path: ast.resolve.get_path_by_item_id(item_id).to_path_buf(),
-            },
-        )));
+            })
+            .into(),
+        );
     }
 
     while let Some((_, item_id, _)) = structs.pop_front() {
-        errors.push(CompileError::from_error(DefineError::from(
-            TyCannotBeDefined {
+        errors.push(
+            DefineError::from(TyCannotBeDefined {
                 path: ast.resolve.get_path_by_item_id(item_id).to_path_buf(),
-            },
-        )));
+            })
+            .into(),
+        );
     }
 
     if errors.is_empty() {

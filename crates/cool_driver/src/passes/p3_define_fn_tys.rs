@@ -15,7 +15,7 @@ pub fn p3_define_fn_tys(package: &Package, resolve: &mut ResolveContext) -> Comp
         ) {
             Ok(fn_expr_ty_id) => fn_expr_ty_id,
             Err(error) => {
-                errors.push(CompileError::from_error(error));
+                errors.push(error.into());
                 continue;
             }
         };
@@ -33,7 +33,7 @@ pub fn p3_define_fn_tys(package: &Package, resolve: &mut ResolveContext) -> Comp
             ) {
                 Ok(fn_expr_ty_id) => fn_expr_ty_id,
                 Err(error) => {
-                    errors.push(CompileError::from_error(error));
+                    errors.push(error.into());
                     continue;
                 }
             };

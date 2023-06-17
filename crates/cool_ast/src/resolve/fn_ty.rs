@@ -1,6 +1,6 @@
 use crate::{AstError, AstGenerator, AstResult, AstResultExt, TyDefError, TyError, TyErrorKind};
 use cool_parser::{FnExternDecl, FnPrototype, Ty};
-use cool_resolve::{FnAbi, ModuleId, Scope, TyId, TyMismatch};
+use cool_resolve::{FnAbi, ModuleId, Scope, TyId};
 use cool_span::Section;
 use smallvec::SmallVec;
 
@@ -58,10 +58,7 @@ impl AstGenerator<'_> {
                     let param_ty_id = self.resolve_ty(scope, param_ty)?;
 
                     if param_ty_id != fn_ty.params[i] {
-                        Err(TyMismatch {
-                            found_ty_id: param_ty_id,
-                            expected_ty_id: fn_ty.params[i],
-                        })?;
+                        return AstResult::ty_mismatch(param.span(), param_ty_id, fn_ty.params[i]);
                     }
                 }
 
@@ -79,10 +76,7 @@ impl AstGenerator<'_> {
                     let ret_ty_id = self.resolve_ty(scope, ret_ty)?;
 
                     if ret_ty_id != fn_ty.ret {
-                        Err(TyMismatch {
-                            found_ty_id: ret_ty_id,
-                            expected_ty_id: fn_ty.ret,
-                        })?;
+                        return AstResult::ty_mismatch(ret_ty.span(), ret_ty_id, fn_ty.ret);
                     }
                 }
 

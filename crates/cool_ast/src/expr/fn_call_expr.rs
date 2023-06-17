@@ -62,9 +62,8 @@ impl AstGenerator<'_> {
             arg_exprs.push(self.gen_expr(frame_id, param_ty_id, arg_expr)?);
         }
 
-        let ret_ty_id = self
-            .resolve
-            .resolve_direct_ty_id(fn_ty.ret, expected_ty_id)?;
+        let ret_ty_id =
+            self.resolve_direct_ty_id(fn_call_expr.span(), fn_ty.ret, expected_ty_id)?;
 
         let expr_id = self.resolve.add_expr(ResolveExpr::rvalue(ret_ty_id));
 

@@ -1,5 +1,5 @@
 use cool_lexer::Symbol;
-use cool_resolve::{FnAbi, ResolveError, TyId, TyMismatch};
+use cool_resolve::{FnAbi, ResolveError, TyId};
 use cool_span::Span;
 use derive_more::{Display, Error, From};
 use std::fmt;
@@ -8,6 +8,8 @@ pub trait AstResultExt {
     fn error<E>(span: Span, error: E) -> Self
     where
         E: Into<AstErrorKind>;
+
+    fn ty_mismatch(span: Span, found_ty_id: TyId, expected_ty_id: TyId) -> Self;
 }
 
 pub type AstResult<T = ()> = Result<T, AstError>;
@@ -21,6 +23,10 @@ impl<T> AstResultExt for AstResult<T> {
             span,
             kind: error.into(),
         })
+    }
+
+    fn ty_mismatch(span: Span, found_ty_id: TyId, expected_ty_id: TyId) -> Self {
+        Self::Err(AstError::ty_mismatch(span, found_ty_id, expected_ty_id))
     }
 }
 
@@ -42,6 +48,16 @@ impl AstError {
         }
     }
 
+    pub fn ty_mismatch(span: Span, found_ty_id: TyId, expected_ty_id: TyId) -> Self {
+        Self {
+            span,
+            kind: AstErrorKind::Ty(TyError {
+                ty_id: found_ty_id,
+                kind: TyErrorKind::TyMismatch { expected_ty_id },
+            }),
+        }
+    }
+
     #[inline]
     pub fn with_span(self, span: Span) -> Self {
         Self { span, ..self }
@@ -54,21 +70,6 @@ impl From<AstErrorKind> for AstError {
         Self {
             span: Span::empty(),
             kind,
-        }
-    }
-}
-
-impl From<TyMismatch> for AstError {
-    #[inline]
-    fn from(error: TyMismatch) -> Self {
-        Self {
-            span: Span::empty(),
-            kind: AstErrorKind::Ty(TyError {
-                ty_id: error.found_ty_id,
-                kind: TyErrorKind::TyMismatch {
-                    expected_ty_id: error.expected_ty_id,
-                },
-            }),
         }
     }
 }

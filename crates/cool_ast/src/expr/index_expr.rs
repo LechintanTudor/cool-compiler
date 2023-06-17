@@ -56,7 +56,7 @@ impl AstGenerator<'_> {
             _ => panic!("{:#?} is not subscriptable", base_expr.ty_id),
         };
 
-        let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
+        let ty_id = self.resolve_direct_ty_id(expr.span(), ty_id, expected_ty_id)?;
         let expr_id = self.resolve.add_expr(ResolveExpr { ty_id, kind });
 
         Ok(IndexExprAst {

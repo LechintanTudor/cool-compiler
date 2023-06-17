@@ -50,7 +50,7 @@ impl AstGenerator<'_> {
         let expr = match expr.literal.kind {
             LiteralKind::Int { .. } => {
                 let (value, ty_id) = parse_int(tys, expr)?;
-                let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
+                let ty_id = self.resolve_direct_ty_id(expr.span(), ty_id, expected_ty_id)?;
 
                 if !is_int_in_range(tys, value, ty_id) {
                     return AstResult::error(
@@ -78,7 +78,7 @@ impl AstGenerator<'_> {
             }
             LiteralKind::Decimal => {
                 let (value, ty_id) = parse_decimal(tys, expr)?;
-                let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
+                let ty_id = self.resolve_direct_ty_id(expr.span(), ty_id, expected_ty_id)?;
 
                 LiteralExprAst {
                     span: expr.span,
@@ -88,9 +88,8 @@ impl AstGenerator<'_> {
             }
             LiteralKind::Bool => {
                 let value = expr.literal.symbol == sym::KW_TRUE;
-                let ty_id = self
-                    .resolve
-                    .resolve_direct_ty_id(self.tys().bool, expected_ty_id)?;
+                let ty_id =
+                    self.resolve_direct_ty_id(expr.span(), self.tys().bool, expected_ty_id)?;
 
                 LiteralExprAst {
                     span: expr.span,
@@ -100,9 +99,8 @@ impl AstGenerator<'_> {
             }
             LiteralKind::Char => {
                 let value = parse_char(expr.literal.symbol);
-                let ty_id = self
-                    .resolve
-                    .resolve_direct_ty_id(self.tys().char, expected_ty_id)?;
+                let ty_id =
+                    self.resolve_direct_ty_id(expr.span(), self.tys().char, expected_ty_id)?;
 
                 LiteralExprAst {
                     span: expr.span,
@@ -112,9 +110,7 @@ impl AstGenerator<'_> {
             }
             LiteralKind::Str => {
                 let value = parse_str(expr.literal.symbol);
-                let ty_id = self
-                    .resolve
-                    .resolve_direct_ty_id(tys.c_str, expected_ty_id)?;
+                let ty_id = self.resolve_direct_ty_id(expr.span(), tys.c_str, expected_ty_id)?;
 
                 LiteralExprAst {
                     span: expr.span,

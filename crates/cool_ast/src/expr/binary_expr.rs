@@ -1,6 +1,6 @@
 use crate::{AstGenerator, AstResult, AstResultExt, ExprAst, TyError, TyErrorKind};
 use cool_parser::{BinOp, BinaryExpr, BitwiseOp};
-use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId, TyMismatch};
+use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -33,9 +33,8 @@ impl AstGenerator<'_> {
                 let lhs_ty_id = self.resolve[lhs.expr_id()].ty_id;
                 let rhs = self.gen_expr(frame_id, lhs_ty_id, &binary_expr.rhs)?;
 
-                let ty_id = self
-                    .resolve
-                    .resolve_direct_ty_id(lhs_ty_id, self.tys().infer_number)?;
+                let ty_id =
+                    self.resolve_direct_ty_id(lhs.span(), lhs_ty_id, self.tys().infer_number)?;
 
                 (ty_id, lhs, rhs)
             }
@@ -54,9 +53,8 @@ impl AstGenerator<'_> {
                     );
                 }
 
-                let ty_id = self
-                    .resolve
-                    .resolve_direct_ty_id(self.tys().bool, expected_ty_id)?;
+                let ty_id =
+                    self.resolve_direct_ty_id(binary_expr.span(), self.tys().bool, expected_ty_id)?;
 
                 (ty_id, lhs, rhs)
             }
@@ -66,10 +64,11 @@ impl AstGenerator<'_> {
 
                 let rhs_expected_ty_id = if lhs_ty_id == self.tys().bool {
                     if matches!(bitwise_op, BitwiseOp::Shl | BitwiseOp::Shr) {
-                        Err(TyMismatch {
-                            found_ty_id: self.tys().bool,
-                            expected_ty_id: self.tys().infer_int,
-                        })?;
+                        return AstResult::ty_mismatch(
+                            binary_expr.span(),
+                            self.tys().bool,
+                            self.tys().infer_int,
+                        );
                     }
 
                     self.tys().bool
@@ -79,10 +78,11 @@ impl AstGenerator<'_> {
                         _ => lhs_ty_id,
                     }
                 } else {
-                    Err(TyMismatch {
-                        found_ty_id: lhs_ty_id,
-                        expected_ty_id: self.tys().infer_int,
-                    })?
+                    return AstResult::ty_mismatch(
+                        binary_expr.span(),
+                        lhs_ty_id,
+                        self.tys().infer_int,
+                    );
                 };
 
                 let rhs = self.gen_expr(frame_id, rhs_expected_ty_id, &binary_expr.rhs)?;
@@ -93,9 +93,8 @@ impl AstGenerator<'_> {
                 let lhs = self.gen_expr(frame_id, self.tys().bool, &binary_expr.lhs)?;
                 let rhs = self.gen_expr(frame_id, self.tys().bool, &binary_expr.rhs)?;
 
-                let ty_id = self
-                    .resolve
-                    .resolve_direct_ty_id(self.tys().bool, expected_ty_id)?;
+                let ty_id =
+                    self.resolve_direct_ty_id(binary_expr.span(), self.tys().bool, expected_ty_id)?;
 
                 (ty_id, lhs, rhs)
             }

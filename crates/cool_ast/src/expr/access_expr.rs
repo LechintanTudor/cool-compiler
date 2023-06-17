@@ -57,9 +57,11 @@ impl AstGenerator<'_> {
 
                 match item {
                     ItemKind::Binding(binding_id) => {
-                        let ty_id = self
-                            .resolve
-                            .resolve_direct_ty_id(self.resolve[binding_id].ty_id, expected_ty_id)?;
+                        let ty_id = self.resolve_direct_ty_id(
+                            access_expr.span(),
+                            self.resolve[binding_id].ty_id,
+                            expected_ty_id,
+                        )?;
 
                         let is_mutable = self.resolve[binding_id].is_mutable();
 
@@ -75,8 +77,11 @@ impl AstGenerator<'_> {
                         .into()
                     }
                     ItemKind::Ty(ty_id) => {
-                        self.resolve
-                            .resolve_direct_ty_id(self.tys().ty, expected_ty_id)?;
+                        self.resolve_direct_ty_id(
+                            access_expr.span(),
+                            self.tys().ty,
+                            expected_ty_id,
+                        )?;
 
                         let expr_id = self
                             .resolve
@@ -90,8 +95,11 @@ impl AstGenerator<'_> {
                         .into()
                     }
                     ItemKind::Module(module_id) => {
-                        self.resolve
-                            .resolve_direct_ty_id(self.tys().module, expected_ty_id)?;
+                        self.resolve_direct_ty_id(
+                            access_expr.span(),
+                            self.tys().module,
+                            expected_ty_id,
+                        )?;
 
                         let expr_id = self
                             .resolve
@@ -166,10 +174,7 @@ impl AstGenerator<'_> {
                     .get_aggregate_field(ident.symbol)
                     .expect("no field found");
 
-                let ty_id = self
-                    .resolve
-                    .resolve_direct_ty_id(field.ty_id, expected_ty_id)?;
-
+                let ty_id = self.resolve_direct_ty_id(ident.span(), field.ty_id, expected_ty_id)?;
                 let expr_id = self.resolve.add_expr(ResolveExpr { ty_id, ..base_expr });
 
                 AccessExprAst {
@@ -184,9 +189,8 @@ impl AstGenerator<'_> {
                     panic!("unknown array access");
                 }
 
-                let ty_id = self
-                    .resolve
-                    .resolve_direct_ty_id(self.tys().usize, expected_ty_id)?;
+                let ty_id =
+                    self.resolve_direct_ty_id(ident.span(), self.tys().usize, expected_ty_id)?;
 
                 ArrayLenExprAst {
                     expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),

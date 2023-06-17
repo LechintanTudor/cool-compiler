@@ -18,7 +18,7 @@ pub fn p0_init(target_triple: &str) -> CompileResult<(CodeGeneratorContext, Reso
 
     let target_triple = TargetTriple::create(target_triple);
     let target = Target::from_triple(&target_triple).map_err(|message| {
-        CompileError::from_error(InitError {
+        CompileError::Init(InitError {
             message: message.to_string(),
         })
     })?;
@@ -33,7 +33,7 @@ pub fn p0_init(target_triple: &str) -> CompileResult<(CodeGeneratorContext, Reso
             CodeModel::Default,
         )
         .ok_or_else(|| {
-            CompileError::from_error(InitError {
+            CompileError::Init(InitError {
                 message: "failed to create target machine".to_owned(),
             })
         })?;

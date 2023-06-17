@@ -34,27 +34,8 @@ impl fmt::Display for CompileErrorBundle {
     }
 }
 
-#[derive(Clone, Error, Display, Debug)]
-#[display(fmt = "{kind}")]
-pub struct CompileError {
-    pub span: Option<Span>,
-    pub kind: CompileErrorKind,
-}
-
-impl CompileError {
-    pub fn from_error<K>(kind: K) -> Self
-    where
-        K: Into<CompileErrorKind>,
-    {
-        Self {
-            span: None,
-            kind: kind.into(),
-        }
-    }
-}
-
 #[derive(Clone, Error, From, Display, Debug)]
-pub enum CompileErrorKind {
+pub enum CompileError {
     Init(InitError),
     Path(ModulePathsError),
     Parse(ParseError),
@@ -62,6 +43,18 @@ pub enum CompileErrorKind {
     Resolve(ResolveError),
     Define(DefineError),
     Ast(AstError),
+}
+
+impl CompileError {
+    pub fn span(&self) -> Option<Span> {
+        let span = match self {
+            Self::Parse(e) => e.found.span,
+            Self::Ast(e) => e.span,
+            _ => return None,
+        };
+
+        Some(span)
+    }
 }
 
 #[derive(Clone, Error, Display, Debug)]

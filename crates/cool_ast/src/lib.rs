@@ -18,6 +18,7 @@ pub use self::package::*;
 pub use self::resolve::*;
 pub use self::stmt::*;
 use cool_resolve::{ResolveContext, TyConsts, TyId};
+use cool_span::Span;
 
 #[derive(Clone, Debug)]
 pub struct FnState {
@@ -58,5 +59,26 @@ impl<'a> AstGenerator<'a> {
     #[inline]
     pub fn pop_fn_state(&mut self) {
         self.fn_state_stack.pop();
+    }
+
+    pub fn resolve_direct_ty_id(
+        &self,
+        span: Span,
+        found_ty_id: TyId,
+        expected_ty_id: TyId,
+    ) -> AstResult<TyId> {
+        self.resolve
+            .resolve_direct_ty_id(found_ty_id, expected_ty_id)
+            .map_err(|error| {
+                AstError::new(
+                    span,
+                    TyError {
+                        ty_id: error.found_ty_id,
+                        kind: TyErrorKind::TyMismatch {
+                            expected_ty_id: error.expected_ty_id,
+                        },
+                    },
+                )
+            })
     }
 }

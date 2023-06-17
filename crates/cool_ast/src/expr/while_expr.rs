@@ -24,10 +24,7 @@ impl AstGenerator<'_> {
         expected_ty_id: TyId,
         expr: &WhileExpr,
     ) -> AstResult<WhileExprAst> {
-        let ty_id = self
-            .resolve
-            .resolve_direct_ty_id(self.tys().unit, expected_ty_id)?;
-
+        let ty_id = self.resolve_direct_ty_id(expr.span(), self.tys().unit, expected_ty_id)?;
         let block = self.gen_cond_block(frame_id, ty_id, &expr.block)?;
 
         Ok(WhileExprAst {
