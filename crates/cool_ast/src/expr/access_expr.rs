@@ -1,6 +1,6 @@
 use crate::{
-    AstError, AstGenerator, AstResult, BindingExprAst, DerefExprAst, ExprAst, ModuleExprAst,
-    TyExprAst,
+    AstError, AstGenerator, AstResult, AstResultExt, BindingExprAst, DerefExprAst, ExprAst,
+    ModuleExprAst, TyExprAst,
 };
 use cool_lexer::sym;
 use cool_parser::{AccessExpr, Ident};
@@ -124,15 +124,11 @@ impl AstGenerator<'_> {
                         self.gen_aggregate_access_expr(
                             expected_ty_id,
                             Box::new(new_base.into()),
-                            access_expr.ident,
+                            access_expr,
                         )?
                     }
                     _ => {
-                        self.gen_aggregate_access_expr(
-                            expected_ty_id,
-                            Box::new(base),
-                            access_expr.ident,
-                        )?
+                        self.gen_aggregate_access_expr(expected_ty_id, Box::new(base), access_expr)?
                     }
                 }
             }
@@ -161,45 +157,47 @@ impl AstGenerator<'_> {
         &mut self,
         expected_ty_id: TyId,
         base: Box<ExprAst>,
-        ident: Ident,
+        access_expr: &AccessExpr,
     ) -> AstResult<ExprAst> {
         let base_expr = self.resolve[base.expr_id()];
-        let Some(base_ty) = base_expr.ty_id.as_value() else {
-            panic!("type is not a value type");
-        };
+        let ident = access_expr.ident;
 
-        let expr = match base_ty {
-            ValueTy::Tuple(_) | ValueTy::Struct(_) | ValueTy::Slice(_) => {
-                let field = base_ty
-                    .get_aggregate_field(ident.symbol)
-                    .expect("no field found");
-
-                let ty_id = self.resolve_direct_ty_id(ident.span(), field.ty_id, expected_ty_id)?;
-                let expr_id = self.resolve.add_expr(ResolveExpr { ty_id, ..base_expr });
-
-                AccessExprAst {
-                    expr_id,
-                    base,
-                    ident,
-                }
-                .into()
+        let expr = if base_expr.ty_id.is_array() {
+            if ident.symbol != sym::LEN {
+                return AstResult::field_not_found(
+                    access_expr.span(),
+                    base_expr.ty_id,
+                    ident.symbol,
+                );
             }
-            ValueTy::Array(_) => {
-                if ident.symbol != sym::LEN {
-                    panic!("unknown array access");
-                }
 
-                let ty_id =
-                    self.resolve_direct_ty_id(ident.span(), self.tys().usize, expected_ty_id)?;
+            let ty_id =
+                self.resolve_direct_ty_id(access_expr.span(), self.tys().usize, expected_ty_id)?;
 
-                ArrayLenExprAst {
-                    expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-                    base,
-                    ident,
-                }
-                .into()
-            }
-            _ => todo!(),
+            ExprAst::from(ArrayLenExprAst {
+                expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                base,
+                ident,
+            })
+        } else {
+            let field = base_expr
+                .ty_id
+                .as_value()
+                .and_then(|ty| ty.get_aggregate_field(ident.symbol))
+                .ok_or_else(|| {
+                    AstError::field_not_found(access_expr.span(), base_expr.ty_id, ident.symbol)
+                })?;
+
+            let ty_id =
+                self.resolve_direct_ty_id(access_expr.span(), field.ty_id, expected_ty_id)?;
+
+            let expr_id = self.resolve.add_expr(ResolveExpr { ty_id, ..base_expr });
+
+            ExprAst::from(AccessExprAst {
+                expr_id,
+                base,
+                ident,
+            })
         };
 
         Ok(expr)

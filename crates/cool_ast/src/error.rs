@@ -10,6 +10,8 @@ pub trait AstResultExt {
         E: Into<AstErrorKind>;
 
     fn ty_mismatch(span: Span, found_ty_id: TyId, expected_ty_id: TyId) -> Self;
+
+    fn field_not_found(span: Span, ty_id: TyId, field: Symbol) -> Self;
 }
 
 pub type AstResult<T = ()> = Result<T, AstError>;
@@ -27,6 +29,10 @@ impl<T> AstResultExt for AstResult<T> {
 
     fn ty_mismatch(span: Span, found_ty_id: TyId, expected_ty_id: TyId) -> Self {
         Self::Err(AstError::ty_mismatch(span, found_ty_id, expected_ty_id))
+    }
+
+    fn field_not_found(span: Span, ty_id: TyId, field: Symbol) -> Self {
+        Self::Err(AstError::field_not_found(span, ty_id, field))
     }
 }
 
@@ -54,6 +60,16 @@ impl AstError {
             kind: AstErrorKind::Ty(TyError {
                 ty_id: found_ty_id,
                 kind: TyErrorKind::TyMismatch { expected_ty_id },
+            }),
+        }
+    }
+
+    pub fn field_not_found(span: Span, ty_id: TyId, field: Symbol) -> Self {
+        Self {
+            span,
+            kind: AstErrorKind::Ty(TyError {
+                ty_id,
+                kind: TyErrorKind::FieldNotFound { field },
             }),
         }
     }
@@ -103,11 +119,12 @@ pub enum TyDefError {
 
 #[derive(Clone, Debug)]
 pub enum TyErrorKind {
+    FieldNotFound { field: Symbol },
+    InvalidArgumentCount { found: u32 },
     TyMismatch { expected_ty_id: TyId },
     TyNotCallable,
     TyNotComparable,
     TyNotDereferenceable,
-    InvalidArgumentCount { found: u32 },
     UnsupportedCast { to_ty_id: TyId },
 }
 
@@ -120,6 +137,16 @@ pub struct TyError {
 impl fmt::Display for TyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.kind {
+            TyErrorKind::FieldNotFound { field } => {
+                write!(f, "type '{}' has no field '{}'", self.ty_id, field)
+            }
+            TyErrorKind::InvalidArgumentCount { found } => {
+                write!(
+                    f,
+                    "tried to call function with an invalid number of {} arguments",
+                    found,
+                )
+            }
             TyErrorKind::TyMismatch { expected_ty_id } => {
                 write!(f, "expected '{}', found '{}'", expected_ty_id, self.ty_id)
             }
@@ -134,13 +161,6 @@ impl fmt::Display for TyError {
                     f,
                     "expressions of type '{}' are not dereferenceable",
                     self.ty_id,
-                )
-            }
-            TyErrorKind::InvalidArgumentCount { found } => {
-                write!(
-                    f,
-                    "tried to call function with an invalid number of {} arguments",
-                    found,
                 )
             }
             TyErrorKind::UnsupportedCast { to_ty_id } => {
