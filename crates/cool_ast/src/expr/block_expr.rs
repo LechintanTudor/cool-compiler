@@ -42,10 +42,7 @@ impl AstGenerator<'_> {
 
         let (expr, ty_id) = match block.expr.as_ref() {
             Some(expr) => {
-                let expr = self
-                    .gen_expr(frame_id, expected_ty_id, expr)?
-                    .ensure_not_module()?;
-
+                let expr = self.gen_expr(frame_id, expected_ty_id, expr)?;
                 let ty_id = self.resolve[expr.expr_id()].ty_id;
                 (Some(expr), ty_id)
             }

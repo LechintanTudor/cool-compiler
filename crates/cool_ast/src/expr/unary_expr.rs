@@ -1,4 +1,4 @@
-use crate::{AstError, AstGenerator, AstResult, ExprAst};
+use crate::{AstGenerator, AstResult, AstResultExt, ExprAst, ExprError};
 use cool_parser::{UnaryExpr, UnaryOp, UnaryOpKind};
 use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId, TyMismatch};
 use cool_span::{Section, Span};
@@ -60,16 +60,18 @@ impl AstGenerator<'_> {
                 let inner_resolve_expr = self.resolve[inner_expr.expr_id()];
 
                 let ty_id = self.resolve.mk_ptr(is_mutable, inner_resolve_expr.ty_id);
-
                 let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
 
                 if is_mutable {
                     if !inner_resolve_expr.is_mutably_addressable() {
-                        Err(AstError::ExprNotMutablyAddressable)?
+                        return AstResult::error(
+                            unary_expr.span(),
+                            ExprError::NotAddressableMutably,
+                        );
                     }
                 } else {
                     if !inner_resolve_expr.is_addressable() {
-                        Err(AstError::ExprNotAddressable)?
+                        return AstResult::error(unary_expr.span(), ExprError::NotAddressable);
                     }
                 }
 

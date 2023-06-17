@@ -1,14 +1,13 @@
 use crate::resolve::fn_ty::resolve_fn_abi;
-use crate::AstGenerator;
+use crate::{AstError, AstGenerator, AstResult};
 use cool_parser::{ItemKind, Ty};
-use cool_resolve::{
-    FrameId, ItemPathBuf, ResolveError, ResolveErrorKind, ResolveResult, Scope, TyId,
-};
+use cool_resolve::{FrameId, ItemPathBuf, ResolveError, ResolveErrorKind, Scope, TyId};
 mod fn_ty;
+use cool_span::Section;
 use smallvec::SmallVec;
 
 impl AstGenerator<'_> {
-    pub fn resolve_ty(&mut self, scope: Scope, ty: &Ty) -> ResolveResult<TyId> {
+    pub fn resolve_ty(&mut self, scope: Scope, ty: &Ty) -> AstResult<TyId> {
         let ty_id = match ty {
             Ty::Array(array_ty) => {
                 let len = self
@@ -54,15 +53,21 @@ impl AstGenerator<'_> {
                     .map(|ident| ident.symbol)
                     .collect::<ItemPathBuf>();
 
-                let item_id = self.resolve.resolve_global(scope, &path)?;
+                let item_id = self
+                    .resolve
+                    .resolve_global(scope, &path)
+                    .map_err(|error| AstError::new(path_ty.span(), error))?;
 
                 self.resolve[item_id]
                     .as_ty_id()
                     .filter(|ty_id| !ty_id.is_infer())
-                    .ok_or(ResolveError {
-                        symbol: path.last(),
-                        kind: ResolveErrorKind::SymbolNotTy,
-                    })?
+                    .ok_or(AstError::new(
+                        path_ty.span(),
+                        ResolveError {
+                            symbol: path.last(),
+                            kind: ResolveErrorKind::SymbolNotTy,
+                        },
+                    ))?
             }
             Ty::Ptr(ptr_ty) => {
                 let pointee = self.resolve_ty(scope, &ptr_ty.pointee)?;

@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, ExprAst};
+use crate::{AstError, AstGenerator, AstResult, ExprAst};
 use cool_parser::IdentExpr;
 use cool_resolve::{BindingId, ExprId, FrameId, ItemKind, ModuleId, ResolveExpr, TyId};
 use cool_span::{Section, Span};
@@ -54,7 +54,8 @@ impl AstGenerator<'_> {
     ) -> AstResult<ExprAst> {
         let item = self
             .resolve
-            .resolve_local(frame_id, ident_expr.ident.symbol)?;
+            .resolve_local(frame_id, ident_expr.ident.symbol)
+            .map_err(|error| AstError::new(ident_expr.span(), error))?;
 
         let expr: ExprAst = match item {
             ItemKind::Binding(binding_id) => {

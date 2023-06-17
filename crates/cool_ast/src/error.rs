@@ -1,84 +1,195 @@
 use cool_lexer::Symbol;
 use cool_resolve::{FnAbi, ResolveError, TyId, TyMismatch};
+use cool_span::Span;
 use derive_more::{Display, Error, From};
+use std::fmt;
+
+pub trait AstResultExt {
+    fn error<E>(span: Span, error: E) -> Self
+    where
+        E: Into<AstErrorKind>;
+}
 
 pub type AstResult<T = ()> = Result<T, AstError>;
 
-#[derive(Clone, Error, From, Display, Debug)]
-pub enum AstError {
+impl<T> AstResultExt for AstResult<T> {
+    fn error<E>(span: Span, error: E) -> Self
+    where
+        E: Into<AstErrorKind>,
+    {
+        Self::Err(AstError {
+            span,
+            kind: error.into(),
+        })
+    }
+}
+
+#[derive(Clone, Error, Display, Debug)]
+#[display(fmt = "{}", kind)]
+pub struct AstError {
+    pub span: Span,
+    pub kind: AstErrorKind,
+}
+
+impl AstError {
+    pub fn new<E>(span: Span, error: E) -> Self
+    where
+        E: Into<AstErrorKind>,
+    {
+        Self {
+            span,
+            kind: error.into(),
+        }
+    }
+
+    #[inline]
+    pub fn with_span(self, span: Span) -> Self {
+        Self { span, ..self }
+    }
+}
+
+impl From<AstErrorKind> for AstError {
+    #[inline]
+    fn from(kind: AstErrorKind) -> Self {
+        Self {
+            span: Span::empty(),
+            kind,
+        }
+    }
+}
+
+impl From<TyMismatch> for AstError {
+    #[inline]
+    fn from(error: TyMismatch) -> Self {
+        Self {
+            span: Span::empty(),
+            kind: AstErrorKind::Ty(TyError {
+                ty_id: error.found_ty_id,
+                kind: TyErrorKind::TyMismatch {
+                    expected_ty_id: error.expected_ty_id,
+                },
+            }),
+        }
+    }
+}
+
+#[derive(Clone, From, Error, Display, Debug)]
+pub enum AstErrorKind {
+    Expr(ExprError),
+    Literal(LiteralError),
     Resolve(ResolveError),
-    TyMismatch(TyMismatch),
-    TyNotFn(TyNotFn),
-    TyHintMissing,
-    FnAbiMismatch(FnAbiMismatch),
-    FnParamCountMismatch(FnParamCountMismatch),
-    FnVariadicMismatch(FnVariadicMismatch),
-    LiteralIntOutOfRange(LiteralIntOutOfRange),
-    LiteralUnknownSuffix(LiteralUnknownSuffix),
-    UnsupportedCast(UnsupportedCast),
+    Ty(TyError),
+    TyDef(TyDefError),
+}
 
-    #[display(fmt = "expected expression and found module")]
-    ModuleUsedAsExpr,
+#[derive(Clone, Error, Display, Debug)]
+pub enum TyDefError {
+    #[display(fmt = "unknown function ABI '{abi}'")]
+    UnknownAbi { abi: Symbol },
 
-    #[display(fmt = "tried to assign to an rvalue expression")]
-    AssignToRvalue,
+    #[display(fmt = "function ABI mismatch")]
+    AbiMismatch { found: FnAbi, expected: FnAbi },
 
-    #[display(fmt = "tried to compare uncomparable types")]
+    #[display(fmt = "function parameter count mismatch")]
+    ParamCountMismatch { found: u32, expected: u32 },
+
+    #[display(fmt = "function variadicity mismtach")]
+    VariadicMismatch { found: bool, expected: bool },
+
+    #[display(fmt = "type hint missing from parameter '{param}'")]
+    TyHintMissing { param: Symbol },
+}
+
+#[derive(Clone, Debug)]
+pub enum TyErrorKind {
+    TyMismatch { expected_ty_id: TyId },
+    TyNotCallable,
     TyNotComparable,
-
-    #[display(fmt = "tired to use non-pointer expression as a pointer")]
-    TyNotPointer,
-
-    #[display(fmt = "tried to create a pointer from a non-addressable expression")]
-    ExprNotAddressable,
-
-    #[display(fmt = "tried to create a pointer from a non-mutably-addressable expression")]
-    ExprNotMutablyAddressable,
+    TyNotDereferenceable,
+    InvalidArgumentCount { found: u32 },
+    UnsupportedCast { to_ty_id: TyId },
 }
 
-#[derive(Clone, Error, Display, Debug)]
-#[display(fmt = "type is not a function")]
-pub struct TyNotFn {
-    pub found: TyId,
-}
-
-#[derive(Clone, Error, Display, Debug)]
-#[display(fmt = "invalid argument count: found {found}, expected {expected}")]
-pub struct FnParamCountMismatch {
-    pub found: u32,
-    pub expected: u32,
-}
-
-#[derive(Clone, Error, Display, Debug)]
-#[display(fmt = "function abi mismatch: found \"{found}\", expected \"{expected}\"")]
-pub struct FnAbiMismatch {
-    pub found: FnAbi,
-    pub expected: FnAbi,
-}
-
-#[derive(Clone, Error, Display, Debug)]
-#[display(fmt = "function variadicity mismatch")]
-pub struct FnVariadicMismatch {
-    pub found: bool,
-    pub expected: bool,
-}
-
-#[derive(Clone, Error, Display, Debug)]
-#[display(fmt = "literal value {symbol} is out of range")]
-pub struct LiteralIntOutOfRange {
+#[derive(Clone, Error, Debug)]
+pub struct TyError {
     pub ty_id: TyId,
-    pub symbol: Symbol,
+    pub kind: TyErrorKind,
+}
+
+impl fmt::Display for TyError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.kind {
+            TyErrorKind::TyMismatch { expected_ty_id } => {
+                write!(f, "expected '{}', found '{}'", expected_ty_id, self.ty_id)
+            }
+            TyErrorKind::TyNotCallable => {
+                write!(f, "expressions of type '{}' are not callable", self.ty_id)
+            }
+            TyErrorKind::TyNotComparable => {
+                write!(f, "expressions of type '{}' are not comparable", self.ty_id)
+            }
+            TyErrorKind::TyNotDereferenceable => {
+                write!(
+                    f,
+                    "expressions of type '{}' are not dereferenceable",
+                    self.ty_id,
+                )
+            }
+            TyErrorKind::InvalidArgumentCount { found } => {
+                write!(
+                    f,
+                    "tried to call function with an invalid number of {} arguments",
+                    found,
+                )
+            }
+            TyErrorKind::UnsupportedCast { to_ty_id } => {
+                write!(
+                    f,
+                    "unsupported cast from '{}' to '{}'",
+                    self.ty_id, to_ty_id,
+                )
+            }
+        }
+    }
 }
 
 #[derive(Clone, Error, Display, Debug)]
-#[display(fmt = "unknown literal suffix: {suffix}")]
-pub struct LiteralUnknownSuffix {
-    pub suffix: Symbol,
+pub enum ExprError {
+    #[display(fmt = "Expression is not addressable.")]
+    NotAddressable,
+
+    #[display(fmt = "expression is not mutably addressable")]
+    NotAddressableMutably,
+
+    #[display(fmt = "expression is not assignable")]
+    NotAssignable,
 }
 
-#[derive(Clone, Error, Display, Debug)]
-#[display(fmt = "unsupported cast from '{from_ty}' to '{to_ty}'")]
-pub struct UnsupportedCast {
-    pub from_ty: TyId,
-    pub to_ty: TyId,
+#[derive(Clone, Debug)]
+pub enum LiteralErrorKind {
+    UnknownSuffix { suffix: Symbol },
+    IntOutOfRange { ty_id: TyId },
+}
+
+#[derive(Clone, Error, Debug)]
+pub struct LiteralError {
+    pub literal: Symbol,
+    pub kind: LiteralErrorKind,
+}
+
+impl fmt::Display for LiteralError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.kind {
+            LiteralErrorKind::UnknownSuffix { suffix } => {
+                write!(
+                    f,
+                    "unknown literal suffix '{}' in '{}'",
+                    suffix, self.literal,
+                )
+            }
+            LiteralErrorKind::IntOutOfRange { ty_id } => {
+                write!(f, "literal {} is out of range of {}", self.literal, ty_id)
+            }
+        }
+    }
 }

@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, ExprAst, UnsupportedCast};
+use crate::{AstGenerator, AstResult, AstResultExt, ExprAst, TyError, TyErrorKind};
 use cool_parser::CastExpr;
 use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId};
 use cool_span::{Section, Span};
@@ -35,11 +35,17 @@ impl AstGenerator<'_> {
         let base_ty_id = self.resolve[base.expr_id()].ty_id;
         let expr_ty_id = self.resolve_ty(frame_id.into(), &expr.ty)?;
 
-        let unsupported_cast: AstResult<CastExprAst> = Err(UnsupportedCast {
-            from_ty: base_ty_id,
-            to_ty: expected_ty_id,
-        }
-        .into());
+        let unsupported_cast = || -> AstResult<CastExprAst> {
+            AstResult::error(
+                expr.span(),
+                TyError {
+                    ty_id: base_ty_id,
+                    kind: TyErrorKind::UnsupportedCast {
+                        to_ty_id: expected_ty_id,
+                    },
+                },
+            )
+        };
 
         let base_value_ty = base_ty_id.as_value().unwrap();
         let expr_value_ty = expr_ty_id.as_value().unwrap();
@@ -50,10 +56,10 @@ impl AstGenerator<'_> {
             } else if expr_value_ty.is_usize() {
                 CastKind::PtrToUsize
             } else {
-                return unsupported_cast;
+                return unsupported_cast();
             }
         } else {
-            return unsupported_cast;
+            return unsupported_cast();
         };
 
         let ty_id = self

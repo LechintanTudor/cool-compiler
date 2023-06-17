@@ -1,5 +1,6 @@
 use crate::{
-    AstGenerator, AstResult, BindingExprAst, DerefExprAst, ExprAst, ModuleExprAst, TyExprAst,
+    AstError, AstGenerator, AstResult, BindingExprAst, DerefExprAst, ExprAst, ModuleExprAst,
+    TyExprAst,
 };
 use cool_lexer::sym;
 use cool_parser::{AccessExpr, Ident};
@@ -45,11 +46,14 @@ impl AstGenerator<'_> {
             ExprAst::Module(module_expr) => {
                 let parent_module_id = self.resolve.resolve_parent_module(frame_id.into());
 
-                let item = self.resolve.resolve_local_access(
-                    parent_module_id,
-                    module_expr.module_id,
-                    access_expr.ident.symbol,
-                )?;
+                let item = self
+                    .resolve
+                    .resolve_local_access(
+                        parent_module_id,
+                        module_expr.module_id,
+                        access_expr.ident.symbol,
+                    )
+                    .map_err(|error| AstError::new(access_expr.span(), error))?;
 
                 match item {
                     ItemKind::Binding(binding_id) => {

@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, ExprAst, FnParamCountMismatch, TyNotFn};
+use crate::{AstGenerator, AstResult, AstResultExt, ExprAst, TyError, TyErrorKind};
 use cool_parser::FnCallExpr;
 use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId};
 use cool_span::{Section, Span};
@@ -27,27 +27,32 @@ impl AstGenerator<'_> {
     ) -> AstResult<FnCallExprAst> {
         let fn_expr = self.gen_expr(frame_id, self.tys().infer, &fn_call_expr.base)?;
         let fn_expr_ty_id = self.resolve[fn_expr.expr_id()].ty_id;
-        let fn_ty = fn_expr_ty_id
-            .as_fn()
-            .ok_or(TyNotFn {
-                found: fn_expr_ty_id,
-            })?
-            .clone();
 
-        if fn_ty.is_variadic {
-            if fn_call_expr.args.len() < fn_ty.params.len() {
-                Err(FnParamCountMismatch {
-                    found: fn_call_expr.args.len() as _,
-                    expected: fn_ty.params.len() as _,
-                })?;
-            }
+        let Some(fn_ty) = fn_expr_ty_id.as_fn() else {
+            return AstResult::error(
+                fn_call_expr.span(),
+                TyError {
+                    ty_id: fn_expr_ty_id,
+                    kind: TyErrorKind::TyNotCallable,
+                },
+            );
+        };
+        let is_argument_count_valid = if fn_ty.is_variadic {
+            fn_call_expr.args.len() >= fn_ty.params.len()
         } else {
-            if fn_call_expr.args.len() != fn_ty.params.len() {
-                Err(FnParamCountMismatch {
-                    found: fn_call_expr.args.len() as _,
-                    expected: fn_ty.params.len() as _,
-                })?;
-            }
+            fn_call_expr.args.len() == fn_ty.params.len()
+        };
+
+        if !is_argument_count_valid {
+            return AstResult::error(
+                fn_call_expr.span(),
+                TyError {
+                    ty_id: fn_expr_ty_id,
+                    kind: TyErrorKind::InvalidArgumentCount {
+                        found: fn_call_expr.args.len() as _,
+                    },
+                },
+            );
         }
 
         let mut arg_exprs = Vec::<ExprAst>::new();

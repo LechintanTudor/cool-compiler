@@ -1,4 +1,4 @@
-use crate::{AstError, AstGenerator, AstResult, ExprAst};
+use crate::{AstGenerator, AstResult, AstResultExt, ExprAst, ExprError};
 use cool_parser::{AssignOp, AssignStmt};
 use cool_resolve::FrameId;
 use cool_span::Section;
@@ -21,24 +21,18 @@ impl AstGenerator<'_> {
     pub fn gen_assign_stmt(
         &mut self,
         frame_id: FrameId,
-        assign_stmt: &AssignStmt,
+        stmt: &AssignStmt,
     ) -> AstResult<AssignStmtAst> {
-        let lhs = self
-            .gen_expr(frame_id, self.tys().infer, &assign_stmt.lhs)?
-            .ensure_not_module()?;
-
+        let lhs = self.gen_expr(frame_id, self.tys().infer, &stmt.lhs)?;
         if !self.resolve[lhs.expr_id()].is_assignable() {
-            Err(AstError::AssignToRvalue)?;
+            return AstResult::error(stmt.span(), ExprError::NotAssignable);
         }
 
         let ty_id = self.resolve[lhs.expr_id()].ty_id;
-
-        let rhs = self
-            .gen_expr(frame_id, ty_id, &assign_stmt.rhs)?
-            .ensure_not_module()?;
+        let rhs = self.gen_expr(frame_id, ty_id, &stmt.rhs)?;
 
         Ok(AssignStmtAst {
-            assign_op: assign_stmt.assign_op,
+            assign_op: stmt.assign_op,
             lhs: Box::new(lhs),
             rhs: Box::new(rhs),
         })

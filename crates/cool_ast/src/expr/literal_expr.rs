@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, LiteralIntOutOfRange, LiteralUnknownSuffix};
+use crate::{AstError, AstGenerator, AstResult, AstResultExt, LiteralError, LiteralErrorKind};
 use cool_collections::SmallString;
 use cool_lexer::{sym, LiteralKind, Symbol};
 use cool_parser::LiteralExpr;
@@ -43,75 +43,81 @@ impl AstGenerator<'_> {
         &mut self,
         _frame_id: FrameId,
         expected_ty_id: TyId,
-        literal_expr: &LiteralExpr,
+        expr: &LiteralExpr,
     ) -> AstResult<LiteralExprAst> {
         let tys = self.tys();
-        let symbol = literal_expr.literal.symbol;
-        let expr = match literal_expr.literal.kind {
+
+        let expr = match expr.literal.kind {
             LiteralKind::Int { .. } => {
-                let (value, ty_id) = parse_int(tys, symbol)?;
+                let (value, ty_id) = parse_int(tys, expr)?;
                 let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
 
                 if !is_int_in_range(tys, value, ty_id) {
-                    Err(LiteralIntOutOfRange { ty_id, symbol })?;
+                    return AstResult::error(
+                        expr.span(),
+                        LiteralError {
+                            literal: expr.literal.symbol,
+                            kind: LiteralErrorKind::IntOutOfRange { ty_id },
+                        },
+                    );
                 }
 
                 if ty_id.is_int() {
                     LiteralExprAst {
-                        span: literal_expr.span,
+                        span: expr.span,
                         expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                         value: LiteralExprValue::Int(value),
                     }
                 } else {
                     LiteralExprAst {
-                        span: literal_expr.span,
+                        span: expr.span,
                         expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                         value: LiteralExprValue::Float(value as _),
                     }
                 }
             }
             LiteralKind::Decimal => {
-                let (value, ty_id) = parse_decimal(tys, symbol)?;
+                let (value, ty_id) = parse_decimal(tys, expr)?;
                 let ty_id = self.resolve.resolve_direct_ty_id(ty_id, expected_ty_id)?;
 
                 LiteralExprAst {
-                    span: literal_expr.span,
+                    span: expr.span,
                     expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                     value: LiteralExprValue::Float(value),
                 }
             }
             LiteralKind::Bool => {
-                let value = symbol == sym::KW_TRUE;
+                let value = expr.literal.symbol == sym::KW_TRUE;
                 let ty_id = self
                     .resolve
                     .resolve_direct_ty_id(self.tys().bool, expected_ty_id)?;
 
                 LiteralExprAst {
-                    span: literal_expr.span,
+                    span: expr.span,
                     expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                     value: LiteralExprValue::Bool(value),
                 }
             }
             LiteralKind::Char => {
-                let value = parse_char(symbol);
+                let value = parse_char(expr.literal.symbol);
                 let ty_id = self
                     .resolve
                     .resolve_direct_ty_id(self.tys().char, expected_ty_id)?;
 
                 LiteralExprAst {
-                    span: literal_expr.span,
+                    span: expr.span,
                     expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                     value: LiteralExprValue::Char(value),
                 }
             }
             LiteralKind::Str => {
-                let value = parse_str(symbol);
+                let value = parse_str(expr.literal.symbol);
                 let ty_id = self
                     .resolve
                     .resolve_direct_ty_id(tys.c_str, expected_ty_id)?;
 
                 LiteralExprAst {
-                    span: literal_expr.span,
+                    span: expr.span,
                     expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                     value: LiteralExprValue::Cstr(value),
                 }
@@ -122,23 +128,23 @@ impl AstGenerator<'_> {
     }
 }
 
-fn parse_int(tys: &TyConsts, symbol: Symbol) -> AstResult<(u128, TyId)> {
-    let value_str = symbol.as_str();
+fn parse_int(tys: &TyConsts, expr: &LiteralExpr) -> AstResult<(u128, TyId)> {
+    let literal_str = expr.literal.symbol.as_str();
 
-    if value_str.starts_with("0b") {
-        parse_binary_int(tys, symbol)
-    } else if value_str.starts_with("0o") {
-        parse_octal_int(tys, symbol)
-    } else if value_str.starts_with("0x") {
-        parse_hexadecimal_int(tys, symbol)
+    if literal_str.starts_with("0b") {
+        parse_binary_int(tys, expr)
+    } else if literal_str.starts_with("0o") {
+        parse_octal_int(tys, expr)
+    } else if literal_str.starts_with("0x") {
+        parse_hexadecimal_int(tys, expr)
     } else {
-        parse_decimal_int(tys, symbol)
+        parse_decimal_int(tys, expr)
     }
 }
 
-fn parse_binary_int(tys: &TyConsts, symbol: Symbol) -> AstResult<(u128, TyId)> {
-    let value_str = symbol.as_str();
-    let mut char_iter = value_str.chars();
+fn parse_binary_int(tys: &TyConsts, expr: &LiteralExpr) -> AstResult<(u128, TyId)> {
+    let literal_str = expr.literal.symbol.as_str();
+    let mut char_iter = literal_str.chars();
 
     // Skip "0b" prefix
     char_iter.next();
@@ -151,26 +157,40 @@ fn parse_binary_int(tys: &TyConsts, symbol: Symbol) -> AstResult<(u128, TyId)> {
         match char {
             '0' | '1' => {
                 let digit = char as u32 - '0' as u32;
-                value = append_digit(value, 2, digit).ok_or(LiteralIntOutOfRange {
-                    ty_id: tys.u128,
-                    symbol,
+                value = append_digit(value, 2, digit).ok_or_else(|| {
+                    AstError::new(
+                        expr.span(),
+                        LiteralError {
+                            literal: expr.literal.symbol,
+                            kind: LiteralErrorKind::IntOutOfRange { ty_id: tys.i128 },
+                        },
+                    )
                 })?;
             }
             '_' => (),
             _ => {
                 suffix.push(char);
+                suffix.extend(char_iter);
                 break;
             }
         }
     }
 
-    suffix.extend(char_iter);
-    Ok((value, parse_int_suffix(tys, &suffix)?))
+    let Some(suffix) = parse_int_suffix(tys, &suffix) else {
+        return AstResult::error(expr.span(), LiteralError {
+                literal: expr.literal.symbol,
+                kind: LiteralErrorKind::UnknownSuffix {
+                    suffix: Symbol::insert(&suffix),
+                },
+            }) ;
+    };
+
+    Ok((value, suffix))
 }
 
-fn parse_octal_int(tys: &TyConsts, symbol: Symbol) -> AstResult<(u128, TyId)> {
-    let value_str = symbol.as_str();
-    let mut char_iter = value_str.chars();
+fn parse_octal_int(tys: &TyConsts, expr: &LiteralExpr) -> AstResult<(u128, TyId)> {
+    let literal_str = expr.literal.symbol.as_str();
+    let mut char_iter = literal_str.chars();
 
     // Skip "0o" prefix
     char_iter.next();
@@ -183,26 +203,40 @@ fn parse_octal_int(tys: &TyConsts, symbol: Symbol) -> AstResult<(u128, TyId)> {
         match char {
             '0'..='7' => {
                 let digit = char as u32 - '0' as u32;
-                value = append_digit(value, 8, digit).ok_or(LiteralIntOutOfRange {
-                    ty_id: tys.u128,
-                    symbol,
+                value = append_digit(value, 8, digit).ok_or_else(|| {
+                    AstError::new(
+                        expr.span(),
+                        LiteralError {
+                            literal: expr.literal.symbol,
+                            kind: LiteralErrorKind::IntOutOfRange { ty_id: tys.i128 },
+                        },
+                    )
                 })?;
             }
             '_' => (),
             _ => {
                 suffix.push(char);
+                suffix.extend(char_iter);
                 break;
             }
         }
     }
 
-    suffix.extend(char_iter);
-    Ok((value, parse_int_suffix(tys, &suffix)?))
+    let Some(suffix) = parse_int_suffix(tys, &suffix) else {
+        return AstResult::error(expr.span(), LiteralError {
+                literal: expr.literal.symbol,
+                kind: LiteralErrorKind::UnknownSuffix {
+                    suffix: Symbol::insert(&suffix),
+                },
+            }) ;
+    };
+
+    Ok((value, suffix))
 }
 
-fn parse_hexadecimal_int(tys: &TyConsts, symbol: Symbol) -> AstResult<(u128, TyId)> {
-    let value_str = symbol.as_str();
-    let mut char_iter = value_str.chars();
+fn parse_hexadecimal_int(tys: &TyConsts, expr: &LiteralExpr) -> AstResult<(u128, TyId)> {
+    let literal_str = expr.literal.symbol.as_str();
+    let mut char_iter = literal_str.chars();
 
     // Skip "0x" prefix
     char_iter.next();
@@ -211,44 +245,54 @@ fn parse_hexadecimal_int(tys: &TyConsts, symbol: Symbol) -> AstResult<(u128, TyI
     let mut value = 0;
     let mut suffix = String::new();
 
+    let int_out_of_range = || {
+        AstError::new(
+            expr.span(),
+            LiteralError {
+                literal: expr.literal.symbol,
+                kind: LiteralErrorKind::IntOutOfRange { ty_id: tys.i128 },
+            },
+        )
+    };
+
     for char in char_iter.by_ref() {
         match char {
             '0'..='9' => {
                 let digit = char as u32 - '0' as u32;
-                value = append_digit(value, 16, digit).ok_or(LiteralIntOutOfRange {
-                    ty_id: tys.u128,
-                    symbol,
-                })?;
+                value = append_digit(value, 16, digit).ok_or_else(int_out_of_range)?;
             }
             'a'..='f' => {
                 let digit = char as u32 - 'a' as u32 + 10;
-                value = append_digit(value, 16, digit).ok_or(LiteralIntOutOfRange {
-                    ty_id: tys.u128,
-                    symbol,
-                })?;
+                value = append_digit(value, 16, digit).ok_or_else(int_out_of_range)?;
             }
             'A'..='F' => {
                 let digit = char as u32 - 'A' as u32 + 10;
-                value = append_digit(value, 16, digit).ok_or(LiteralIntOutOfRange {
-                    ty_id: tys.u128,
-                    symbol,
-                })?;
+                value = append_digit(value, 16, digit).ok_or_else(int_out_of_range)?;
             }
             '_' => (),
             _ => {
                 suffix.push(char);
+                suffix.extend(char_iter);
                 break;
             }
         }
     }
 
-    suffix.extend(char_iter);
-    Ok((value, parse_int_suffix(tys, &suffix)?))
+    let Some(suffix) = parse_int_suffix(tys, &suffix) else {
+        return AstResult::error(expr.span(), LiteralError {
+                literal: expr.literal.symbol,
+                kind: LiteralErrorKind::UnknownSuffix {
+                    suffix: Symbol::insert(&suffix),
+                },
+            }) ;
+    };
+
+    Ok((value, suffix))
 }
 
-fn parse_decimal_int(tys: &TyConsts, symbol: Symbol) -> AstResult<(u128, TyId)> {
-    let value_str = symbol.as_str();
-    let mut char_iter = value_str.chars();
+fn parse_decimal_int(tys: &TyConsts, expr: &LiteralExpr) -> AstResult<(u128, TyId)> {
+    let literal_str = expr.literal.symbol.as_str();
+    let mut char_iter = literal_str.chars();
 
     let mut value = 0;
     let mut suffix = String::new();
@@ -257,9 +301,14 @@ fn parse_decimal_int(tys: &TyConsts, symbol: Symbol) -> AstResult<(u128, TyId)> 
         match char {
             '0'..='9' => {
                 let digit = char as u32 - '0' as u32;
-                value = append_digit(value, 10, digit).ok_or(LiteralIntOutOfRange {
-                    ty_id: tys.u128,
-                    symbol,
+                value = append_digit(value, 10, digit).ok_or_else(|| {
+                    AstError::new(
+                        expr.span(),
+                        LiteralError {
+                            literal: expr.literal.symbol,
+                            kind: LiteralErrorKind::IntOutOfRange { ty_id: tys.i128 },
+                        },
+                    )
                 })?;
             }
             '_' => (),
@@ -270,8 +319,16 @@ fn parse_decimal_int(tys: &TyConsts, symbol: Symbol) -> AstResult<(u128, TyId)> 
         }
     }
 
-    suffix.extend(char_iter);
-    Ok((value, parse_number_suffix(tys, &suffix)?))
+    let Some(suffix) = parse_int_suffix(tys, &suffix) else {
+        return AstResult::error(expr.span(), LiteralError {
+                literal: expr.literal.symbol,
+                kind: LiteralErrorKind::UnknownSuffix {
+                    suffix: Symbol::insert(&suffix),
+                },
+        }) ;
+    };
+
+    Ok((value, suffix))
 }
 
 fn append_digit(value: u128, base: u128, digit: u32) -> Option<u128> {
@@ -280,7 +337,7 @@ fn append_digit(value: u128, base: u128, digit: u32) -> Option<u128> {
         .and_then(|value| value.checked_add(digit as u128))
 }
 
-fn parse_int_suffix(tys: &TyConsts, suffix: &str) -> AstResult<TyId> {
+fn parse_int_suffix(tys: &TyConsts, suffix: &str) -> Option<TyId> {
     let ty_id = match suffix {
         "" => tys.infer_int,
         "i8" => tys.i8,
@@ -288,39 +345,31 @@ fn parse_int_suffix(tys: &TyConsts, suffix: &str) -> AstResult<TyId> {
         "i32" => tys.i32,
         "i64" => tys.i64,
         "i128" => tys.i128,
-        "isize" => tys.isize,
+        "isize" | "i" => tys.isize,
         "u8" => tys.u8,
         "u16" => tys.u16,
         "u32" => tys.u32,
         "u64" => tys.u64,
         "u128" => tys.u128,
-        "usize" => tys.usize,
-        _ => {
-            Err(LiteralUnknownSuffix {
-                suffix: Symbol::insert(suffix),
-            })?
-        }
+        "usize" | "u" => tys.usize,
+        _ => return None,
     };
 
-    Ok(ty_id)
+    Some(ty_id)
 }
 
-pub fn parse_decimal_suffix(tys: &TyConsts, suffix: &str) -> AstResult<TyId> {
+pub fn parse_decimal_suffix(tys: &TyConsts, suffix: &str) -> Option<TyId> {
     let ty_id = match suffix {
         "" => tys.infer_float,
         "f32" => tys.f32,
         "f64" => tys.f64,
-        _ => {
-            Err(LiteralUnknownSuffix {
-                suffix: Symbol::insert(suffix),
-            })?
-        }
+        _ => return None,
     };
 
-    Ok(ty_id)
+    Some(ty_id)
 }
 
-pub fn parse_number_suffix(tys: &TyConsts, suffix: &str) -> AstResult<TyId> {
+pub fn parse_number_suffix(tys: &TyConsts, suffix: &str) -> Option<TyId> {
     let ty_id = match suffix {
         "" => tys.infer_int,
         "i8" => tys.i8,
@@ -337,14 +386,10 @@ pub fn parse_number_suffix(tys: &TyConsts, suffix: &str) -> AstResult<TyId> {
         "usize" | "u" => tys.usize,
         "f32" => tys.f32,
         "f64" => tys.f64,
-        _ => {
-            Err(LiteralUnknownSuffix {
-                suffix: Symbol::insert(suffix),
-            })?
-        }
+        _ => return None,
     };
 
-    Ok(ty_id)
+    Some(ty_id)
 }
 
 fn is_int_in_range(tys: &TyConsts, value: u128, ty_id: TyId) -> bool {
@@ -383,8 +428,8 @@ fn is_int_in_range(tys: &TyConsts, value: u128, ty_id: TyId) -> bool {
     value <= rhs_value
 }
 
-pub fn parse_decimal(tys: &TyConsts, symbol: Symbol) -> AstResult<(f64, TyId)> {
-    let value_str = symbol.as_str();
+fn parse_decimal(tys: &TyConsts, expr: &LiteralExpr) -> AstResult<(f64, TyId)> {
+    let value_str = expr.literal.symbol.as_str();
     let mut char_iter = value_str.chars();
 
     let mut value = 0.0;
@@ -408,14 +453,23 @@ pub fn parse_decimal(tys: &TyConsts, symbol: Symbol) -> AstResult<(f64, TyId)> {
             '_' => (),
             '.' => found_dot = true,
             _ => {
+                suffix.extend(char_iter);
                 suffix.push(char);
                 break;
             }
         }
     }
 
-    suffix.extend(char_iter);
-    Ok((value, parse_decimal_suffix(tys, &suffix)?))
+    let Some(suffix) = parse_decimal_suffix(tys, &suffix) else {
+        return AstResult::error(expr.span(), LiteralError {
+                literal: expr.literal.symbol,
+                kind: LiteralErrorKind::UnknownSuffix {
+                    suffix: Symbol::insert(&suffix),
+                },
+        }) ;
+    };
+
+    Ok((value, suffix))
 }
 
 fn parse_char(symbol: Symbol) -> u32 {

@@ -33,7 +33,7 @@ pub use self::struct_expr::*;
 pub use self::tuple_expr::*;
 pub use self::unary_expr::*;
 pub use self::while_expr::*;
-use crate::{AstError, AstGenerator, AstResult};
+use crate::{AstGenerator, AstResult};
 use cool_parser::{Expr, ParenExpr};
 use cool_resolve::{ExprId, FrameId, TyId};
 use cool_span::{Section, Span};
@@ -119,14 +119,6 @@ impl ExprAst {
             self,
             Self::Array(_) | Self::ArrayRepeat(_) | Self::Struct(_),
         )
-    }
-
-    #[inline]
-    pub fn ensure_not_module(self) -> AstResult<Self> {
-        match self {
-            Self::Module(_) => Err(AstError::ModuleUsedAsExpr),
-            _ => Ok(self),
-        }
     }
 }
 
