@@ -27,7 +27,7 @@ impl AstGenerator<'_> {
         let expected_ty_id = decl_stmt
             .ty
             .as_ref()
-            .map(|ty| self.resolve_ty(frame_id.into(), ty))
+            .map(|ty| self.resolve_ty(frame_id, ty))
             .transpose()?
             .unwrap_or(self.tys().infer);
 

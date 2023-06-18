@@ -1,6 +1,7 @@
 mod define_error;
 mod resolve_alias;
 mod resolve_binding;
+mod resolve_enum;
 mod resolve_error;
 mod resolve_expr;
 mod resolve_global;
@@ -11,6 +12,7 @@ mod resolve_ty;
 pub use self::define_error::*;
 pub use self::resolve_alias::*;
 pub use self::resolve_binding::*;
+pub use self::resolve_enum::*;
 pub use self::resolve_error::*;
 pub use self::resolve_expr::*;
 pub use self::resolve_global::*;

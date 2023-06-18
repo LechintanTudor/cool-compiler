@@ -33,7 +33,7 @@ impl AstGenerator<'_> {
     ) -> AstResult<CastExprAst> {
         let base = self.gen_expr(frame_id, self.tys().infer, &expr.base)?;
         let base_ty_id = self.resolve[base.expr_id()].ty_id;
-        let expr_ty_id = self.resolve_ty(frame_id.into(), &expr.ty)?;
+        let expr_ty_id = self.resolve_ty(frame_id, &expr.ty)?;
 
         let unsupported_cast = || -> AstResult<CastExprAst> {
             AstResult::error(

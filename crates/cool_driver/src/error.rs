@@ -38,7 +38,11 @@ impl fmt::Display for CompileErrorBundle {
 #[derive(Clone, Error, From, Display, Debug)]
 pub enum CompileError {
     Ast(AstError),
-    Define(DefineError),
+    #[display(fmt = "{error}")]
+    Define {
+        span: Span,
+        error: DefineError,
+    },
     Import(ImportError),
     Init(InitError),
     Module(ModuleError),
@@ -50,6 +54,7 @@ impl CompileError {
     pub fn span(&self) -> Option<Span> {
         match self {
             Self::Ast(e) => Some(e.span),
+            Self::Define { span, .. } => Some(*span),
             Self::Import(e) => Some(e.span),
             Self::Module(e) => e.span,
             Self::Parse(e) => Some(e.found.span),

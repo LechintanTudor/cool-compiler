@@ -1,29 +1,24 @@
 use crate::{CompileError, CompileErrorBundle, CompileResult, Package};
 use cool_ast::AstGenerator;
-use cool_resolve::{
-    DefineError, Field, ResolveContext, StructHasDuplicatedField, TyCannotBeDefined,
-};
+use cool_resolve::{DefineError, DefineErrorKind, Field, ResolveContext};
+use cool_span::Section;
 use std::collections::VecDeque;
 
 pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> CompileResult<()> {
     let mut ast = AstGenerator::new(resolve);
     let mut errors = Vec::<CompileError>::new();
 
-    let mut aliases = package
-        .aliases
-        .iter()
-        .map(|alias| (alias.module_id, alias.item_id, &alias.item))
-        .collect::<VecDeque<_>>();
-
+    let mut aliases = package.aliases.iter().collect::<VecDeque<_>>();
     let mut resolve_fail_count = 0;
-    while let Some((module_id, item_id, alias)) = aliases.pop_front() {
-        match ast.resolve_ty(module_id.into(), &alias.ty) {
+
+    while let Some(item) = aliases.pop_front() {
+        match ast.resolve_ty(item.module_id, &item.item.ty) {
             Ok(resolved_ty_id) => {
-                ast.resolve.define_alias(item_id, resolved_ty_id);
+                ast.resolve.define_alias(item.item_id, resolved_ty_id);
                 resolve_fail_count = 0;
             }
             Err(_) => {
-                aliases.push_back((module_id, item_id, alias));
+                aliases.push_back(item);
 
                 resolve_fail_count += 1;
                 if resolve_fail_count >= aliases.len() {
@@ -33,46 +28,21 @@ pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
         }
     }
 
-    let mut structs = package
-        .structs
-        .iter()
-        .map(|struct_item| {
-            (
-                struct_item.module_id,
-                struct_item.item_id,
-                &struct_item.item,
-            )
-        })
-        .collect::<VecDeque<_>>();
-
+    let mut structs = package.structs.iter().collect::<VecDeque<_>>();
     let mut resolve_fail_count = 0;
-    'struct_loop: while let Some((module_id, item_id, struct_item)) = structs.pop_front() {
+
+    'struct_loop: while let Some(item) = structs.pop_front() {
         let fields = {
             let mut fields = Vec::<Field>::new();
 
-            for field in struct_item.fields.iter() {
-                let ty_id = match ast.resolve_ty(module_id.into(), &field.ty) {
+            for field in item.item.fields.iter() {
+                let ty_id = match ast.resolve_ty(item.module_id, &field.ty) {
                     Ok(ty_id) => ty_id,
                     Err(error) => {
                         errors.push(error.into());
                         continue 'struct_loop;
                     }
                 };
-
-                let is_duplicated = fields
-                    .iter()
-                    .any(|ty_field| ty_field.symbol == field.ident.symbol);
-
-                if is_duplicated {
-                    errors.push(
-                        DefineError::from(StructHasDuplicatedField {
-                            path: ast.resolve.get_path_by_item_id(item_id).to_path_buf(),
-                            field: field.ident.symbol,
-                        })
-                        .into(),
-                    );
-                    continue 'struct_loop;
-                }
 
                 fields.push(Field {
                     offset: 0,
@@ -84,10 +54,10 @@ pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
             fields
         };
 
-        match ast.resolve.define_struct(item_id, fields) {
+        match ast.resolve.define_struct(item.item_id, fields) {
             Ok(true) => resolve_fail_count = 0,
             Ok(false) => {
-                structs.push_back((module_id, item_id, struct_item));
+                structs.push_back(item);
 
                 resolve_fail_count += 1;
                 if resolve_fail_count >= structs.len() {
@@ -95,28 +65,29 @@ pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
                 }
             }
             Err(error) => {
-                errors.push(DefineError::from(error).into());
+                errors.push(CompileError::Define {
+                    span: item.item.span(),
+                    error,
+                });
             }
         }
     }
 
-    while let Some((_, item_id, _)) = aliases.pop_front() {
-        errors.push(
-            DefineError::from(TyCannotBeDefined {
-                path: ast.resolve.get_path_by_item_id(item_id).to_path_buf(),
-            })
-            .into(),
-        );
-    }
+    let undefinable_tys = {
+        let undefinable_aliases = aliases.iter().map(|item| (item.span, item.item_id));
+        let undefinable_structs = structs.iter().map(|item| (item.span, item.item_id));
+        undefinable_aliases.chain(undefinable_structs)
+    };
 
-    while let Some((_, item_id, _)) = structs.pop_front() {
-        errors.push(
-            DefineError::from(TyCannotBeDefined {
+    undefinable_tys.for_each(|(span, item_id)| {
+        errors.push(CompileError::Define {
+            span,
+            error: DefineError {
                 path: ast.resolve.get_path_by_item_id(item_id).to_path_buf(),
-            })
-            .into(),
-        );
-    }
+                kind: DefineErrorKind::TypeCannotBeDefined,
+            },
+        });
+    });
 
     if errors.is_empty() {
         Ok(())

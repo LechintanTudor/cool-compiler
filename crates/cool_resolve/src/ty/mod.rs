@@ -1,6 +1,7 @@
 mod any_ty;
 mod array_ty;
 mod consts;
+mod enum_ty;
 mod error;
 mod field;
 mod fn_ty;
@@ -17,6 +18,7 @@ mod value_ty;
 pub use self::any_ty::*;
 pub use self::array_ty::*;
 pub use self::consts::*;
+pub use self::enum_ty::*;
 pub use self::error::*;
 pub use self::field::*;
 pub use self::fn_ty::*;

@@ -1,8 +1,9 @@
 use crate::{
-    Field, ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveErrorKind,
-    ResolveResult, StructHasInfiniteSize, TyId, ValueTy,
+    DefineError, DefineErrorKind, DefineResult, Field, ItemId, ItemKind, ModuleElem, ModuleId,
+    ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, TyId, ValueTy,
 };
 use cool_lexer::Symbol;
+use rustc_hash::FxHashSet;
 use smallvec::SmallVec;
 
 impl ResolveContext {
@@ -37,20 +38,29 @@ impl ResolveContext {
         Ok(item_id)
     }
 
-    // TODO: Separate error type for ty definitions
-    pub fn define_struct(
-        &mut self,
-        item_id: ItemId,
-        fields: Vec<Field>,
-    ) -> Result<bool, StructHasInfiniteSize> {
-        let ty_id = self.items[item_id].as_ty_id().expect("item is not a type");
+    pub fn define_struct(&mut self, item_id: ItemId, fields: Vec<Field>) -> DefineResult<bool> {
+        let ty_id = self.items[item_id]
+            .as_ty_id()
+            .expect("item is not a struct");
+
+        let mut field_names = FxHashSet::<Symbol>::default();
 
         for field in fields.iter() {
+            if !field_names.insert(field.symbol) {
+                return Err(DefineError {
+                    path: self.paths[item_id].into(),
+                    kind: DefineErrorKind::StructHasDuplicatedField {
+                        field: field.symbol,
+                    },
+                });
+            }
+
             match self.ty_contains_ty(field.ty_id, ty_id) {
                 Some(true) => {
-                    return Err(StructHasInfiniteSize {
+                    return Err(DefineError {
                         path: self.paths[item_id].into(),
-                    })
+                        kind: DefineErrorKind::StructHasInfiniteSize,
+                    });
                 }
                 Some(false) => (),
                 None => return Ok(false),

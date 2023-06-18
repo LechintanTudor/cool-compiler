@@ -7,7 +7,7 @@ use cool_lexer::{sym, Symbol};
 use smallvec::SmallVec;
 
 impl ResolveContext {
-    pub fn insert_primitive_item_ty(&mut self, symbol: Symbol, ty_id: TyId) {
+    pub(crate) fn insert_primitive_item_ty(&mut self, symbol: Symbol, ty_id: TyId) {
         let item_id = self
             .paths
             .insert_if_not_exists(&[sym::EMPTY, symbol])
@@ -70,7 +70,6 @@ impl ResolveContext {
         })
     }
 
-    #[inline]
     pub fn mk_ptr(&mut self, is_mutable: bool, pointee: TyId) -> TyId {
         self.tys.get_or_insert_value(PtrTy {
             pointee,
@@ -78,7 +77,6 @@ impl ResolveContext {
         })
     }
 
-    #[inline]
     pub fn mk_many_ptr(&mut self, is_mutable: bool, pointee: TyId) -> TyId {
         self.tys.get_or_insert_value(ManyPtrTy {
             pointee,
@@ -86,7 +84,6 @@ impl ResolveContext {
         })
     }
 
-    #[inline]
     pub fn mk_slice(&mut self, is_mutable: bool, elem: TyId) -> TyId {
         let ty = SliceTy {
             fields: [

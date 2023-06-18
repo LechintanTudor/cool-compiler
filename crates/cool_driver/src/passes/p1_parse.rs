@@ -10,7 +10,7 @@ use cool_span::{Section, Span};
 use std::collections::VecDeque;
 
 #[derive(Clone, Debug)]
-pub struct Import {
+struct Import {
     pub span: Span,
     pub module_id: ModuleId,
     pub is_exported: bool,
@@ -155,6 +155,7 @@ pub fn p1_parse(
                                     item,
                                 });
                             }
+                            Item::Enum(item) => {}
                             Item::ExternFn(item) => {
                                 let item_id = match resove.insert_global_binding(
                                     module_id,

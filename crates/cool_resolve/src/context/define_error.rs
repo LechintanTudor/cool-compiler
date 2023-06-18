@@ -1,27 +1,43 @@
 use crate::ItemPathBuf;
 use cool_lexer::Symbol;
-use derive_more::{Display, Error, From};
+use derive_more::Error;
+use std::fmt;
 
-#[derive(Clone, Error, From, Display, Debug)]
-pub enum DefineError {
-    StructHasDuplicatedField(StructHasDuplicatedField),
-    StructHasInfiniteSize(StructHasInfiniteSize),
-    TyCannotBeDefined(TyCannotBeDefined),
+pub type DefineResult<T> = Result<T, DefineError>;
+
+#[derive(Clone, Debug)]
+pub enum DefineErrorKind {
+    TypeCannotBeDefined,
+    StructHasInfiniteSize,
+    StructHasDuplicatedField { field: Symbol },
+    EnumHasDuplicatedVariant { field: Symbol },
 }
 
-#[derive(Clone, Error, Display, Debug)]
-#[display(fmt = "struct {path} has duplicate field '{field}'")]
-pub struct StructHasDuplicatedField {
+#[derive(Clone, Error, Debug)]
+pub struct DefineError {
     pub path: ItemPathBuf,
-    pub field: Symbol,
+    pub kind: DefineErrorKind,
 }
 
-#[derive(Clone, Error, Display, Debug)]
-pub struct StructHasInfiniteSize {
-    pub path: ItemPathBuf,
-}
-
-#[derive(Clone, Error, Display, Debug)]
-pub struct TyCannotBeDefined {
-    pub path: ItemPathBuf,
+impl fmt::Display for DefineError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.kind {
+            DefineErrorKind::TypeCannotBeDefined => {
+                write!(f, "type '{}' cannot be defined", self.path)
+            }
+            DefineErrorKind::StructHasInfiniteSize => {
+                write!(f, "struct '{}' has infinite size", self.path)
+            }
+            DefineErrorKind::StructHasDuplicatedField { field } => {
+                write!(f, "struct '{}' has duplicated field '{}'", self.path, field)
+            }
+            DefineErrorKind::EnumHasDuplicatedVariant { field: variant } => {
+                write!(
+                    f,
+                    "enum '{}' has duplicated variant '{}'",
+                    self.path, variant,
+                )
+            }
+        }
+    }
 }

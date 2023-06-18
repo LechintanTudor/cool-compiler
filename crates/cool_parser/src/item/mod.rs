@@ -1,11 +1,13 @@
 mod alias_item;
 mod const_item;
+mod enum_item;
 mod extern_fn_item;
 mod module_item;
 mod struct_item;
 
 pub use self::alias_item::*;
 pub use self::const_item::*;
+pub use self::enum_item::*;
 pub use self::extern_fn_item::*;
 pub use self::module_item::*;
 pub use self::struct_item::*;
@@ -37,6 +39,7 @@ macro_rules! define_item {
 define_item! {
     Alias,
     Const,
+    Enum,
     ExternFn,
     Module,
     Struct,
