@@ -1,5 +1,6 @@
 use crate::ModulePathsError;
 use cool_ast::AstError;
+use cool_lexer::Symbol;
 use cool_parser::ParseError;
 use cool_resolve::{DefineError, ItemPathBuf, ResolveError};
 use cool_span::Span;
@@ -36,24 +37,24 @@ impl fmt::Display for CompileErrorBundle {
 
 #[derive(Clone, Error, From, Display, Debug)]
 pub enum CompileError {
-    Init(InitError),
-    Path(ModulePathsError),
-    Parse(ParseError),
-    Import(ImportError),
-    Resolve(ResolveError),
-    Define(DefineError),
     Ast(AstError),
+    Define(DefineError),
+    Import(ImportError),
+    Init(InitError),
+    Module(ModuleError),
+    Parse(ParseError),
+    Resolve(ResolveError),
 }
 
 impl CompileError {
     pub fn span(&self) -> Option<Span> {
-        let span = match self {
-            Self::Parse(e) => e.found.span,
-            Self::Ast(e) => e.span,
-            _ => return None,
-        };
-
-        Some(span)
+        match self {
+            Self::Ast(e) => Some(e.span),
+            Self::Import(e) => Some(e.span),
+            Self::Module(e) => e.span,
+            Self::Parse(e) => Some(e.found.span),
+            _ => None,
+        }
     }
 }
 
@@ -64,8 +65,16 @@ pub struct InitError {
 }
 
 #[derive(Clone, Error, Display, Debug)]
-#[display(fmt = "failed to import {import_path:?} in module {module_path:?}")]
+#[display(fmt = "no file found for module '{module_name}'")]
+pub struct ModuleError {
+    pub span: Option<Span>,
+    pub module_name: Symbol,
+    pub error: ModulePathsError,
+}
+
+#[derive(Clone, Error, Display, Debug)]
+#[display(fmt = "failed to import '{path}'")]
 pub struct ImportError {
-    pub module_path: ItemPathBuf,
-    pub import_path: ItemPathBuf,
+    pub span: Span,
+    pub path: ItemPathBuf,
 }

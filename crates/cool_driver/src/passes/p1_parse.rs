@@ -1,19 +1,17 @@
 use crate::paths::ModulePaths;
 use crate::{
-    Alias, CompileError, CompileErrorBundle, CompileOptions, Const, ExternFn, Package, Struct,
+    Alias, CompileError, CompileErrorBundle, CompileOptions, Const, ExternFn, ImportError,
+    ModuleError, Package, Struct,
 };
 use cool_lexer::Symbol;
 use cool_parser::{DeclKind, Item, ModuleContent, ModuleKind};
-use cool_resolve::{
-    ItemPathBuf, ModuleId, Mutability, ResolveContext, ResolveError, ResolveErrorKind,
-};
-use cool_span::Section;
+use cool_resolve::{ItemPathBuf, ModuleId, Mutability, ResolveContext, ResolveErrorKind};
+use cool_span::{Section, Span};
 use std::collections::VecDeque;
-use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
 pub struct Import {
-    pub source_path: PathBuf,
+    pub span: Span,
     pub module_id: ModuleId,
     pub is_exported: bool,
     pub path: ItemPathBuf,
@@ -23,14 +21,18 @@ pub struct Import {
 pub fn p1_parse(
     resove: &mut ResolveContext,
     options: &CompileOptions,
-) -> Result<Package, (CompileErrorBundle, Package)> {
+) -> Result<Package, (Package, CompileErrorBundle)> {
     let mut errors = Vec::<CompileError>::new();
     let mut package = Package::default();
 
     let crate_paths = match ModulePaths::for_root(&options.crate_root_file) {
         Ok(crate_paths) => Some(crate_paths),
         Err(error) => {
-            errors.push(error.into());
+            errors.push(CompileError::from(ModuleError {
+                span: None,
+                module_name: Symbol::insert(&options.crate_name),
+                error,
+            }));
             None
         }
     };
@@ -46,7 +48,7 @@ pub fn p1_parse(
 
     let (crate_paths, crate_module_id) = match (crate_paths, crate_module_id) {
         (Some(crate_paths), Some(crate_module_id)) => (crate_paths, crate_module_id),
-        _ => return Err((CompileErrorBundle { errors }, package)),
+        _ => return Err((package, CompileErrorBundle { errors })),
     };
 
     let mut file_modules = VecDeque::<(ModuleId, ModulePaths)>::new();
@@ -97,7 +99,11 @@ pub fn p1_parse(
                                         ) {
                                             Ok(child_module_paths) => child_module_paths,
                                             Err(error) => {
-                                                errors.push(error.into());
+                                                errors.push(CompileError::from(ModuleError {
+                                                    span: Some(item_decl_span),
+                                                    module_name: item_decl.ident.symbol,
+                                                    error,
+                                                }));
                                                 continue;
                                             }
                                         };
@@ -206,7 +212,7 @@ pub fn p1_parse(
                         let alias = use_decl.alias.map(|alias| alias.symbol);
 
                         imports.push_back(Import {
-                            source_path: module_paths.path.clone(),
+                            span: use_decl.span(),
                             module_id,
                             is_exported: decl.is_exported,
                             path,
@@ -219,7 +225,7 @@ pub fn p1_parse(
     }
 
     let mut import_fail_count = 0_usize;
-    while let Some(import) = imports.pop_back() {
+    while let Some(import) = imports.pop_front() {
         match resove.insert_use(
             import.module_id,
             import.is_exported,
@@ -233,7 +239,10 @@ pub fn p1_parse(
                 if error.kind == ResolveErrorKind::SymbolNotFound {
                     imports.push_back(import);
                 } else {
-                    errors.push(error.into());
+                    errors.push(CompileError::from(ImportError {
+                        span: import.span,
+                        path: import.path,
+                    }));
                 }
 
                 if import_fail_count >= imports.len() {
@@ -244,15 +253,15 @@ pub fn p1_parse(
     }
 
     for import in imports.drain(..) {
-        errors.push(CompileError::Resolve(ResolveError {
-            symbol: import.path.last(),
-            kind: ResolveErrorKind::SymbolNotFound,
+        errors.push(CompileError::from(ImportError {
+            span: import.span,
+            path: import.path,
         }));
     }
 
     if errors.is_empty() {
         Ok(package)
     } else {
-        Err((CompileErrorBundle { errors }, package))
+        Err((package, CompileErrorBundle { errors }))
     }
 }

@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, BlockExprAst, FnState};
+use crate::{AstGenerator, AstResult, AstResultExt, BlockExprAst, FnState, TyError, TyErrorKind};
 use cool_parser::FnExpr;
 use cool_resolve::{BindingId, FrameId, ItemId, ModuleId, TyId};
 use cool_span::{Section, Span};
@@ -33,7 +33,13 @@ impl AstGenerator<'_> {
         fn_expr: &FnExpr,
     ) -> AstResult<FnAst> {
         let frame_id = self.resolve.add_frame(module_id.into());
-        let fn_ty = ty_id.as_fn().unwrap().clone();
+
+        let Some(fn_ty) = ty_id.as_fn().cloned() else {
+            return AstResult::error(fn_expr.span(), TyError {
+                ty_id,
+                kind: TyErrorKind::TyNotCallable,
+            });
+        };
 
         let param_ty_iter = fn_expr
             .prototype
