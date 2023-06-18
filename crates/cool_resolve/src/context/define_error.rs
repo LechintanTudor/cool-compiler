@@ -1,4 +1,4 @@
-use crate::ItemPathBuf;
+use crate::{ItemPathBuf, TyId};
 use cool_lexer::Symbol;
 use derive_more::Error;
 use std::fmt;
@@ -10,7 +10,8 @@ pub enum DefineErrorKind {
     TypeCannotBeDefined,
     StructHasInfiniteSize,
     StructHasDuplicatedField { field: Symbol },
-    EnumHasDuplicatedVariant { field: Symbol },
+    EnumHasInvalidStorage { storage: TyId },
+    EnumHasDuplicatedVariant { variant: Symbol },
 }
 
 #[derive(Clone, Error, Debug)]
@@ -31,7 +32,10 @@ impl fmt::Display for DefineError {
             DefineErrorKind::StructHasDuplicatedField { field } => {
                 write!(f, "struct '{}' has duplicated field '{}'", self.path, field)
             }
-            DefineErrorKind::EnumHasDuplicatedVariant { field: variant } => {
+            DefineErrorKind::EnumHasInvalidStorage { storage } => {
+                write!(f, "enum '{}' has invalid storage '{}'", self.path, storage)
+            }
+            DefineErrorKind::EnumHasDuplicatedVariant { variant } => {
                 write!(
                     f,
                     "enum '{}' has duplicated variant '{}'",

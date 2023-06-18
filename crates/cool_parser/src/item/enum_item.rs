@@ -39,7 +39,9 @@ impl Parser<'_> {
             .then(|| self.parse_enum_storage())
             .transpose()?;
 
-        if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
+        self.bump_expect(&tk::OPEN_BRACE)?;
+
+        if let Some(end_token) = self.bump_if_eq(tk::CLOSE_BRACE) {
             return Ok(EnumItem {
                 span: start_token.span.to(end_token.span),
                 storage,
@@ -53,12 +55,12 @@ impl Parser<'_> {
         let (end_token, has_trailing_comma) = loop {
             variants.push(self.parse_ident()?);
 
-            match self.bump_if_eq(tk::CLOSE_PAREN) {
+            match self.bump_if_eq(tk::CLOSE_BRACE) {
                 Some(end_token) => break (end_token, false),
                 None => {
                     self.bump_expect(&tk::COMMA)?;
 
-                    if let Some(end_token) = self.bump_if_eq(tk::CLOSE_PAREN) {
+                    if let Some(end_token) = self.bump_if_eq(tk::CLOSE_BRACE) {
                         break (end_token, true);
                     }
                 }

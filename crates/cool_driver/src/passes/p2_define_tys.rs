@@ -1,4 +1,4 @@
-use crate::{CompileError, CompileErrorBundle, CompileResult, Package};
+use crate::{CompileError, CompileErrorBundle, CompileResult, DefineItem, Package};
 use cool_ast::AstGenerator;
 use cool_resolve::{DefineError, DefineErrorKind, Field, ResolveContext};
 use cool_span::Section;
@@ -8,6 +8,18 @@ pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
     let mut ast = AstGenerator::new(resolve);
     let mut errors = Vec::<CompileError>::new();
 
+    define_aliases(package, &mut ast, &mut errors);
+    define_enums(package, &mut ast, &mut errors);
+    define_structs(package, &mut ast, &mut errors);
+
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(CompileErrorBundle { errors })
+    }
+}
+
+fn define_aliases(package: &Package, ast: &mut AstGenerator, errors: &mut Vec<CompileError>) {
     let mut aliases = package.aliases.iter().collect::<VecDeque<_>>();
     let mut resolve_fail_count = 0;
 
@@ -28,6 +40,39 @@ pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
         }
     }
 
+    report_undefinable_tys(ast, errors, aliases);
+}
+
+fn define_enums(package: &Package, ast: &mut AstGenerator, errors: &mut Vec<CompileError>) {
+    for item in package.enums.iter() {
+        let storage = item
+            .item
+            .storage
+            .as_ref()
+            .map(|storage| ast.resolve_ty(item.module_id, &storage.ty))
+            .transpose();
+
+        let storage = match storage {
+            Ok(storage) => storage,
+            Err(error) => {
+                errors.push(error.into());
+                continue;
+            }
+        };
+
+        let variants = item.item.variants.iter().map(|ident| ident.symbol);
+
+        if let Err(error) = ast.resolve.define_enum(item.item_id, storage, variants) {
+            errors.push(CompileError::Define {
+                span: item.span,
+                error,
+            });
+            continue;
+        }
+    }
+}
+
+fn define_structs(package: &Package, ast: &mut AstGenerator, errors: &mut Vec<CompileError>) {
     let mut structs = package.structs.iter().collect::<VecDeque<_>>();
     let mut resolve_fail_count = 0;
 
@@ -72,26 +117,22 @@ pub fn p2_define_tys(package: &Package, resolve: &mut ResolveContext) -> Compile
             }
         }
     }
+}
 
-    let undefinable_tys = {
-        let undefinable_aliases = aliases.iter().map(|item| (item.span, item.item_id));
-        let undefinable_structs = structs.iter().map(|item| (item.span, item.item_id));
-        undefinable_aliases.chain(undefinable_structs)
-    };
-
-    undefinable_tys.for_each(|(span, item_id)| {
+fn report_undefinable_tys<'a, I>(
+    ast: &mut AstGenerator,
+    errors: &mut Vec<CompileError>,
+    items: impl IntoIterator<Item = &'a DefineItem<I>>,
+) where
+    I: 'a,
+{
+    items.into_iter().for_each(|item| {
         errors.push(CompileError::Define {
-            span,
+            span: item.span,
             error: DefineError {
-                path: ast.resolve.get_path_by_item_id(item_id).to_path_buf(),
+                path: ast.resolve.get_path_by_item_id(item.item_id).to_path_buf(),
                 kind: DefineErrorKind::TypeCannotBeDefined,
             },
         });
-    });
-
-    if errors.is_empty() {
-        Ok(())
-    } else {
-        Err(CompileErrorBundle { errors })
-    }
+    })
 }

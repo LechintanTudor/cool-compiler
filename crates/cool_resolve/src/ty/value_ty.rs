@@ -1,5 +1,5 @@
 use crate::{
-    resolve_fields_size_align, AnyTy, ArrayTy, Field, FloatTy, FnTy, IntTy, ManyPtrTy,
+    resolve_fields_size_align, AnyTy, ArrayTy, EnumTy, Field, FloatTy, FnTy, IntTy, ManyPtrTy,
     PrimitiveTyData, PtrTy, ResolveTy, SliceTy, StructTy, TupleTy,
 };
 use cool_lexer::Symbol;
@@ -79,6 +79,7 @@ define_value_ty! {
         Array,
         Tuple,
         Struct,
+        Enum,
         Fn,
         Ptr,
         ManyPtr,
@@ -199,6 +200,14 @@ impl ValueTy {
                     ty: AnyTy::Value(self),
                 }
             }
+            ValueTy::Enum(enum_ty) => {
+                let storage_ty = enum_ty.storage.as_int().unwrap().to_resolve_ty(primitives);
+
+                ResolveTy {
+                    ty: AnyTy::Value(ValueTy::Enum(enum_ty)),
+                    ..storage_ty
+                }
+            }
             ValueTy::Fn(_) | ValueTy::Ptr(_) | ValueTy::ManyPtr(_) => {
                 ResolveTy {
                     size: primitives.ptr_size,
@@ -230,6 +239,7 @@ impl fmt::Display for ValueTy {
             Self::Array(array_ty) => write!(f, "{array_ty}"),
             Self::Tuple(tuple_ty) => write!(f, "{tuple_ty}"),
             Self::Struct(struct_ty) => write!(f, "{struct_ty}"),
+            Self::Enum(enum_ty) => write!(f, "{enum_ty}"),
             Self::Fn(fn_ty) => write!(f, "{fn_ty}"),
             Self::Ptr(ptr_ty) => write!(f, "{ptr_ty}"),
             Self::ManyPtr(many_ptr_ty) => write!(f, "{many_ptr_ty}"),

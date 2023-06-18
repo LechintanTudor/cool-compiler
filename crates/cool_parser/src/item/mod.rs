@@ -60,10 +60,12 @@ impl Parser<'_> {
         let item: Item = match self.peek().kind {
             tk::KW_EXTERN | tk::KW_FN => self.parse_fn_or_extern_fn_item()?.into(),
             tk::KW_MODULE => self.parse_module_item()?.into(),
-            tk::KW_STRUCT => self.parse_struct_item()?.into(),
             tk::KW_TYPE => self.parse_alias_item()?.into(),
+            tk::KW_ENUM => self.parse_enum_item()?.into(),
+            tk::KW_STRUCT => self.parse_struct_item()?.into(),
             _ => {
                 self.peek_error(&[
+                    tk::KW_ENUM,
                     tk::KW_EXTERN,
                     tk::KW_FN,
                     tk::KW_MODULE,

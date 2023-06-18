@@ -1,4 +1,4 @@
-use crate::{IntTy, ItemId};
+use crate::{IntTy, ItemId, TyId};
 use cool_lexer::Symbol;
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -7,7 +7,7 @@ use std::sync::Arc;
 #[derive(Clone, Eq, Debug)]
 pub struct EnumTy {
     pub item_id: ItemId,
-    pub storage: IntTy,
+    pub storage: TyId,
     pub variants: Arc<[Symbol]>,
 }
 
@@ -35,7 +35,12 @@ impl fmt::Display for EnumTy {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "enum")?;
 
-        if self.storage != Self::DEFAULT_STORAGE {
+        let should_display_storage = self
+            .storage
+            .as_int()
+            .is_some_and(|&storage| storage != Self::DEFAULT_STORAGE);
+
+        if should_display_storage {
             write!(f, "({})", self.storage)?;
         }
 

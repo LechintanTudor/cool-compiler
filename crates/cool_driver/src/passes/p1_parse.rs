@@ -1,6 +1,6 @@
 use crate::paths::ModulePaths;
 use crate::{
-    Alias, CompileError, CompileErrorBundle, CompileOptions, Const, ExternFn, ImportError,
+    Alias, CompileError, CompileErrorBundle, CompileOptions, Const, Enum, ExternFn, ImportError,
     ModuleError, Package, Struct,
 };
 use cool_lexer::Symbol;
@@ -155,7 +155,27 @@ pub fn p1_parse(
                                     item,
                                 });
                             }
-                            Item::Enum(item) => {}
+                            Item::Enum(item) => {
+                                let item_id = match resove.declare_enum(
+                                    module_id,
+                                    decl.is_exported,
+                                    item_decl.ident.symbol,
+                                ) {
+                                    Ok(item_id) => item_id,
+                                    Err(error) => {
+                                        errors.push(error.into());
+                                        continue;
+                                    }
+                                };
+
+                                package.enums.push(Enum {
+                                    span: item_decl_span,
+                                    module_id,
+                                    item_id,
+                                    ty: item_decl.ty,
+                                    item,
+                                });
+                            }
                             Item::ExternFn(item) => {
                                 let item_id = match resove.insert_global_binding(
                                     module_id,
