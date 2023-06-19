@@ -2,19 +2,19 @@ mod array_ty;
 mod fn_ty;
 mod item_ty;
 mod many_ptr_ty;
+mod paren_ty;
 mod path_ty;
 mod ptr_ty;
 mod slice_ty;
-mod tuple_ty;
 
 pub use self::array_ty::*;
 pub use self::fn_ty::*;
 pub use self::item_ty::*;
 pub use self::many_ptr_ty::*;
+pub use self::paren_ty::*;
 pub use self::path_ty::*;
 pub use self::ptr_ty::*;
 pub use self::slice_ty::*;
-pub use self::tuple_ty::*;
 use crate::{ParseResult, Parser};
 use cool_lexer::{tk, TokenKind};
 use cool_span::{Section, Span};
@@ -50,6 +50,7 @@ define_ty! {
     Ptr,
     Slice,
     Tuple,
+    Variant,
 }
 
 impl Parser<'_> {
@@ -61,7 +62,7 @@ impl Parser<'_> {
             tk::KW_EXTERN | tk::KW_FN => self.parse_fn_ty()?.into(),
             tk::KW_MODULE | tk::KW_TYPE => self.parse_item_ty()?.into(),
             tk::OPEN_BRACKET => self.parse_array_or_slice_ty()?,
-            tk::OPEN_PAREN => self.parse_tuple_ty()?,
+            tk::OPEN_PAREN => self.parse_paren_ty()?,
             tk::STAR => self.parse_ptr_ty()?.into(),
             _ => {
                 return self.peek_error(&[

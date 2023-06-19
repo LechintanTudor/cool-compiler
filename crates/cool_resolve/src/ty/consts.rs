@@ -65,7 +65,7 @@ impl TyConsts {
             infer_number: insert_ty(AnyTy::Infer(InferTy::Number)),
             infer_int: insert_ty(AnyTy::Infer(InferTy::Int)),
             infer_float: insert_ty(AnyTy::Infer(InferTy::Float)),
-            infer_empty_array: insert_ty(AnyTy::Infer(InferTy::EmptyArray)),
+            infer_empty_array: insert_ty(AnyTy::Infer(InferTy::Array)),
 
             // Items
             module: insert_ty(AnyTy::Item(ItemTy::Module)),

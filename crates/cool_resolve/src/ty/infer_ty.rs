@@ -1,24 +1,28 @@
-use std::fmt;
+use derive_more::Display;
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Display, Debug)]
 pub enum InferTy {
+    #[display(fmt = "<any>")]
     Any,
+
+    #[display(fmt = "<int>")]
     Int,
+
+    #[display(fmt = "<float>")]
     Float,
+
+    #[display(fmt = "<number>")]
     Number,
-    EmptyArray,
-}
 
-impl fmt::Display for InferTy {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let display_str = match self {
-            Self::Any => "<any>",
-            Self::Int => "<int>",
-            Self::Float => "<float>",
-            Self::Number => "<number>",
-            Self::EmptyArray => "<array>",
-        };
+    #[display(fmt = "<array>")]
+    Array,
 
-        write!(f, "{display_str}")
-    }
+    #[display(fmt = "<ptr>")]
+    Ptr,
+
+    #[display(fmt = "<manyptr>")]
+    ManyPtr,
+
+    #[display(fmt = "<slice>")]
+    Slice,
 }

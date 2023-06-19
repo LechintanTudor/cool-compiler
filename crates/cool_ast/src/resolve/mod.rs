@@ -93,6 +93,9 @@ impl AstGenerator<'_> {
 
                 self.resolve.mk_tuple(elem_tys)
             }
+            Ty::Variant(_variant_ty) => {
+                todo!()
+            }
         };
 
         Ok(ty_id)

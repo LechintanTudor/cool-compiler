@@ -117,6 +117,8 @@ fn define_structs(package: &Package, ast: &mut AstGenerator, errors: &mut Vec<Co
             }
         }
     }
+
+    report_undefinable_tys(ast, errors, structs);
 }
 
 fn report_undefinable_tys<'a, I>(
