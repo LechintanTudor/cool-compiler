@@ -94,6 +94,7 @@ impl From<AstErrorKind> for AstError {
 pub enum AstErrorKind {
     Expr(ExprError),
     Literal(LiteralError),
+    Logic(LogicError),
     Resolve(ResolveError),
     Ty(TyError),
     TyDef(TyDefError),
@@ -213,4 +214,10 @@ impl fmt::Display for LiteralError {
             }
         }
     }
+}
+
+#[derive(Clone, Error, Display, Debug)]
+#[display(fmt = "tried to jump from outside a loop")]
+pub enum LogicError {
+    InvalidJump,
 }

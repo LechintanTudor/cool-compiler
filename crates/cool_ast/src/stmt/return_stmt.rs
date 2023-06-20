@@ -23,10 +23,12 @@ impl AstGenerator<'_> {
         frame_id: FrameId,
         stmt: &ReturnStmt,
     ) -> AstResult<ReturnStmtAst> {
+        let expr_ty_id = self.fn_ret_ty_id();
+
         let expr = stmt
             .expr
             .as_ref()
-            .map(|expr| self.gen_expr(frame_id, self.fn_state().ret, expr))
+            .map(|expr| self.gen_expr(frame_id, expr_ty_id, expr))
             .transpose()?;
 
         Ok(ReturnStmtAst {

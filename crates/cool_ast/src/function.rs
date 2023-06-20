@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, AstResultExt, BlockExprAst, FnState, TyError, TyErrorKind};
+use crate::{AstGenerator, AstResult, AstResultExt, BlockExprAst, TyError, TyErrorKind};
 use cool_parser::FnExpr;
 use cool_resolve::{BindingId, FrameId, ItemId, ModuleId, TyId};
 use cool_span::{Section, Span};
@@ -64,7 +64,7 @@ impl AstGenerator<'_> {
             binding_ids.push(binding_id);
         }
 
-        self.push_fn_state(FnState { ret: fn_ty.ret });
+        self.push_fn_state(fn_ty.ret);
         let body = self.gen_block_expr(frame_id, fn_ty.ret, &fn_expr.body);
         self.pop_fn_state();
 

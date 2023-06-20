@@ -24,14 +24,13 @@ impl<'a> CodeGenerator<'a> {
         self.builder
             .build_conditional_branch(cond_value, body_block, end_block);
 
+        // Body
+        self.builder.position_at_end(body_block);
         self.push_jump_block(JumpBlock {
             first_frame_id: stmt.block.expr.first_frame_id,
             break_block: end_block,
             continue_block: cond_block,
         });
-
-        // Body
-        self.builder.position_at_end(body_block);
 
         self.gen_block_expr(&stmt.block.expr);
         if !self.builder.current_block_diverges() {

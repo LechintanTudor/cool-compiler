@@ -22,7 +22,9 @@ impl AstGenerator<'_> {
         frame_id: FrameId,
         stmt: &WhileLoop,
     ) -> AstResult<WhileLoopAst> {
+        self.push_block_ty_id(self.tys().unit);
         let block = self.gen_cond_block(frame_id, self.tys().unit, &stmt.block)?;
+        self.pop_block_ty_id();
 
         Ok(WhileLoopAst {
             span: stmt.span,

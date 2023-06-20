@@ -22,6 +22,8 @@ impl AstGenerator<'_> {
         frame_id: FrameId,
         stmt: &ContinueStmt,
     ) -> AstResult<ContinueStmtAst> {
+        self.block_ty_id(stmt.span())?;
+
         Ok(ContinueStmtAst {
             span: stmt.span,
             frame_id,

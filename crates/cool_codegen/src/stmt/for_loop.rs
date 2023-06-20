@@ -1,4 +1,4 @@
-use crate::{BuilderExt, CodeGenerator};
+use crate::{BuilderExt, CodeGenerator, JumpBlock};
 use cool_ast::ForLoopAst;
 
 impl<'a> CodeGenerator<'a> {
@@ -29,19 +29,8 @@ impl<'a> CodeGenerator<'a> {
         self.builder
             .build_conditional_branch(cond_value, body_block, end_block);
 
-        // Body
-        self.builder.position_at_end(body_block);
-        self.gen_block_expr(&stmt.body);
-
-        if self.builder.current_block_diverges() {
-            self.builder.position_at_end(end_block);
-            return;
-        }
-
-        let after_block = self.append_block_after_current_block();
-        self.builder.build_unconditional_branch(after_block);
-
         // After
+        let after_block = self.append_block_after(body_block);
         self.builder.position_at_end(after_block);
         self.gen_stmt(&stmt.after);
 
@@ -49,6 +38,20 @@ impl<'a> CodeGenerator<'a> {
             self.builder.build_unconditional_branch(cond_block);
         }
 
+        // Body
+        self.builder.position_at_end(body_block);
+        self.push_jump_block(JumpBlock {
+            first_frame_id: stmt.body.first_frame_id,
+            break_block: end_block,
+            continue_block: after_block,
+        });
+
+        self.gen_block_expr(&stmt.body);
+        if !self.builder.current_block_diverges() {
+            self.builder.build_unconditional_branch(after_block);
+        }
+
         self.builder.position_at_end(end_block);
+        self.pop_jump_block();
     }
 }

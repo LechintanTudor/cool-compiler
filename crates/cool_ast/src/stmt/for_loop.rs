@@ -32,7 +32,9 @@ impl AstGenerator<'_> {
             ExprOrStmt::Stmt(stmt) => self.gen_stmt_kind(frame_id, stmt)?,
         };
 
+        self.push_block_ty_id(self.tys().unit);
         let body = self.gen_block_expr(frame_id, self.tys().unit, &stmt.body)?;
+        self.pop_block_ty_id();
 
         Ok(ForLoopAst {
             span: stmt.span,
