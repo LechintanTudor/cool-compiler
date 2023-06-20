@@ -1,5 +1,6 @@
 mod builder_ext;
 mod expr;
+mod fn_state;
 mod function;
 mod stmt;
 mod ty;
@@ -8,6 +9,7 @@ mod value;
 
 pub use self::builder_ext::*;
 pub use self::expr::*;
+pub use self::fn_state::*;
 pub use self::function::*;
 pub use self::stmt::*;
 pub use self::ty::*;
@@ -23,24 +25,6 @@ use inkwell::passes::PassManager;
 use inkwell::targets::{InitializationConfig, Target, TargetData, TargetTriple};
 use inkwell::values::{FunctionValue, InstructionValue, IntValue};
 use rustc_hash::{FxHashMap, FxHashSet};
-
-#[derive(Clone, Debug)]
-struct FnState<'a> {
-    fn_value: FunctionValue<'a>,
-    last_alloca: Option<InstructionValue<'a>>,
-    ret_values: Vec<(LoadedValue<'a>, BasicBlock<'a>)>,
-}
-
-impl<'a> FnState<'a> {
-    #[inline]
-    pub fn new(fn_value: FunctionValue<'a>) -> Self {
-        Self {
-            fn_value,
-            last_alloca: None,
-            ret_values: Default::default(),
-        }
-    }
-}
 
 pub struct CodeGenerator<'a> {
     context: &'a Context,
@@ -195,13 +179,5 @@ impl<'a> CodeGenerator<'a> {
 
     pub fn update_last_alloca(&mut self, alloca: InstructionValue<'a>) {
         self.fn_stack.last_mut().unwrap().last_alloca = Some(alloca);
-    }
-
-    pub fn add_ret_value(&mut self, value: LoadedValue<'a>, block: BasicBlock<'a>) {
-        self.fn_stack
-            .last_mut()
-            .unwrap()
-            .ret_values
-            .push((value, block))
     }
 }

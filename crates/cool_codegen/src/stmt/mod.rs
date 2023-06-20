@@ -1,4 +1,5 @@
 mod assign_stmt;
+mod continue_stmt;
 mod decl_stmt;
 mod for_loop;
 mod return_stmt;
@@ -22,8 +23,8 @@ impl<'a> CodeGenerator<'a> {
             StmtAst::Break(_stmt) => {
                 todo!()
             }
-            StmtAst::Continue(_stmt) => {
-                todo!()
+            StmtAst::Continue(stmt) => {
+                self.gen_continue_stmt(stmt);
             }
             StmtAst::Decl(decl) => {
                 self.gen_decl_stmt(decl);
