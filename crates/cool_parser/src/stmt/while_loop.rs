@@ -3,12 +3,12 @@ use cool_lexer::tk;
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
-pub struct WhileExpr {
+pub struct WhileLoop {
     pub span: Span,
     pub block: Box<CondBlock>,
 }
 
-impl Section for WhileExpr {
+impl Section for WhileLoop {
     #[inline]
     fn span(&self) -> Span {
         self.span
@@ -16,11 +16,11 @@ impl Section for WhileExpr {
 }
 
 impl Parser<'_> {
-    pub fn parse_while_expr(&mut self) -> ParseResult<WhileExpr> {
+    pub fn parse_while_loop(&mut self) -> ParseResult<WhileLoop> {
         let start_token = self.bump_expect(&tk::KW_WHILE)?;
         let block = self.parse_cond_block()?;
 
-        Ok(WhileExpr {
+        Ok(WhileLoop {
             span: start_token.span.to(block.span()),
             block: Box::new(block),
         })

@@ -6,7 +6,6 @@ mod cast_expr;
 mod cond_expr;
 mod fn_call_expr;
 mod fn_expr;
-mod for_expr;
 mod ident_expr;
 mod literal_expr;
 mod loop_expr;
@@ -14,7 +13,6 @@ mod struct_expr;
 mod subscript_expr;
 mod tuple_expr;
 mod unary_expr;
-mod while_expr;
 
 pub use self::access_expr::*;
 pub use self::array_expr::*;
@@ -24,7 +22,6 @@ pub use self::cast_expr::*;
 pub use self::cond_expr::*;
 pub use self::fn_call_expr::*;
 pub use self::fn_expr::*;
-pub use self::for_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::loop_expr::*;
@@ -32,7 +29,6 @@ pub use self::struct_expr::*;
 pub use self::subscript_expr::*;
 pub use self::tuple_expr::*;
 pub use self::unary_expr::*;
-pub use self::while_expr::*;
 use crate::{BinOp, ParseResult, Parser};
 use cool_lexer::{tk, TokenKind};
 use cool_span::{Section, Span};
@@ -69,7 +65,6 @@ define_expr! {
     Deref,
     Fn,
     FnCall,
-    For,
     Ident,
     Index,
     Literal,
@@ -79,16 +74,12 @@ define_expr! {
     Struct,
     Tuple,
     Unary,
-    While,
 }
 
 impl Expr {
     #[inline]
     pub fn is_promotable_to_stmt(&self) -> bool {
-        matches!(
-            self,
-            Self::Block(_) | Self::Cond(_) | Self::For(_) | Self::Loop(_) | Self::While(_),
-        )
+        matches!(self, Self::Block(_) | Self::Cond(_) | Self::Loop(_),)
     }
 }
 
@@ -181,10 +172,8 @@ impl Parser<'_> {
         let mut expr: Expr = match self.peek().kind {
             TokenKind::Ident(_) => self.parse_ident_expr()?.into(),
             TokenKind::Prefix(_) | TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
-            tk::KW_FOR => self.parse_for_expr()?.into(),
             tk::KW_IF => self.parse_cond_expr()?.into(),
             tk::KW_LOOP => self.parse_loop_expr()?.into(),
-            tk::KW_WHILE => self.parse_while_expr()?.into(),
             tk::MINUS | tk::NOT | tk::AND => self.parse_unary_expr()?.into(),
             tk::OPEN_BRACE => self.parse_block_expr()?.into(),
             tk::OPEN_BRACKET => self.parse_array_expr()?,

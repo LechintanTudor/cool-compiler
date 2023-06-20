@@ -37,17 +37,40 @@ impl Parser<'_> {
         allow_struct_expr: bool,
     ) -> ParseResult<ExprOrStmt> {
         match self.peek().kind {
-            tk::KW_MUT => {
-                self.parse_decl_stmt()
-                    .map(|decl_stmt| ExprOrStmt::Stmt(decl_stmt.into()))
+            tk::KW_BREAK => {
+                self.parse_break_stmt()
+                    .map(StmtKind::from)
+                    .map(ExprOrStmt::from)
+            }
+            tk::KW_CONTINUE => {
+                self.parse_continue_stmt()
+                    .map(StmtKind::from)
+                    .map(ExprOrStmt::from)
             }
             tk::KW_DEFER if allow_defer_stmt => {
                 self.parse_defer_stmt()
-                    .map(|defer_stmt| ExprOrStmt::Stmt(defer_stmt.into()))
+                    .map(StmtKind::from)
+                    .map(ExprOrStmt::from)
+            }
+            tk::KW_FOR => {
+                self.parse_for_loop()
+                    .map(StmtKind::from)
+                    .map(ExprOrStmt::from)
+            }
+            tk::KW_MUT => {
+                self.parse_decl_stmt()
+                    .map(StmtKind::from)
+                    .map(ExprOrStmt::from)
             }
             tk::KW_RETURN => {
                 self.parse_return_stmt()
-                    .map(|return_stmt| ExprOrStmt::Stmt(return_stmt.into()))
+                    .map(StmtKind::from)
+                    .map(ExprOrStmt::from)
+            }
+            tk::KW_WHILE => {
+                self.parse_while_loop()
+                    .map(StmtKind::from)
+                    .map(ExprOrStmt::from)
             }
             _ => self.parse_expr_or_decl_or_assign(allow_struct_expr),
         }

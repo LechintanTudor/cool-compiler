@@ -1,8 +1,8 @@
-use crate::{BuilderExt, CodeGenerator, LoadedValue};
-use cool_ast::WhileExprAst;
+use crate::{BuilderExt, CodeGenerator};
+use cool_ast::WhileLoopAst;
 
 impl<'a> CodeGenerator<'a> {
-    pub fn gen_while_expr(&mut self, expr: &WhileExprAst) -> LoadedValue<'a> {
+    pub fn gen_while_loop(&mut self, stmt: &WhileLoopAst) {
         let cond_block = self.append_block_after_current_block();
         self.builder.build_unconditional_branch(cond_block);
 
@@ -10,9 +10,9 @@ impl<'a> CodeGenerator<'a> {
         self.builder.position_at_end(cond_block);
 
         let cond_value = {
-            let cond_value = self.gen_loaded_expr(&expr.block.cond);
+            let cond_value = self.gen_loaded_expr(&stmt.block.cond);
             if self.builder.current_block_diverges() {
-                return LoadedValue::Void;
+                return;
             }
 
             let cond_value = cond_value.into_basic_value().into_int_value();
@@ -27,14 +27,13 @@ impl<'a> CodeGenerator<'a> {
         // Body
         self.builder.position_at_end(body_block);
 
-        self.gen_block_expr(&expr.block.expr);
+        self.gen_block_expr(&stmt.block.expr);
         if self.builder.current_block_diverges() {
             self.builder.position_at_end(end_block);
-            return LoadedValue::Void;
+            return;
         }
 
         self.builder.build_unconditional_branch(cond_block);
         self.builder.position_at_end(end_block);
-        LoadedValue::Void
     }
 }

@@ -1,6 +1,8 @@
 mod assign_stmt;
 mod decl_stmt;
+mod for_loop;
 mod return_stmt;
+mod while_loop;
 
 use crate::{BuilderExt, CodeGenerator};
 use cool_ast::StmtAst;
@@ -17,15 +19,29 @@ impl<'a> CodeGenerator<'a> {
             StmtAst::Assign(assign) => {
                 self.gen_assign_stmt(assign);
             }
+            StmtAst::Break(_stmt) => {
+                todo!()
+            }
+            StmtAst::Continue(_stmt) => {
+                todo!()
+            }
             StmtAst::Decl(decl) => {
                 self.gen_decl_stmt(decl);
             }
-            StmtAst::Defer(_) => (),
+            StmtAst::Defer(_) => {
+                // Empty
+            }
             StmtAst::Expr(expr) => {
                 self.gen_expr(expr, None);
             }
+            StmtAst::For(stmt) => {
+                self.gen_for_loop(stmt);
+            }
             StmtAst::Return(stmt) => {
                 self.gen_return_stmt(stmt);
+            }
+            StmtAst::While(stmt) => {
+                self.gen_while_loop(stmt);
             }
         }
     }

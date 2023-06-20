@@ -6,7 +6,6 @@ mod cast_expr;
 mod cond_expr;
 mod deref_expr;
 mod fn_call_expr;
-mod for_expr;
 mod ident_expr;
 mod index_expr;
 mod literal_expr;
@@ -14,7 +13,6 @@ mod range_expr;
 mod struct_expr;
 mod tuple_expr;
 mod unary_expr;
-mod while_expr;
 
 pub use self::access_expr::*;
 pub use self::array_expr::*;
@@ -24,7 +22,6 @@ pub use self::cast_expr::*;
 pub use self::cond_expr::*;
 pub use self::deref_expr::*;
 pub use self::fn_call_expr::*;
-pub use self::for_expr::*;
 pub use self::ident_expr::*;
 pub use self::index_expr::*;
 pub use self::literal_expr::*;
@@ -32,7 +29,6 @@ pub use self::range_expr::*;
 pub use self::struct_expr::*;
 pub use self::tuple_expr::*;
 pub use self::unary_expr::*;
-pub use self::while_expr::*;
 use crate::{AstGenerator, AstResult};
 use cool_parser::{Expr, ParenExpr};
 use cool_resolve::{ExprId, FrameId, TyId};
@@ -100,7 +96,6 @@ define_expr_ast! {
     Cond,
     Deref,
     FnCall,
-    For,
     Index,
     Literal,
     Module,
@@ -109,7 +104,6 @@ define_expr_ast! {
     Tuple,
     Ty,
     Unary,
-    While,
 }
 
 impl ExprAst {
@@ -160,7 +154,6 @@ impl_gen_expr! {
     Cond,
     Deref,
     FnCall,
-    For,
     Ident,
     Index,
     Literal,
@@ -169,7 +162,6 @@ impl_gen_expr! {
     Struct,
     Tuple,
     Unary,
-    While,
 }
 
 impl AstGenerator<'_> {

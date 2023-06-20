@@ -6,14 +6,12 @@ mod cast_expr;
 mod cond_expr;
 mod deref_expr;
 mod fn_call_expr;
-mod for_expr;
 mod index_expr;
 mod literal_expr;
 mod range_expr;
 mod struct_expr;
 mod tuple_expr;
 mod unary_expr;
-mod while_expr;
 
 use crate::{BuilderExt, CodeGenerator, LoadedValue, MemoryValue, Value};
 use cool_ast::{BindingExprAst, ExprAst};
@@ -39,14 +37,12 @@ impl<'a> CodeGenerator<'a> {
             ExprAst::Cond(e) => self.gen_cond_expr(e).into(),
             ExprAst::Deref(e) => self.gen_deref_expr(e),
             ExprAst::FnCall(e) => self.gen_fn_call_expr(e).into(),
-            ExprAst::For(e) => self.gen_for_expr(e).into(),
             ExprAst::Index(e) => self.gen_index_expr(e),
             ExprAst::Literal(e) => self.gen_literal_expr(e).into(),
             ExprAst::Range(e) => self.gen_range_expr(e, memory),
             ExprAst::Struct(e) => self.gen_struct_expr(e, memory),
             ExprAst::Tuple(e) => self.gen_tuple_expr(e, memory),
             ExprAst::Unary(e) => self.gen_unary_expr(e),
-            ExprAst::While(e) => self.gen_while_expr(e).into(),
             _ => panic!("unsupported codegen operation: {:#?}", expr),
         }
     }
