@@ -18,6 +18,14 @@ impl ExprOrStmt {
             Self::Stmt(stmt) => stmt,
         }
     }
+
+    #[inline]
+    pub fn is_promotable_to_stmt(&self) -> bool {
+        match self {
+            Self::Expr(expr) => expr.is_promotable_to_stmt(),
+            Self::Stmt(stmt) => stmt.is_promotable_to_stmt(),
+        }
+    }
 }
 
 impl Section for ExprOrStmt {

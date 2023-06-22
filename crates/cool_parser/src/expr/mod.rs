@@ -9,6 +9,7 @@ mod fn_expr;
 mod ident_expr;
 mod literal_expr;
 mod loop_expr;
+mod match_expr;
 mod struct_expr;
 mod subscript_expr;
 mod tuple_expr;
@@ -25,6 +26,7 @@ pub use self::fn_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::loop_expr::*;
+pub use self::match_expr::*;
 pub use self::struct_expr::*;
 pub use self::subscript_expr::*;
 pub use self::tuple_expr::*;
@@ -69,6 +71,7 @@ define_expr! {
     Index,
     Literal,
     Loop,
+    Match,
     Paren,
     Range,
     Struct,
@@ -103,6 +106,11 @@ impl Parser<'_> {
     #[inline]
     pub fn parse_expr(&mut self) -> ParseResult<Expr> {
         self.parse_expr_full(true)
+    }
+
+    #[inline]
+    pub fn parse_non_struct_expr(&mut self) -> ParseResult<Expr> {
+        self.parse_expr_full(false)
     }
 
     pub fn parse_expr_full(&mut self, allow_struct_expr: bool) -> ParseResult<Expr> {
@@ -174,6 +182,7 @@ impl Parser<'_> {
             TokenKind::Prefix(_) | TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
             tk::KW_IF => self.parse_cond_expr()?.into(),
             tk::KW_LOOP => self.parse_loop_expr()?.into(),
+            tk::KW_MATCH => self.parse_match_expr()?.into(),
             tk::MINUS | tk::NOT | tk::AND => self.parse_unary_expr()?.into(),
             tk::OPEN_BRACE => self.parse_block_expr()?.into(),
             tk::OPEN_BRACKET => self.parse_array_expr()?,

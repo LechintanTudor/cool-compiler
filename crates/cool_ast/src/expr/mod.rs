@@ -134,7 +134,7 @@ macro_rules! impl_gen_expr {
                                 expr,
                             )?.into(),
                         )+
-                        expr => todo!("ast generation not yet implemented for {:?}", expr),
+                        expr => todo!("ast generation not yet implemented for {:#?}", expr),
                     };
                 }
 
