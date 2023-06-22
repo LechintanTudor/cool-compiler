@@ -6,6 +6,8 @@ mod fn_ty;
 use cool_span::Section;
 use smallvec::SmallVec;
 
+type TySmallVec = SmallVec<[TyId; 7]>;
+
 impl AstGenerator<'_> {
     pub fn resolve_ty<S>(&mut self, scope: S, ty: &Ty) -> AstResult<TyId>
     where
@@ -28,16 +30,20 @@ impl AstGenerator<'_> {
             }
             Ty::Fn(fn_ty) => {
                 let abi = resolve_fn_abi(&fn_ty.extern_decl)?;
-                let mut param_ty_ids = SmallVec::<[TyId; 6]>::new();
 
-                for param in fn_ty.param_list.params.iter() {
-                    param_ty_ids.push(self.resolve_ty_inner(scope, param)?);
-                }
+                let param_ty_ids = fn_ty
+                    .param_list
+                    .params
+                    .iter()
+                    .map(|ty| self.resolve_ty_inner(scope, ty))
+                    .collect::<Result<TySmallVec, _>>()?;
 
-                let ret_ty_id = match &fn_ty.ret_ty {
-                    Some(ret_ty) => self.resolve_ty_inner(scope, ret_ty)?,
-                    None => self.tys().unit,
-                };
+                let ret_ty_id = fn_ty
+                    .ret_ty
+                    .as_ref()
+                    .map(|ty| self.resolve_ty_inner(scope, ty))
+                    .transpose()?
+                    .unwrap_or(self.tys().unit);
 
                 self.resolve
                     .mk_fn(abi, param_ty_ids, fn_ty.param_list.is_variadic, ret_ty_id)
@@ -85,11 +91,11 @@ impl AstGenerator<'_> {
                 self.resolve.mk_slice(slice_ty.is_mutable, elem)
             }
             Ty::Tuple(tuple_ty) => {
-                let mut elem_tys = SmallVec::<[TyId; 6]>::new();
-
-                for ty in tuple_ty.elems.iter() {
-                    elem_tys.push(self.resolve_ty_inner(scope, ty)?);
-                }
+                let elem_tys = tuple_ty
+                    .elems
+                    .iter()
+                    .map(|ty| self.resolve_ty_inner(scope, ty))
+                    .collect::<Result<TySmallVec, _>>()?;
 
                 self.resolve.mk_tuple(elem_tys)
             }
@@ -98,7 +104,7 @@ impl AstGenerator<'_> {
                     .variants
                     .iter()
                     .map(|ty| self.resolve_ty_inner(scope, ty))
-                    .collect::<Result<SmallVec<[TyId; 6]>, _>>()?;
+                    .collect::<Result<TySmallVec, _>>()?;
 
                 self.resolve.mk_variant(variants)
             }
