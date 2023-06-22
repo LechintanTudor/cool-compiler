@@ -1,10 +1,11 @@
 use crate::{
     ArrayTy, Field, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ManyPtrTy, ModuleElem, ModuleId,
     PtrTy, ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, Scope, SliceTy, StructTy,
-    TupleTy, TyConsts, TyId, TyMismatch,
+    TupleTy, TyConsts, TyId, TyMismatch, VariantTy, VariantTyKind,
 };
 use cool_lexer::{sym, Symbol};
 use smallvec::SmallVec;
+use std::collections::BTreeSet;
 
 impl ResolveContext {
     pub(crate) fn insert_primitive_item_ty(&mut self, symbol: Symbol, ty_id: TyId) {
@@ -101,6 +102,35 @@ impl ResolveContext {
         };
 
         self.tys.get_or_insert_value(ty)
+    }
+
+    pub fn mk_variant<V>(&mut self, variants: V) -> TyId
+    where
+        V: IntoIterator<Item = TyId>,
+    {
+        let mut ty_ids = BTreeSet::<TyId>::default();
+
+        for ty_id in variants {
+            match ty_id.as_variant() {
+                Some(variant_ty) => {
+                    ty_ids.extend(variant_ty.variants.iter().cloned());
+                }
+                None => {
+                    ty_ids.insert(ty_id);
+                }
+            }
+        }
+
+        match ty_ids.len() {
+            0 => self.ty_consts().unit,
+            1 => ty_ids.iter().next().copied().unwrap(),
+            _ => {
+                self.tys.get_or_insert_value(VariantTy {
+                    kind: VariantTyKind::NullablePtr,
+                    variants: ty_ids.into_iter().collect(),
+                })
+            }
+        }
     }
 
     pub fn resolve_ty_from_path<'a, P>(&self, scope: Scope, path: P) -> ResolveResult<TyId>

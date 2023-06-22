@@ -1,6 +1,6 @@
 use crate::{mangle_item_path, BaiscTypeEnumOptionExt, TyFieldMap};
 use cool_lexer::Symbol;
-use cool_resolve::{Field, ItemId, ResolveContext, TyId, ValueTy};
+use cool_resolve::{Field, ItemId, ResolveContext, TyId, ValueTy, VariantTyKind};
 use inkwell::context::Context;
 use inkwell::targets::TargetData;
 use inkwell::types::{
@@ -197,7 +197,18 @@ impl<'a> GeneratedTys<'a> {
 
                 Some(ty)
             }
-            ty => todo!("Unimplemented ty: {:?}", ty),
+            ValueTy::Variant(variant_ty) => {
+                match variant_ty.kind {
+                    VariantTyKind::NullablePtr => {
+                        variant_ty
+                            .variants
+                            .first()
+                            .and_then(|&ty_id| self.insert_ty(context, resolve, ty_id))
+                    }
+                    _ => todo!(),
+                }
+            }
+            ty => unimplemented!("{}", ty),
         };
 
         self.tys.insert(ty_id, ty);

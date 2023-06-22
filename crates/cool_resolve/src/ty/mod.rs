@@ -14,6 +14,7 @@ mod struct_ty;
 mod tuple_ty;
 mod ty_id;
 mod value_ty;
+mod variant_ty;
 
 pub use self::any_ty::*;
 pub use self::array_ty::*;
@@ -31,6 +32,7 @@ pub use self::struct_ty::*;
 pub use self::tuple_ty::*;
 pub use self::ty_id::*;
 pub use self::value_ty::*;
+pub use self::variant_ty::*;
 use crate::ItemId;
 use cool_arena::Arena;
 use cool_collections::id_newtype;
@@ -59,7 +61,7 @@ impl TyContext {
     }
 
     pub fn declare_struct(&mut self, item_id: ItemId) -> TyId {
-        self.get_or_insert(AnyTy::Value(ValueTy::Struct(StructTy {
+        self.get_or_insert(AnyTy::from(ValueTy::from(StructTy {
             item_id,
             def: Default::default(),
         })))

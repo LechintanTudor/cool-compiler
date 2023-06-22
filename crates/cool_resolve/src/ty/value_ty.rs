@@ -1,18 +1,23 @@
 use crate::{
     resolve_fields_size_align, AnyTy, ArrayTy, EnumTy, Field, FloatTy, FnTy, IntTy, ManyPtrTy,
-    PrimitiveTyData, PtrTy, ResolveTy, SliceTy, StructTy, TupleTy,
+    PrimitiveTyData, PtrTy, ResolveTy, SliceTy, StructTy, TupleTy, VariantTy,
 };
 use cool_lexer::Symbol;
-use derive_more::From;
+use derive_more::{Display, From};
 use paste::paste;
-use std::fmt;
 
 macro_rules! define_value_ty {
-    { Simple { $($SimpleTy:ident,)* }, Wrapped { $($WrappedTy:ident,)* }, } => {
+    {
+        Simple { $($SimpleTy:ident => $display:literal,)* },
+        Wrapped { $($WrappedTy:ident,)* },
+    } => {
         paste! {
-            #[derive(Clone, PartialEq, Eq, Hash, From, Debug)]
+            #[derive(Clone, PartialEq, Eq, Hash, From, Display, Debug)]
             pub enum ValueTy {
-                $($SimpleTy,)*
+                $(
+                    #[display(fmt = $display)]
+                    $SimpleTy,
+                )*
                 $($WrappedTy([<$WrappedTy Ty>]),)*
             }
 
@@ -69,9 +74,9 @@ macro_rules! define_value_ty {
 
 define_value_ty! {
     Simple {
-        Unit,
-        Bool,
-        Char,
+        Unit => "()",
+        Bool => "bool",
+        Char => "char",
     },
     Wrapped {
         Int,
@@ -84,6 +89,7 @@ define_value_ty! {
         Ptr,
         ManyPtr,
         Slice,
+        Variant,
     },
 }
 
@@ -143,45 +149,45 @@ impl ValueTy {
 
     pub fn to_resolve_ty(self, primitives: &PrimitiveTyData) -> ResolveTy {
         match self {
-            ValueTy::Unit => {
+            Self::Unit => {
                 ResolveTy {
                     size: 0,
                     align: 1,
                     ty: AnyTy::Value(self),
                 }
             }
-            ValueTy::Bool => {
+            Self::Bool => {
                 ResolveTy {
                     size: 1,
                     align: 1,
                     ty: AnyTy::Value(self),
                 }
             }
-            ValueTy::Char => {
+            Self::Char => {
                 ResolveTy {
                     size: 4,
                     align: primitives.i32_align,
                     ty: AnyTy::Value(self),
                 }
             }
-            ValueTy::Int(int_ty) => int_ty.to_resolve_ty(primitives),
-            ValueTy::Float(float_ty) => float_ty.to_resolve_ty(primitives),
-            ValueTy::Array(array_ty) => {
+            Self::Int(int_ty) => int_ty.to_resolve_ty(primitives),
+            Self::Float(float_ty) => float_ty.to_resolve_ty(primitives),
+            Self::Array(array_ty) => {
                 let elem_size = array_ty.elem.get_size();
                 let elem_align = array_ty.elem.get_align();
 
                 ResolveTy {
                     size: elem_size * array_ty.len,
                     align: elem_align,
-                    ty: AnyTy::Value(ValueTy::Array(array_ty)),
+                    ty: AnyTy::Value(Self::Array(array_ty)),
                 }
             }
-            ValueTy::Tuple(mut tuple_ty) => {
+            Self::Tuple(mut tuple_ty) => {
                 if tuple_ty.fields.is_empty() {
                     return ResolveTy {
                         size: 0,
                         align: 1,
-                        ty: AnyTy::Value(ValueTy::Unit),
+                        ty: AnyTy::Value(Self::Unit),
                     };
                 }
 
@@ -190,32 +196,32 @@ impl ValueTy {
                 ResolveTy {
                     size,
                     align,
-                    ty: AnyTy::Value(ValueTy::Tuple(tuple_ty)),
+                    ty: AnyTy::Value(Self::Tuple(tuple_ty)),
                 }
             }
-            ValueTy::Struct(_) => {
+            Self::Struct(_) => {
                 ResolveTy {
                     size: 0,
                     align: 1,
                     ty: AnyTy::Value(self),
                 }
             }
-            ValueTy::Enum(enum_ty) => {
+            Self::Enum(enum_ty) => {
                 let storage_ty = enum_ty.storage.as_int().unwrap().to_resolve_ty(primitives);
 
                 ResolveTy {
-                    ty: AnyTy::Value(ValueTy::Enum(enum_ty)),
+                    ty: AnyTy::Value(Self::Enum(enum_ty)),
                     ..storage_ty
                 }
             }
-            ValueTy::Fn(_) | ValueTy::Ptr(_) | ValueTy::ManyPtr(_) => {
+            Self::Fn(_) | Self::Ptr(_) | Self::ManyPtr(_) => {
                 ResolveTy {
                     size: primitives.ptr_size,
                     align: primitives.ptr_align,
                     ty: AnyTy::Value(self),
                 }
             }
-            ValueTy::Slice(mut slice_ty) => {
+            Self::Slice(mut slice_ty) => {
                 let (size, align) = resolve_fields_size_align(&mut slice_ty.fields);
 
                 ResolveTy {
@@ -224,26 +230,7 @@ impl ValueTy {
                     ty: AnyTy::Value(self),
                 }
             }
-        }
-    }
-}
-
-impl fmt::Display for ValueTy {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Unit => write!(f, "()"),
-            Self::Bool => write!(f, "bool"),
-            Self::Char => write!(f, "char"),
-            Self::Int(int_ty) => write!(f, "{int_ty}"),
-            Self::Float(float_ty) => write!(f, "{float_ty}"),
-            Self::Array(array_ty) => write!(f, "{array_ty}"),
-            Self::Tuple(tuple_ty) => write!(f, "{tuple_ty}"),
-            Self::Struct(struct_ty) => write!(f, "{struct_ty}"),
-            Self::Enum(enum_ty) => write!(f, "{enum_ty}"),
-            Self::Fn(fn_ty) => write!(f, "{fn_ty}"),
-            Self::Ptr(ptr_ty) => write!(f, "{ptr_ty}"),
-            Self::ManyPtr(many_ptr_ty) => write!(f, "{many_ptr_ty}"),
-            Self::Slice(slice_ty) => write!(f, "{slice_ty}"),
+            Self::Variant(variant_ty) => variant_ty.to_resolve_ty(),
         }
     }
 }

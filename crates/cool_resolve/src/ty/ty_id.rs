@@ -1,8 +1,9 @@
 use crate::{resolve_fields_size_align, AnyTy, Field, ResolveTy, StructTyDef, ValueTy};
+use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
-use std::{fmt, ops};
+use std::{fmt, ops, ptr};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Eq, Debug)]
 pub struct TyId(&'static ResolveTy);
 
 impl fmt::Display for TyId {
@@ -71,18 +72,32 @@ impl TyId {
 impl PartialEq for TyId {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self.0, other.0)
+        ptr::eq(self.0, other.0)
     }
 }
 
-impl Eq for TyId {}
+impl PartialOrd for TyId {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for TyId {
+    #[inline]
+    fn cmp(&self, other: &Self) -> Ordering {
+        let self_ptr: *const _ = self;
+        let other_ptr: *const _ = other;
+        self_ptr.cmp(&other_ptr)
+    }
+}
 
 impl Hash for TyId {
     fn hash<H>(&self, state: &mut H)
     where
         H: Hasher,
     {
-        std::ptr::hash(self.0, state);
+        ptr::hash(self.0, state);
     }
 }
 

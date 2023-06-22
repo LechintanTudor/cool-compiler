@@ -9,6 +9,14 @@ pub struct StructTy {
     pub def: Arc<Mutex<Option<StructTyDef>>>,
 }
 
+impl StructTy {
+    #[inline]
+    #[must_use]
+    pub fn has_known_layout(&self) -> bool {
+        self.def.lock().unwrap().is_some()
+    }
+}
+
 impl PartialEq for StructTy {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
