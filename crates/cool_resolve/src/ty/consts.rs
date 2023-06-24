@@ -1,5 +1,6 @@
 use crate::{
-    AnyTy, FloatTy, InferTy, IntTy, ItemTy, ManyPtrTy, PrimitiveTyData, TyArena, TyId, ValueTy,
+    FloatTy, InferTy, IntTy, ItemTy, ManyPtrTy, ResolveTy, TyArena, TyContext, TyDef, TyId,
+    TyShape, ValueTy,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -46,59 +47,89 @@ pub struct TyConsts {
 }
 
 impl TyConsts {
-    pub fn new(tys: &mut TyArena, primitives: &PrimitiveTyData) -> Self {
-        let mut insert_ty = |ty: AnyTy| -> TyId {
-            let ty = ty.to_resolve_ty(primitives);
-            let internal_ty_id = tys.insert(ty);
-            TyId::new(tys.get(internal_ty_id).unwrap())
-        };
+    pub fn blank(tys: &mut TyArena) -> Self {
+        let diverge = TyId::from(tys.insert(ResolveTy {
+            shape: TyShape::Diverge,
+            def: TyDef::Undefined,
+        }));
 
-        let i8_ty = insert_ty(AnyTy::Value(IntTy::I8.into()));
-        let c_str = insert_ty(AnyTy::Value(ValueTy::ManyPtr(ManyPtrTy {
+        Self {
+            infer: diverge,
+            infer_number: diverge,
+            infer_int: diverge,
+            infer_float: diverge,
+            infer_empty_array: diverge,
+            module: diverge,
+            ty: diverge,
+            unit: diverge,
+            bool: diverge,
+            char: diverge,
+            c_str: diverge,
+            i8: diverge,
+            i16: diverge,
+            i32: diverge,
+            i64: diverge,
+            i128: diverge,
+            isize: diverge,
+            u8: diverge,
+            u16: diverge,
+            u32: diverge,
+            u64: diverge,
+            u128: diverge,
+            usize: diverge,
+            f32: diverge,
+            f64: diverge,
+            diverge,
+        }
+    }
+
+    pub fn new(tys: &mut TyContext) -> Self {
+        let i8_ty = tys.insert(TyShape::Value(IntTy::I8.into()));
+        let c_str = tys.insert(TyShape::Value(ValueTy::ManyPtr(ManyPtrTy {
             pointee: i8_ty,
             is_mutable: false,
         })));
 
         Self {
             // Inferred
-            infer: insert_ty(AnyTy::Infer(InferTy::Any)),
-            infer_number: insert_ty(AnyTy::Infer(InferTy::Number)),
-            infer_int: insert_ty(AnyTy::Infer(InferTy::Int)),
-            infer_float: insert_ty(AnyTy::Infer(InferTy::Float)),
-            infer_empty_array: insert_ty(AnyTy::Infer(InferTy::Array)),
+            infer: tys.insert(TyShape::Infer(InferTy::Any)),
+            infer_number: tys.insert(TyShape::Infer(InferTy::Number)),
+            infer_int: tys.insert(TyShape::Infer(InferTy::Int)),
+            infer_float: tys.insert(TyShape::Infer(InferTy::Float)),
+            infer_empty_array: tys.insert(TyShape::Infer(InferTy::Array)),
 
             // Items
-            module: insert_ty(AnyTy::Item(ItemTy::Module)),
-            ty: insert_ty(AnyTy::Item(ItemTy::Ty)),
+            module: tys.insert(TyShape::Item(ItemTy::Module)),
+            ty: tys.insert(TyShape::Item(ItemTy::Ty)),
 
             // Non-number primitives
-            unit: insert_ty(AnyTy::Value(ValueTy::Unit)),
-            bool: insert_ty(AnyTy::Value(ValueTy::Bool)),
-            char: insert_ty(AnyTy::Value(ValueTy::Char)),
+            unit: tys.insert_value(ValueTy::Unit),
+            bool: tys.insert_value(ValueTy::Bool),
+            char: tys.insert_value(ValueTy::Char),
             c_str,
 
             // Signed integers
-            i8: insert_ty(AnyTy::Value(IntTy::I8.into())),
-            i16: insert_ty(AnyTy::Value(IntTy::I16.into())),
-            i32: insert_ty(AnyTy::Value(IntTy::I32.into())),
-            i64: insert_ty(AnyTy::Value(IntTy::I64.into())),
-            i128: insert_ty(AnyTy::Value(IntTy::I128.into())),
-            isize: insert_ty(AnyTy::Value(IntTy::Isize.into())),
+            i8: tys.insert_value(IntTy::I8),
+            i16: tys.insert_value(IntTy::I16),
+            i32: tys.insert_value(IntTy::I32),
+            i64: tys.insert_value(IntTy::I64),
+            i128: tys.insert_value(IntTy::I128),
+            isize: tys.insert_value(IntTy::Isize),
 
             // Unsigned integers
-            u8: insert_ty(AnyTy::Value(IntTy::U8.into())),
-            u16: insert_ty(AnyTy::Value(IntTy::U16.into())),
-            u32: insert_ty(AnyTy::Value(IntTy::U32.into())),
-            u64: insert_ty(AnyTy::Value(IntTy::U64.into())),
-            u128: insert_ty(AnyTy::Value(IntTy::U128.into())),
-            usize: insert_ty(AnyTy::Value(IntTy::Usize.into())),
+            u8: tys.insert_value(IntTy::U8),
+            u16: tys.insert_value(IntTy::U16),
+            u32: tys.insert_value(IntTy::U32),
+            u64: tys.insert_value(IntTy::U64),
+            u128: tys.insert_value(IntTy::U128),
+            usize: tys.insert_value(IntTy::Usize),
 
             // Floats
-            f32: insert_ty(AnyTy::Value(FloatTy::F32.into())),
-            f64: insert_ty(AnyTy::Value(FloatTy::F64.into())),
+            f32: tys.insert_value(FloatTy::F32),
+            f64: tys.insert_value(FloatTy::F64),
 
             // Diverge
-            diverge: insert_ty(AnyTy::Diverge),
+            diverge: tys.insert(TyShape::Diverge),
         }
     }
 }

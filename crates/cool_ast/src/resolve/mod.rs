@@ -56,7 +56,7 @@ impl AstGenerator<'_> {
             }
             Ty::ManyPtr(many_ptr_ty) => {
                 let pointee = self.resolve_ty_inner(scope, &many_ptr_ty.pointee)?;
-                self.resolve.mk_many_ptr(many_ptr_ty.is_mutable, pointee)
+                self.resolve.mk_many_ptr(pointee, many_ptr_ty.is_mutable)
             }
             Ty::Paren(paren_ty) => self.resolve_ty_inner(scope, &paren_ty.inner)?,
             Ty::Path(path_ty) => {
@@ -73,7 +73,7 @@ impl AstGenerator<'_> {
 
                 self.resolve[item_id]
                     .as_ty_id()
-                    .filter(|ty_id| !ty_id.is_infer())
+                    .filter(|ty_id| !ty_id.shape.is_infer())
                     .ok_or(AstError::new(
                         path_ty.span(),
                         ResolveError {
@@ -84,11 +84,11 @@ impl AstGenerator<'_> {
             }
             Ty::Ptr(ptr_ty) => {
                 let pointee = self.resolve_ty_inner(scope, &ptr_ty.pointee)?;
-                self.resolve.mk_ptr(ptr_ty.is_mutable, pointee)
+                self.resolve.mk_ptr(pointee, ptr_ty.is_mutable)
             }
             Ty::Slice(slice_ty) => {
                 let elem = self.resolve_ty_inner(scope, &slice_ty.elem)?;
-                self.resolve.mk_slice(slice_ty.is_mutable, elem)
+                self.resolve.mk_slice(elem, slice_ty.is_mutable)
             }
             Ty::Tuple(tuple_ty) => {
                 let elem_tys = tuple_ty

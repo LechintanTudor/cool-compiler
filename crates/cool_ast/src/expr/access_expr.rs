@@ -4,7 +4,7 @@ use crate::{
 };
 use cool_lexer::sym;
 use cool_parser::{AccessExpr, Ident};
-use cool_resolve::{AnyTy, ExprId, FrameId, ItemKind, ResolveExpr, TyId, ValueTy};
+use cool_resolve::{ExprId, FrameId, ItemKind, ResolveExpr, TyId, TyShape, ValueTy};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
@@ -117,8 +117,8 @@ impl AstGenerator<'_> {
             base => {
                 let base_ty_id = self.resolve[base.expr_id()].ty_id;
 
-                match &*base_ty_id {
-                    AnyTy::Value(ValueTy::Ptr(_)) => {
+                match &base_ty_id.shape {
+                    TyShape::Value(ValueTy::Ptr(_)) => {
                         let new_base = self.gen_implicit_deref_expr(Box::new(base))?;
 
                         self.gen_aggregate_access_expr(
@@ -139,7 +139,7 @@ impl AstGenerator<'_> {
 
     fn gen_implicit_deref_expr(&mut self, base: Box<ExprAst>) -> AstResult<DerefExprAst> {
         let base_expr = self.resolve[base.expr_id()];
-        let base_ptr_ty = base_expr.ty_id.as_ptr().unwrap();
+        let base_ptr_ty = base_expr.ty_id.shape.as_ptr().unwrap();
 
         let expr_id = self.resolve.add_expr(ResolveExpr::lvalue(
             base_ptr_ty.pointee,
@@ -162,7 +162,7 @@ impl AstGenerator<'_> {
         let base_expr = self.resolve[base.expr_id()];
         let ident = access_expr.ident;
 
-        let expr = if base_expr.ty_id.is_array() {
+        let expr = if base_expr.ty_id.shape.is_array() {
             if ident.symbol != sym::LEN {
                 return AstResult::field_not_found(
                     access_expr.span(),
@@ -182,8 +182,8 @@ impl AstGenerator<'_> {
         } else {
             let field = base_expr
                 .ty_id
-                .as_value()
-                .and_then(|ty| ty.get_aggregate_field(ident.symbol))
+                .def
+                .get_aggregate_field(ident.symbol)
                 .ok_or_else(|| {
                     AstError::field_not_found(access_expr.span(), base_expr.ty_id, ident.symbol)
                 })?;

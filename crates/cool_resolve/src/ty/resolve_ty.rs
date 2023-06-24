@@ -1,17 +1,16 @@
-use crate::AnyTy;
+use crate::{TyDef, TyShape};
 use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Debug)]
 pub struct ResolveTy {
-    pub size: u64,
-    pub align: u64,
-    pub ty: AnyTy,
+    pub shape: TyShape,
+    pub def: TyDef,
 }
 
 impl PartialEq for ResolveTy {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        self.ty == other.ty
+        self.shape == other.shape
     }
 }
 
@@ -22,6 +21,6 @@ impl Hash for ResolveTy {
     where
         H: Hasher,
     {
-        self.ty.hash(state);
+        self.shape.hash(state);
     }
 }

@@ -1,14 +1,14 @@
 use crate::{IntTy, ItemId, TyId};
 use cool_lexer::Symbol;
+use smallvec::SmallVec;
 use std::fmt;
 use std::hash::{Hash, Hasher};
-use std::sync::Arc;
 
 #[derive(Clone, Eq, Debug)]
 pub struct EnumTy {
     pub item_id: ItemId,
     pub storage: TyId,
-    pub variants: Arc<[Symbol]>,
+    pub variants: SmallVec<[Symbol; 4]>,
 }
 
 impl EnumTy {
@@ -37,6 +37,7 @@ impl fmt::Display for EnumTy {
 
         let should_display_storage = self
             .storage
+            .shape
             .as_int()
             .is_some_and(|&storage| storage != Self::DEFAULT_STORAGE);
 

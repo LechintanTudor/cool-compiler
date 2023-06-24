@@ -49,7 +49,7 @@ impl AstGenerator<'_> {
             None => {
                 let diverges = stmts.last().map(StmtAst::is_return).is_some();
 
-                let ty_id = if diverges && !expected_ty_id.is_infer() {
+                let ty_id = if diverges && !expected_ty_id.shape.is_infer() {
                     expected_ty_id
                 } else {
                     self.resolve_direct_ty_id(block.span(), self.tys().unit, expected_ty_id)?

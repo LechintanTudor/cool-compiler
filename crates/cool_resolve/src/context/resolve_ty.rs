@@ -1,6 +1,6 @@
 use crate::{
-    ArrayTy, Field, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ManyPtrTy, ModuleElem, ModuleId,
-    PtrTy, ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, Scope, SliceTy, StructTy,
+    ArrayTy, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ManyPtrTy, ModuleElem, ModuleId, PtrTy,
+    ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, Scope, SliceTy, StructTy,
     TupleTy, TyConsts, TyId, TyMismatch, VariantTy, VariantTyKind,
 };
 use cool_lexer::{sym, Symbol};
@@ -26,44 +26,27 @@ impl ResolveContext {
     }
 
     pub fn mk_array(&mut self, len: u64, elem: TyId) -> TyId {
-        self.tys.get_or_insert_value(ArrayTy { len, elem })
+        self.tys.insert_value(ArrayTy { len, elem })
     }
 
-    pub fn mk_tuple<F>(&mut self, field_tys: F) -> TyId
+    pub fn mk_tuple<E>(&mut self, elems: E) -> TyId
     where
-        F: IntoIterator<Item = TyId>,
+        E: IntoIterator<Item = TyId>,
     {
-        let fields = field_tys
-            .into_iter()
-            .enumerate()
-            .map(|(i, ty_id)| {
-                Field {
-                    offset: 0,
-                    symbol: Symbol::insert_u32(i as u32),
-                    ty_id,
-                }
-            })
-            .collect::<Vec<_>>();
-
-        if fields.is_empty() {
-            return self.tys.consts().unit;
-        }
-
-        self.tys.get_or_insert_value(TupleTy { fields })
+        self.tys.insert_value(TupleTy {
+            elems: elems.into_iter().collect(),
+        })
     }
 
     pub fn mk_struct(&mut self, item_id: ItemId) -> TyId {
-        self.tys.get_or_insert_value(StructTy {
-            item_id,
-            def: Default::default(),
-        })
+        self.tys.insert_value(StructTy { item_id })
     }
 
     pub fn mk_fn<P>(&mut self, abi: FnAbi, params: P, is_variadic: bool, ret: TyId) -> TyId
     where
         P: IntoIterator<Item = TyId>,
     {
-        self.tys.get_or_insert_value(FnTy {
+        self.tys.insert_value(FnTy {
             abi,
             params: SmallVec::from_iter(params),
             is_variadic,
@@ -71,66 +54,52 @@ impl ResolveContext {
         })
     }
 
-    pub fn mk_ptr(&mut self, is_mutable: bool, pointee: TyId) -> TyId {
-        self.tys.get_or_insert_value(PtrTy {
+    pub fn mk_ptr(&mut self, pointee: TyId, is_mutable: bool) -> TyId {
+        self.tys.insert_value(PtrTy {
             pointee,
             is_mutable,
         })
     }
 
-    pub fn mk_many_ptr(&mut self, is_mutable: bool, pointee: TyId) -> TyId {
-        self.tys.get_or_insert_value(ManyPtrTy {
+    pub fn mk_many_ptr(&mut self, pointee: TyId, is_mutable: bool) -> TyId {
+        self.tys.insert_value(ManyPtrTy {
             pointee,
             is_mutable,
         })
     }
 
-    pub fn mk_slice(&mut self, is_mutable: bool, elem: TyId) -> TyId {
-        let ty = SliceTy {
-            fields: [
-                Field {
-                    offset: 0,
-                    symbol: sym::PTR,
-                    ty_id: self.mk_many_ptr(is_mutable, elem),
-                },
-                Field {
-                    offset: 0,
-                    symbol: sym::LEN,
-                    ty_id: self.tys.consts().usize,
-                },
-            ],
-        };
-
-        self.tys.get_or_insert_value(ty)
+    pub fn mk_slice(&mut self, elem: TyId, is_mutable: bool) -> TyId {
+        self.tys.insert_value(SliceTy { elem, is_mutable })
     }
 
     pub fn mk_variant<V>(&mut self, variants: V) -> TyId
     where
         V: IntoIterator<Item = TyId>,
     {
-        let mut ty_ids = BTreeSet::<TyId>::default();
+        todo!()
+        // let mut ty_ids = BTreeSet::<TyId>::default();
 
-        for ty_id in variants {
-            match ty_id.as_variant() {
-                Some(variant_ty) => {
-                    ty_ids.extend(variant_ty.variants.iter().cloned());
-                }
-                None => {
-                    ty_ids.insert(ty_id);
-                }
-            }
-        }
+        // for ty_id in variants {
+        //     match ty_id.as_variant() {
+        //         Some(variant_ty) => {
+        //             ty_ids.extend(variant_ty.variants.iter().cloned());
+        //         }
+        //         None => {
+        //             ty_ids.insert(ty_id);
+        //         }
+        //     }
+        // }
 
-        match ty_ids.len() {
-            0 => self.ty_consts().unit,
-            1 => ty_ids.iter().next().copied().unwrap(),
-            _ => {
-                self.tys.get_or_insert_value(VariantTy {
-                    kind: VariantTyKind::NullablePtr,
-                    variants: ty_ids.into_iter().collect(),
-                })
-            }
-        }
+        // match ty_ids.len() {
+        //     0 => self.ty_consts().unit,
+        //     1 => ty_ids.iter().next().copied().unwrap(),
+        //     _ => {
+        //         self.tys.insert_value(VariantTy {
+        //             kind: VariantTyKind::NullablePtr,
+        //             variants: ty_ids.into_iter().collect(),
+        //         })
+        //     }
+        // }
     }
 
     pub fn resolve_ty_from_path<'a, P>(&self, scope: Scope, path: P) -> ResolveResult<TyId>

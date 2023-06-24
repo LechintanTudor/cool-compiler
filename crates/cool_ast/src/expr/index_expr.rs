@@ -29,7 +29,7 @@ impl AstGenerator<'_> {
         let index = self.gen_expr(frame_id, self.tys().usize, &expr.index)?;
 
         let base_expr = self.resolve[base.expr_id()];
-        let Some(base_ty) = base_expr.ty_id.as_value() else {
+        let Some(base_ty) = base_expr.ty_id.shape.as_value() else {
             panic!("type is not a value type");
         };
 
@@ -44,12 +44,10 @@ impl AstGenerator<'_> {
                 )
             }
             ValueTy::Slice(slice_ty) => {
-                let many_ptr_ty = slice_ty.ptr_ty();
-
                 (
-                    many_ptr_ty.pointee,
+                    slice_ty.elem,
                     ResolveExprKind::Lvalue {
-                        is_mutable: many_ptr_ty.is_mutable,
+                        is_mutable: slice_ty.is_mutable,
                     },
                 )
             }

@@ -1,16 +1,16 @@
-use crate::{InferTy, ItemTy, PrimitiveTyData, ResolveTy, ValueTy};
+use crate::{InferTy, ItemTy, ValueTy};
 use derive_more::From;
 use std::fmt;
 
 #[derive(Clone, Eq, PartialEq, Hash, From, Debug)]
-pub enum AnyTy {
+pub enum TyShape {
     Infer(InferTy),
     Item(ItemTy),
     Value(ValueTy),
     Diverge,
 }
 
-impl AnyTy {
+impl TyShape {
     #[inline]
     pub fn is_infer(&self) -> bool {
         matches!(self, Self::Infer(_))
@@ -53,22 +53,9 @@ impl AnyTy {
             _ => None,
         }
     }
-
-    pub fn to_resolve_ty(self, primitives: &PrimitiveTyData) -> ResolveTy {
-        match self {
-            Self::Infer(_) | Self::Item(_) | Self::Diverge => {
-                ResolveTy {
-                    size: 0,
-                    align: 1,
-                    ty: self,
-                }
-            }
-            Self::Value(value_ty) => value_ty.to_resolve_ty(primitives),
-        }
-    }
 }
 
-impl fmt::Display for AnyTy {
+impl fmt::Display for TyShape {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Infer(infer_ty) => write!(f, "{infer_ty}"),

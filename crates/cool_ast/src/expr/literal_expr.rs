@@ -62,7 +62,7 @@ impl AstGenerator<'_> {
                     );
                 }
 
-                if ty_id.is_int() {
+                if ty_id.shape.is_int() {
                     LiteralExprAst {
                         span: expr.span,
                         expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
@@ -224,11 +224,11 @@ fn parse_suffix(tys: &TyConsts, suffix: &str, kind: NumberKind) -> Option<TyId> 
         _ => return None,
     };
 
-    if kind == NumberKind::Int && !ty_id.is_int() {
+    if kind == NumberKind::Int && !ty_id.shape.is_int() {
         return None;
     }
 
-    if kind == NumberKind::Decimal && !ty_id.is_float() {
+    if kind == NumberKind::Decimal && !ty_id.shape.is_float() {
         return None;
     }
 

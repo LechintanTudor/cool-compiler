@@ -1,5 +1,4 @@
 use crate::{AstGenerator, AstResult, ExprAst};
-use cool_lexer::Symbol;
 use cool_parser::TupleExpr;
 use cool_resolve::{ExprId, FrameId, ResolveExpr, TupleTy, TyId};
 use cool_span::{Section, Span};
@@ -25,7 +24,7 @@ impl AstGenerator<'_> {
         expected_ty_id: TyId,
         expr: &TupleExpr,
     ) -> AstResult<TupleExprAst> {
-        let elems = match expected_ty_id.as_tuple() {
+        let elems = match expected_ty_id.shape.as_tuple() {
             Some(tuple_ty) => self.gen_tuple_elems_with_type(frame_id, tuple_ty, expr)?,
             None => self.gen_tuple_elems_without_type(frame_id, expr)?,
         };
@@ -64,27 +63,10 @@ impl AstGenerator<'_> {
         tuple_ty: &TupleTy,
         expr: &TupleExpr,
     ) -> AstResult<Vec<ExprAst>> {
-        if expr.elems.len() != tuple_ty.fields.len() {
-            panic!("tuples are not the same size");
-        }
-
-        let get_expected_elem_ty_id = |symbol| {
-            tuple_ty
-                .fields
-                .iter()
-                .find(|field| field.symbol == symbol)
-                .map(|field| field.ty_id)
-                .unwrap()
-        };
-
         expr.elems
             .iter()
-            .enumerate()
-            .map(|(i, elem)| {
-                let symbol = Symbol::insert_u32(i as u32);
-                let expected_ty_id = get_expected_elem_ty_id(symbol);
-                self.gen_expr(frame_id, expected_ty_id, elem)
-            })
+            .zip(tuple_ty.elems.iter().copied())
+            .map(|(elem, elem_ty_id)| self.gen_expr(frame_id, elem_ty_id, elem))
             .collect::<Result<Vec<_>, _>>()
     }
 }

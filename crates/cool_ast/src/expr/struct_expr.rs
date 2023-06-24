@@ -46,16 +46,14 @@ impl AstGenerator<'_> {
             .expect("struct base is not a type")
             .item_ty_id;
 
-        let struct_ty = ty_id
+        ty_id
+            .shape
             .as_struct()
-            .expect("struct base is not a struct type")
-            .clone();
+            .expect("struct base is not a struct type");
 
         let mut initializers = Vec::<StructFieldInitializerAst>::new();
         let mut used_fields = FxHashSet::<Symbol>::default();
-
-        let struct_def = struct_ty.def.lock().unwrap();
-        let fields: &[_] = &struct_def.as_ref().unwrap().fields;
+        let fields = ty_id.def.get_aggregate_fields().unwrap();
 
         for initializer in expr.initializers.iter() {
             let field_ty_id = fields

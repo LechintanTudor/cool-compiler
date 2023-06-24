@@ -20,7 +20,7 @@ impl AstGenerator<'_> {
 
         match explicit_ty_id {
             Some(ty_id) => {
-                let Some(fn_ty) = ty_id.as_fn() else {
+                let Some(fn_ty) = ty_id.shape.as_fn() else {
                     return AstResult::error(prototype.span(), TyError {
                         ty_id,
                         kind: TyErrorKind::TyNotCallable,

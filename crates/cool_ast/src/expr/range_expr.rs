@@ -65,7 +65,7 @@ impl AstGenerator<'_> {
 
         let base_expr = &self.resolve[base.expr_id()];
 
-        let Some(value_ty) = base_expr.ty_id.as_value() else {
+        let Some(value_ty) = base_expr.ty_id.shape.as_value() else {
             panic!("type is not a value type");
         };
 
@@ -78,18 +78,16 @@ impl AstGenerator<'_> {
                 array_ty.elem
             }
             ValueTy::Slice(slice_ty) => {
-                let many_ptr_ty = slice_ty.ptr_ty();
-
                 if expr.is_mutable {
-                    assert!(many_ptr_ty.is_mutable)
+                    assert!(slice_ty.is_mutable);
                 }
 
-                many_ptr_ty.pointee
+                slice_ty.elem
             }
             _ => panic!("type does not support range operations"),
         };
 
-        let ty_id = self.resolve.mk_slice(expr.is_mutable, elem_ty_id);
+        let ty_id = self.resolve.mk_slice(elem_ty_id, expr.is_mutable);
         let ty_id = self.resolve_direct_ty_id(expr.span(), ty_id, expected_ty_id)?;
 
         Ok(RangeExprAst {

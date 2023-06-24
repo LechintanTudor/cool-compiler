@@ -1,4 +1,4 @@
-use crate::{AnyTy, ResolveTy, TyId, ValueTy};
+use crate::TyId;
 use std::collections::BTreeSet;
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -13,29 +13,6 @@ pub enum VariantTyKind {
 pub struct VariantTy {
     pub kind: VariantTyKind,
     pub variants: BTreeSet<TyId>,
-}
-
-impl VariantTy {
-    pub fn to_resolve_ty(&self) -> ResolveTy {
-        let (size, align) = self
-            .variants
-            .iter()
-            .map(|variant| (variant.get_size(), variant.get_align()))
-            .fold((0, 1), |(old_size, old_align), (size, align)| {
-                (old_size.max(size), old_align.max(align))
-            });
-
-        let (size, align) = match self.kind {
-            VariantTyKind::Regular => (size, align),
-            VariantTyKind::NullablePtr => (size, align),
-        };
-
-        ResolveTy {
-            size,
-            align,
-            ty: AnyTy::from(ValueTy::from(self.clone())),
-        }
-    }
 }
 
 impl PartialEq for VariantTy {

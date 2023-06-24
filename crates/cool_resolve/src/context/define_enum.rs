@@ -3,8 +3,8 @@ use crate::{
     ResolveResult, TyId,
 };
 use cool_lexer::Symbol;
+use smallvec::SmallVec;
 use std::collections::HashSet;
-use std::sync::Arc;
 
 impl ResolveContext {
     pub fn declare_enum(
@@ -29,9 +29,9 @@ impl ResolveContext {
             panic!("item is not a type");
         };
 
-        assert!(item_ty_id.is_infer());
+        assert!(item_ty_id.shape.is_infer());
 
-        let variants = variants.into_iter().collect::<Arc<[Symbol]>>();
+        let variants = variants.into_iter().collect::<SmallVec<[Symbol; 4]>>();
         let mut used_variants = HashSet::<Symbol>::default();
 
         for &variant in variants.iter() {
@@ -45,7 +45,7 @@ impl ResolveContext {
 
         let storage = match storage {
             Some(storage) => {
-                if !storage.is_int() {
+                if !storage.shape.is_int() {
                     return Err(DefineError {
                         path: self.paths[item_id].into(),
                         kind: DefineErrorKind::EnumHasInvalidStorage { storage },
@@ -54,10 +54,10 @@ impl ResolveContext {
 
                 storage
             }
-            None => self.tys.get_or_insert_value(EnumTy::DEFAULT_STORAGE),
+            None => self.tys.insert_value(EnumTy::DEFAULT_STORAGE),
         };
 
-        let ty_id = self.tys.get_or_insert_value(EnumTy {
+        let ty_id = self.tys.insert_value(EnumTy {
             item_id,
             storage,
             variants,

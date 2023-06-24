@@ -1,5 +1,5 @@
-use crate::{AnyTy, ResolveTy, ValueTy};
-use std::fmt;
+use crate::{BasicTyDef, TyDef};
+use derive_more::Display;
 
 #[derive(Clone, Copy, Debug)]
 pub struct PrimitiveTyData {
@@ -14,19 +14,42 @@ pub struct PrimitiveTyData {
     pub f64_align: u64,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Display, Debug)]
 pub enum IntTy {
+    #[display(fmt = "i8")]
     I8,
+
+    #[display(fmt = "i16")]
     I16,
+
+    #[display(fmt = "i32")]
     I32,
+
+    #[display(fmt = "i64")]
     I64,
+
+    #[display(fmt = "i128")]
     I128,
+
+    #[display(fmt = "isize")]
     Isize,
+
+    #[display(fmt = "u8")]
     U8,
+
+    #[display(fmt = "u16")]
     U16,
+
+    #[display(fmt = "u32")]
     U32,
+
+    #[display(fmt = "u64")]
     U64,
+
+    #[display(fmt = "u128")]
     U128,
+
+    #[display(fmt = "usize")]
     Usize,
 }
 
@@ -44,7 +67,7 @@ impl IntTy {
         !self.is_signed()
     }
 
-    pub fn to_resolve_ty(&self, primitives: &PrimitiveTyData) -> ResolveTy {
+    pub fn to_ty_def(&self, primitives: &PrimitiveTyData) -> TyDef {
         let (size, align) = match self {
             Self::I8 | Self::U8 => (1, primitives.i8_align),
             Self::I16 | Self::U16 => (2, primitives.i16_align),
@@ -54,63 +77,26 @@ impl IntTy {
             Self::Isize | Self::Usize => (primitives.ptr_size, primitives.ptr_align),
         };
 
-        ResolveTy {
-            size,
-            align,
-            ty: AnyTy::Value(ValueTy::Int(*self)),
-        }
+        TyDef::from(BasicTyDef { size, align })
     }
 }
 
-impl fmt::Display for IntTy {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let display_str = match self {
-            Self::I8 => "i8",
-            Self::I16 => "i16",
-            Self::I32 => "i32",
-            Self::I64 => "i64",
-            Self::I128 => "i128",
-            Self::Isize => "isize",
-            Self::U8 => "u8",
-            Self::U16 => "u16",
-            Self::U32 => "u32",
-            Self::U64 => "u64",
-            Self::U128 => "u128",
-            Self::Usize => "usize",
-        };
-
-        write!(f, "{}", display_str)
-    }
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Display, Debug)]
 pub enum FloatTy {
+    #[display(fmt = "f32")]
     F32,
+
+    #[display(fmt = "f64")]
     F64,
 }
 
 impl FloatTy {
-    pub fn to_resolve_ty(&self, primitives: &PrimitiveTyData) -> ResolveTy {
+    pub fn to_ty_def(&self, primitives: &PrimitiveTyData) -> TyDef {
         let (size, align) = match self {
             Self::F32 => (4, primitives.f32_align),
             Self::F64 => (8, primitives.f64_align),
         };
 
-        ResolveTy {
-            size,
-            align,
-            ty: AnyTy::Value(ValueTy::Float(*self)),
-        }
-    }
-}
-
-impl fmt::Display for FloatTy {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let display_str = match self {
-            Self::F32 => "f32",
-            Self::F64 => "f64",
-        };
-
-        write!(f, "{}", display_str)
+        TyDef::from(BasicTyDef { size, align })
     }
 }
