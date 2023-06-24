@@ -20,13 +20,13 @@ pub use self::resolve_global::*;
 pub use self::resolve_local::*;
 pub use self::resolve_ty::*;
 use crate::{Binding, Frame, ItemKind, Module, PrimitiveTyData, TyContext};
-use cool_arena::SliceArena;
+use cool_arena::Arena;
 use cool_collections::IdIndexedVec;
 use cool_lexer::{sym, Symbol};
 
 #[derive(Debug)]
 pub struct ResolveContext {
-    paths: SliceArena<'static, ItemId, Symbol>,
+    paths: Arena<'static, ItemId, [Symbol]>,
     items: IdIndexedVec<ItemId, ItemKind>,
     modules: IdIndexedVec<ModuleId, Module>,
     tys: TyContext,
@@ -45,7 +45,7 @@ impl ResolveContext {
 
     fn empty(primitives: PrimitiveTyData) -> Self {
         Self {
-            paths: SliceArena::new_leak(),
+            paths: Arena::new_leak(),
             items: Default::default(),
             modules: Default::default(),
             tys: TyContext::new(primitives),

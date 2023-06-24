@@ -5,13 +5,19 @@ use std::hash::Hash;
 use std::num::NonZeroU32;
 use std::{fmt, ops};
 
-pub struct Arena<'a, I, T> {
+pub struct Arena<'a, I, T>
+where
+    T: ?Sized,
+{
     bump: &'a UnsafeBump,
     indexes: FxHashMap<&'a T, I>,
     values: Vec<&'a T>,
 }
 
-impl<'a, I, T> Arena<'a, I, T> {
+impl<'a, I, T> Arena<'a, I, T>
+where
+    T: ?Sized,
+{
     /// Safety
     /// The bump must only be used by the arena.
     pub unsafe fn new(bump: &'a UnsafeBump) -> Self {
@@ -21,9 +27,21 @@ impl<'a, I, T> Arena<'a, I, T> {
             values: Default::default(),
         }
     }
+
+    fn get_next_index(&self) -> I
+    where
+        I: Id,
+    {
+        NonZeroU32::new((self.values.len() + 1) as u32)
+            .map(I::from)
+            .unwrap()
+    }
 }
 
-impl<I, T> Arena<'static, I, T> {
+impl<I, T> Arena<'static, I, T>
+where
+    T: ?Sized,
+{
     pub fn new_leak() -> Self {
         unsafe { Self::new(Box::leak(Box::default())) }
     }
@@ -32,51 +50,8 @@ impl<I, T> Arena<'static, I, T> {
 impl<'a, I, T> Arena<'a, I, T>
 where
     I: Id,
-    T: Eq + Hash,
+    T: ?Sized + Eq + Hash,
 {
-    pub fn insert_if_not_exists(&mut self, value: T) -> Option<I>
-    where
-        I: Id,
-        T: Eq + Hash,
-    {
-        if self.indexes.contains_key(&value) {
-            return None;
-        }
-
-        Some(self.insert_new(value))
-    }
-
-    pub fn insert_checked(&mut self, expected_index: I, value: T)
-    where
-        I: Id,
-        T: Eq + Hash,
-    {
-        assert!(
-            !self.indexes.contains_key(&value),
-            "Arena::insert_checked: value already exists"
-        );
-
-        let index = self.insert_new(value);
-
-        assert_eq!(
-            index.index(),
-            expected_index.index(),
-            "Arena::insert_checked: unexpected index",
-        );
-    }
-
-    pub fn get_or_insert(&mut self, value: T) -> I
-    where
-        I: Id,
-        T: Eq + Hash,
-    {
-        if let Some(&index) = self.indexes.get(&value) {
-            return index;
-        }
-
-        self.insert_new(value)
-    }
-
     #[must_use]
     pub fn get(&self, index: I) -> Option<&'a T> {
         self.values.get(index.index()).copied()
@@ -97,24 +72,121 @@ where
             .map(I::from)
     }
 
-    fn insert_new(&mut self, value: T) -> I {
-        debug_assert!(!self.indexes.contains_key(&value));
+    #[must_use]
+    pub fn contains(&self, value: &T) -> bool {
+        self.indexes.contains_key(&value)
+    }
+}
 
+impl<'a, I, T> Arena<'a, I, T>
+where
+    I: Id,
+    T: Eq + Hash,
+{
+    pub fn insert(&mut self, value: T) -> I {
+        if let Some(&index) = self.indexes.get(&value) {
+            return index;
+        }
+
+        let index = self.get_next_index();
         let value = unsafe { self.bump.alloc(value) };
+        self.indexes.insert(value, index);
         self.values.push(value);
 
-        let index = NonZeroU32::new(self.values.len() as u32)
-            .map(I::from)
-            .unwrap();
-
-        self.indexes.insert(value, index);
         index
+    }
+}
+
+impl<'a, I, E> Arena<'a, I, [E]>
+where
+    I: Id,
+    E: Eq + Hash,
+{
+    pub fn insert_slice(&mut self, value: &[E]) -> I
+    where
+        E: Copy,
+    {
+        if let Some(&index) = self.indexes.get(&value) {
+            return index;
+        }
+
+        let index = self.get_next_index();
+        let value = unsafe { self.bump.alloc_slice_copy(value) };
+        self.indexes.insert(value, index);
+        self.values.push(value);
+
+        index
+    }
+
+    pub fn insert_slice_if_not_exists(&mut self, value: &[E]) -> Option<I>
+    where
+        E: Copy,
+    {
+        if self.indexes.contains_key(value) {
+            return None;
+        }
+
+        Some(self.insert_slice(value))
+    }
+
+    pub fn insert_slice_clone(&mut self, value: &[E]) -> I
+    where
+        E: Copy,
+    {
+        if let Some(&index) = self.indexes.get(&value) {
+            return index;
+        }
+
+        let index = self.get_next_index();
+        let value = unsafe { self.bump.alloc_slice_clone(value) };
+        self.indexes.insert(value, index);
+        self.values.push(value);
+
+        index
+    }
+
+    pub fn insert_slice_clone_if_not_exists(&mut self, value: &[E]) -> Option<I>
+    where
+        E: Copy,
+    {
+        if self.indexes.contains_key(value) {
+            return None;
+        }
+
+        Some(self.insert_slice_clone(value))
+    }
+}
+
+impl<'a, I> Arena<'a, I, str>
+where
+    I: Id,
+{
+    pub fn insert_str(&mut self, value: &str) -> I {
+        if let Some(&index) = self.indexes.get(&value) {
+            return index;
+        }
+
+        let index = self.get_next_index();
+        let value = unsafe { self.bump.alloc_str(value) };
+        self.indexes.insert(value, index);
+        self.values.push(value);
+
+        index
+    }
+
+    pub fn insert_str_if_not_exists(&mut self, value: &str) -> Option<I> {
+        if self.indexes.contains_key(value) {
+            return None;
+        }
+
+        Some(self.insert_str(value))
     }
 }
 
 impl<I, T> ops::Index<I> for Arena<'_, I, T>
 where
     I: Id,
+    T: ?Sized,
 {
     type Output = T;
 
@@ -125,7 +197,7 @@ where
 
 impl<I, T> fmt::Debug for Arena<'_, I, T>
 where
-    T: fmt::Debug,
+    T: ?Sized + fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.values, f)

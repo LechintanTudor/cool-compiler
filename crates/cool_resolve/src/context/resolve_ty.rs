@@ -11,7 +11,7 @@ impl ResolveContext {
     pub(crate) fn insert_primitive_item_ty(&mut self, symbol: Symbol, ty_id: TyId) {
         let item_id = self
             .paths
-            .insert_if_not_exists(&[sym::EMPTY, symbol])
+            .insert_slice_if_not_exists(&[sym::EMPTY, symbol])
             .unwrap();
 
         self.modules[ModuleId::for_builtins()].elems.insert(

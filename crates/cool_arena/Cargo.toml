@@ -7,4 +7,5 @@ edition = "2021"
 cool_collections = { path = "../cool_collections" }
 
 bumpalo = { workspace = true }
+derive_more = { workspace = true }
 rustc-hash = { workspace = true }

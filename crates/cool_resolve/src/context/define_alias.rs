@@ -16,7 +16,7 @@ impl ResolveContext {
 
         let item_id = self
             .paths
-            .insert_if_not_exists(item_path.as_symbol_slice())
+            .insert_slice_if_not_exists(item_path.as_symbol_slice())
             .ok_or(ResolveError {
                 symbol,
                 kind: ResolveErrorKind::SymbolAlreadyDefined,

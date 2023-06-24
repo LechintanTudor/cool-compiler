@@ -14,11 +14,21 @@ impl UnsafeBump {
     /// # Safery
     /// `self` must not be shared across threads during this call.
     #[inline]
-    pub unsafe fn alloc_slice<T>(&self, values: &[T]) -> &[T]
+    pub unsafe fn alloc_slice_copy<T>(&self, values: &[T]) -> &[T]
     where
         T: Copy,
     {
         self.0.alloc_slice_copy(values)
+    }
+
+    /// # Safery
+    /// `self` must not be shared across threads during this call.
+    #[inline]
+    pub unsafe fn alloc_slice_clone<T>(&self, values: &[T]) -> &[T]
+    where
+        T: Clone,
+    {
+        self.0.alloc_slice_clone(values)
     }
 
     /// # Safery

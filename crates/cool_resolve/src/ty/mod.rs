@@ -69,7 +69,7 @@ impl TyContext {
 
     pub fn get_or_insert(&mut self, ty: AnyTy) -> TyId {
         let ty = ty.to_resolve_ty(&self.primitives);
-        let internal_ty_id = self.tys.get_or_insert(ty);
+        let internal_ty_id = self.tys.insert(ty);
         TyId::new(self.tys.get(internal_ty_id).unwrap())
     }
 

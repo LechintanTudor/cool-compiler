@@ -1,11 +1,11 @@
 use crate::symbols::{sym, Symbol};
-use cool_arena::StrArena;
+use cool_arena::Arena;
 use cool_collections::{Id, SmallString};
 use once_cell::sync::Lazy;
 use std::fmt::Write;
 use std::sync::Mutex;
 
-pub(crate) type SymbolTable<'a> = StrArena<'a, Symbol>;
+pub(crate) type SymbolTable<'a> = Arena<'a, Symbol, str>;
 
 static SYMBOL_TABLE: Lazy<Mutex<SymbolTable<'static>>> = Lazy::new(|| {
     let mut symbols = SymbolTable::new_leak();
@@ -16,7 +16,7 @@ static SYMBOL_TABLE: Lazy<Mutex<SymbolTable<'static>>> = Lazy::new(|| {
 impl Symbol {
     #[inline]
     pub fn insert(symbol_str: &str) -> Symbol {
-        SYMBOL_TABLE.lock().unwrap().get_or_insert(symbol_str)
+        SYMBOL_TABLE.lock().unwrap().insert_str(symbol_str)
     }
 
     pub fn insert_u32(value: u32) -> Symbol {

@@ -49,7 +49,7 @@ impl TyConsts {
     pub fn new(tys: &mut TyArena, primitives: &PrimitiveTyData) -> Self {
         let mut insert_ty = |ty: AnyTy| -> TyId {
             let ty = ty.to_resolve_ty(primitives);
-            let internal_ty_id = tys.get_or_insert(ty);
+            let internal_ty_id = tys.insert(ty);
             TyId::new(tys.get(internal_ty_id).unwrap())
         };
 

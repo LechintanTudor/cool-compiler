@@ -53,25 +53,31 @@ macro_rules! define_symbols {
             )+
 
             pub fn intern_symbols(symbols: &mut SymbolTable) {
+                let mut insert_checked = |expected_id, symbol| {
+                    let actual_id = symbols.insert_str(symbol);
+                    assert_eq!(actual_id, expected_id);
+                    actual_id
+                };
+
                 paste! {
                     // Keywords
                     $(
-                        symbols.insert_checked([<KW_ $kw:upper>], stringify!($kw));
+                        insert_checked([<KW_ $kw:upper>], stringify!($kw));
                     )+
 
                     // Primitives
                     $(
-                        symbols.insert_checked([<$primitive:upper>], stringify!($primitive));
+                        insert_checked([<$primitive:upper>], stringify!($primitive));
                     )+
 
                     // Digits
                     $(
-                        symbols.insert_checked($digit, $digit_repr);
+                        insert_checked($digit, $digit_repr);
                     )+
 
                     // Extra
                     $(
-                        symbols.insert_checked($extra, $extra_repr);
+                        insert_checked($extra, $extra_repr);
                     )+
                 }
             }
