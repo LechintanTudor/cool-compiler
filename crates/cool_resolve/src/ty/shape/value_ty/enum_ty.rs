@@ -1,10 +1,11 @@
 use crate::{IntTy, ItemId, TyId};
 use cool_lexer::Symbol;
+use derive_more::Display;
 use smallvec::SmallVec;
-use std::fmt;
 use std::hash::{Hash, Hasher};
 
-#[derive(Clone, Eq, Debug)]
+#[derive(Clone, Eq, Display, Debug)]
+#[display(fmt = "enum")]
 pub struct EnumTy {
     pub item_id: ItemId,
     pub storage: TyId,
@@ -28,23 +29,5 @@ impl Hash for EnumTy {
         H: Hasher,
     {
         self.item_id.hash(state)
-    }
-}
-
-impl fmt::Display for EnumTy {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "enum")?;
-
-        let should_display_storage = self
-            .storage
-            .shape
-            .as_int()
-            .is_some_and(|&storage| storage != Self::DEFAULT_STORAGE);
-
-        if should_display_storage {
-            write!(f, "({})", self.storage)?;
-        }
-
-        Ok(())
     }
 }

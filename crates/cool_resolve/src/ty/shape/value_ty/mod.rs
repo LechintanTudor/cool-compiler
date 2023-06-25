@@ -1,7 +1,21 @@
-use crate::{
-    ArrayTy, EnumTy, FloatTy, FnTy, IntTy, ManyPtrTy, PtrTy, SliceTy, StructTy, TupleTy, TyShape,
-    VariantTy,
-};
+mod array_ty;
+mod enum_ty;
+mod fn_ty;
+mod primitive_ty;
+mod ptr_ty;
+mod struct_ty;
+mod tuple_ty;
+mod variant_ty;
+
+pub use self::array_ty::*;
+pub use self::enum_ty::*;
+pub use self::fn_ty::*;
+pub use self::primitive_ty::*;
+pub use self::ptr_ty::*;
+pub use self::struct_ty::*;
+pub use self::tuple_ty::*;
+pub use self::variant_ty::*;
+use crate::TyShape;
 use derive_more::{Display, From};
 use paste::paste;
 

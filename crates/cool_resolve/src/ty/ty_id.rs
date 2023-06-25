@@ -10,6 +10,24 @@ pub struct TyId(InternedValue<'static, ResolveTy>);
 
 impl TyId {
     #[must_use]
+    pub fn define_deferred(&self, def: TyDef) -> bool {
+        if matches!(def, TyDef::Deferred(_)) {
+            return false;
+        }
+
+        let mut def_slot = match &self.def {
+            TyDef::Deferred(def) => def.lock().unwrap(),
+            _ => return true,
+        };
+
+        if !def_slot.is_some() {
+            *def_slot = Some(def);
+        }
+
+        true
+    }
+
+    #[must_use]
     pub fn define_struct<F>(&self, fields: F) -> bool
     where
         F: IntoIterator<Item = (Symbol, TyId)>,
@@ -25,7 +43,10 @@ impl TyId {
             _ => return true,
         };
 
-        *def_slot = Some(def);
+        if !def_slot.is_some() {
+            *def_slot = Some(def);
+        }
+
         true
     }
 }

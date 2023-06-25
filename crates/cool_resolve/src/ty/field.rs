@@ -1,32 +1,12 @@
 use crate::TyId;
 use cool_lexer::Symbol;
 use std::cmp::Reverse;
-use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Field {
     pub offset: u64,
     pub symbol: Symbol,
     pub ty_id: TyId,
-}
-
-impl PartialEq for Field {
-    #[inline]
-    fn eq(&self, other: &Self) -> bool {
-        (self.symbol, self.ty_id) == (other.symbol, other.ty_id)
-    }
-}
-
-impl Eq for Field {}
-
-impl Hash for Field {
-    fn hash<H>(&self, state: &mut H)
-    where
-        H: Hasher,
-    {
-        self.symbol.hash(state);
-        self.ty_id.hash(state);
-    }
 }
 
 pub fn resolve_fields_size_align(fields: &mut [Field]) -> Option<(u64, u64)> {

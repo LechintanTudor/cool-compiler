@@ -1,3 +1,6 @@
+mod primitive_ty_data;
+
+pub use self::primitive_ty_data::*;
 use crate::{resolve_fields_size_align, DefineErrorKind, Field, TyId};
 use cool_lexer::Symbol;
 use derive_more::From;

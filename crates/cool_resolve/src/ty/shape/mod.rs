@@ -1,12 +1,19 @@
-use crate::{InferTy, ItemTy, ValueTy};
-use derive_more::From;
-use std::fmt;
+mod infer_ty;
+mod item_ty;
+mod value_ty;
 
-#[derive(Clone, Eq, PartialEq, Hash, From, Debug)]
+pub use self::infer_ty::*;
+pub use self::item_ty::*;
+pub use self::value_ty::*;
+use derive_more::{Display, From};
+
+#[derive(Clone, Eq, PartialEq, Hash, From, Display, Debug)]
 pub enum TyShape {
     Infer(InferTy),
     Item(ItemTy),
     Value(ValueTy),
+
+    #[display(fmt = "<diverge>")]
     Diverge,
 }
 
@@ -59,17 +66,6 @@ impl TyShape {
         match self {
             Self::Value(ty) => ty,
             _ => panic!("type is not a value type"),
-        }
-    }
-}
-
-impl fmt::Display for TyShape {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Infer(infer_ty) => write!(f, "{infer_ty}"),
-            Self::Item(item_ty) => write!(f, "{item_ty}"),
-            Self::Value(value_ty) => write!(f, "{value_ty}"),
-            Self::Diverge => write!(f, "<diverge>"),
         }
     }
 }
