@@ -59,7 +59,7 @@ impl<'a> CodeGenerator<'a> {
         self.builder.position_at_end(end_block);
 
         let expr_ty_id = self.resolve[expr.expr_id].ty_id;
-        if expr_ty_id.is_zero_sized() || phi_values.is_empty() {
+        if expr_ty_id.def.is_zero_sized() || phi_values.is_empty() {
             return LoadedValue::Void;
         }
 

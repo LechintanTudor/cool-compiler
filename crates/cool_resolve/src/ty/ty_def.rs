@@ -53,30 +53,6 @@ impl TyDef {
         self.try_get_size_align().is_some()
     }
 
-    pub fn get_aggregate_fields(&self) -> Option<Arc<[Field]>> {
-        let fields = match self {
-            Self::Aggregate(def) => def.fields.clone(),
-            Self::Deferred(def) => {
-                let def = def.lock().unwrap();
-
-                match def.as_ref()? {
-                    Self::Aggregate(def) => def.fields.clone(),
-                    _ => return None,
-                }
-            }
-            _ => return None,
-        };
-
-        Some(fields)
-    }
-
-    pub fn get_aggregate_field(&self, symbol: Symbol) -> Option<Field> {
-        self.get_aggregate_fields()?
-            .iter()
-            .find(|field| field.symbol == symbol)
-            .cloned()
-    }
-
     #[must_use]
     pub fn try_get_size_align(&self) -> Option<(u64, u64)> {
         let (size, align) = match self {
@@ -115,6 +91,36 @@ impl TyDef {
     pub fn get_align(&self) -> u64 {
         let (_, align) = self.get_size_align();
         align
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn is_zero_sized(&self) -> bool {
+        self.get_size() == 0
+    }
+
+    pub fn get_aggregate_fields(&self) -> Option<Arc<[Field]>> {
+        let fields = match self {
+            Self::Aggregate(def) => def.fields.clone(),
+            Self::Deferred(def) => {
+                let def = def.lock().unwrap();
+
+                match def.as_ref()? {
+                    Self::Aggregate(def) => def.fields.clone(),
+                    _ => return None,
+                }
+            }
+            _ => return None,
+        };
+
+        Some(fields)
+    }
+
+    pub fn get_aggregate_field(&self, symbol: Symbol) -> Option<Field> {
+        self.get_aggregate_fields()?
+            .iter()
+            .find(|field| field.symbol == symbol)
+            .cloned()
     }
 }
 

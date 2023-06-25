@@ -1,6 +1,7 @@
 use crate::{CompileError, CompileErrorBundle, CompileResult, DefineItem, Package};
 use cool_ast::AstGenerator;
-use cool_resolve::{DefineError, DefineErrorKind, Field, ResolveContext};
+use cool_lexer::Symbol;
+use cool_resolve::{DefineError, DefineErrorKind, ResolveContext, TyId};
 use cool_span::Section;
 use std::collections::VecDeque;
 
@@ -78,7 +79,7 @@ fn define_structs(package: &Package, ast: &mut AstGenerator, errors: &mut Vec<Co
 
     'struct_loop: while let Some(item) = structs.pop_front() {
         let fields = {
-            let mut fields = Vec::<Field>::new();
+            let mut fields = Vec::<(Symbol, TyId)>::new();
 
             for field in item.item.fields.iter() {
                 let ty_id = match ast.resolve_ty(item.module_id, &field.ty) {
@@ -89,11 +90,7 @@ fn define_structs(package: &Package, ast: &mut AstGenerator, errors: &mut Vec<Co
                     }
                 };
 
-                fields.push(Field {
-                    offset: 0,
-                    symbol: field.ident.symbol,
-                    ty_id,
-                });
+                fields.push((field.ident.symbol, ty_id));
             }
 
             fields

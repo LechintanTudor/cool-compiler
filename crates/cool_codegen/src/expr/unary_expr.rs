@@ -19,13 +19,13 @@ impl<'a> CodeGenerator<'a> {
                     value.into_basic_value()
                 };
 
-                if ty_id.is_int() {
+                if ty_id.shape.is_int() {
                     self.builder
                         .build_int_neg(value.into_int_value(), "")
                         .as_basic_value_enum()
                         .into()
                 } else {
-                    debug_assert!(ty_id.is_float());
+                    debug_assert!(ty_id.shape.is_float());
 
                     self.builder
                         .build_float_neg(value.into_float_value(), "")
@@ -43,7 +43,7 @@ impl<'a> CodeGenerator<'a> {
                     value.into_basic_value().into_int_value()
                 };
 
-                if ty_id.is_int() {
+                if ty_id.shape.is_int() {
                     self.builder
                         .build_not(value, "")
                         .as_basic_value_enum()

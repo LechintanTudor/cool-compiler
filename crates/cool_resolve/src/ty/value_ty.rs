@@ -41,6 +41,14 @@ macro_rules! define_value_ty {
                             _ => None,
                         }
                     }
+
+                    #[inline]
+                    pub fn [<get_ $WrappedTy:snake:lower>](&self) -> &[<$WrappedTy Ty>] {
+                        match self {
+                            Self::$WrappedTy(ty) => ty,
+                            _ => panic!("wrong type"),
+                        }
+                    }
                 )*
             }
 
@@ -63,6 +71,14 @@ macro_rules! define_value_ty {
                         match self {
                             Self::Value(ValueTy::$WrappedTy(ty)) => Some(ty),
                             _ => None,
+                        }
+                    }
+
+                    #[inline]
+                    pub fn [<get_ $WrappedTy:snake:lower>](&self) -> &[<$WrappedTy Ty>] {
+                        match self {
+                            Self::Value(ValueTy::$WrappedTy(ty)) => ty,
+                            _ => panic!("wrong type"),
                         }
                     }
                 )*

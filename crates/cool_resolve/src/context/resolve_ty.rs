@@ -1,11 +1,10 @@
 use crate::{
     ArrayTy, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ManyPtrTy, ModuleElem, ModuleId, PtrTy,
     ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, Scope, SliceTy, StructTy,
-    TupleTy, TyConsts, TyId, TyMismatch, VariantTy, VariantTyKind,
+    TupleTy, TyConsts, TyId, TyMismatch,
 };
 use cool_lexer::{sym, Symbol};
 use smallvec::SmallVec;
-use std::collections::BTreeSet;
 
 impl ResolveContext {
     pub(crate) fn insert_primitive_item_ty(&mut self, symbol: Symbol, ty_id: TyId) {
@@ -72,7 +71,7 @@ impl ResolveContext {
         self.tys.insert_value(SliceTy { elem, is_mutable })
     }
 
-    pub fn mk_variant<V>(&mut self, variants: V) -> TyId
+    pub fn mk_variant<V>(&mut self, _variants: V) -> TyId
     where
         V: IntoIterator<Item = TyId>,
     {

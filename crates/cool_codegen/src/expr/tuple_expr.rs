@@ -27,11 +27,8 @@ impl<'a> CodeGenerator<'a> {
                 };
 
             let field_ty = expr_ty_id
-                .as_tuple()
-                .unwrap()
-                .fields
-                .iter()
-                .find(|field| field.symbol == symbol)
+                .def
+                .get_aggregate_field(symbol)
                 .and_then(|field| self.tys[field.ty_id])
                 .unwrap();
 

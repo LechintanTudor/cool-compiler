@@ -37,7 +37,6 @@ pub use self::value_ty::*;
 pub use self::variant_ty::*;
 use cool_arena::InternArena;
 use cool_lexer::{sym, Symbol};
-use rustc_hash::FxHashSet;
 use smallvec::SmallVec;
 
 pub(crate) type TyArena = InternArena<'static, ResolveTy>;
@@ -46,7 +45,6 @@ pub(crate) type TyArena = InternArena<'static, ResolveTy>;
 pub struct TyContext {
     primitives: PrimitiveTyData,
     tys: TyArena,
-    undefined_tys: FxHashSet<TyId>,
     consts: TyConsts,
 }
 
@@ -58,7 +56,6 @@ impl TyContext {
         let mut tys = Self {
             primitives,
             tys,
-            undefined_tys: Default::default(),
             consts,
         };
         tys.consts = TyConsts::new(&mut tys);
@@ -100,6 +97,14 @@ impl TyContext {
             }
             ValueTy::Int(int_ty) => int_ty.to_ty_def(&self.primitives),
             ValueTy::Float(float_ty) => float_ty.to_ty_def(&self.primitives),
+            ValueTy::Array(array_ty) => {
+                let (elem_size, align) = array_ty.elem.def.try_get_size_align()?;
+
+                TyDef::from(BasicTyDef {
+                    size: elem_size * array_ty.len,
+                    align,
+                })
+            }
             ValueTy::Tuple(tuple_ty) => {
                 let fields = tuple_ty
                     .elems

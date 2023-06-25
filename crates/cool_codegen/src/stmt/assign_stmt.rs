@@ -8,7 +8,7 @@ impl<'a> CodeGenerator<'a> {
         let lhs = self.gen_expr(&assign.lhs, None);
         let lhs_ty_id = self.resolve[assign.lhs.expr_id()].ty_id;
 
-        if lhs_ty_id.is_zero_sized() {
+        if lhs_ty_id.def.is_zero_sized() {
             self.gen_expr(&assign.rhs, None);
             return;
         }
@@ -52,7 +52,7 @@ impl<'a> CodeGenerator<'a> {
         let result_value = match assign.assign_op {
             AssignOp::Eq => self.gen_loaded_expr(&assign.rhs).into_basic_value(),
             AssignOp::Add => {
-                if lhs_ty_id.is_int() {
+                if lhs_ty_id.shape.is_int() {
                     let (lhs, rhs) = gen_int_values(self);
                     self.builder
                         .build_int_add(lhs, rhs, "")
@@ -65,7 +65,7 @@ impl<'a> CodeGenerator<'a> {
                 }
             }
             AssignOp::Sub => {
-                if lhs_ty_id.is_int() {
+                if lhs_ty_id.shape.is_int() {
                     let (lhs, rhs) = gen_int_values(self);
                     self.builder
                         .build_int_sub(lhs, rhs, "")
@@ -78,7 +78,7 @@ impl<'a> CodeGenerator<'a> {
                 }
             }
             AssignOp::Mul => {
-                if lhs_ty_id.is_int() {
+                if lhs_ty_id.shape.is_int() {
                     let (lhs, rhs) = gen_int_values(self);
                     self.builder
                         .build_int_mul(lhs, rhs, "")
@@ -91,12 +91,12 @@ impl<'a> CodeGenerator<'a> {
                 }
             }
             AssignOp::Div => {
-                if lhs_ty_id.is_signed_int() {
+                if lhs_ty_id.shape.is_signed_int() {
                     let (lhs, rhs) = gen_int_values(self);
                     self.builder
                         .build_int_signed_div(lhs, rhs, "")
                         .as_basic_value_enum()
-                } else if lhs_ty_id.is_unsigned_int() {
+                } else if lhs_ty_id.shape.is_unsigned_int() {
                     let (lhs, rhs) = gen_int_values(self);
                     self.builder
                         .build_int_unsigned_div(lhs, rhs, "")
@@ -109,12 +109,12 @@ impl<'a> CodeGenerator<'a> {
                 }
             }
             AssignOp::Rem => {
-                if lhs_ty_id.is_signed_int() {
+                if lhs_ty_id.shape.is_signed_int() {
                     let (lhs, rhs) = gen_int_values(self);
                     self.builder
                         .build_int_signed_rem(lhs, rhs, "")
                         .as_basic_value_enum()
-                } else if lhs_ty_id.is_unsigned_int() {
+                } else if lhs_ty_id.shape.is_unsigned_int() {
                     let (lhs, rhs) = gen_int_values(self);
                     self.builder
                         .build_int_unsigned_rem(lhs, rhs, "")
@@ -146,7 +146,7 @@ impl<'a> CodeGenerator<'a> {
             }
             AssignOp::Shr => {
                 let (lhs, rhs) = gen_int_values(self);
-                let sign_extend = lhs_ty_id.is_signed_int();
+                let sign_extend = lhs_ty_id.shape.is_signed_int();
 
                 self.builder
                     .build_right_shift(lhs, rhs, sign_extend, "")

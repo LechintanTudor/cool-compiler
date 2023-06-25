@@ -1,6 +1,6 @@
 use crate::{mangle_item_path, BaiscTypeEnumOptionExt, TyFieldMap};
 use cool_lexer::Symbol;
-use cool_resolve::{Field, ItemId, ResolveContext, TyId, ValueTy, VariantTyKind};
+use cool_resolve::{Field, ItemId, ResolveContext, TyId, ValueTy};
 use inkwell::context::Context;
 use inkwell::targets::TargetData;
 use inkwell::types::{
@@ -80,7 +80,7 @@ impl<'a> GeneratedTys<'a> {
 
     fn insert_derived_tys(&mut self, context: &'a Context, resolve: &'a ResolveContext) {
         for ty_id in resolve.iter_value_ty_ids() {
-            if let Some(struct_ty) = ty_id.as_struct() {
+            if let Some(struct_ty) = ty_id.shape.as_struct() {
                 self.declare_struct_ty(context, resolve, ty_id, struct_ty.item_id);
             }
         }
@@ -90,10 +90,9 @@ impl<'a> GeneratedTys<'a> {
         }
 
         for ty_id in resolve.iter_value_ty_ids() {
-            if let Some(struct_ty) = ty_id.as_struct() {
-                let struct_def = struct_ty.def.lock().unwrap();
-                let fields: &[_] = &struct_def.as_ref().unwrap().fields;
-                self.define_struct_ty(context, resolve, ty_id, fields.into());
+            if ty_id.shape.as_struct().is_some() {
+                let fields = ty_id.def.get_aggregate_fields().unwrap();
+                self.define_struct_ty(context, resolve, ty_id, &fields);
             }
         }
     }
@@ -115,7 +114,7 @@ impl<'a> GeneratedTys<'a> {
         context: &'a Context,
         resolve: &'a ResolveContext,
         ty_id: TyId,
-        fields: Vec<Field>,
+        fields: &[Field],
     ) {
         let struct_decl = self.tys[&ty_id].into_struct_type();
         let mut field_tys = Vec::<BasicTypeEnum>::new();
@@ -147,7 +146,7 @@ impl<'a> GeneratedTys<'a> {
             return ty;
         }
 
-        let ty: Option<BasicTypeEnum> = match ty_id.as_value().unwrap() {
+        let ty: Option<BasicTypeEnum> = match ty_id.shape.get_value() {
             ValueTy::Fn(fn_ty) => {
                 let params = fn_ty
                     .params
@@ -170,16 +169,9 @@ impl<'a> GeneratedTys<'a> {
                     .map(|elem_ty| elem_ty.array_type(array_ty.len as u32))
                     .map(BasicTypeEnum::from)
             }
-            ValueTy::Tuple(tuple_ty) => {
-                self.insert_aggregate_ty(context, resolve, ty_id, &tuple_ty.fields)
-            }
-            ValueTy::Struct(struct_ty) => {
-                let struct_def = struct_ty.def.lock().unwrap();
-                let fields: &[_] = &struct_def.as_ref().unwrap().fields;
-                self.insert_aggregate_ty(context, resolve, ty_id, fields)
-            }
-            ValueTy::Slice(slice_ty) => {
-                self.insert_aggregate_ty(context, resolve, ty_id, &slice_ty.fields)
+            ValueTy::Tuple(_) | ValueTy::Struct(_) | ValueTy::Slice(_) => {
+                let fields = ty_id.def.get_aggregate_fields().unwrap();
+                self.insert_aggregate_ty(context, resolve, ty_id, &fields)
             }
             ValueTy::Ptr(ptr_ty) => {
                 let ty = self
@@ -196,17 +188,6 @@ impl<'a> GeneratedTys<'a> {
                     .unwrap_or(self.isize_ty.as_basic_type_enum());
 
                 Some(ty)
-            }
-            ValueTy::Variant(variant_ty) => {
-                match variant_ty.kind {
-                    VariantTyKind::NullablePtr => {
-                        variant_ty
-                            .variants
-                            .first()
-                            .and_then(|&ty_id| self.insert_ty(context, resolve, ty_id))
-                    }
-                    _ => todo!(),
-                }
             }
             ty => unimplemented!("{}", ty),
         };

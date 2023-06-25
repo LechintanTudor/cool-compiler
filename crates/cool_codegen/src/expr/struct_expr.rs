@@ -15,8 +15,8 @@ impl<'a> CodeGenerator<'a> {
             MemoryValue::new(struct_ptr, struct_ty)
         });
 
-        let struct_def = expr_ty_id.as_struct().unwrap().def.lock().unwrap();
-        let fields: &[_] = &struct_def.as_ref().unwrap().fields;
+        let fields = expr_ty_id.def.get_aggregate_fields().unwrap();
+        let fields: &[_] = &fields;
 
         for initializer in expr.initializers.iter() {
             let Some(field_index) = self

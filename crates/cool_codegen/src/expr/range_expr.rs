@@ -45,7 +45,12 @@ impl<'a> CodeGenerator<'a> {
             MemoryValue::new(slice_ptr, slice_ty)
         });
 
-        match self.resolve[expr.base.expr_id()].ty_id.as_value().unwrap() {
+        match self.resolve[expr.base.expr_id()]
+            .ty_id
+            .shape
+            .as_value()
+            .unwrap()
+        {
             ValueTy::Array(_) => self.gen_array_range_expr(expr, base, from, to, memory),
             ValueTy::Slice(_) => self.gen_slice_range_expr(expr, base, from, to, memory),
             _ => unreachable!(),
@@ -83,8 +88,8 @@ impl<'a> CodeGenerator<'a> {
             LoadedValue::Void => {
                 let base_len = self.resolve[expr.base.expr_id()]
                     .ty_id
-                    .as_array()
-                    .unwrap()
+                    .shape
+                    .get_array()
                     .len;
 
                 self.tys.isize_ty().const_int(base_len, false)
@@ -105,8 +110,7 @@ impl<'a> CodeGenerator<'a> {
         memory: MemoryValue<'a>,
     ) -> Value<'a> {
         let slice_ty_id = self.resolve.get_expr_ty_id(expr.base.expr_id());
-        let ptr_ty_id = slice_ty_id.as_slice().unwrap().ptr_field().ty_id;
-        let elem_ty_id = ptr_ty_id.as_many_ptr().unwrap().pointee;
+        let elem_ty_id = slice_ty_id.shape.get_slice().elem;
         let elem_ty = self.tys[elem_ty_id].unwrap();
 
         let (ptr_value, len_value) = match base {

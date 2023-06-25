@@ -53,6 +53,14 @@ impl TyShape {
             _ => None,
         }
     }
+
+    #[inline]
+    pub fn get_value(&self) -> &ValueTy {
+        match self {
+            Self::Value(ty) => ty,
+            _ => panic!("type is not a value type"),
+        }
+    }
 }
 
 impl fmt::Display for TyShape {
