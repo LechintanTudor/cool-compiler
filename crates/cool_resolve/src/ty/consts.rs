@@ -1,6 +1,6 @@
 use crate::{
-    FloatTy, InferTy, IntTy, ItemTy, ManyPtrTy, ResolveTy, TyArena, TyContext, TyDef, TyId,
-    TyShape, ValueTy,
+    FloatTy, InferTy, IntTy, ItemTy, ManyPtrTy, PrimitiveTyData, TyDef, TyDefs, TyId, TyShape,
+    TyShapes, ValueTy,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -47,89 +47,60 @@ pub struct TyConsts {
 }
 
 impl TyConsts {
-    pub fn blank(tys: &mut TyArena) -> Self {
-        let diverge = TyId::from(tys.insert(ResolveTy {
-            shape: TyShape::Diverge,
-            def: TyDef::Undefined,
-        }));
+    pub fn new(shapes: &mut TyShapes, defs: &mut TyDefs, primitives: &PrimitiveTyData) -> Self {
+        let mut insert_ty_shape = |shape| {
+            let ty_id = TyId::from(shapes.insert(shape));
+            let ty_def = TyDef::for_basic(&ty_id, primitives).unwrap();
+            defs.insert(ty_id, ty_def);
+            ty_id
+        };
 
-        Self {
-            infer: diverge,
-            infer_number: diverge,
-            infer_int: diverge,
-            infer_float: diverge,
-            infer_empty_array: diverge,
-            module: diverge,
-            ty: diverge,
-            unit: diverge,
-            bool: diverge,
-            char: diverge,
-            c_str: diverge,
-            i8: diverge,
-            i16: diverge,
-            i32: diverge,
-            i64: diverge,
-            i128: diverge,
-            isize: diverge,
-            u8: diverge,
-            u16: diverge,
-            u32: diverge,
-            u64: diverge,
-            u128: diverge,
-            usize: diverge,
-            f32: diverge,
-            f64: diverge,
-            diverge,
-        }
-    }
-
-    pub fn new(tys: &mut TyContext) -> Self {
-        let i8_ty = tys.insert(TyShape::Value(IntTy::I8.into()));
-        let c_str = tys.insert(TyShape::Value(ValueTy::ManyPtr(ManyPtrTy {
+        let i8_ty = insert_ty_shape(TyShape::from(ValueTy::from(IntTy::I8)));
+        let c_str = insert_ty_shape(TyShape::from(ValueTy::ManyPtr(ManyPtrTy {
             pointee: i8_ty,
             is_mutable: false,
         })));
 
         Self {
             // Inferred
-            infer: tys.insert(TyShape::Infer(InferTy::Any)),
-            infer_number: tys.insert(TyShape::Infer(InferTy::Number)),
-            infer_int: tys.insert(TyShape::Infer(InferTy::Int)),
-            infer_float: tys.insert(TyShape::Infer(InferTy::Float)),
-            infer_empty_array: tys.insert(TyShape::Infer(InferTy::Array)),
+            infer: insert_ty_shape(TyShape::from(InferTy::Any)),
+            infer_number: insert_ty_shape(TyShape::from(InferTy::Number)),
+            infer_int: insert_ty_shape(TyShape::from(InferTy::Int)),
+            infer_float: insert_ty_shape(TyShape::from(InferTy::Float)),
+            infer_empty_array: insert_ty_shape(TyShape::from(InferTy::Array)),
 
             // Items
-            module: tys.insert(TyShape::Item(ItemTy::Module)),
-            ty: tys.insert(TyShape::Item(ItemTy::Ty)),
+            module: insert_ty_shape(TyShape::from(ItemTy::Module)),
+            ty: insert_ty_shape(TyShape::from(ItemTy::Ty)),
 
             // Non-number primitives
-            unit: tys.insert_value(ValueTy::Unit),
-            bool: tys.insert_value(ValueTy::Bool),
-            char: tys.insert_value(ValueTy::Char),
+            unit: insert_ty_shape(TyShape::from(ValueTy::Unit)),
+            bool: insert_ty_shape(TyShape::from(ValueTy::Bool)),
+            char: insert_ty_shape(TyShape::from(ValueTy::Char)),
             c_str,
 
             // Signed integers
-            i8: tys.insert_value(IntTy::I8),
-            i16: tys.insert_value(IntTy::I16),
-            i32: tys.insert_value(IntTy::I32),
-            i64: tys.insert_value(IntTy::I64),
-            i128: tys.insert_value(IntTy::I128),
-            isize: tys.insert_value(IntTy::Isize),
+            i8: insert_ty_shape(TyShape::from(ValueTy::from(IntTy::I8))),
+            i16: insert_ty_shape(TyShape::from(ValueTy::from(IntTy::I16))),
+            i32: insert_ty_shape(TyShape::from(ValueTy::from(IntTy::I32))),
+            i64: insert_ty_shape(TyShape::from(ValueTy::from(IntTy::I64))),
+            i128: insert_ty_shape(TyShape::from(ValueTy::from(IntTy::I128))),
+            isize: insert_ty_shape(TyShape::from(ValueTy::from(IntTy::Isize))),
 
             // Unsigned integers
-            u8: tys.insert_value(IntTy::U8),
-            u16: tys.insert_value(IntTy::U16),
-            u32: tys.insert_value(IntTy::U32),
-            u64: tys.insert_value(IntTy::U64),
-            u128: tys.insert_value(IntTy::U128),
-            usize: tys.insert_value(IntTy::Usize),
+            u8: insert_ty_shape(TyShape::from(ValueTy::from(IntTy::U8))),
+            u16: insert_ty_shape(TyShape::from(ValueTy::from(IntTy::U16))),
+            u32: insert_ty_shape(TyShape::from(ValueTy::from(IntTy::U32))),
+            u64: insert_ty_shape(TyShape::from(ValueTy::from(IntTy::U64))),
+            u128: insert_ty_shape(TyShape::from(ValueTy::from(IntTy::U128))),
+            usize: insert_ty_shape(TyShape::from(ValueTy::from(IntTy::Usize))),
 
             // Floats
-            f32: tys.insert_value(FloatTy::F32),
-            f64: tys.insert_value(FloatTy::F64),
+            f32: insert_ty_shape(TyShape::from(ValueTy::from(FloatTy::F32))),
+            f64: insert_ty_shape(TyShape::from(ValueTy::from(FloatTy::F64))),
 
             // Diverge
-            diverge: tys.insert(TyShape::Diverge),
+            diverge: insert_ty_shape(TyShape::Diverge),
         }
     }
 }

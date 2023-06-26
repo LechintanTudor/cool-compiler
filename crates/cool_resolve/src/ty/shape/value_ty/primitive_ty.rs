@@ -1,4 +1,3 @@
-use crate::{BasicTyDef, PrimitiveTyData, TyDef};
 use derive_more::Display;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Display, Debug)]
@@ -53,19 +52,6 @@ impl IntTy {
     pub fn is_unsigned(&self) -> bool {
         !self.is_signed()
     }
-
-    pub fn to_ty_def(&self, primitives: &PrimitiveTyData) -> TyDef {
-        let (size, align) = match self {
-            Self::I8 | Self::U8 => (1, primitives.i8_align),
-            Self::I16 | Self::U16 => (2, primitives.i16_align),
-            Self::I32 | Self::U32 => (4, primitives.i32_align),
-            Self::I64 | Self::U64 => (8, primitives.i64_align),
-            Self::I128 | Self::U128 => (16, primitives.i128_align),
-            Self::Isize | Self::Usize => (primitives.ptr_size, primitives.ptr_align),
-        };
-
-        TyDef::from(BasicTyDef { size, align })
-    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Display, Debug)]
@@ -75,15 +61,4 @@ pub enum FloatTy {
 
     #[display(fmt = "f64")]
     F64,
-}
-
-impl FloatTy {
-    pub fn to_ty_def(&self, primitives: &PrimitiveTyData) -> TyDef {
-        let (size, align) = match self {
-            Self::F32 => (4, primitives.f32_align),
-            Self::F64 => (8, primitives.f64_align),
-        };
-
-        TyDef::from(BasicTyDef { size, align })
-    }
 }

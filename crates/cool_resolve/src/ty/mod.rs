@@ -1,120 +1,97 @@
 mod consts;
 mod def;
 mod error;
-mod field;
-mod resolve_ty;
 mod shape;
 mod ty_id;
 
 pub use self::consts::*;
 pub use self::def::*;
 pub use self::error::*;
-pub use self::field::*;
-pub use self::resolve_ty::*;
 pub use self::shape::*;
 pub use self::ty_id::*;
 use cool_arena::InternArena;
-use cool_lexer::{sym, Symbol};
-use smallvec::SmallVec;
+use cool_lexer::Symbol;
+use rustc_hash::FxHashMap;
 
-pub(crate) type TyArena = InternArena<'static, ResolveTy>;
+pub(crate) type TyShapes = InternArena<'static, TyShape>;
+pub(crate) type TyDefs = FxHashMap<TyId, TyDef>;
 
 #[derive(Debug)]
 pub struct TyContext {
+    shapes: TyShapes,
+    defs: TyDefs,
     primitives: PrimitiveTyData,
-    tys: TyArena,
     consts: TyConsts,
 }
 
 impl TyContext {
     pub fn new(primitives: PrimitiveTyData) -> Self {
-        let mut tys = InternArena::new_leak();
-        let consts = TyConsts::blank(&mut tys);
+        let mut shapes = TyShapes::new_leak();
+        let mut defs = TyDefs::default();
+        let consts = TyConsts::new(&mut shapes, &mut defs, &primitives);
 
-        let mut tys = Self {
+        Self {
+            shapes,
+            defs,
             primitives,
-            tys,
             consts,
-        };
-        tys.consts = TyConsts::new(&mut tys);
-        tys
+        }
     }
 
     pub fn insert(&mut self, ty_shape: TyShape) -> TyId {
-        let ty_def = match &ty_shape {
-            TyShape::Value(value_ty) => {
-                self.value_ty_to_ty_def(value_ty)
-                    .unwrap_or_else(TyDef::deferred)
-            }
-            _ => TyDef::Undefined,
-        };
-
-        TyId::from(self.tys.insert(ResolveTy {
-            shape: ty_shape,
-            def: ty_def,
-        }))
+        let ty_id = TyId::from(self.shapes.insert(ty_shape));
+        let _ = self.define(ty_id);
+        ty_id
     }
 
     pub fn insert_value<T>(&mut self, value_ty: T) -> TyId
     where
         T: Into<ValueTy>,
     {
-        let value_ty: ValueTy = value_ty.into();
-        self.insert(value_ty.into())
+        self.insert(TyShape::from(value_ty.into()))
     }
 
-    pub fn value_ty_to_ty_def(&mut self, value_ty: &ValueTy) -> Option<TyDef> {
-        let ty_def = match value_ty {
-            ValueTy::Unit => TyDef::from(BasicTyDef { size: 0, align: 1 }),
-            ValueTy::Bool => TyDef::from(BasicTyDef { size: 1, align: 1 }),
-            ValueTy::Char => {
-                TyDef::from(BasicTyDef {
-                    size: 4,
-                    align: self.primitives.i32_align,
-                })
-            }
-            ValueTy::Int(int_ty) => int_ty.to_ty_def(&self.primitives),
-            ValueTy::Float(float_ty) => float_ty.to_ty_def(&self.primitives),
-            ValueTy::Array(array_ty) => {
-                let (elem_size, align) = array_ty.elem.def.try_get_size_align()?;
+    pub fn define(&mut self, ty_id: TyId) -> TyResult<&TyDef> {
+        if let Some(def) = self.defs.get(&ty_id) {
+            return Ok(def);
+        }
 
-                TyDef::from(BasicTyDef {
-                    size: elem_size * array_ty.len,
-                    align,
-                })
-            }
-            ValueTy::Tuple(tuple_ty) => {
-                let fields = tuple_ty
-                    .elems
-                    .iter()
-                    .enumerate()
-                    .map(|(i, ty)| (Symbol::insert_u32(i as u32), *ty))
-                    .collect::<SmallVec<[_; 2]>>();
-
-                TyDef::aggregate(fields).ok()?
-            }
-            ValueTy::Struct(_) => TyDef::deferred(),
-            ValueTy::Fn(fn_ty) => fn_ty.to_ty_def(&self.primitives),
-            ValueTy::Ptr(ptr_ty) => ptr_ty.to_ty_def(&self.primitives),
-            ValueTy::ManyPtr(many_ptr_ty) => many_ptr_ty.to_ty_def(&self.primitives),
-            ValueTy::Slice(slice_ty) => {
-                let fields = vec![
-                    (
-                        sym::PTR,
-                        self.insert_value(ManyPtrTy {
-                            pointee: slice_ty.elem,
-                            is_mutable: slice_ty.is_mutable,
-                        }),
-                    ),
-                    (sym::LEN, self.consts.usize),
-                ];
-
-                TyDef::aggregate(fields).ok()?
-            }
-            _ => todo!("{}", value_ty),
+        let TyShape::Value(value_ty) = &*ty_id else {
+            return Err(TyError {
+                ty_id,
+                kind: TyErrorKind::CannotBeDefined,
+            });
         };
 
-        Some(ty_def)
+        let def = match value_ty {
+            ValueTy::Unit => TyDef::for_unit(),
+            ValueTy::Bool => TyDef::for_bool(&self.primitives),
+            ValueTy::Char => TyDef::for_char(&self.primitives),
+            ValueTy::Int(int_ty) => TyDef::for_int(*int_ty, &self.primitives),
+            ValueTy::Float(float_ty) => TyDef::for_float(*float_ty, &self.primitives),
+            ValueTy::Fn(_) | ValueTy::Ptr(_) | ValueTy::ManyPtr(_) => {
+                TyDef::for_ptr(&self.primitives)
+            }
+            ValueTy::Array(array_ty) => {
+                let elem_def = self.define(array_ty.elem)?;
+
+                TyDef {
+                    size: elem_def.size * array_ty.len,
+                    align: elem_def.align,
+                    kind: TyKind::Basic,
+                }
+            }
+            _ => todo!(),
+        };
+
+        Ok(self.defs.entry(ty_id).or_insert(def))
+    }
+
+    pub fn define_struct<F>(&mut self, struct_ty_id: TyId, fields: F) -> TyResult
+    where
+        F: IntoIterator<Item = (Symbol, TyId)>,
+    {
+        todo!()
     }
 
     pub fn resolve_direct_ty_id(
@@ -131,7 +108,7 @@ impl TyContext {
 
     #[allow(clippy::if_same_then_else)]
     fn resolve_direct_ty_id_inner(&self, found_ty_id: TyId, expected_ty_id: TyId) -> Option<TyId> {
-        if found_ty_id.shape.is_diverge() {
+        if found_ty_id.is_diverge() {
             return Some(expected_ty_id);
         }
 
@@ -142,7 +119,7 @@ impl TyContext {
                 tys.i32
             } else if found_ty_id == tys.infer_float {
                 tys.f64
-            } else if !found_ty_id.shape.is_infer() {
+            } else if !found_ty_id.is_infer() {
                 found_ty_id
             } else {
                 return None;
@@ -152,7 +129,7 @@ impl TyContext {
                 tys.i32
             } else if found_ty_id == tys.infer_float {
                 tys.f32
-            } else if found_ty_id.shape.is_number() {
+            } else if found_ty_id.is_number() {
                 found_ty_id
             } else {
                 return None;
@@ -160,7 +137,7 @@ impl TyContext {
         } else if expected_ty_id == tys.infer_int {
             if found_ty_id == tys.infer_int {
                 tys.i32
-            } else if found_ty_id.shape.is_int() {
+            } else if found_ty_id.is_int() {
                 found_ty_id
             } else {
                 return None;
@@ -170,7 +147,7 @@ impl TyContext {
                 tys.f64
             } else if found_ty_id == tys.infer_float {
                 tys.f64
-            } else if found_ty_id.shape.is_float() {
+            } else if found_ty_id.is_float() {
                 found_ty_id
             } else {
                 return None;
@@ -178,10 +155,10 @@ impl TyContext {
         } else {
             let can_resolve_directly = (found_ty_id == expected_ty_id)
                 || (found_ty_id == tys.infer)
-                || (found_ty_id == tys.infer_number && expected_ty_id.shape.is_number())
-                || (found_ty_id == tys.infer_int && expected_ty_id.shape.is_number())
-                || (found_ty_id == tys.infer_float && expected_ty_id.shape.is_float())
-                || (found_ty_id == tys.infer_empty_array && expected_ty_id.shape.is_array());
+                || (found_ty_id == tys.infer_number && expected_ty_id.is_number())
+                || (found_ty_id == tys.infer_int && expected_ty_id.is_number())
+                || (found_ty_id == tys.infer_float && expected_ty_id.is_float())
+                || (found_ty_id == tys.infer_empty_array && expected_ty_id.is_array());
 
             if !can_resolve_directly {
                 return None;
@@ -200,9 +177,9 @@ impl TyContext {
 
     #[inline]
     pub fn iter_value_ty_ids(&self) -> impl Iterator<Item = TyId> + '_ {
-        self.tys
+        self.shapes
             .iter()
-            .filter(|ty| ty.shape.is_value())
+            .filter(|ty| ty.is_value())
             .map(TyId::from)
     }
 }

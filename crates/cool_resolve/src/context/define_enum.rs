@@ -29,7 +29,7 @@ impl ResolveContext {
             panic!("item is not a type");
         };
 
-        assert!(item_ty_id.shape.is_infer());
+        assert!(item_ty_id.is_infer());
 
         let variants = variants.into_iter().collect::<SmallVec<[Symbol; 4]>>();
         let mut used_variants = HashSet::<Symbol>::default();
@@ -45,7 +45,7 @@ impl ResolveContext {
 
         let storage = match storage {
             Some(storage) => {
-                if !storage.shape.is_int() {
+                if !storage.is_int() {
                     return Err(DefineError {
                         path: self.paths[item_id].into(),
                         kind: DefineErrorKind::EnumHasInvalidStorage { storage },

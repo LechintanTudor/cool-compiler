@@ -1,20 +1,10 @@
-use crate::{BasicTyDef, PrimitiveTyData, TyDef, TyId};
+use crate::TyId;
 use std::fmt;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct PtrTy {
     pub pointee: TyId,
     pub is_mutable: bool,
-}
-
-impl PtrTy {
-    #[inline]
-    pub fn to_ty_def(&self, primitives: &PrimitiveTyData) -> TyDef {
-        TyDef::from(BasicTyDef {
-            size: primitives.ptr_size,
-            align: primitives.ptr_align,
-        })
-    }
 }
 
 impl fmt::Display for PtrTy {
@@ -28,16 +18,6 @@ impl fmt::Display for PtrTy {
 pub struct ManyPtrTy {
     pub pointee: TyId,
     pub is_mutable: bool,
-}
-
-impl ManyPtrTy {
-    #[inline]
-    pub fn to_ty_def(&self, primitives: &PrimitiveTyData) -> TyDef {
-        TyDef::from(BasicTyDef {
-            size: primitives.ptr_size,
-            align: primitives.ptr_align,
-        })
-    }
 }
 
 impl fmt::Display for ManyPtrTy {

@@ -88,7 +88,7 @@ impl ResolveContext {
                 return None;
             }
 
-            match ty_id.shape.as_value().unwrap() {
+            match ty_id.get_value() {
                 ValueTy::Array(array_ty) => {
                     tys_to_check.push(array_ty.elem);
                 }

@@ -43,7 +43,7 @@ impl ResolveContext {
             panic!("item is not a type alias");
         };
 
-        assert!(alias_ty_id.shape.is_infer());
+        assert!(alias_ty_id.is_infer());
         *alias_ty_id = resolved_ty_id;
     }
 }

@@ -1,10 +1,10 @@
 use crate::UnsafeBump;
-use derive_more::{Deref, From};
+use derive_more::{Deref, Display, From};
 use rustc_hash::FxHashSet;
 use std::hash::{Hash, Hasher};
 use std::{fmt, ptr};
 
-#[derive(Eq, From, Deref, Debug)]
+#[derive(Eq, From, Deref, Display, Debug)]
 #[deref(forward)]
 pub struct InternedValue<'a, T>(&'a T)
 where

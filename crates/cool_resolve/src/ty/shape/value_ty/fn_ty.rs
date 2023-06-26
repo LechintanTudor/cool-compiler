@@ -1,4 +1,4 @@
-use crate::{BasicTyDef, FnAbi, PrimitiveTyData, TyDef, TyId};
+use crate::{FnAbi, TyId};
 use smallvec::SmallVec;
 use std::fmt;
 
@@ -8,16 +8,6 @@ pub struct FnTy {
     pub params: SmallVec<[TyId; 2]>,
     pub is_variadic: bool,
     pub ret: TyId,
-}
-
-impl FnTy {
-    #[inline]
-    pub fn to_ty_def(&self, primitives: &PrimitiveTyData) -> TyDef {
-        TyDef::from(BasicTyDef {
-            size: primitives.ptr_size,
-            align: primitives.ptr_align,
-        })
-    }
 }
 
 impl fmt::Display for FnTy {
@@ -53,7 +43,7 @@ impl fmt::Display for FnTy {
             }
         }
 
-        if self.ret.shape.is_unit() {
+        if self.ret.is_unit() {
             write!(f, ")")
         } else {
             write!(f, ") -> {}", self.ret)

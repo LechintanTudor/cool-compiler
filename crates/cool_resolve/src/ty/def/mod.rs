@@ -1,141 +1,106 @@
+mod aggregate_ty;
 mod primitive_ty_data;
 
+pub use self::aggregate_ty::*;
 pub use self::primitive_ty_data::*;
-use crate::{resolve_fields_size_align, DefineErrorKind, Field, TyId};
-use cool_lexer::Symbol;
-use derive_more::From;
-use rustc_hash::FxHashSet;
-use std::sync::{Arc, Mutex};
+use crate::{FloatTy, IntTy, TyShape, ValueTy};
 
-#[derive(Clone, From, Debug)]
-pub enum TyDef {
-    Undefined,
-    Basic(BasicTyDef),
-    Aggregate(AggregateTyDef),
-    Deferred(Arc<Mutex<Option<TyDef>>>),
+#[derive(Clone, Debug)]
+pub enum TyKind {
+    Basic,
+    Aggregate(AggregateTy),
+}
+
+#[derive(Clone, Debug)]
+pub struct TyDef {
+    pub size: u64,
+    pub align: u64,
+    pub kind: TyKind,
 }
 
 impl TyDef {
-    pub fn aggregate<F>(field_iter: F) -> Result<Self, DefineErrorKind>
-    where
-        F: IntoIterator<Item = (Symbol, TyId)>,
-    {
-        let mut fields = Vec::<Field>::new();
-        let mut used_symbols = FxHashSet::<Symbol>::default();
-
-        for (symbol, ty_id) in field_iter {
-            if !used_symbols.insert(symbol) {
-                return Err(DefineErrorKind::StructHasDuplicatedField { field: symbol });
-            }
-
-            fields.push(Field {
-                offset: 0,
-                symbol,
-                ty_id,
-            });
-        }
-
-        let (size, align) =
-            resolve_fields_size_align(&mut fields).ok_or(DefineErrorKind::TypeCannotBeDefined)?;
-
-        Ok(Self::from(AggregateTyDef {
-            size,
-            align,
-            fields: fields.into(),
-        }))
-    }
-
-    #[inline]
-    pub fn deferred() -> Self {
-        Self::Deferred(Default::default())
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn is_defined(&self) -> bool {
-        self.try_get_size_align().is_some()
-    }
-
-    #[must_use]
-    pub fn try_get_size_align(&self) -> Option<(u64, u64)> {
-        let (size, align) = match self {
-            Self::Undefined => return None,
-            Self::Basic(def) => (def.size, def.align),
-            Self::Aggregate(def) => (def.size, def.align),
-            Self::Deferred(def) => {
-                let def = def.lock().unwrap();
-
-                match def.as_ref()? {
-                    Self::Basic(def) => (def.size, def.align),
-                    Self::Aggregate(def) => (def.size, def.align),
-                    _ => return None,
-                }
-            }
+    pub fn for_basic(ty_shape: &TyShape, primitives: &PrimitiveTyData) -> Option<Self> {
+        let TyShape::Value(value_ty) = ty_shape else {
+            return None;
         };
 
-        Some((size, align))
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn get_size_align(&self) -> (u64, u64) {
-        self.try_get_size_align().unwrap()
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn get_size(&self) -> u64 {
-        let (size, _) = self.get_size_align();
-        size
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn get_align(&self) -> u64 {
-        let (_, align) = self.get_size_align();
-        align
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn is_zero_sized(&self) -> bool {
-        self.get_size() == 0
-    }
-
-    pub fn get_aggregate_fields(&self) -> Option<Arc<[Field]>> {
-        let fields = match self {
-            Self::Aggregate(def) => def.fields.clone(),
-            Self::Deferred(def) => {
-                let def = def.lock().unwrap();
-
-                match def.as_ref()? {
-                    Self::Aggregate(def) => def.fields.clone(),
-                    _ => return None,
-                }
-            }
+        let def = match value_ty {
+            ValueTy::Unit => Self::for_unit(),
+            ValueTy::Bool => Self::for_bool(primitives),
+            ValueTy::Char => Self::for_char(primitives),
+            ValueTy::Int(int_ty) => Self::for_int(*int_ty, primitives),
+            ValueTy::Float(float_ty) => Self::for_float(*float_ty, primitives),
+            ValueTy::Fn(_) | ValueTy::Ptr(_) | ValueTy::ManyPtr(_) => Self::for_ptr(primitives),
             _ => return None,
         };
 
-        Some(fields)
+        Some(def)
     }
 
-    pub fn get_aggregate_field(&self, symbol: Symbol) -> Option<Field> {
-        self.get_aggregate_fields()?
-            .iter()
-            .find(|field| field.symbol == symbol)
-            .cloned()
+    pub fn for_unit() -> Self {
+        Self {
+            size: 0,
+            align: 1,
+            kind: TyKind::Basic,
+        }
     }
-}
 
-#[derive(Clone, Debug)]
-pub struct BasicTyDef {
-    pub size: u64,
-    pub align: u64,
-}
+    pub fn for_bool(primitives: &PrimitiveTyData) -> Self {
+        Self {
+            size: 1,
+            align: primitives.i8_align,
+            kind: TyKind::Basic,
+        }
+    }
 
-#[derive(Clone, Debug)]
-pub struct AggregateTyDef {
-    pub size: u64,
-    pub align: u64,
-    pub fields: Arc<[Field]>,
+    pub fn for_char(primitives: &PrimitiveTyData) -> Self {
+        Self {
+            size: 1,
+            align: primitives.i32_align,
+            kind: TyKind::Basic,
+        }
+    }
+
+    pub fn for_int(int_ty: IntTy, primitives: &PrimitiveTyData) -> Self {
+        let (size, align) = match int_ty {
+            IntTy::I8 | IntTy::U8 => (1, primitives.i8_align),
+            IntTy::I16 | IntTy::U16 => (2, primitives.i16_align),
+            IntTy::I32 | IntTy::U32 => (4, primitives.i32_align),
+            IntTy::I64 | IntTy::U64 => (8, primitives.i64_align),
+            IntTy::I128 | IntTy::U128 => (16, primitives.i128_align),
+            IntTy::Isize | IntTy::Usize => (primitives.ptr_size, primitives.ptr_align),
+        };
+
+        Self {
+            size,
+            align,
+            kind: TyKind::Basic,
+        }
+    }
+
+    pub fn for_float(float_ty: FloatTy, primitives: &PrimitiveTyData) -> Self {
+        let (size, align) = match float_ty {
+            FloatTy::F32 => (4, primitives.f32_align),
+            FloatTy::F64 => (8, primitives.f64_align),
+        };
+
+        Self {
+            size,
+            align,
+            kind: TyKind::Basic,
+        }
+    }
+
+    pub fn for_ptr(primitives: &PrimitiveTyData) -> Self {
+        Self {
+            size: primitives.ptr_size,
+            align: primitives.ptr_align,
+            kind: TyKind::Basic,
+        }
+    }
+
+    #[inline]
+    pub fn is_zero_sized(&self) -> bool {
+        self.size == 0
+    }
 }
