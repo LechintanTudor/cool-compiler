@@ -43,7 +43,7 @@ impl AstGenerator<'_> {
                 let lhs_ty_id = self.resolve[lhs.expr_id()].ty_id;
                 let rhs = self.gen_expr(frame_id, lhs_ty_id, &binary_expr.rhs)?;
 
-                if !lhs_ty_id.shape.is_comparable() {
+                if !lhs_ty_id.is_comparable() {
                     return AstResult::error(
                         binary_expr.span(),
                         TyError {
@@ -72,7 +72,7 @@ impl AstGenerator<'_> {
                     }
 
                     self.tys().bool
-                } else if lhs_ty_id.shape.is_int() {
+                } else if lhs_ty_id.is_int() {
                     match bitwise_op {
                         BitwiseOp::Shl | BitwiseOp::Shr => self.tys().infer_int,
                         _ => lhs_ty_id,

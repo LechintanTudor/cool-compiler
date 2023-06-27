@@ -2,7 +2,7 @@ use crate::ModulePathsError;
 use cool_ast::AstError;
 use cool_lexer::Symbol;
 use cool_parser::ParseError;
-use cool_resolve::{DefineError, ItemPathBuf, ResolveError};
+use cool_resolve::{ItemId, ItemPathBuf, ResolveError, TyId};
 use cool_span::Span;
 use derive_more::{Display, Error, From};
 use std::fmt;
@@ -38,11 +38,7 @@ impl fmt::Display for CompileErrorBundle {
 #[derive(Clone, Error, From, Display, Debug)]
 pub enum CompileError {
     Ast(AstError),
-    #[display(fmt = "{error}")]
-    Define {
-        span: Span,
-        error: DefineError,
-    },
+    Define(DefineError),
     Import(ImportError),
     Init(InitError),
     Module(ModuleError),
@@ -54,13 +50,33 @@ impl CompileError {
     pub fn span(&self) -> Option<Span> {
         match self {
             Self::Ast(e) => Some(e.span),
-            Self::Define { span, .. } => Some(*span),
+            Self::Define(e) => e.span,
             Self::Import(e) => Some(e.span),
             Self::Module(e) => e.span,
             Self::Parse(e) => Some(e.found.span),
             _ => None,
         }
     }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, From, Debug)]
+pub enum DefineErrorKind {
+    Item(ItemId),
+    Ty(TyId),
+}
+
+#[derive(Clone, Error, Display, Debug)]
+#[display(fmt = "item {:?} could not be defined", kind)]
+pub struct DefineError {
+    pub span: Option<Span>,
+    pub kind: DefineErrorKind,
+}
+
+#[derive(Clone, Error, Display, Debug)]
+#[display(fmt = "failed to import '{path}'")]
+pub struct ImportError {
+    pub span: Span,
+    pub path: ItemPathBuf,
 }
 
 #[derive(Clone, Error, Display, Debug)]
@@ -75,11 +91,4 @@ pub struct ModuleError {
     pub span: Option<Span>,
     pub module_name: Symbol,
     pub error: ModulePathsError,
-}
-
-#[derive(Clone, Error, Display, Debug)]
-#[display(fmt = "failed to import '{path}'")]
-pub struct ImportError {
-    pub span: Span,
-    pub path: ItemPathBuf,
 }

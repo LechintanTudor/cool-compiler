@@ -47,8 +47,8 @@ impl AstGenerator<'_> {
             )
         };
 
-        let base_value_ty = base_ty_id.shape.as_value().unwrap();
-        let expr_value_ty = expr_ty_id.shape.as_value().unwrap();
+        let base_value_ty = base_ty_id.as_value().unwrap();
+        let expr_value_ty = expr_ty_id.as_value().unwrap();
 
         let kind = if base_value_ty.is_ptr() || base_value_ty.is_many_ptr() {
             if expr_value_ty.is_ptr() || expr_value_ty.is_many_ptr() {

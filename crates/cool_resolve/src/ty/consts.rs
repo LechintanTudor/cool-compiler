@@ -50,8 +50,11 @@ impl TyConsts {
     pub fn new(shapes: &mut TyShapes, defs: &mut TyDefs, primitives: &PrimitiveTyData) -> Self {
         let mut insert_ty_shape = |shape| {
             let ty_id = TyId::from(shapes.insert(shape));
-            let ty_def = TyDef::for_basic(&ty_id, primitives).unwrap();
-            defs.insert(ty_id, ty_def);
+
+            if let Some(ty_def) = TyDef::for_basic(&ty_id, primitives) {
+                defs.insert(ty_id, ty_def);
+            }
+
             ty_id
         };
 

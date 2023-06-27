@@ -1,7 +1,7 @@
 use crate::{
     ArrayTy, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ManyPtrTy, ModuleElem, ModuleId, PtrTy,
     ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, Scope, SliceTy, StructTy,
-    TupleTy, TyConsts, TyId, TyMismatch,
+    TupleTy, TyConsts, TyDef, TyId, TyMismatch,
 };
 use cool_lexer::{sym, Symbol};
 use smallvec::SmallVec;
@@ -71,34 +71,9 @@ impl ResolveContext {
         self.tys.insert_value(SliceTy { elem, is_mutable })
     }
 
-    pub fn mk_variant<V>(&mut self, _variants: V) -> TyId
-    where
-        V: IntoIterator<Item = TyId>,
-    {
-        todo!()
-        // let mut ty_ids = BTreeSet::<TyId>::default();
-
-        // for ty_id in variants {
-        //     match ty_id.as_variant() {
-        //         Some(variant_ty) => {
-        //             ty_ids.extend(variant_ty.variants.iter().cloned());
-        //         }
-        //         None => {
-        //             ty_ids.insert(ty_id);
-        //         }
-        //     }
-        // }
-
-        // match ty_ids.len() {
-        //     0 => self.ty_consts().unit,
-        //     1 => ty_ids.iter().next().copied().unwrap(),
-        //     _ => {
-        //         self.tys.insert_value(VariantTy {
-        //             kind: VariantTyKind::NullablePtr,
-        //             variants: ty_ids.into_iter().collect(),
-        //         })
-        //     }
-        // }
+    #[must_use]
+    pub fn define_ty(&mut self, ty_id: TyId) -> bool {
+        self.tys.define(ty_id).is_ok()
     }
 
     pub fn resolve_ty_from_path<'a, P>(&self, scope: Scope, path: P) -> ResolveResult<TyId>
@@ -130,7 +105,25 @@ impl ResolveContext {
     }
 
     #[inline]
+    pub fn get_ty_def(&self, ty_id: TyId) -> Option<&TyDef> {
+        self.tys.get_def(ty_id)
+    }
+
+    #[inline]
+    pub fn is_ty_zero_sized(&self, ty_id: TyId) -> bool {
+        match self.tys.get_def(ty_id) {
+            Some(def) => def.is_zero_sized(),
+            None => true,
+        }
+    }
+
+    #[inline]
     pub fn iter_value_ty_ids(&self) -> impl Iterator<Item = TyId> + '_ {
         self.tys.iter_value_ty_ids()
+    }
+
+    #[inline]
+    pub fn iter_undefined_value_ty_ids(&self) -> impl Iterator<Item = TyId> + '_ {
+        self.tys.iter_undefined_value_ty_ids()
     }
 }

@@ -41,7 +41,7 @@ impl CodeGenerator<'_> {
         for &binding_id in fn_ast.binding_ids.iter() {
             let param = self.resolve[binding_id];
 
-            let param_value = if param.ty_id.def.is_zero_sized() {
+            let param_value = if self.resolve.is_ty_zero_sized(param.ty_id) {
                 Value::Void
             } else {
                 let value = param_value_iter.next().unwrap().as_basic_value_enum();

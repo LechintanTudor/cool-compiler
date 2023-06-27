@@ -48,7 +48,7 @@ impl<'a> CodeGenerator<'a> {
     ) -> LoadedValue<'a> {
         let value = match arithmetic_op {
             ArithmeticOp::Add => {
-                if lhs_ty_id.shape.is_int() {
+                if lhs_ty_id.is_int() {
                     self.builder
                         .build_int_add(lhs.into_int_value(), rhs.into_int_value(), "")
                         .as_basic_value_enum()
@@ -59,7 +59,7 @@ impl<'a> CodeGenerator<'a> {
                 }
             }
             ArithmeticOp::Sub => {
-                if lhs_ty_id.shape.is_int() {
+                if lhs_ty_id.is_int() {
                     self.builder
                         .build_int_sub(lhs.into_int_value(), rhs.into_int_value(), "")
                         .as_basic_value_enum()
@@ -70,7 +70,7 @@ impl<'a> CodeGenerator<'a> {
                 }
             }
             ArithmeticOp::Mul => {
-                if lhs_ty_id.shape.is_int() {
+                if lhs_ty_id.is_int() {
                     self.builder
                         .build_int_mul(lhs.into_int_value(), rhs.into_int_value(), "")
                         .as_basic_value_enum()
@@ -81,11 +81,11 @@ impl<'a> CodeGenerator<'a> {
                 }
             }
             ArithmeticOp::Div => {
-                if lhs_ty_id.shape.is_signed_int() {
+                if lhs_ty_id.is_signed_int() {
                     self.builder
                         .build_int_signed_div(lhs.into_int_value(), rhs.into_int_value(), "")
                         .as_basic_value_enum()
-                } else if lhs_ty_id.shape.is_unsigned_int() {
+                } else if lhs_ty_id.is_unsigned_int() {
                     self.builder
                         .build_int_unsigned_div(lhs.into_int_value(), rhs.into_int_value(), "")
                         .as_basic_value_enum()
@@ -96,11 +96,11 @@ impl<'a> CodeGenerator<'a> {
                 }
             }
             ArithmeticOp::Rem => {
-                if lhs_ty_id.shape.is_signed_int() {
+                if lhs_ty_id.is_signed_int() {
                     self.builder
                         .build_int_signed_rem(lhs.into_int_value(), rhs.into_int_value(), "")
                         .as_basic_value_enum()
-                } else if lhs_ty_id.shape.is_unsigned_int() {
+                } else if lhs_ty_id.is_unsigned_int() {
                     self.builder
                         .build_int_unsigned_rem(lhs.into_int_value(), rhs.into_int_value(), "")
                         .as_basic_value_enum()
@@ -142,50 +142,50 @@ impl<'a> CodeGenerator<'a> {
 
         let value = match comparison_op {
             ComparisonOp::Eq => {
-                if lhs_ty_id.shape.is_float() {
+                if lhs_ty_id.is_float() {
                     self.util_gen_float_compare(lhs, rhs, FloatP::OEQ)
                 } else {
                     self.util_gen_int_compare(lhs, rhs, IntP::EQ)
                 }
             }
             ComparisonOp::Ne => {
-                if lhs_ty_id.shape.is_float() {
+                if lhs_ty_id.is_float() {
                     self.util_gen_float_compare(lhs, rhs, FloatP::ONE)
                 } else {
                     self.util_gen_int_compare(lhs, rhs, IntP::NE)
                 }
             }
             ComparisonOp::Lt => {
-                if lhs_ty_id.shape.is_float() {
+                if lhs_ty_id.is_float() {
                     self.util_gen_float_compare(lhs, rhs, FloatP::OLE)
-                } else if lhs_ty_id.shape.is_signed_int() {
+                } else if lhs_ty_id.is_signed_int() {
                     self.util_gen_int_compare(lhs, rhs, IntP::SLT)
                 } else {
                     self.util_gen_int_compare(lhs, rhs, IntP::ULT)
                 }
             }
             ComparisonOp::Le => {
-                if lhs_ty_id.shape.is_float() {
+                if lhs_ty_id.is_float() {
                     self.util_gen_float_compare(lhs, rhs, FloatP::OLE)
-                } else if lhs_ty_id.shape.is_signed_int() {
+                } else if lhs_ty_id.is_signed_int() {
                     self.util_gen_int_compare(lhs, rhs, IntP::SLT)
                 } else {
                     self.util_gen_int_compare(lhs, rhs, IntP::ULT)
                 }
             }
             ComparisonOp::Gt => {
-                if lhs_ty_id.shape.is_float() {
+                if lhs_ty_id.is_float() {
                     self.util_gen_float_compare(lhs, rhs, FloatP::OGT)
-                } else if lhs_ty_id.shape.is_signed_int() {
+                } else if lhs_ty_id.is_signed_int() {
                     self.util_gen_int_compare(lhs, rhs, IntP::SGT)
                 } else {
                     self.util_gen_int_compare(lhs, rhs, IntP::UGT)
                 }
             }
             ComparisonOp::Ge => {
-                if lhs_ty_id.shape.is_float() {
+                if lhs_ty_id.is_float() {
                     self.util_gen_float_compare(lhs, rhs, FloatP::OGE)
-                } else if lhs_ty_id.shape.is_signed_int() {
+                } else if lhs_ty_id.is_signed_int() {
                     self.util_gen_int_compare(lhs, rhs, IntP::SGE)
                 } else {
                     self.util_gen_int_compare(lhs, rhs, IntP::UGE)
@@ -215,7 +215,7 @@ impl<'a> CodeGenerator<'a> {
             BitwiseOp::Xor => self.builder.build_xor(lhs, rhs, ""),
             BitwiseOp::Shl => self.builder.build_left_shift(lhs, rhs, ""),
             BitwiseOp::Shr => {
-                let sign_extend = lhs_ty_id.shape.is_signed_int();
+                let sign_extend = lhs_ty_id.is_signed_int();
                 self.builder.build_right_shift(lhs, rhs, sign_extend, "")
             }
         };

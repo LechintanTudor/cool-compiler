@@ -26,8 +26,10 @@ impl<'a> CodeGenerator<'a> {
                     continue;
                 };
 
-            let field_ty = expr_ty_id
-                .def
+            let field_ty = self
+                .resolve
+                .get_ty_def(expr_ty_id)
+                .unwrap()
                 .get_aggregate_field(symbol)
                 .and_then(|field| self.tys[field.ty_id])
                 .unwrap();

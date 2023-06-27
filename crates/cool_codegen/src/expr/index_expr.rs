@@ -18,7 +18,7 @@ impl<'a> CodeGenerator<'a> {
 
         let index = index.as_basic_value().unwrap().into_int_value();
 
-        match self.resolve[expr.base.expr_id()].ty_id.shape.get_value() {
+        match self.resolve[expr.base.expr_id()].ty_id.get_value() {
             ValueTy::Array(_) => self.continue_gen_array_index_expr(expr, base, index),
             ValueTy::ManyPtr(_) => self.continue_gen_many_ptr_index_expr(expr, base, index),
             ValueTy::Slice(_) => self.continue_gen_slice_index_expr(expr, base, index),
@@ -58,7 +58,6 @@ impl<'a> CodeGenerator<'a> {
         let elem_ty_id = self
             .resolve
             .get_expr_ty_id(expr.base.expr_id())
-            .shape
             .get_many_ptr()
             .pointee;
 
@@ -81,7 +80,7 @@ impl<'a> CodeGenerator<'a> {
         index: IntValue<'a>,
     ) -> Value<'a> {
         let slice_ty_id = self.resolve.get_expr_ty_id(expr.base.expr_id());
-        let elem_ty_id = slice_ty_id.shape.get_slice().elem;
+        let elem_ty_id = slice_ty_id.get_slice().elem;
         let elem_ty = self.tys[elem_ty_id].unwrap();
 
         match base {

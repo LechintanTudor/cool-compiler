@@ -73,7 +73,7 @@ impl AstGenerator<'_> {
 
                 self.resolve[item_id]
                     .as_ty_id()
-                    .filter(|ty_id| !ty_id.shape.is_infer())
+                    .filter(|ty_id| !ty_id.is_infer())
                     .ok_or(AstError::new(
                         path_ty.span(),
                         ResolveError {
@@ -100,13 +100,13 @@ impl AstGenerator<'_> {
                 self.resolve.mk_tuple(elem_tys)
             }
             Ty::Variant(variant_ty) => {
-                let variants = variant_ty
+                let _variants = variant_ty
                     .variants
                     .iter()
                     .map(|ty| self.resolve_ty_inner(scope, ty))
                     .collect::<Result<TySmallVec, _>>()?;
 
-                self.resolve.mk_variant(variants)
+                todo!()
             }
         };
 

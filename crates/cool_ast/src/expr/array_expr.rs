@@ -90,12 +90,11 @@ impl AstGenerator<'_> {
     }
 
     fn get_expected_array_elem_ty_id(&self, expected_array_ty_id: TyId) -> TyId {
-        if expected_array_ty_id.shape.is_infer() {
+        if expected_array_ty_id.is_infer() {
             return self.tys().infer;
         }
 
         expected_array_ty_id
-            .shape
             .as_array()
             .map(|array_ty| array_ty.elem)
             .unwrap_or(self.tys().infer)

@@ -13,9 +13,9 @@ impl ResolveContext {
 
     pub fn define_enum<V>(
         &mut self,
-        item_id: ItemId,
-        storage: Option<TyId>,
-        variants: V,
+        _item_id: ItemId,
+        _storage: Option<TyId>,
+        _variants: V,
     ) -> TyResult
     where
         V: IntoIterator<Item = Symbol>,

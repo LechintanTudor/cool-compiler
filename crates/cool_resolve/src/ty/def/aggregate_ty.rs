@@ -2,6 +2,7 @@ use crate::{TyContext, TyDef, TyError, TyErrorKind, TyId, TyKind, TyResult};
 use cool_lexer::Symbol;
 use rustc_hash::FxHashSet;
 use std::cmp::Reverse;
+use std::sync::Arc;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Field {
@@ -12,7 +13,23 @@ pub struct Field {
 
 #[derive(Clone, Debug)]
 pub struct AggregateTy {
-    fields: Vec<Field>,
+    fields: Arc<[Field]>,
+}
+
+impl AggregateTy {
+    pub fn get_field(&self, symbol: Symbol) -> Option<&Field> {
+        self.fields.iter().find(|field| field.symbol == symbol)
+    }
+
+    #[inline]
+    pub fn fields(&self) -> &[Field] {
+        &self.fields
+    }
+
+    #[inline]
+    pub fn fields_arc(&self) -> &Arc<[Field]> {
+        &self.fields
+    }
 }
 
 impl TyContext {
@@ -61,7 +78,7 @@ impl TyContext {
                 align = align.max(field_def.align);
                 field
             })
-            .collect::<Vec<_>>();
+            .collect::<Arc<[_]>>();
 
         Ok(TyDef {
             size: offset + compute_padding_for_align(offset, align),

@@ -65,7 +65,7 @@ impl AstGenerator<'_> {
 
         let base_expr = &self.resolve[base.expr_id()];
 
-        let Some(value_ty) = base_expr.ty_id.shape.as_value() else {
+        let Some(value_ty) = base_expr.ty_id.as_value() else {
             panic!("type is not a value type");
         };
 

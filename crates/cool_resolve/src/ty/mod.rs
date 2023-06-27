@@ -224,6 +224,15 @@ impl TyContext {
     }
 
     #[inline]
+    pub fn iter_undefined_value_ty_ids(&self) -> impl Iterator<Item = TyId> + '_ {
+        self.shapes
+            .iter()
+            .filter(|ty| ty.is_value())
+            .map(TyId::from)
+            .filter(|&ty| self.get_def(ty).is_none())
+    }
+
+    #[inline]
     pub fn get_def(&self, ty_id: TyId) -> Option<&TyDef> {
         self.defs.get(&ty_id)
     }

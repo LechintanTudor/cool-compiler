@@ -43,7 +43,7 @@ impl AstGenerator<'_> {
                 let expr = self.gen_expr(frame_id, expected_ty_id, &unary_expr.expr)?;
                 let ty_id = self.resolve[expr.expr_id()].ty_id;
 
-                if !ty_id.shape.is_number() && ty_id != self.tys().bool {
+                if !ty_id.is_number() && ty_id != self.tys().bool {
                     return AstResult::ty_mismatch(
                         unary_expr.span(),
                         ty_id,

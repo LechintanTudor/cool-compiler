@@ -43,17 +43,21 @@ impl AstGenerator<'_> {
         let ty_id = self
             .gen_expr(frame_id, self.tys().ty, &expr.base)?
             .as_ty()
-            .expect("struct base is not a type")
+            .unwrap()
             .item_ty_id;
 
-        ty_id
-            .shape
-            .as_struct()
-            .expect("struct base is not a struct type");
+        ty_id.as_struct().expect("struct base is not a struct type");
 
         let mut initializers = Vec::<StructFieldInitializerAst>::new();
         let mut used_fields = FxHashSet::<Symbol>::default();
-        let fields = ty_id.def.get_aggregate_fields().unwrap();
+
+        let fields = self
+            .resolve
+            .get_ty_def(ty_id)
+            .unwrap()
+            .get_aggregate_fields()
+            .unwrap()
+            .clone();
 
         for initializer in expr.initializers.iter() {
             let field_ty_id = fields
@@ -62,9 +66,7 @@ impl AstGenerator<'_> {
                 .map(|field| field.ty_id)
                 .expect("unknown struct field in initializer");
 
-            let is_duplicate = !used_fields.insert(initializer.ident.symbol);
-
-            if is_duplicate {
+            if !used_fields.insert(initializer.ident.symbol) {
                 panic!(
                     "duplicate field initializer: {}",
                     initializer.ident.symbol.as_str()

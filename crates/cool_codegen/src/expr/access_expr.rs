@@ -53,7 +53,7 @@ impl<'a> CodeGenerator<'a> {
             return LoadedValue::Void;
         }
 
-        let base_ty = self.resolve[expr.base.expr_id()].ty_id.shape.get_array();
+        let base_ty = self.resolve[expr.base.expr_id()].ty_id.get_array();
 
         self.tys
             .isize_ty()

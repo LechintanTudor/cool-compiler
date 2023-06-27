@@ -80,7 +80,7 @@ impl<'a> GeneratedTys<'a> {
 
     fn insert_derived_tys(&mut self, context: &'a Context, resolve: &'a ResolveContext) {
         for ty_id in resolve.iter_value_ty_ids() {
-            if let Some(struct_ty) = ty_id.shape.as_struct() {
+            if let Some(struct_ty) = ty_id.as_struct() {
                 self.declare_struct_ty(context, resolve, ty_id, struct_ty.item_id);
             }
         }
@@ -90,8 +90,13 @@ impl<'a> GeneratedTys<'a> {
         }
 
         for ty_id in resolve.iter_value_ty_ids() {
-            if ty_id.shape.as_struct().is_some() {
-                let fields = ty_id.def.get_aggregate_fields().unwrap();
+            if ty_id.as_struct().is_some() {
+                let fields = resolve
+                    .get_ty_def(ty_id)
+                    .unwrap()
+                    .get_aggregate_fields()
+                    .unwrap();
+
                 self.define_struct_ty(context, resolve, ty_id, &fields);
             }
         }
@@ -146,7 +151,7 @@ impl<'a> GeneratedTys<'a> {
             return ty;
         }
 
-        let ty: Option<BasicTypeEnum> = match ty_id.shape.get_value() {
+        let ty: Option<BasicTypeEnum> = match ty_id.get_value() {
             ValueTy::Fn(fn_ty) => {
                 let params = fn_ty
                     .params
@@ -170,7 +175,12 @@ impl<'a> GeneratedTys<'a> {
                     .map(BasicTypeEnum::from)
             }
             ValueTy::Tuple(_) | ValueTy::Struct(_) | ValueTy::Slice(_) => {
-                let fields = ty_id.def.get_aggregate_fields().unwrap();
+                let fields = resolve
+                    .get_ty_def(ty_id)
+                    .unwrap()
+                    .get_aggregate_fields()
+                    .unwrap();
+
                 self.insert_aggregate_ty(context, resolve, ty_id, &fields)
             }
             ValueTy::Ptr(ptr_ty) => {

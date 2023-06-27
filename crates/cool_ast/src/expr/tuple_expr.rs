@@ -24,7 +24,7 @@ impl AstGenerator<'_> {
         expected_ty_id: TyId,
         expr: &TupleExpr,
     ) -> AstResult<TupleExprAst> {
-        let elems = match expected_ty_id.shape.as_tuple() {
+        let elems = match expected_ty_id.as_tuple() {
             Some(tuple_ty) => self.gen_tuple_elems_with_type(frame_id, tuple_ty, expr)?,
             None => self.gen_tuple_elems_without_type(frame_id, expr)?,
         };
