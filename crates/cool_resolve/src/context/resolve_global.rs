@@ -29,7 +29,7 @@ impl ResolveContext {
 
     pub fn insert_root_module(&mut self, symbol: Symbol) -> ResolveResult<ModuleId> {
         let item_id = self.insert_item(&[symbol])?;
-        let module_id = self.modules.push(Module::from_path(symbol));
+        let module_id = self.modules.push(Module::new(item_id));
         self.items.insert(item_id, ItemKind::Module(module_id));
 
         Ok(module_id)
@@ -41,14 +41,13 @@ impl ResolveContext {
         is_exported: bool,
         symbol: Symbol,
     ) -> ResolveResult<ModuleId> {
-        let module_path = {
+        let item_id = {
             let parent_module = &self.modules[parent];
-            parent_module.path.append(symbol)
+            let path = ItemPathBuf::from_base_and_symbol(&parent_module.item_id, symbol);
+            self.insert_item(path.as_symbol_slice())?
         };
 
-        let item_id = self.insert_item(module_path.as_symbol_slice())?;
-        let module_id = self.modules.push(Module::from_path(module_path));
-
+        let module_id = self.modules.push(Module::new(item_id));
         self.items.insert(item_id, ItemKind::Module(module_id));
 
         let parent_module = &mut self.modules[parent];
@@ -71,7 +70,7 @@ impl ResolveContext {
         symbol: Symbol,
     ) -> ResolveResult<ItemId> {
         let parent_module = &mut self.modules[parent];
-        let item_path = parent_module.path.append(symbol);
+        let item_path = parent_module.child_path(symbol);
 
         let item_id = self
             .paths
@@ -159,22 +158,26 @@ impl ResolveContext {
         let mut resolved_path: ItemPathBuf = match first_symbol {
             sym::KW_CRATE => {
                 let _ = symbol_iter.next();
-                module.path.first().into()
+                module.path().first().into()
             }
             sym::KW_SUPER => {
                 let _ = symbol_iter.next();
-                module.path.try_pop().ok_or(ResolveError {
-                    symbol: path.last(),
-                    kind: ResolveErrorKind::TooManySuperKeywords,
-                })?
+                module
+                    .path()
+                    .try_pop()
+                    .ok_or(ResolveError {
+                        symbol: path.last(),
+                        kind: ResolveErrorKind::TooManySuperKeywords,
+                    })?
+                    .to_path_buf()
             }
             sym::KW_SELF => {
                 let _ = symbol_iter.next();
-                module.path.clone()
+                module.path().to_path_buf()
             }
             symbol => {
                 if module.elems.contains_key(&symbol) {
-                    module.path.clone()
+                    module.path().to_path_buf()
                 } else if self.paths.contains(&[symbol]) {
                     // Check other crates
                     ItemPathBuf::from(symbol)
@@ -200,7 +203,7 @@ impl ResolveContext {
                 });
             };
 
-            if !current_item.is_exported && !module.path.starts_with(&current_module.path) {
+            if !current_item.is_exported && !module.item_id.is_child_of(current_module.item_id) {
                 return Err(ResolveError {
                     symbol,
                     kind: ResolveErrorKind::SymbolNotPublic,

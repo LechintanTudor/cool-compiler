@@ -7,6 +7,13 @@ pub struct ItemPathBuf(SmallVec<[Symbol; 4]>);
 
 impl ItemPathBuf {
     #[inline]
+    pub fn from_base_and_symbol(base: &[Symbol], symbol: Symbol) -> Self {
+        let mut path = SmallVec::from_slice(base);
+        path.push(symbol);
+        Self(path)
+    }
+
+    #[inline]
     pub fn as_path(&self) -> ItemPath {
         ItemPath(self.0.as_slice())
     }

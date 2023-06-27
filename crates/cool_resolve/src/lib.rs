@@ -1,6 +1,5 @@
 mod binding;
 mod context;
-mod fn_abi;
 mod item_id;
 mod item_kind;
 mod item_path;
@@ -10,7 +9,6 @@ mod ty;
 
 pub use self::binding::*;
 pub use self::context::*;
-pub use self::fn_abi::*;
 pub use self::item_id::*;
 pub use self::item_kind::*;
 pub use self::item_path::*;

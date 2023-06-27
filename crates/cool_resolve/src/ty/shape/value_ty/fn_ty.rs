@@ -1,6 +1,31 @@
-use crate::{FnAbi, TyId};
+use crate::TyId;
+use cool_lexer::{sym, Symbol};
+use derive_more::Display;
 use smallvec::SmallVec;
 use std::fmt;
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Default, Display, Debug)]
+pub enum FnAbi {
+    #[default]
+    #[display(fmt = "Cool")]
+    Cool,
+
+    #[display(fmt = "C")]
+    C,
+}
+
+impl FnAbi {
+    #[inline]
+    pub fn from_symbol(symbol: Symbol) -> Option<FnAbi> {
+        let abi = match symbol {
+            sym::ABI_COOL => Self::Cool,
+            sym::ABI_C => Self::C,
+            _ => return None,
+        };
+
+        Some(abi)
+    }
+}
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct FnTy {

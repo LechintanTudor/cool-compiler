@@ -46,18 +46,20 @@ impl ResolveContext {
         let parent_module = &self.modules[parent];
         let source_module = &self.modules[source_id];
 
-        let resolved_elem = source_module.elems.get(&symbol).ok_or(ResolveError {
-            symbol,
-            kind: ResolveErrorKind::SymbolNotFound,
-        })?;
+        let Some(elem) = source_module.elems.get(&symbol) else {
+            return Err(ResolveError {
+                symbol,
+                kind: ResolveErrorKind::SymbolNotFound,
+            });
+        };
 
-        if !resolved_elem.is_exported && !parent_module.path.starts_with(&source_module.path) {
+        if !elem.is_exported && !source_module.item_id.is_child_of(parent_module.item_id) {
             return Err(ResolveError {
                 symbol,
                 kind: ResolveErrorKind::SymbolNotPublic,
             });
         }
 
-        Ok(self.items[&resolved_elem.item_id])
+        Ok(self.items[&elem.item_id])
     }
 }

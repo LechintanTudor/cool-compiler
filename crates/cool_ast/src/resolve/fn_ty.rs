@@ -125,8 +125,10 @@ pub fn resolve_fn_abi(extern_decl: &Option<FnExternDecl>) -> AstResult<FnAbi> {
         return Ok(FnAbi::C);
     };
 
-    FnAbi::try_from(abi_symbol)
-        .map_err(|_| AstError::new(decl.span(), TyDefError::UnknownAbi { abi: abi_symbol }))
+    FnAbi::from_symbol(abi_symbol).ok_or(AstError::new(
+        decl.span(),
+        TyDefError::UnknownAbi { abi: abi_symbol },
+    ))
 }
 
 pub fn resolve_explicit_fn_abi(extern_decl: &Option<FnExternDecl>) -> AstResult<Option<FnAbi>> {
@@ -138,7 +140,10 @@ pub fn resolve_explicit_fn_abi(extern_decl: &Option<FnExternDecl>) -> AstResult<
         return Ok(Some(FnAbi::C));
     };
 
-    FnAbi::try_from(abi_symbol)
+    FnAbi::from_symbol(abi_symbol)
         .map(Some)
-        .map_err(|_| AstError::new(decl.span(), TyDefError::UnknownAbi { abi: abi_symbol }))
+        .ok_or(AstError::new(
+            decl.span(),
+            TyDefError::UnknownAbi { abi: abi_symbol },
+        ))
 }

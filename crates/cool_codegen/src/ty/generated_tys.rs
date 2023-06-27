@@ -97,7 +97,7 @@ impl<'a> GeneratedTys<'a> {
                     .get_aggregate_fields()
                     .unwrap();
 
-                self.define_struct_ty(context, resolve, ty_id, &fields);
+                self.define_struct_ty(context, resolve, ty_id, fields);
             }
         }
     }
@@ -175,7 +175,7 @@ impl<'a> GeneratedTys<'a> {
                     .get_aggregate_fields()
                     .unwrap();
 
-                self.insert_aggregate_ty(context, resolve, ty_id, &fields)
+                self.insert_aggregate_ty(context, resolve, ty_id, fields)
             }
             ValueTy::Ptr(ptr_ty) => {
                 let ty = self

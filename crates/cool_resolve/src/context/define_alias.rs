@@ -12,7 +12,7 @@ impl ResolveContext {
         symbol: Symbol,
     ) -> ResolveResult<ItemId> {
         let module = &mut self.modules[module_id];
-        let item_path = module.path.append(symbol);
+        let item_path = module.child_path(symbol);
 
         let item_id = self
             .paths
