@@ -74,7 +74,7 @@ impl TyContext {
                     ty_id: *field_ty_id,
                 };
 
-                offset += compute_padding_for_align(offset, field_def.align);
+                offset += field_def.size + compute_padding_for_align(offset, field_def.align);
                 align = align.max(field_def.align);
                 field
             })

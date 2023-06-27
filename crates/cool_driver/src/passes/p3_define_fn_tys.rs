@@ -43,9 +43,9 @@ pub fn p3_define_fn_tys(package: &Package, resolve: &mut ResolveContext) -> Comp
         }
     }
 
-    if errors.is_empty() {
-        Ok(())
-    } else {
-        Err(CompileErrorBundle { errors })
+    if !errors.is_empty() {
+        return Err(CompileErrorBundle { errors });
     }
+
+    Ok(())
 }
