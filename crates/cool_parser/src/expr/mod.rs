@@ -1,4 +1,5 @@
 mod access_expr;
+mod align_of_expr;
 mod array_expr;
 mod binary_expr;
 mod block_expr;
@@ -10,12 +11,14 @@ mod ident_expr;
 mod literal_expr;
 mod loop_expr;
 mod match_expr;
+mod size_of_expr;
 mod struct_expr;
 mod subscript_expr;
 mod tuple_expr;
 mod unary_expr;
 
 pub use self::access_expr::*;
+pub use self::align_of_expr::*;
 pub use self::array_expr::*;
 pub use self::binary_expr::*;
 pub use self::block_expr::*;
@@ -27,6 +30,7 @@ pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::loop_expr::*;
 pub use self::match_expr::*;
+pub use self::size_of_expr::*;
 pub use self::struct_expr::*;
 pub use self::subscript_expr::*;
 pub use self::tuple_expr::*;
@@ -58,6 +62,7 @@ macro_rules! define_expr {
 
 define_expr! {
     Access,
+    AlignOf,
     Array,
     ArrayRepeat,
     Binary,
@@ -74,6 +79,7 @@ define_expr! {
     Match,
     Paren,
     Range,
+    SizeOf,
     Struct,
     Tuple,
     Unary,
@@ -180,9 +186,11 @@ impl Parser<'_> {
         let mut expr: Expr = match self.peek().kind {
             TokenKind::Ident(_) => self.parse_ident_expr()?.into(),
             TokenKind::Prefix(_) | TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
+            tk::KW_ALIGN_OF => self.parse_align_of_expr()?.into(),
             tk::KW_IF => self.parse_cond_expr()?.into(),
             tk::KW_LOOP => self.parse_loop_expr()?.into(),
             tk::KW_MATCH => self.parse_match_expr()?.into(),
+            tk::KW_SIZE_OF => self.parse_size_of_expr()?.into(),
             tk::MINUS | tk::NOT | tk::AND => self.parse_unary_expr()?.into(),
             tk::OPEN_BRACE => self.parse_block_expr()?.into(),
             tk::OPEN_BRACKET => self.parse_array_expr()?,
@@ -191,7 +199,9 @@ impl Parser<'_> {
                 return self.peek_error(&[
                     tk::DIAG_IDENT,
                     tk::DIAG_LITERAL,
+                    tk::KW_ALIGN_OF,
                     tk::KW_RETURN,
+                    tk::KW_SIZE_OF,
                     tk::OPEN_BRACE,
                     tk::OPEN_BRACKET,
                     tk::OPEN_PAREN,

@@ -7,6 +7,7 @@ mod cond_expr;
 mod deref_expr;
 mod fn_call_expr;
 mod index_expr;
+mod layout_expr;
 mod literal_expr;
 mod range_expr;
 mod struct_expr;
@@ -27,6 +28,7 @@ impl<'a> CodeGenerator<'a> {
 
         match expr {
             ExprAst::Access(e) => self.gen_access_expr(e),
+            ExprAst::AlignOf(e) => self.gen_align_of_expr(e).as_basic_value_enum().into(),
             ExprAst::Array(e) => self.gen_array_expr(e, memory),
             ExprAst::ArrayLen(e) => self.gen_array_len_expr(e).into(),
             ExprAst::ArrayRepeat(e) => self.gen_array_repeat_expr(e, memory),
@@ -40,6 +42,7 @@ impl<'a> CodeGenerator<'a> {
             ExprAst::Index(e) => self.gen_index_expr(e),
             ExprAst::Literal(e) => self.gen_literal_expr(e).into(),
             ExprAst::Range(e) => self.gen_range_expr(e, memory),
+            ExprAst::SizeOf(e) => self.gen_size_of_expr(e).as_basic_value_enum().into(),
             ExprAst::Struct(e) => self.gen_struct_expr(e, memory),
             ExprAst::Tuple(e) => self.gen_tuple_expr(e, memory),
             ExprAst::Unary(e) => self.gen_unary_expr(e),
