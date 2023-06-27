@@ -1,5 +1,5 @@
 use crate::CodeGenerator;
-use cool_ast::{AlignOfExprAst, SizeOfExprAst};
+use cool_ast::{AlignOfExprAst, OffsetOfExprAst, SizeOfExprAst};
 use inkwell::values::IntValue;
 
 impl<'a> CodeGenerator<'a> {
@@ -10,6 +10,11 @@ impl<'a> CodeGenerator<'a> {
 
     #[inline]
     pub fn gen_align_of_expr(&mut self, expr: &AlignOfExprAst) -> IntValue<'a> {
+        self.tys.isize_ty().const_int(expr.value, false)
+    }
+
+    #[inline]
+    pub fn gen_offset_of_expr(&mut self, expr: &OffsetOfExprAst) -> IntValue<'a> {
         self.tys.isize_ty().const_int(expr.value, false)
     }
 }

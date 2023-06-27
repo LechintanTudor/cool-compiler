@@ -67,10 +67,7 @@ impl AstError {
     pub fn field_not_found(span: Span, ty_id: TyId, field: Symbol) -> Self {
         Self {
             span,
-            kind: AstErrorKind::Ty(TyError {
-                ty_id,
-                kind: TyErrorKind::FieldNotFound { field },
-            }),
+            kind: AstErrorKind::from(LogicError::FieldNotFound { ty_id, field }),
         }
     }
 
@@ -120,7 +117,6 @@ pub enum TyDefError {
 
 #[derive(Clone, Debug)]
 pub enum TyErrorKind {
-    FieldNotFound { field: Symbol },
     InvalidArgumentCount { found: u32 },
     TyMismatch { expected_ty_id: TyId },
     TyNotCallable,
@@ -138,9 +134,6 @@ pub struct TyError {
 impl fmt::Display for TyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.kind {
-            TyErrorKind::FieldNotFound { field } => {
-                write!(f, "type '{}' has no field '{}'", self.ty_id, field)
-            }
             TyErrorKind::InvalidArgumentCount { found } => {
                 write!(
                     f,
@@ -217,7 +210,10 @@ impl fmt::Display for LiteralError {
 }
 
 #[derive(Clone, Error, Display, Debug)]
-#[display(fmt = "tried to jump from outside a loop")]
 pub enum LogicError {
+    #[display(fmt = "tried to jump from outside a loop")]
     InvalidJump,
+
+    #[display(fmt = "type '{ty_id}' has no field '{field}'")]
+    FieldNotFound { ty_id: TyId, field: Symbol },
 }

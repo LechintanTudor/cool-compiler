@@ -10,6 +10,7 @@ mod fn_call_expr;
 mod ident_expr;
 mod index_expr;
 mod literal_expr;
+mod offset_of_expr;
 mod range_expr;
 mod size_of_expr;
 mod struct_expr;
@@ -28,6 +29,7 @@ pub use self::fn_call_expr::*;
 pub use self::ident_expr::*;
 pub use self::index_expr::*;
 pub use self::literal_expr::*;
+pub use self::offset_of_expr::*;
 pub use self::range_expr::*;
 pub use self::size_of_expr::*;
 pub use self::struct_expr::*;
@@ -104,6 +106,7 @@ define_expr_ast! {
     Index,
     Literal,
     Module,
+    OffsetOf,
     Range,
     SizeOf,
     Struct,
@@ -164,6 +167,7 @@ impl_gen_expr! {
     Ident,
     Index,
     Literal,
+    OffsetOf,
     Paren,
     Range,
     SizeOf,

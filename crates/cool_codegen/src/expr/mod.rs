@@ -41,6 +41,7 @@ impl<'a> CodeGenerator<'a> {
             ExprAst::FnCall(e) => self.gen_fn_call_expr(e).into(),
             ExprAst::Index(e) => self.gen_index_expr(e),
             ExprAst::Literal(e) => self.gen_literal_expr(e).into(),
+            ExprAst::OffsetOf(e) => self.gen_offset_of_expr(e).as_basic_value_enum().into(),
             ExprAst::Range(e) => self.gen_range_expr(e, memory),
             ExprAst::SizeOf(e) => self.gen_size_of_expr(e).as_basic_value_enum().into(),
             ExprAst::Struct(e) => self.gen_struct_expr(e, memory),

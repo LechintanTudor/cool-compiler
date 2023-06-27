@@ -28,6 +28,28 @@ impl Parser<'_> {
         })
     }
 
+    pub fn parse_access_path_ident(&mut self) -> ParseResult<Ident> {
+        let token = self.bump();
+
+        let ident = match token.kind {
+            TokenKind::Ident(symbol) => {
+                Ident {
+                    span: token.span,
+                    symbol,
+                }
+            }
+            TokenKind::Literal(literal) => {
+                Ident {
+                    span: token.span,
+                    symbol: literal.symbol,
+                }
+            }
+            _ => return self.error(token, &[tk::DIAG_IDENT]),
+        };
+
+        Ok(ident)
+    }
+
     pub fn parse_path_ident(&mut self) -> ParseResult<Ident> {
         let token = self.bump();
         let symbol = match token.kind {
