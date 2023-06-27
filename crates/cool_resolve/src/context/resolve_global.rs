@@ -1,12 +1,11 @@
 use crate::{
-    Binding, ItemKind, ItemPath, ItemPathBuf, Module, ModuleElem, Mutability, ResolveContext,
-    ResolveError, ResolveErrorKind, ResolveResult, Scope,
+    Binding, ItemId, ItemKind, ItemPath, ItemPathBuf, Module, ModuleElem, Mutability,
+    ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, Scope,
 };
 use cool_collections::id_newtype;
 use cool_lexer::{sym, Symbol};
-use std::ops;
+use std::ops::{self, Deref};
 
-id_newtype!(ItemId);
 id_newtype!(ModuleId);
 
 impl ModuleId {
@@ -17,19 +16,21 @@ impl ModuleId {
 }
 
 impl ResolveContext {
-    pub fn insert_root_module(&mut self, symbol: Symbol) -> ResolveResult<ModuleId> {
-        let item_id = self
-            .paths
-            .insert_slice_if_not_exists(&[symbol])
-            .ok_or(ResolveError {
-                symbol,
+    pub(crate) fn insert_item(&mut self, path: &[Symbol]) -> ResolveResult<ItemId> {
+        if self.paths.contains(path) {
+            return Err(ResolveError {
+                symbol: path.last().copied().unwrap_or(sym::EMPTY),
                 kind: ResolveErrorKind::SymbolAlreadyDefined,
-            })?;
+            });
+        }
 
+        Ok(ItemId::from(self.paths.insert_slice(path)))
+    }
+
+    pub fn insert_root_module(&mut self, symbol: Symbol) -> ResolveResult<ModuleId> {
+        let item_id = self.insert_item(&[symbol])?;
         let module_id = self.modules.push(Module::from_path(symbol));
-
-        self.items
-            .push_checked(item_id, ItemKind::Module(module_id));
+        self.items.insert(item_id, ItemKind::Module(module_id));
 
         Ok(module_id)
     }
@@ -45,18 +46,10 @@ impl ResolveContext {
             parent_module.path.append(symbol)
         };
 
-        let item_id = self
-            .paths
-            .insert_slice_if_not_exists(module_path.as_symbol_slice())
-            .ok_or(ResolveError {
-                symbol,
-                kind: ResolveErrorKind::SymbolAlreadyDefined,
-            })?;
-
+        let item_id = self.insert_item(module_path.as_symbol_slice())?;
         let module_id = self.modules.push(Module::from_path(module_path));
 
-        self.items
-            .push_checked(item_id, ItemKind::Module(module_id));
+        self.items.insert(item_id, ItemKind::Module(module_id));
 
         let parent_module = &mut self.modules[parent];
         parent_module.elems.insert(
@@ -83,6 +76,7 @@ impl ResolveContext {
         let item_id = self
             .paths
             .insert_slice_if_not_exists(item_path.as_symbol_slice())
+            .map(ItemId::from)
             .ok_or(ResolveError {
                 symbol,
                 kind: ResolveErrorKind::SymbolAlreadyDefined,
@@ -94,8 +88,7 @@ impl ResolveContext {
             ty_id: self.tys.consts().infer,
         });
 
-        self.items
-            .push_checked(item_id, ItemKind::Binding(binding_id));
+        self.items.insert(item_id, ItemKind::Binding(binding_id));
 
         parent_module.elems.insert(
             symbol,
@@ -200,10 +193,12 @@ impl ResolveContext {
         for &symbol in symbol_iter {
             let current_module = self.get_module_by_path(&resolved_path)?;
 
-            let current_item = current_module.elems.get(&symbol).ok_or(ResolveError {
-                symbol,
-                kind: ResolveErrorKind::SymbolNotFound,
-            })?;
+            let Some(current_item) = current_module.elems.get(&symbol) else {
+                return Err(ResolveError {
+                    symbol,
+                    kind: ResolveErrorKind::SymbolNotFound,
+                });
+            };
 
             if !current_item.is_exported && !module.path.starts_with(&current_module.path) {
                 return Err(ResolveError {
@@ -212,7 +207,7 @@ impl ResolveContext {
                 });
             }
 
-            resolved_path = self.paths[current_item.item_id].into();
+            resolved_path = current_item.item_id.deref().into();
         }
 
         self.get_item_id_by_path(&resolved_path)
@@ -223,16 +218,13 @@ impl ResolveContext {
     }
 
     #[inline]
-    pub fn get_path_by_item_id(&self, item_id: ItemId) -> ItemPath {
-        self.paths[item_id].into()
-    }
-
-    #[inline]
     fn get_item_id_by_path<'a, P>(&self, path: P) -> Option<ItemId>
     where
         P: Into<ItemPath<'a>>,
     {
-        self.paths.get_id(path.into().as_symbol_slice())
+        self.paths
+            .get(path.into().as_symbol_slice())
+            .map(ItemId::from)
     }
 
     fn get_module_by_path<'a, P>(&self, path: P) -> ResolveResult<&Module>
@@ -243,13 +235,14 @@ impl ResolveContext {
 
         let item_id = self
             .paths
-            .get_id(path.as_symbol_slice())
+            .get(path.as_symbol_slice())
+            .map(ItemId::from)
             .ok_or(ResolveError {
                 symbol: path.last(),
                 kind: ResolveErrorKind::SymbolNotFound,
             })?;
 
-        let module_id = self.items[item_id].as_module_id().ok_or(ResolveError {
+        let module_id = self.items[&item_id].as_module_id().ok_or(ResolveError {
             symbol: path.last(),
             kind: ResolveErrorKind::SymbolNotModule,
         })?;
@@ -263,7 +256,7 @@ impl ops::Index<ItemId> for ResolveContext {
 
     #[inline]
     fn index(&self, item_id: ItemId) -> &Self::Output {
-        &self.items[item_id]
+        &self.items[&item_id]
     }
 }
 

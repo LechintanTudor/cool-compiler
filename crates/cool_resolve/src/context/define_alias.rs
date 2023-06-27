@@ -17,13 +17,14 @@ impl ResolveContext {
         let item_id = self
             .paths
             .insert_slice_if_not_exists(item_path.as_symbol_slice())
+            .map(ItemId::from)
             .ok_or(ResolveError {
                 symbol,
                 kind: ResolveErrorKind::SymbolAlreadyDefined,
             })?;
 
         self.items
-            .push_checked(item_id, ItemKind::Ty(self.tys.consts().infer));
+            .insert(item_id, ItemKind::Ty(self.tys.consts().infer));
 
         module.elems.insert(
             symbol,
@@ -37,7 +38,7 @@ impl ResolveContext {
     }
 
     pub fn define_alias(&mut self, item_id: ItemId, resolved_ty_id: TyId) {
-        let item = &mut self.items[item_id];
+        let item = self.items.get_mut(&item_id).unwrap();
 
         let ItemKind::Ty(alias_ty_id) = item else {
             panic!("item is not a type alias");

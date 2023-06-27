@@ -59,14 +59,14 @@ impl CompileError {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, From, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, From, Display, Debug)]
 pub enum DefineErrorKind {
     Item(ItemId),
     Ty(TyId),
 }
 
 #[derive(Clone, Error, Display, Debug)]
-#[display(fmt = "item {:?} could not be defined", kind)]
+#[display(fmt = "item '{kind}' could not be defined")]
 pub struct DefineError {
     pub span: Option<Span>,
     pub kind: DefineErrorKind,

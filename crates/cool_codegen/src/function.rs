@@ -4,12 +4,7 @@ use inkwell::values::BasicValue;
 
 impl CodeGenerator<'_> {
     pub fn add_extern_fn(&mut self, extern_fn_ast: &ExternFnAst) {
-        let fn_name = self
-            .resolve
-            .get_path_by_item_id(extern_fn_ast.item_id)
-            .last()
-            .as_str();
-
+        let fn_name = extern_fn_ast.item_id.last().unwrap().as_str();
         let fn_ty = self.tys.get_fn_ty(extern_fn_ast.ty_id);
         let binding_id = self.resolve[extern_fn_ast.item_id].as_binding_id().unwrap();
         let fn_value = self.module.add_function(fn_name, fn_ty, None);
@@ -19,7 +14,7 @@ impl CodeGenerator<'_> {
     }
 
     pub fn add_fn(&mut self, fn_ast: &FnAst) {
-        let fn_name = mangle_item_path(self.resolve.get_path_by_item_id(fn_ast.item_id));
+        let fn_name = mangle_item_path(&*fn_ast.item_id);
         let fn_ty = self.tys.get_fn_ty(fn_ast.ty_id);
         let binding_id = self.resolve[fn_ast.item_id].as_binding_id().unwrap();
         let fn_value = self.module.add_function(&fn_name, fn_ty, None);

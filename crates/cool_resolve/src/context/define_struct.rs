@@ -17,13 +17,14 @@ impl ResolveContext {
         let item_id = self
             .paths
             .insert_slice_if_not_exists(item_path.as_symbol_slice())
+            .map(ItemId::from)
             .ok_or(ResolveError {
                 symbol,
                 kind: ResolveErrorKind::SymbolAlreadyDefined,
             })?;
 
         let ty_id = self.tys.insert_value(StructTy { item_id });
-        self.items.push_checked(item_id, ItemKind::Ty(ty_id));
+        self.items.insert(item_id, ItemKind::Ty(ty_id));
 
         module.elems.insert(
             symbol,
@@ -40,7 +41,7 @@ impl ResolveContext {
     where
         F: IntoIterator<Item = (Symbol, TyId)>,
     {
-        let struct_ty_id = self.items[item_id]
+        let struct_ty_id = self.items[&item_id]
             .as_ty_id()
             .expect("item is not a struct");
 

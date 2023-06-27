@@ -88,6 +88,13 @@ where
         self.values.contains(value)
     }
 
+    #[must_use]
+    pub fn get(&self, value: &T) -> Option<InternedValue<'a, T>> {
+        self.values
+            .get(value)
+            .map(|&value| InternedValue::from(value))
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = InternedValue<'a, T>> + '_ {
         self.values.iter().copied().map(InternedValue::from)
     }
@@ -105,6 +112,16 @@ where
         let value = unsafe { self.bump.alloc(value) };
         self.values.insert(value);
         InternedValue::from(value)
+    }
+
+    pub fn insert_if_not_exists(&mut self, value: T) -> Option<InternedValue<'a, T>> {
+        if self.values.contains(&value) {
+            return None;
+        }
+
+        let value = unsafe { self.bump.alloc(value) };
+        self.values.insert(value);
+        Some(InternedValue::from(value))
     }
 }
 
@@ -125,6 +142,19 @@ where
         InternedValue::from(value)
     }
 
+    pub fn insert_slice_if_not_exists(&mut self, value: &[E]) -> Option<InternedValue<'a, [E]>>
+    where
+        E: Copy,
+    {
+        if self.values.contains(&value) {
+            return None;
+        }
+
+        let value = unsafe { self.bump.alloc_slice_copy(value) };
+        self.values.insert(value);
+        Some(InternedValue::from(value))
+    }
+
     pub fn insert_slice_clone(&mut self, value: &[E]) -> InternedValue<'a, [E]>
     where
         E: Clone,
@@ -136,6 +166,22 @@ where
         let value = unsafe { self.bump.alloc_slice_clone(value) };
         self.values.insert(value);
         InternedValue::from(value)
+    }
+
+    pub fn insert_slice_clone_if_not_exists(
+        &mut self,
+        value: &[E],
+    ) -> Option<InternedValue<'a, [E]>>
+    where
+        E: Copy,
+    {
+        if self.values.contains(&value) {
+            return None;
+        }
+
+        let value = unsafe { self.bump.alloc_slice_clone(value) };
+        self.values.insert(value);
+        Some(InternedValue::from(value))
     }
 }
 
@@ -149,11 +195,21 @@ impl<'a> InternArena<'a, str> {
         self.values.insert(value);
         InternedValue::from(value)
     }
+
+    pub fn insert_str_if_not_exists(&mut self, value: &str) -> Option<InternedValue<'a, str>> {
+        if self.values.contains(value) {
+            return None;
+        }
+
+        let value = unsafe { self.bump.alloc_str(value) };
+        self.values.insert(value);
+        Some(InternedValue::from(value))
+    }
 }
 
 impl<T> fmt::Debug for InternArena<'_, T>
 where
-    T: fmt::Debug,
+    T: ?Sized + fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.values, f)

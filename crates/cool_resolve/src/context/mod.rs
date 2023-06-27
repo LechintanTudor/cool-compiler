@@ -17,15 +17,16 @@ pub use self::resolve_expr::*;
 pub use self::resolve_global::*;
 pub use self::resolve_local::*;
 pub use self::resolve_ty::*;
-use crate::{Binding, Frame, ItemKind, Module, PrimitiveTyData, TyContext};
-use cool_arena::Arena;
+use crate::{Binding, Frame, ItemId, ItemKind, Module, PrimitiveTyData, TyContext};
+use cool_arena::InternArena;
 use cool_collections::IdIndexedVec;
 use cool_lexer::{sym, Symbol};
+use rustc_hash::FxHashMap;
 
 #[derive(Debug)]
 pub struct ResolveContext {
-    paths: Arena<'static, ItemId, [Symbol]>,
-    items: IdIndexedVec<ItemId, ItemKind>,
+    paths: InternArena<'static, [Symbol]>,
+    items: FxHashMap<ItemId, ItemKind>,
     modules: IdIndexedVec<ModuleId, Module>,
     tys: TyContext,
     bindings: IdIndexedVec<BindingId, Binding>,
@@ -43,7 +44,7 @@ impl ResolveContext {
 
     fn empty(primitives: PrimitiveTyData) -> Self {
         Self {
-            paths: Arena::new_leak(),
+            paths: InternArena::new_leak(),
             items: Default::default(),
             modules: Default::default(),
             tys: TyContext::new(primitives),

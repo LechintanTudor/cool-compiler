@@ -24,7 +24,7 @@ impl ResolveContext {
                     let resolved_elem = self.modules[module_id].elems.get(&symbol);
 
                     match resolved_elem {
-                        Some(resolved_elem) => return Ok(self.items[resolved_elem.item_id]),
+                        Some(resolved_elem) => return Ok(self.items[&resolved_elem.item_id]),
                         None => {
                             return Err(ResolveError {
                                 symbol,
@@ -58,6 +58,6 @@ impl ResolveContext {
             });
         }
 
-        Ok(self.items[resolved_elem.item_id])
+        Ok(self.items[&resolved_elem.item_id])
     }
 }

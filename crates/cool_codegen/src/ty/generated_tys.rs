@@ -81,7 +81,7 @@ impl<'a> GeneratedTys<'a> {
     fn insert_derived_tys(&mut self, context: &'a Context, resolve: &'a ResolveContext) {
         for ty_id in resolve.iter_value_ty_ids() {
             if let Some(struct_ty) = ty_id.as_struct() {
-                self.declare_struct_ty(context, resolve, ty_id, struct_ty.item_id);
+                self.declare_struct_ty(context, ty_id, struct_ty.item_id);
             }
         }
 
@@ -102,14 +102,8 @@ impl<'a> GeneratedTys<'a> {
         }
     }
 
-    fn declare_struct_ty(
-        &mut self,
-        context: &'a Context,
-        resolve: &'a ResolveContext,
-        ty_id: TyId,
-        item_id: ItemId,
-    ) {
-        let struct_name = mangle_item_path(resolve.get_path_by_item_id(item_id));
+    fn declare_struct_ty(&mut self, context: &'a Context, ty_id: TyId, item_id: ItemId) {
+        let struct_name = mangle_item_path(&*item_id);
         let struct_ty = context.opaque_struct_type(&struct_name);
         self.tys.insert(ty_id, Some(struct_ty.as_basic_type_enum()));
     }

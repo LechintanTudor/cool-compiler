@@ -8,10 +8,7 @@ use smallvec::SmallVec;
 
 impl ResolveContext {
     pub(crate) fn insert_primitive_item_ty(&mut self, symbol: Symbol, ty_id: TyId) {
-        let item_id = self
-            .paths
-            .insert_slice_if_not_exists(&[sym::EMPTY, symbol])
-            .unwrap();
+        let item_id = ItemId::from(self.paths.insert_slice(&[sym::EMPTY, symbol]));
 
         self.modules[ModuleId::for_builtins()].elems.insert(
             symbol,
@@ -21,7 +18,7 @@ impl ResolveContext {
             },
         );
 
-        self.items.push(ItemKind::Ty(ty_id));
+        self.items.insert(item_id, ItemKind::Ty(ty_id));
     }
 
     pub fn mk_array(&mut self, len: u64, elem: TyId) -> TyId {
