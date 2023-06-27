@@ -1,10 +1,8 @@
 use crate::{
-    DefineError, DefineErrorKind, DefineResult, ItemId, ItemKind, ModuleElem, ModuleId,
-    ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, StructTy, TyId, ValueTy,
+    ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveErrorKind,
+    ResolveResult, StructTy, TyDef, TyId, TyResult,
 };
 use cool_lexer::Symbol;
-use rustc_hash::FxHashSet;
-use smallvec::SmallVec;
 
 impl ResolveContext {
     pub fn declare_struct(
@@ -38,72 +36,14 @@ impl ResolveContext {
         Ok(item_id)
     }
 
-    pub fn define_struct(
-        &mut self,
-        item_id: ItemId,
-        fields: Vec<(Symbol, TyId)>,
-    ) -> DefineResult<bool> {
-        let ty_id = self.items[item_id]
+    pub fn define_struct<F>(&mut self, item_id: ItemId, fields: F) -> TyResult<&TyDef>
+    where
+        F: IntoIterator<Item = (Symbol, TyId)>,
+    {
+        let struct_ty_id = self.items[item_id]
             .as_ty_id()
             .expect("item is not a struct");
 
-        let mut field_names = FxHashSet::<Symbol>::default();
-
-        for (field_symbol, field_ty_id) in fields.iter().copied() {
-            if !field_names.insert(field_symbol) {
-                return Err(DefineError {
-                    path: self.paths[item_id].into(),
-                    kind: DefineErrorKind::StructHasDuplicatedField {
-                        field: field_symbol,
-                    },
-                });
-            }
-
-            match self.ty_contains_ty(field_ty_id, ty_id) {
-                Some(true) => {
-                    return Err(DefineError {
-                        path: self.paths[item_id].into(),
-                        kind: DefineErrorKind::StructHasInfiniteSize,
-                    });
-                }
-                Some(false) => (),
-                None => return Ok(false),
-            }
-        }
-
-        let _ = ty_id.define_struct(fields);
-        Ok(true)
-    }
-
-    fn ty_contains_ty(&self, haysack_ty_id: TyId, needle_ty_id: TyId) -> Option<bool> {
-        let mut tys_to_check = SmallVec::<[TyId; 7]>::new();
-        tys_to_check.push(haysack_ty_id);
-
-        while let Some(ty_id) = tys_to_check.pop() {
-            if ty_id == needle_ty_id {
-                return Some(true);
-            }
-
-            if !ty_id.def.is_defined() {
-                return None;
-            }
-
-            match ty_id.get_value() {
-                ValueTy::Array(array_ty) => {
-                    tys_to_check.push(array_ty.elem);
-                }
-                ValueTy::Tuple(tuple_ty) => {
-                    tys_to_check.extend(tuple_ty.elems.iter().cloned());
-                }
-                ValueTy::Struct(_) => {
-                    let fields = ty_id.def.get_aggregate_fields()?;
-                    let fields = fields.iter().map(|field| field.ty_id);
-                    tys_to_check.extend(fields);
-                }
-                _ => (),
-            }
-        }
-
-        Some(false)
+        self.tys.define_struct(struct_ty_id, fields)
     }
 }

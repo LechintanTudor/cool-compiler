@@ -1,6 +1,5 @@
 mod define_alias;
 mod define_enum;
-mod define_error;
 mod define_struct;
 mod resolve_binding;
 mod resolve_error;
@@ -11,7 +10,6 @@ mod resolve_ty;
 
 pub use self::define_alias::*;
 pub use self::define_enum::*;
-pub use self::define_error::*;
 pub use self::define_struct::*;
 pub use self::resolve_binding::*;
 pub use self::resolve_error::*;

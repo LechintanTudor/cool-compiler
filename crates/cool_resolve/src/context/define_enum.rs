@@ -1,10 +1,5 @@
-use crate::{
-    DefineError, DefineErrorKind, DefineResult, EnumTy, ItemId, ItemKind, ModuleId, ResolveContext,
-    ResolveResult, TyId,
-};
+use crate::{ItemId, ModuleId, ResolveContext, ResolveResult, TyId, TyResult};
 use cool_lexer::Symbol;
-use smallvec::SmallVec;
-use std::collections::HashSet;
 
 impl ResolveContext {
     pub fn declare_enum(
@@ -21,49 +16,10 @@ impl ResolveContext {
         item_id: ItemId,
         storage: Option<TyId>,
         variants: V,
-    ) -> DefineResult<()>
+    ) -> TyResult
     where
         V: IntoIterator<Item = Symbol>,
     {
-        let ItemKind::Ty(item_ty_id) = &mut self.items[item_id] else {
-            panic!("item is not a type");
-        };
-
-        assert!(item_ty_id.is_infer());
-
-        let variants = variants.into_iter().collect::<SmallVec<[Symbol; 4]>>();
-        let mut used_variants = HashSet::<Symbol>::default();
-
-        for &variant in variants.iter() {
-            if !used_variants.insert(variant) {
-                return Err(DefineError {
-                    path: self.paths[item_id].into(),
-                    kind: DefineErrorKind::EnumHasDuplicatedVariant { variant },
-                });
-            }
-        }
-
-        let storage = match storage {
-            Some(storage) => {
-                if !storage.is_int() {
-                    return Err(DefineError {
-                        path: self.paths[item_id].into(),
-                        kind: DefineErrorKind::EnumHasInvalidStorage { storage },
-                    });
-                }
-
-                storage
-            }
-            None => self.tys.insert_value(EnumTy::DEFAULT_STORAGE),
-        };
-
-        let ty_id = self.tys.insert_value(EnumTy {
-            item_id,
-            storage,
-            variants,
-        });
-
-        *item_ty_id = ty_id;
-        Ok(())
+        todo!()
     }
 }

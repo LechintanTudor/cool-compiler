@@ -10,7 +10,7 @@ pub use self::error::*;
 pub use self::shape::*;
 pub use self::ty_id::*;
 use cool_arena::InternArena;
-use cool_lexer::Symbol;
+use cool_lexer::{sym, Symbol};
 use rustc_hash::FxHashMap;
 
 pub(crate) type TyShapes = InternArena<'static, TyShape>;
@@ -52,8 +52,8 @@ impl TyContext {
     }
 
     pub fn define(&mut self, ty_id: TyId) -> TyResult<&TyDef> {
-        if let Some(def) = self.defs.get(&ty_id) {
-            return Ok(def);
+        if self.defs.contains_key(&ty_id) {
+            return Ok(&self.defs[&ty_id]);
         }
 
         let TyShape::Value(value_ty) = &*ty_id else {
@@ -72,6 +72,20 @@ impl TyContext {
             ValueTy::Fn(_) | ValueTy::Ptr(_) | ValueTy::ManyPtr(_) => {
                 TyDef::for_ptr(&self.primitives)
             }
+            ValueTy::Slice(slice_ty) => {
+                let fields = [
+                    (
+                        sym::PTR,
+                        self.insert_value(ManyPtrTy {
+                            pointee: slice_ty.elem,
+                            is_mutable: slice_ty.is_mutable,
+                        }),
+                    ),
+                    (sym::LEN, self.consts.usize),
+                ];
+
+                self.mk_aggregate_ty_def(ty_id, fields)?
+            }
             ValueTy::Array(array_ty) => {
                 let elem_def = self.define(array_ty.elem)?;
 
@@ -81,17 +95,43 @@ impl TyContext {
                     kind: TyKind::Basic,
                 }
             }
-            _ => todo!(),
+            ValueTy::Tuple(tuple_ty) => {
+                let fields = tuple_ty
+                    .elems
+                    .iter()
+                    .enumerate()
+                    .map(|(i, &ty_id)| (Symbol::insert_u32(i as _), ty_id));
+
+                self.mk_aggregate_ty_def(ty_id, fields)?
+            }
+            _ => {
+                return Err(TyError {
+                    ty_id,
+                    kind: TyErrorKind::CannotBeDefined,
+                });
+            }
         };
 
         Ok(self.defs.entry(ty_id).or_insert(def))
     }
 
-    pub fn define_struct<F>(&mut self, struct_ty_id: TyId, fields: F) -> TyResult
+    pub fn define_struct<F>(&mut self, struct_ty_id: TyId, fields: F) -> TyResult<&TyDef>
     where
         F: IntoIterator<Item = (Symbol, TyId)>,
     {
-        todo!()
+        if !struct_ty_id.is_struct() {
+            return Err(TyError {
+                ty_id: struct_ty_id,
+                kind: TyErrorKind::CannotBeDefined,
+            });
+        }
+
+        if self.defs.contains_key(&struct_ty_id) {
+            return Ok(&self.defs[&struct_ty_id]);
+        }
+
+        let def = self.mk_aggregate_ty_def(struct_ty_id, fields)?;
+        Ok(self.defs.entry(struct_ty_id).or_insert(def))
     }
 
     pub fn resolve_direct_ty_id(
@@ -181,5 +221,10 @@ impl TyContext {
             .iter()
             .filter(|ty| ty.is_value())
             .map(TyId::from)
+    }
+
+    #[inline]
+    pub fn get_def(&self, ty_id: TyId) -> Option<&TyDef> {
+        self.defs.get(&ty_id)
     }
 }
