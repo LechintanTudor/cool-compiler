@@ -22,7 +22,7 @@ impl Section for IdentPath {
 impl Parser<'_> {
     pub fn parse_access_path(&mut self) -> ParseResult<IdentPath> {
         let mut idents = IdentVec::new();
-        idents.push(self.parse_ident()?);
+        idents.push(self.parse_access_path_ident()?);
 
         while self.bump_if_eq(tk::DOT).is_some() {
             idents.push(self.parse_access_path_ident()?);
