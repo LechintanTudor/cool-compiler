@@ -26,7 +26,7 @@ impl AstGenerator<'_> {
         fn_call_expr: &FnCallExpr,
     ) -> AstResult<FnCallExprAst> {
         let fn_expr = self.gen_expr(frame_id, self.tys().infer, &fn_call_expr.base)?;
-        let fn_expr_ty_id = self.resolve[fn_expr.expr_id()].ty_id;
+        let fn_expr_ty_id = fn_expr.expr_id().ty_id;
 
         let Some(fn_ty) = fn_expr_ty_id.as_fn() else {
             return AstResult::error(

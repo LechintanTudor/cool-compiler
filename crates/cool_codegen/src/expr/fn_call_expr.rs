@@ -36,7 +36,7 @@ impl<'a> CodeGenerator<'a> {
                     .left_or(LoadedValue::Void)
             }
             CallableValue::Register(fn_pointer) => {
-                let ty_id = self.resolve[expr.fn_expr.expr_id()].ty_id;
+                let ty_id = expr.fn_expr.expr_id().ty_id;
                 let fn_type = self.tys.get_fn_ty(ty_id);
 
                 self.builder

@@ -63,16 +63,16 @@ impl AstGenerator<'_> {
             }
         };
 
-        let base_expr = &self.resolve[base.expr_id()];
+        let base_expr_id = base.expr_id();
 
-        let Some(value_ty) = base_expr.ty_id.as_value() else {
+        let Some(value_ty) = base_expr_id.ty_id.as_value() else {
             panic!("type is not a value type");
         };
 
         let elem_ty_id = match value_ty {
             ValueTy::Array(array_ty) => {
                 if expr.is_mutable {
-                    assert!(base_expr.is_assignable());
+                    assert!(base_expr_id.is_assignable());
                 }
 
                 array_ty.elem

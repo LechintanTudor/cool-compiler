@@ -10,7 +10,7 @@ impl<'a> CodeGenerator<'a> {
         memory: Option<MemoryValue<'a>>,
     ) -> Value<'a> {
         let memory = memory.unwrap_or_else(|| {
-            let ty_id = self.resolve[expr.expr_id].ty_id;
+            let ty_id = expr.expr_id.ty_id;
             let ty = self.tys[ty_id].unwrap();
             let ptr = self.util_gen_alloca(ty);
             MemoryValue::new(ptr, ty)
@@ -56,7 +56,7 @@ impl<'a> CodeGenerator<'a> {
         };
 
         let memory = memory.unwrap_or_else(|| {
-            let ty_id = self.resolve[expr.expr_id].ty_id;
+            let ty_id = expr.expr_id.ty_id;
             let ty = self.tys[ty_id].unwrap();
             let ptr = self.util_gen_alloca(ty);
             MemoryValue::new(ptr, ty)

@@ -39,13 +39,13 @@ impl<'a> CodeGenerator<'a> {
         }
 
         let memory = memory.unwrap_or_else(|| {
-            let slice_ty_id = self.resolve.get_expr_ty_id(expr.expr_id);
+            let slice_ty_id = expr.expr_id.ty_id;
             let slice_ty = self.tys[slice_ty_id].unwrap();
             let slice_ptr = self.util_gen_alloca(slice_ty);
             MemoryValue::new(slice_ptr, slice_ty)
         });
 
-        match self.resolve[expr.base.expr_id()].ty_id.as_value().unwrap() {
+        match expr.base.expr_id().ty_id.as_value().unwrap() {
             ValueTy::Array(_) => self.gen_array_range_expr(expr, base, from, to, memory),
             ValueTy::Slice(_) => self.gen_slice_range_expr(expr, base, from, to, memory),
             _ => unreachable!(),
@@ -60,7 +60,7 @@ impl<'a> CodeGenerator<'a> {
         to: LoadedValue<'a>,
         memory: MemoryValue<'a>,
     ) -> Value<'a> {
-        let elem_ty = self.tys[self.resolve.get_expr_ty_id(expr.base.expr_id())]
+        let elem_ty = self.tys[expr.base.expr_id().ty_id]
             .unwrap()
             .into_array_type()
             .get_element_type();
@@ -81,7 +81,7 @@ impl<'a> CodeGenerator<'a> {
         let to = match to {
             LoadedValue::Register(value) => value.into_int_value(),
             LoadedValue::Void => {
-                let base_len = self.resolve[expr.base.expr_id()].ty_id.get_array().len;
+                let base_len = expr.base.expr_id().ty_id.get_array().len;
 
                 self.tys.isize_ty().const_int(base_len, false)
             }
@@ -100,7 +100,7 @@ impl<'a> CodeGenerator<'a> {
         to: LoadedValue<'a>,
         memory: MemoryValue<'a>,
     ) -> Value<'a> {
-        let slice_ty_id = self.resolve.get_expr_ty_id(expr.base.expr_id());
+        let slice_ty_id = expr.base.expr_id().ty_id;
         let elem_ty_id = slice_ty_id.get_slice().elem;
         let elem_ty = self.tys[elem_ty_id].unwrap();
 

@@ -41,7 +41,7 @@ impl AstGenerator<'_> {
                 frame_id,
                 decl_stmt.pattern.is_mutable,
                 decl_stmt.pattern.ident.symbol,
-                Some(self.resolve[expr.expr_id()].ty_id),
+                Some(expr.expr_id().ty_id),
             )
             .map_err(|error| AstError::new(decl_stmt.span(), error))?;
 

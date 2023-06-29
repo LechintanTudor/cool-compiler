@@ -13,7 +13,7 @@ impl<'a> CodeGenerator<'a> {
             pointer.into_basic_value().into_pointer_value()
         };
 
-        let expr_ty_id = self.resolve[deref_expr.expr_id].ty_id;
+        let expr_ty_id = deref_expr.expr_id.ty_id;
         let ty = self.tys[expr_ty_id].unwrap();
 
         Value::memory(pointer, ty)

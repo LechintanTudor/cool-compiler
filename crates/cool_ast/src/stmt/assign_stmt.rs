@@ -24,11 +24,11 @@ impl AstGenerator<'_> {
         stmt: &AssignStmt,
     ) -> AstResult<AssignStmtAst> {
         let lhs = self.gen_expr(frame_id, self.tys().infer, &stmt.lhs)?;
-        if !self.resolve[lhs.expr_id()].is_assignable() {
+        if !lhs.expr_id().is_assignable() {
             return AstResult::error(stmt.span(), ExprError::NotAssignable);
         }
 
-        let ty_id = self.resolve[lhs.expr_id()].ty_id;
+        let ty_id = lhs.expr_id().ty_id;
         let rhs = self.gen_expr(frame_id, ty_id, &stmt.rhs)?;
 
         Ok(AssignStmtAst {

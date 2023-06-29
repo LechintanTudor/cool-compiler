@@ -6,7 +6,7 @@ use inkwell::values::BasicValue;
 impl<'a> CodeGenerator<'a> {
     pub fn gen_assign_stmt(&mut self, assign: &AssignStmtAst) {
         let lhs = self.gen_expr(&assign.lhs, None);
-        let lhs_ty_id = self.resolve[assign.lhs.expr_id()].ty_id;
+        let lhs_ty_id = assign.lhs.expr_id().ty_id;
 
         if self.resolve.is_ty_zero_sized(lhs_ty_id) {
             self.gen_expr(&assign.rhs, None);

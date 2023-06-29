@@ -7,7 +7,7 @@ impl<'a> CodeGenerator<'a> {
         expr: &StructExprAst,
         memory: Option<MemoryValue<'a>>,
     ) -> Value<'a> {
-        let expr_ty_id = self.resolve[expr.expr_id].ty_id;
+        let expr_ty_id = expr.expr_id.ty_id;
 
         let memory = memory.unwrap_or_else(|| {
             let struct_ty = self.tys[expr_ty_id].unwrap();

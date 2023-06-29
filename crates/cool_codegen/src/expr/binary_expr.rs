@@ -29,7 +29,7 @@ impl<'a> CodeGenerator<'a> {
             rhs.into_basic_value()
         };
 
-        let lhs_ty_id = self.resolve[expr.lhs.expr_id()].ty_id;
+        let lhs_ty_id = expr.lhs.expr_id().ty_id;
 
         match expr.bin_op {
             BinOp::Arithmetic(op) => self.gen_arithmetic_expr(lhs_ty_id, lhs, rhs, op),

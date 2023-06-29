@@ -7,7 +7,7 @@ impl<'a> CodeGenerator<'a> {
         match self.gen_expr(&expr.base, None) {
             Value::Void => Value::Void,
             Value::Memory(memory) => {
-                let base_ty_id = self.resolve[expr.base.expr_id()].ty_id;
+                let base_ty_id = expr.base.expr_id().ty_id;
 
                 let Some(field_index) = self
                     .tys
@@ -21,12 +21,12 @@ impl<'a> CodeGenerator<'a> {
                     .build_struct_gep(memory.ty, memory.ptr, field_index, "")
                     .unwrap();
 
-                let field_ty_id = self.resolve[expr.expr_id].ty_id;
+                let field_ty_id = expr.expr_id.ty_id;
                 let field_ty = self.tys[field_ty_id].unwrap();
                 Value::memory(field_ptr, field_ty)
             }
             Value::Register(value) => {
-                let base_ty_id = self.resolve[expr.base.expr_id()].ty_id;
+                let base_ty_id = expr.base.expr_id().ty_id;
 
                 let Some(field_index) = self
                     .tys
@@ -53,11 +53,11 @@ impl<'a> CodeGenerator<'a> {
             return LoadedValue::Void;
         }
 
-        let base_ty = self.resolve[expr.base.expr_id()].ty_id.get_array();
+        let array_len = expr.base.expr_id().ty_id.get_array().len;
 
         self.tys
             .isize_ty()
-            .const_int(base_ty.len, false)
+            .const_int(array_len, false)
             .as_basic_value_enum()
             .into()
     }

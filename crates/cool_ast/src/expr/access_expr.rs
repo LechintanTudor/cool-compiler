@@ -115,9 +115,7 @@ impl AstGenerator<'_> {
                 }
             }
             base => {
-                let base_ty_id = self.resolve[base.expr_id()].ty_id;
-
-                match &*base_ty_id {
+                match &*base.expr_id().ty_id {
                     TyShape::Value(ValueTy::Ptr(_)) => {
                         let new_base = self.gen_implicit_deref_expr(Box::new(base))?;
 
@@ -138,8 +136,8 @@ impl AstGenerator<'_> {
     }
 
     fn gen_implicit_deref_expr(&mut self, base: Box<ExprAst>) -> AstResult<DerefExprAst> {
-        let base_expr = self.resolve[base.expr_id()];
-        let base_ptr_ty = base_expr.ty_id.as_ptr().unwrap();
+        let base_ty_id = base.expr_id().ty_id;
+        let base_ptr_ty = base_ty_id.as_ptr().unwrap();
 
         let expr_id = self.resolve.add_expr(ResolveExpr::lvalue(
             base_ptr_ty.pointee,
@@ -159,14 +157,14 @@ impl AstGenerator<'_> {
         base: Box<ExprAst>,
         access_expr: &AccessExpr,
     ) -> AstResult<ExprAst> {
-        let base_expr = self.resolve[base.expr_id()];
+        let base_expr_id = base.expr_id();
         let ident = access_expr.ident;
 
-        let expr = if base_expr.ty_id.is_array() {
+        let expr = if base_expr_id.ty_id.is_array() {
             if ident.symbol != sym::LEN {
                 return AstResult::field_not_found(
                     access_expr.span(),
-                    base_expr.ty_id,
+                    base_expr_id.ty_id,
                     ident.symbol,
                 );
             }
@@ -182,17 +180,20 @@ impl AstGenerator<'_> {
         } else {
             let field = self
                 .resolve
-                .get_ty_def(base_expr.ty_id)
+                .get_ty_def(base_expr_id.ty_id)
                 .unwrap()
                 .get_aggregate_field(ident.symbol)
                 .ok_or_else(|| {
-                    AstError::field_not_found(access_expr.span(), base_expr.ty_id, ident.symbol)
+                    AstError::field_not_found(access_expr.span(), base_expr_id.ty_id, ident.symbol)
                 })?;
 
             let ty_id =
                 self.resolve_direct_ty_id(access_expr.span(), field.ty_id, expected_ty_id)?;
 
-            let expr_id = self.resolve.add_expr(ResolveExpr { ty_id, ..base_expr });
+            let expr_id = self.resolve.add_expr(ResolveExpr {
+                ty_id,
+                ..*base_expr_id
+            });
 
             ExprAst::from(AccessExprAst {
                 expr_id,

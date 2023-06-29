@@ -8,6 +8,23 @@ pub struct VariantWrapExprAst {
     pub inner: Box<ExprAst>,
 }
 
+impl VariantWrapExprAst {
+    #[must_use]
+    pub fn variant_index(&self) -> u32 {
+        let inner_ty_id = self.inner.expr_id().ty_id;
+
+        self.expr_id
+            .ty_id
+            .get_variant()
+            .variants()
+            .iter()
+            .enumerate()
+            .find(|(_, ty_id)| **ty_id == inner_ty_id)
+            .map(|(index, _)| index as u32)
+            .unwrap()
+    }
+}
+
 impl Section for VariantWrapExprAst {
     #[inline]
     fn span(&self) -> Span {
@@ -21,7 +38,7 @@ impl AstGenerator<'_> {
         inner: Box<ExprAst>,
         variant_ty_id: TyId,
     ) -> AstResult<VariantWrapExprAst> {
-        let inner_ty_id = self.resolve.get_expr_ty_id(inner.expr_id());
+        let inner_ty_id = inner.expr_id().ty_id;
 
         if !variant_ty_id
             .get_variant()

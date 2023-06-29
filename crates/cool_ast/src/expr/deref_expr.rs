@@ -25,7 +25,7 @@ impl AstGenerator<'_> {
         deref_expr: &DerefExpr,
     ) -> AstResult<DerefExprAst> {
         let expr = self.gen_expr(frame_id, expected_ty_id, &deref_expr.expr)?;
-        let expr_ty_id = self.resolve[expr.expr_id()].ty_id;
+        let expr_ty_id = expr.expr_id().ty_id;
 
         let Some(pointer_ty) = expr_ty_id.as_ptr() else {
             return AstResult::error(

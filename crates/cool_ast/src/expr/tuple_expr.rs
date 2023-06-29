@@ -32,7 +32,7 @@ impl AstGenerator<'_> {
         let ty_id = {
             let elem_ty_ids = elems
                 .iter()
-                .map(|elem| self.resolve.get_expr_ty_id(elem.expr_id()))
+                .map(|elem| elem.expr_id().ty_id)
                 .collect::<Vec<_>>();
 
             let ty_id = self.resolve.mk_tuple(elem_ty_ids);

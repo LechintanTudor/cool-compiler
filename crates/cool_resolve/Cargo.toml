@@ -8,6 +8,7 @@ cool_arena = { path = "../cool_arena" }
 cool_collections = { path = "../cool_collections" }
 cool_lexer = { path = "../cool_lexer" }
 
+bumpalo = { workspace = true }
 derive_more =  { workspace = true }
 paste = { workspace = true }
 rustc-hash = { workspace = true }

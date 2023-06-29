@@ -38,7 +38,7 @@ impl AstGenerator<'_> {
             .unwrap_or(expected_ty_id);
 
         let if_block = self.gen_cond_block(frame_id, expected_ty_id, &expr.if_block)?;
-        let ty_id = self.resolve[if_block.expr.expr_id].ty_id;
+        let ty_id = if_block.expr.expr_id.ty_id;
 
         let mut cond_blocks = vec![if_block];
         for cond_block in expr.else_if_blocks.iter() {

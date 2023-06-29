@@ -30,7 +30,7 @@ impl AstGenerator<'_> {
         let (ty_id, lhs, rhs) = match binary_expr.bin_op {
             BinOp::Arithmetic(_) => {
                 let lhs = self.gen_expr(frame_id, expected_ty_id, &binary_expr.lhs)?;
-                let lhs_ty_id = self.resolve[lhs.expr_id()].ty_id;
+                let lhs_ty_id = lhs.expr_id().ty_id;
                 let rhs = self.gen_expr(frame_id, lhs_ty_id, &binary_expr.rhs)?;
 
                 let ty_id =
@@ -40,7 +40,7 @@ impl AstGenerator<'_> {
             }
             BinOp::Comparison(_) => {
                 let lhs = self.gen_expr(frame_id, self.tys().infer, &binary_expr.lhs)?;
-                let lhs_ty_id = self.resolve[lhs.expr_id()].ty_id;
+                let lhs_ty_id = lhs.expr_id().ty_id;
                 let rhs = self.gen_expr(frame_id, lhs_ty_id, &binary_expr.rhs)?;
 
                 if !lhs_ty_id.is_comparable() {
@@ -60,7 +60,7 @@ impl AstGenerator<'_> {
             }
             BinOp::Bitwise(bitwise_op) => {
                 let lhs = self.gen_expr(frame_id, expected_ty_id, &binary_expr.lhs)?;
-                let lhs_ty_id = self.resolve[lhs.expr_id()].ty_id;
+                let lhs_ty_id = lhs.expr_id().ty_id;
 
                 let rhs_expected_ty_id = if lhs_ty_id == self.tys().bool {
                     if matches!(bitwise_op, BitwiseOp::Shl | BitwiseOp::Shr) {

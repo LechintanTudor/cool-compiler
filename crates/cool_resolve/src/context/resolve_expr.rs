@@ -1,8 +1,10 @@
 use crate::{ResolveContext, TyId};
-use cool_collections::id_newtype;
-use std::ops;
+use cool_arena::InternedValue;
+use derive_more::Deref;
 
-id_newtype!(ExprId);
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Deref, Debug)]
+#[deref(forward)]
+pub struct ExprId(InternedValue<'static, ResolveExpr>);
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum ResolveExprKind {
@@ -52,20 +54,7 @@ impl ResolveExpr {
 impl ResolveContext {
     #[inline]
     pub fn add_expr(&mut self, expr: ResolveExpr) -> ExprId {
-        self.exprs.push(expr)
-    }
-
-    #[inline]
-    pub fn get_expr_ty_id(&self, expr_id: ExprId) -> TyId {
-        self.exprs[expr_id].ty_id
-    }
-}
-
-impl ops::Index<ExprId> for ResolveContext {
-    type Output = ResolveExpr;
-
-    #[inline]
-    fn index(&self, expr_id: ExprId) -> &Self::Output {
-        &self.exprs[expr_id]
+        let expr: &'static _ = self.exprs.alloc(expr);
+        ExprId(InternedValue::from(expr))
     }
 }

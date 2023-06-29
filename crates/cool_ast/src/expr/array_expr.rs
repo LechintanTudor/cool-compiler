@@ -43,7 +43,7 @@ impl AstGenerator<'_> {
             Some((first_elem, other_elems)) => {
                 let expected_elem_ty_id = self.get_expected_array_elem_ty_id(expected_ty_id);
                 let first_elem = self.gen_expr(frame_id, expected_elem_ty_id, first_elem)?;
-                let elem_ty_id = self.resolve[first_elem.expr_id()].ty_id;
+                let elem_ty_id = first_elem.expr_id().ty_id;
 
                 let mut elems = vec![first_elem];
                 for elem in other_elems {
@@ -76,7 +76,7 @@ impl AstGenerator<'_> {
 
         let expected_elem_ty_id = self.get_expected_array_elem_ty_id(expected_ty_id);
         let elem = self.gen_expr(frame_id, expected_elem_ty_id, &expr.elem)?;
-        let elem_ty_id = self.resolve[elem.expr_id()].ty_id;
+        let elem_ty_id = elem.expr_id().ty_id;
 
         let ty_id = self.resolve.mk_array(len, elem_ty_id);
         let ty_id = self.resolve_direct_ty_id(expr.span(), ty_id, expected_ty_id)?;

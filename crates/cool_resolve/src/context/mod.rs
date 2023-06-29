@@ -18,6 +18,7 @@ pub use self::resolve_global::*;
 pub use self::resolve_local::*;
 pub use self::resolve_ty::*;
 use crate::{Binding, Frame, ItemId, ItemKind, Module, PrimitiveTyData, TyContext};
+use bumpalo::Bump;
 use cool_arena::InternArena;
 use cool_collections::IdIndexedVec;
 use cool_lexer::{sym, Symbol};
@@ -31,7 +32,7 @@ pub struct ResolveContext {
     tys: TyContext,
     bindings: IdIndexedVec<BindingId, Binding>,
     frames: IdIndexedVec<FrameId, Frame>,
-    exprs: IdIndexedVec<ExprId, ResolveExpr>,
+    exprs: &'static Bump,
 }
 
 impl ResolveContext {
@@ -50,7 +51,7 @@ impl ResolveContext {
             tys: TyContext::new(primitives),
             bindings: Default::default(),
             frames: Default::default(),
-            exprs: Default::default(),
+            exprs: Box::leak(Box::default()),
         }
     }
 

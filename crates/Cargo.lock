@@ -273,6 +273,7 @@ dependencies = [
 name = "cool_resolve"
 version = "0.1.0"
 dependencies = [
+ "bumpalo",
  "cool_arena",
  "cool_collections",
  "cool_lexer",

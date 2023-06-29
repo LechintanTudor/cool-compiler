@@ -29,7 +29,7 @@ impl AstGenerator<'_> {
                 let expr = self.gen_expr(frame_id, expected_ty_id, &unary_expr.expr)?;
                 let ty_id = self.resolve_direct_ty_id(
                     unary_expr.span(),
-                    self.resolve[expr.expr_id()].ty_id,
+                    expr.expr_id().ty_id,
                     self.tys().infer_number,
                 )?;
 
@@ -41,7 +41,7 @@ impl AstGenerator<'_> {
             }
             UnaryOpKind::Not => {
                 let expr = self.gen_expr(frame_id, expected_ty_id, &unary_expr.expr)?;
-                let ty_id = self.resolve[expr.expr_id()].ty_id;
+                let ty_id = expr.expr_id().ty_id;
 
                 if !ty_id.is_number() && ty_id != self.tys().bool {
                     return AstResult::ty_mismatch(
@@ -59,7 +59,7 @@ impl AstGenerator<'_> {
             }
             UnaryOpKind::Addr { is_mutable } => {
                 let inner_expr = self.gen_expr(frame_id, self.tys().infer, &unary_expr.expr)?;
-                let inner_resolve_expr = self.resolve[inner_expr.expr_id()];
+                let inner_resolve_expr = inner_expr.expr_id();
 
                 let ty_id = self.resolve.mk_ptr(inner_resolve_expr.ty_id, is_mutable);
                 let ty_id = self.resolve_direct_ty_id(unary_expr.span(), ty_id, expected_ty_id)?;
