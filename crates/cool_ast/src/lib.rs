@@ -19,7 +19,7 @@ pub use self::function::*;
 pub use self::package::*;
 pub use self::resolve::*;
 pub use self::stmt::*;
-use cool_resolve::{ResolveContext, TyConsts, TyId};
+use cool_resolve::{ResolveContext, TyConsts, TyId, TyResolutionMethod};
 use cool_span::Span;
 
 pub struct AstGenerator<'a> {
@@ -43,24 +43,20 @@ impl<'a> AstGenerator<'a> {
         self.resolve.ty_consts()
     }
 
-    pub fn resolve_direct_ty_id(
+    pub fn resolve_expr_ty_id(
         &self,
         span: Span,
         found_ty_id: TyId,
         expected_ty_id: TyId,
-    ) -> AstResult<TyId> {
+    ) -> AstResult<(TyId, TyResolutionMethod)> {
         self.resolve
-            .resolve_direct_ty_id(found_ty_id, expected_ty_id)
-            .map_err(|error| {
-                AstError::new(
-                    span,
-                    TyError {
-                        ty_id: error.found_ty_id,
-                        kind: TyErrorKind::TyMismatch {
-                            expected_ty_id: error.expected_ty_id,
-                        },
-                    },
-                )
-            })
+            .resolve_ty_id(found_ty_id, expected_ty_id)
+            .ok_or(AstError::new(
+                span,
+                TyError {
+                    ty_id: found_ty_id,
+                    kind: TyErrorKind::TyMismatch { expected_ty_id },
+                },
+            ))
     }
 }

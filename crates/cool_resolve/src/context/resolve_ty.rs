@@ -1,7 +1,7 @@
 use crate::{
     ArrayTy, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ManyPtrTy, ModuleElem, ModuleId, PtrTy,
     ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, Scope, SliceTy, StructTy,
-    TupleTy, TyConsts, TyDef, TyId, TyMismatch, VariantTy,
+    TupleTy, TyConsts, TyDef, TyId, TyResolutionMethod, VariantTy,
 };
 use cool_lexer::{sym, Symbol};
 use smallvec::SmallVec;
@@ -93,12 +93,12 @@ impl ResolveContext {
     }
 
     #[inline]
-    pub fn resolve_direct_ty_id(
+    pub fn resolve_ty_id(
         &self,
         found_ty_id: TyId,
         expected_ty_id: TyId,
-    ) -> Result<TyId, TyMismatch> {
-        self.tys.resolve_direct_ty_id(found_ty_id, expected_ty_id)
+    ) -> Option<(TyId, TyResolutionMethod)> {
+        self.tys.resolve_ty_id(found_ty_id, expected_ty_id)
     }
 
     #[inline]

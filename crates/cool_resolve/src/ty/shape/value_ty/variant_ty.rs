@@ -41,6 +41,14 @@ impl VariantTy {
     pub fn variants(&self) -> &[TyId] {
         &self.variants
     }
+
+    pub fn get_variant_index(&self, ty_id: TyId) -> Option<u32> {
+        self.variants
+            .iter()
+            .enumerate()
+            .find(|(_, variant_ty_id)| **variant_ty_id == ty_id)
+            .map(|(index, _)| index as u32)
+    }
 }
 
 impl fmt::Display for VariantTy {

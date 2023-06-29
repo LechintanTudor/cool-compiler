@@ -1,20 +1,13 @@
 use crate::TyId;
 use cool_lexer::Symbol;
-use derive_more::{Display, Error};
+use derive_more::Error;
 use std::fmt;
-
-#[derive(Clone, Copy, Error, Display, Debug)]
-#[display(fmt = "[Type Mismatch]\n -> expected: {expected_ty_id}\n -> found:    {found_ty_id}")]
-pub struct TyMismatch {
-    pub found_ty_id: TyId,
-    pub expected_ty_id: TyId,
-}
 
 pub type TyResult<T = ()> = Result<T, TyError>;
 
 #[derive(Clone, Debug)]
 pub enum TyErrorKind {
-    Unify { expected: TyId },
+    Mismatch { expected: TyId },
     CannotBeDefined,
     StructHasInfiniteSize,
     StructHasDuplicatedField { field: Symbol },
@@ -31,7 +24,7 @@ pub struct TyError {
 impl fmt::Display for TyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.kind {
-            TyErrorKind::Unify { expected } => {
+            TyErrorKind::Mismatch { expected } => {
                 write!(
                     f,
                     "type mismatch - expected: '{}', found: '{}'",
