@@ -150,4 +150,12 @@ impl ValueTy {
             Self::Int(_) | Self::Float(_) | Self::Ptr(_) | Self::ManyPtr(_),
         )
     }
+
+    #[inline]
+    pub fn is_ptr_like(&self) -> bool {
+        matches!(
+            self,
+            Self::Ptr(_) | Self::ManyPtr(_) | Self::Fn(_) | Self::Slice(_),
+        )
+    }
 }

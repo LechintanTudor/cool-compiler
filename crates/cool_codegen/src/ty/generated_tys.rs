@@ -1,5 +1,5 @@
 use crate::{mangle_item_path, BaiscTypeEnumOptionExt, TyFieldMap};
-use cool_lexer::Symbol;
+use cool_lexer::{sym, Symbol};
 use cool_resolve::{Field, ItemId, ResolveContext, TyId, ValueTy};
 use inkwell::context::Context;
 use inkwell::targets::TargetData;
@@ -192,6 +192,37 @@ impl<'a> GeneratedTys<'a> {
                     .unwrap_or(self.isize_ty.as_basic_type_enum());
 
                 Some(ty)
+            }
+            ValueTy::Variant(_) => {
+                let tagged_union_ty = resolve
+                    .get_ty_def(ty_id)
+                    .unwrap()
+                    .kind
+                    .as_tagged_union()
+                    .unwrap();
+
+                let dominant_ty =
+                    self.insert_ty(context, resolve, tagged_union_ty.dominant_ty_id)?;
+
+                let padding = (tagged_union_ty.padding_before_index != 0).then(|| {
+                    context
+                        .i8_type()
+                        .array_type(tagged_union_ty.padding_before_index as u32)
+                        .as_basic_type_enum()
+                });
+
+                let index = context.i8_type().as_basic_type_enum();
+
+                let (fields, index_index) = match padding {
+                    Some(padding) => (vec![dominant_ty, padding, index], 2),
+                    None => (vec![dominant_ty, index], 1),
+                };
+
+                let mut field_map = FxHashMap::default();
+                field_map.insert(sym::VARIANT_INDEX, index_index);
+                self.field_maps.insert(ty_id, field_map.into());
+
+                Some(context.struct_type(&fields, false).as_basic_type_enum())
             }
             ty => unimplemented!("{}", ty),
         };

@@ -1,4 +1,6 @@
-use crate::{TyContext, TyDef, TyError, TyErrorKind, TyId, TyKind, TyResult};
+use crate::{
+    compute_padding_for_align, TyContext, TyDef, TyError, TyErrorKind, TyId, TyKind, TyResult,
+};
 use cool_lexer::Symbol;
 use rustc_hash::FxHashSet;
 use std::cmp::Reverse;
@@ -85,15 +87,5 @@ impl TyContext {
             align,
             kind: TyKind::Aggregate(AggregateTy { fields }),
         })
-    }
-}
-
-fn compute_padding_for_align(offset: u64, align: u64) -> u64 {
-    let misalign = offset % align;
-
-    if misalign > 0 {
-        align - misalign
-    } else {
-        0
     }
 }

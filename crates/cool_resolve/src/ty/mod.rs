@@ -104,6 +104,9 @@ impl TyContext {
 
                 self.mk_aggregate_ty_def(ty_id, fields)?
             }
+            ValueTy::Variant(variant_ty) => {
+                self.mk_tagged_union_ty_def(ty_id, variant_ty.variants().iter().copied())?
+            }
             _ => {
                 return Err(TyError {
                     ty_id,

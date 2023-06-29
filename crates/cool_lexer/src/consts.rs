@@ -192,5 +192,7 @@ define_symbols! {
         65: "string literal" as DIAG_STR_LITERAL,
         66: "punctuation" as DIAG_PUNCTUATION,
         67: "binary operator" as DIAG_BIN_OP,
+
+        68: "index" as VARIANT_INDEX,
     },
 }

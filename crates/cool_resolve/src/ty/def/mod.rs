@@ -1,15 +1,19 @@
 mod aggregate_ty;
 mod primitive_ty_data;
+mod tagged_union_ty;
 
 pub use self::aggregate_ty::*;
 pub use self::primitive_ty_data::*;
+pub use self::tagged_union_ty::*;
 use cool_lexer::Symbol;
+use derive_more::From;
 use std::sync::Arc;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, From, Debug)]
 pub enum TyKind {
     Basic,
     Aggregate(AggregateTy),
+    TaggedUnion(TaggedUnionTy),
 }
 
 impl TyKind {
@@ -17,6 +21,14 @@ impl TyKind {
     pub fn as_aggregate(&self) -> Option<&AggregateTy> {
         match self {
             Self::Aggregate(aggregate_ty) => Some(aggregate_ty),
+            _ => None,
+        }
+    }
+
+    #[inline]
+    pub fn as_tagged_union(&self) -> Option<&TaggedUnionTy> {
+        match self {
+            Self::TaggedUnion(tagged_union_ty) => Some(tagged_union_ty),
             _ => None,
         }
     }
@@ -42,5 +54,15 @@ impl TyDef {
     #[inline]
     pub fn is_zero_sized(&self) -> bool {
         self.size == 0
+    }
+}
+
+pub(crate) fn compute_padding_for_align(offset: u64, align: u64) -> u64 {
+    let misalign = offset % align;
+
+    if misalign > 0 {
+        align - misalign
+    } else {
+        0
     }
 }
