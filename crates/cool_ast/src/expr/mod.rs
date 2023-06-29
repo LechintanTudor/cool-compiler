@@ -16,6 +16,7 @@ mod size_of_expr;
 mod struct_expr;
 mod tuple_expr;
 mod unary_expr;
+mod variant_wrap_expr;
 
 pub use self::access_expr::*;
 pub use self::align_of_expr::*;
@@ -35,6 +36,7 @@ pub use self::size_of_expr::*;
 pub use self::struct_expr::*;
 pub use self::tuple_expr::*;
 pub use self::unary_expr::*;
+pub use self::variant_wrap_expr::*;
 use crate::{AstGenerator, AstResult};
 use cool_parser::{Expr, ParenExpr};
 use cool_resolve::{ExprId, FrameId, TyId};
@@ -113,6 +115,7 @@ define_expr_ast! {
     Tuple,
     Ty,
     Unary,
+    VariantWrap,
 }
 
 impl ExprAst {
