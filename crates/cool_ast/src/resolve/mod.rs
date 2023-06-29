@@ -100,13 +100,13 @@ impl AstGenerator<'_> {
                 self.resolve.mk_tuple(elem_tys)
             }
             Ty::Variant(variant_ty) => {
-                let _variants = variant_ty
+                let variants = variant_ty
                     .variants
                     .iter()
                     .map(|ty| self.resolve_ty_inner(scope, ty))
                     .collect::<Result<TySmallVec, _>>()?;
 
-                todo!()
+                self.resolve.mk_variant(variants)
             }
         };
 

@@ -1,50 +1,61 @@
-use crate::TyId;
+use crate::{TyId, ValueTy};
+use smallvec::SmallVec;
 use std::collections::BTreeSet;
 use std::fmt;
-use std::hash::{Hash, Hasher};
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum VariantTyKind {
-    Regular,
-    NullablePtr,
-}
-
-#[derive(Clone, Eq, Debug)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub struct VariantTy {
-    pub kind: VariantTyKind,
-    pub variants: BTreeSet<TyId>,
+    variants: SmallVec<[TyId; 2]>,
 }
 
-impl PartialEq for VariantTy {
-    #[inline]
-    fn eq(&self, other: &Self) -> bool {
-        self.variants == other.variants
-    }
-}
-
-impl Hash for VariantTy {
-    fn hash<H>(&self, state: &mut H)
+impl VariantTy {
+    pub fn new<V>(variants: V) -> ValueTy
     where
-        H: Hasher,
+        V: IntoIterator<Item = TyId>,
     {
-        self.variants.hash(state);
+        let mut variant_set = BTreeSet::<TyId>::new();
+
+        for variant in variants {
+            match variant.as_variant() {
+                Some(variant_ty) => {
+                    variant_set.extend(variant_ty.variants().iter().copied());
+                }
+                None => {
+                    variant_set.insert(variant);
+                }
+            }
+        }
+
+        match variant_set.len() {
+            0 => ValueTy::Unit,
+            1 => variant_set.first().unwrap().get_value().clone(),
+            _ => {
+                ValueTy::from(Self {
+                    variants: variant_set.into_iter().collect(),
+                })
+            }
+        }
+    }
+
+    #[inline]
+    pub fn variants(&self) -> &[TyId] {
+        &self.variants
     }
 }
 
 impl fmt::Display for VariantTy {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "(")?;
+        match self.variants.as_slice() {
+            [] => write!(f, "()"),
+            [first, others @ ..] => {
+                write!(f, "({}", first)?;
 
-        let mut variant_iter = self.variants.iter();
+                for other in others {
+                    write!(f, " | {}", other)?;
+                }
 
-        if let Some(first) = variant_iter.next() {
-            write!(f, "{first}")?;
+                write!(f, ")")
+            }
         }
-
-        for other in variant_iter {
-            write!(f, " | {other}")?;
-        }
-
-        write!(f, ")")
     }
 }

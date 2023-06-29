@@ -97,7 +97,7 @@ impl TyContext {
             }
             ValueTy::Tuple(tuple_ty) => {
                 let fields = tuple_ty
-                    .elems
+                    .elems()
                     .iter()
                     .enumerate()
                     .map(|(i, &ty_id)| (Symbol::insert_u32(i as _), ty_id));

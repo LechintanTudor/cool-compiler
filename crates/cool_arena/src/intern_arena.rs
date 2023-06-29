@@ -1,10 +1,11 @@
 use crate::UnsafeBump;
 use derive_more::{Deref, Display, From};
 use rustc_hash::FxHashSet;
+use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 use std::{fmt, ptr};
 
-#[derive(Eq, From, Deref, Display, Debug)]
+#[derive(From, Deref, Display, Debug)]
 #[deref(forward)]
 pub struct InternedValue<'a, T>(&'a T)
 where
@@ -44,6 +45,39 @@ where
 {
     fn eq(&self, other: &Self) -> bool {
         ptr::eq(self.0, other.0)
+    }
+}
+
+impl<T> Eq for InternedValue<'_, T>
+where
+    T: ?Sized,
+{
+    // Empty
+}
+
+impl<T> PartialOrd for InternedValue<'_, T>
+where
+    T: ?Sized,
+    Self: Ord,
+{
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<T> Ord for InternedValue<'_, T> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let a = self.0 as *const _ as usize;
+        let b = other.0 as *const _ as usize;
+        a.cmp(&b)
+    }
+}
+
+impl<E> Ord for InternedValue<'_, [E]> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let a = self.0.as_ptr() as usize;
+        let b = other.0.as_ptr() as usize;
+        a.cmp(&b)
     }
 }
 

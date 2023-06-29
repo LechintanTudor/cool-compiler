@@ -1,7 +1,7 @@
 use crate::{
     ArrayTy, FnAbi, FnTy, ItemId, ItemKind, ItemPath, ManyPtrTy, ModuleElem, ModuleId, PtrTy,
     ResolveContext, ResolveError, ResolveErrorKind, ResolveResult, Scope, SliceTy, StructTy,
-    TupleTy, TyConsts, TyDef, TyId, TyMismatch,
+    TupleTy, TyConsts, TyDef, TyId, TyMismatch, VariantTy,
 };
 use cool_lexer::{sym, Symbol};
 use smallvec::SmallVec;
@@ -29,13 +29,18 @@ impl ResolveContext {
     where
         E: IntoIterator<Item = TyId>,
     {
-        self.tys.insert_value(TupleTy {
-            elems: elems.into_iter().collect(),
-        })
+        self.tys.insert_value(TupleTy::new(elems))
     }
 
     pub fn mk_struct(&mut self, item_id: ItemId) -> TyId {
         self.tys.insert_value(StructTy { item_id })
+    }
+
+    pub fn mk_variant<V>(&mut self, variants: V) -> TyId
+    where
+        V: IntoIterator<Item = TyId>,
+    {
+        self.tys.insert_value(VariantTy::new(variants))
     }
 
     pub fn mk_fn<P>(&mut self, abi: FnAbi, params: P, is_variadic: bool, ret: TyId) -> TyId

@@ -65,7 +65,7 @@ impl AstGenerator<'_> {
     ) -> AstResult<Vec<ExprAst>> {
         expr.elems
             .iter()
-            .zip(tuple_ty.elems.iter().copied())
+            .zip(tuple_ty.elems().iter().copied())
             .map(|(elem, elem_ty_id)| self.gen_expr(frame_id, elem_ty_id, elem))
             .collect::<Result<Vec<_>, _>>()
     }
