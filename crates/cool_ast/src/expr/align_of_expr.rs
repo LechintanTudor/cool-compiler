@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult};
+use crate::{AstGenerator, AstResult, ExprAst};
 use cool_parser::AlignOfExpr;
 use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId};
 use cool_span::{Section, Span};
@@ -23,15 +23,21 @@ impl AstGenerator<'_> {
         frame_id: FrameId,
         expected_ty_id: TyId,
         expr: &AlignOfExpr,
-    ) -> AstResult<AlignOfExprAst> {
+    ) -> AstResult<ExprAst> {
         let arg_ty_id = self.resolve_ty(frame_id, &expr.ty)?;
         let value = self.resolve.get_ty_def(arg_ty_id).unwrap().align;
-        let ty_id = self.resolve_direct_ty_id(expr.span, self.tys().usize, expected_ty_id)?;
 
-        Ok(AlignOfExprAst {
-            span: expr.span,
-            expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-            value,
-        })
+        self.resolve_expr(
+            expr.span(),
+            self.tys().usize,
+            expected_ty_id,
+            |resolve, span, ty_id| {
+                AlignOfExprAst {
+                    span,
+                    expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                    value,
+                }
+            },
+        )
     }
 }

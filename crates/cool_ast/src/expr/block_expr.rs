@@ -52,7 +52,7 @@ impl AstGenerator<'_> {
                 let ty_id = if diverges && !expected_ty_id.is_infer() {
                     expected_ty_id
                 } else {
-                    self.resolve_direct_ty_id(block.span(), self.tys().unit, expected_ty_id)?
+                    self.resolve_ty_id(block.span(), self.tys().unit, expected_ty_id)?
                 };
 
                 (None, ty_id)

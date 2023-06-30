@@ -57,7 +57,7 @@ impl AstGenerator<'_> {
 
                 match item {
                     ItemKind::Binding(binding_id) => {
-                        let ty_id = self.resolve_direct_ty_id(
+                        let ty_id = self.resolve_ty_id(
                             access_expr.span(),
                             self.resolve[binding_id].ty_id,
                             expected_ty_id,
@@ -77,11 +77,7 @@ impl AstGenerator<'_> {
                         .into()
                     }
                     ItemKind::Ty(ty_id) => {
-                        self.resolve_direct_ty_id(
-                            access_expr.span(),
-                            self.tys().ty,
-                            expected_ty_id,
-                        )?;
+                        self.resolve_ty_id(access_expr.span(), self.tys().ty, expected_ty_id)?;
 
                         let expr_id = self
                             .resolve
@@ -95,11 +91,7 @@ impl AstGenerator<'_> {
                         .into()
                     }
                     ItemKind::Module(module_id) => {
-                        self.resolve_direct_ty_id(
-                            access_expr.span(),
-                            self.tys().module,
-                            expected_ty_id,
-                        )?;
+                        self.resolve_ty_id(access_expr.span(), self.tys().module, expected_ty_id)?;
 
                         let expr_id = self
                             .resolve
@@ -169,8 +161,7 @@ impl AstGenerator<'_> {
                 );
             }
 
-            let ty_id =
-                self.resolve_direct_ty_id(access_expr.span(), self.tys().usize, expected_ty_id)?;
+            let ty_id = self.resolve_ty_id(access_expr.span(), self.tys().usize, expected_ty_id)?;
 
             ExprAst::from(ArrayLenExprAst {
                 expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
@@ -187,8 +178,7 @@ impl AstGenerator<'_> {
                     AstError::field_not_found(access_expr.span(), base_expr_id.ty_id, ident.symbol)
                 })?;
 
-            let ty_id =
-                self.resolve_direct_ty_id(access_expr.span(), field.ty_id, expected_ty_id)?;
+            let ty_id = self.resolve_ty_id(access_expr.span(), field.ty_id, expected_ty_id)?;
 
             let expr_id = self.resolve.add_expr(ResolveExpr {
                 ty_id,

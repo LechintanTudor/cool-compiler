@@ -10,7 +10,7 @@ pub struct TyId(InternedValue<'static, TyShape>);
 pub enum TyResolutionMethod {
     Direct,
     DropConst,
-    WrapInVariant,
+    WrapInVariant { wrapped_ty_id: TyId },
 }
 
 impl TyContext {
@@ -27,7 +27,12 @@ impl TyContext {
             .map(|variant| variant.get_variant_index(found_ty_id))
             .is_some()
         {
-            return Some((found_ty_id, TyResolutionMethod::WrapInVariant));
+            return Some((
+                expected_ty_id,
+                TyResolutionMethod::WrapInVariant {
+                    wrapped_ty_id: found_ty_id,
+                },
+            ));
         }
 
         if let Some(expected_pointee) = expected_ty_id

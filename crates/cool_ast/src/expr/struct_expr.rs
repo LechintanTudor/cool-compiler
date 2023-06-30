@@ -39,7 +39,7 @@ impl AstGenerator<'_> {
         frame_id: FrameId,
         expected_ty_id: TyId,
         expr: &StructExpr,
-    ) -> AstResult<StructExprAst> {
+    ) -> AstResult<ExprAst> {
         let ty_id = self
             .gen_expr(frame_id, self.tys().ty, &expr.base)?
             .as_ty()
@@ -86,12 +86,17 @@ impl AstGenerator<'_> {
             panic!("missing struct fields");
         }
 
-        let ty_id = self.resolve_direct_ty_id(expr.span(), ty_id, expected_ty_id)?;
-
-        Ok(StructExprAst {
-            span: expr.span,
-            expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-            initializers,
-        })
+        self.resolve_expr(
+            expr.span(),
+            ty_id,
+            expected_ty_id,
+            |resolve, span, ty_id| {
+                StructExprAst {
+                    span,
+                    expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                    initializers,
+                }
+            },
+        )
     }
 }

@@ -22,6 +22,8 @@ impl AstGenerator<'_> {
                 let len = self
                     .gen_literal_expr(FrameId::dummy(), self.tys().usize, &array_ty.len)
                     .unwrap()
+                    .as_literal()
+                    .unwrap()
                     .as_int_value()
                     .unwrap() as u64;
 

@@ -30,12 +30,12 @@ impl AstGenerator<'_> {
         frame_id: FrameId,
         expected_ty_id: TyId,
         expr: &CastExpr,
-    ) -> AstResult<CastExprAst> {
+    ) -> AstResult<ExprAst> {
         let base = self.gen_expr(frame_id, self.tys().infer, &expr.base)?;
         let base_ty_id = base.expr_id().ty_id;
         let expr_ty_id = self.resolve_ty(frame_id, &expr.ty)?;
 
-        let unsupported_cast = || -> AstResult<CastExprAst> {
+        let unsupported_cast = || -> AstResult<ExprAst> {
             AstResult::error(
                 expr.span(),
                 TyError {
@@ -62,13 +62,18 @@ impl AstGenerator<'_> {
             return unsupported_cast();
         };
 
-        let ty_id = self.resolve_direct_ty_id(expr.span(), expr_ty_id, expected_ty_id)?;
-
-        Ok(CastExprAst {
-            span: expr.span(),
-            expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-            base: Box::new(base),
-            kind,
-        })
+        self.resolve_expr(
+            expr.span(),
+            expr_ty_id,
+            expected_ty_id,
+            |resolve, span, ty_id| {
+                CastExprAst {
+                    span,
+                    expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                    base: Box::new(base),
+                    kind,
+                }
+            },
+        )
     }
 }

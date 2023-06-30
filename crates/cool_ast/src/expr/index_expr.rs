@@ -24,7 +24,7 @@ impl AstGenerator<'_> {
         frame_id: FrameId,
         expected_ty_id: TyId,
         expr: &IndexExpr,
-    ) -> AstResult<IndexExprAst> {
+    ) -> AstResult<ExprAst> {
         let base = self.gen_expr(frame_id, self.tys().infer, &expr.base)?;
         let index = self.gen_expr(frame_id, self.tys().usize, &expr.index)?;
 
@@ -54,14 +54,18 @@ impl AstGenerator<'_> {
             _ => panic!("{:#?} is not subscriptable", base_expr.ty_id),
         };
 
-        let ty_id = self.resolve_direct_ty_id(expr.span(), ty_id, expected_ty_id)?;
-        let expr_id = self.resolve.add_expr(ResolveExpr { ty_id, kind });
-
-        Ok(IndexExprAst {
-            span: expr.span,
-            expr_id,
-            base: Box::new(base),
-            index: Box::new(index),
-        })
+        self.resolve_expr(
+            expr.span(),
+            ty_id,
+            expected_ty_id,
+            |resolve, span, ty_id| {
+                IndexExprAst {
+                    span,
+                    expr_id: resolve.add_expr(ResolveExpr { ty_id, kind }),
+                    base: Box::new(base),
+                    index: Box::new(index),
+                }
+            },
+        )
     }
 }

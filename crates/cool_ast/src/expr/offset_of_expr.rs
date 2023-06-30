@@ -1,4 +1,4 @@
-use crate::{AstError, AstGenerator, AstResult};
+use crate::{AstError, AstGenerator, AstResult, ExprAst};
 use cool_parser::OffsetOfExpr;
 use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId};
 use cool_span::{Section, Span};
@@ -23,7 +23,7 @@ impl AstGenerator<'_> {
         frame_id: FrameId,
         expected_ty_id: TyId,
         expr: &OffsetOfExpr,
-    ) -> AstResult<OffsetOfExprAst> {
+    ) -> AstResult<ExprAst> {
         let mut arg_ty_id = self.resolve_ty(frame_id, &expr.ty)?;
         let mut offset = 0;
 
@@ -38,12 +38,17 @@ impl AstGenerator<'_> {
             offset += field.offset;
         }
 
-        let ty_id = self.resolve_direct_ty_id(expr.span, self.tys().i64, expected_ty_id)?;
-
-        Ok(OffsetOfExprAst {
-            span: expr.span,
-            expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-            value: offset,
-        })
+        self.resolve_expr(
+            expr.span(),
+            self.tys().usize,
+            expected_ty_id,
+            |resolve, span, ty_id| {
+                OffsetOfExprAst {
+                    span,
+                    expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                    value: offset,
+                }
+            },
+        )
     }
 }

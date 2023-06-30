@@ -1,7 +1,7 @@
 use crate::{AstGenerator, AstResult, AstResultExt, ExprAst, ExprError};
 use cool_parser::{AssignOp, AssignStmt};
 use cool_resolve::FrameId;
-use cool_span::Section;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Debug)]
 pub struct AssignStmtAst {
@@ -12,7 +12,7 @@ pub struct AssignStmtAst {
 
 impl Section for AssignStmtAst {
     #[inline]
-    fn span(&self) -> cool_span::Span {
+    fn span(&self) -> Span {
         self.lhs.span().to(self.rhs.span())
     }
 }

@@ -33,8 +33,7 @@ impl AstGenerator<'_> {
                 let lhs_ty_id = lhs.expr_id().ty_id;
                 let rhs = self.gen_expr(frame_id, lhs_ty_id, &binary_expr.rhs)?;
 
-                let ty_id =
-                    self.resolve_direct_ty_id(lhs.span(), lhs_ty_id, self.tys().infer_number)?;
+                let ty_id = self.resolve_ty_id(lhs.span(), lhs_ty_id, self.tys().infer_number)?;
 
                 (ty_id, lhs, rhs)
             }
@@ -54,7 +53,7 @@ impl AstGenerator<'_> {
                 }
 
                 let ty_id =
-                    self.resolve_direct_ty_id(binary_expr.span(), self.tys().bool, expected_ty_id)?;
+                    self.resolve_ty_id(binary_expr.span(), self.tys().bool, expected_ty_id)?;
 
                 (ty_id, lhs, rhs)
             }
@@ -94,7 +93,7 @@ impl AstGenerator<'_> {
                 let rhs = self.gen_expr(frame_id, self.tys().bool, &binary_expr.rhs)?;
 
                 let ty_id =
-                    self.resolve_direct_ty_id(binary_expr.span(), self.tys().bool, expected_ty_id)?;
+                    self.resolve_ty_id(binary_expr.span(), self.tys().bool, expected_ty_id)?;
 
                 (ty_id, lhs, rhs)
             }

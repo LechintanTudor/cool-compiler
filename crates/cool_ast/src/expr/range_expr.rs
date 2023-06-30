@@ -43,7 +43,7 @@ impl AstGenerator<'_> {
         frame_id: FrameId,
         expected_ty_id: TyId,
         expr: &RangeExpr,
-    ) -> AstResult<RangeExprAst> {
+    ) -> AstResult<ExprAst> {
         let base = self.gen_expr(frame_id, self.tys().infer, &expr.base)?;
 
         let kind = match &expr.kind {
@@ -87,14 +87,20 @@ impl AstGenerator<'_> {
             _ => panic!("type does not support range operations"),
         };
 
-        let ty_id = self.resolve.mk_slice(elem_ty_id, expr.is_mutable);
-        let ty_id = self.resolve_direct_ty_id(expr.span(), ty_id, expected_ty_id)?;
+        let found_ty_id = self.resolve.mk_slice(elem_ty_id, expr.is_mutable);
 
-        Ok(RangeExprAst {
-            span: expr.span,
-            expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-            base: Box::new(base),
-            kind,
-        })
+        self.resolve_expr(
+            expr.span(),
+            found_ty_id,
+            expected_ty_id,
+            |resolve, span, ty_id| {
+                RangeExprAst {
+                    span,
+                    expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                    base: Box::new(base),
+                    kind,
+                }
+            },
+        )
     }
 }

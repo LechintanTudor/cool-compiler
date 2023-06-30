@@ -23,27 +23,28 @@ impl AstGenerator<'_> {
         frame_id: FrameId,
         expected_ty_id: TyId,
         expr: &TupleExpr,
-    ) -> AstResult<TupleExprAst> {
+    ) -> AstResult<ExprAst> {
         let elems = match expected_ty_id.as_tuple() {
             Some(tuple_ty) => self.gen_tuple_elems_with_type(frame_id, tuple_ty, expr)?,
             None => self.gen_tuple_elems_without_type(frame_id, expr)?,
         };
 
-        let ty_id = {
-            let elem_ty_ids = elems
-                .iter()
-                .map(|elem| elem.expr_id().ty_id)
-                .collect::<Vec<_>>();
+        let found_ty_id = self
+            .resolve
+            .mk_tuple(elems.iter().map(|elem| elem.expr_id().ty_id));
 
-            let ty_id = self.resolve.mk_tuple(elem_ty_ids);
-            self.resolve_direct_ty_id(expr.span(), ty_id, expected_ty_id)?
-        };
-
-        Ok(TupleExprAst {
-            span: expr.span,
-            expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-            elems,
-        })
+        self.resolve_expr(
+            expr.span(),
+            found_ty_id,
+            expected_ty_id,
+            |resolve, span, ty_id| {
+                TupleExprAst {
+                    span,
+                    expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                    elems,
+                }
+            },
+        )
     }
 
     fn gen_tuple_elems_without_type(

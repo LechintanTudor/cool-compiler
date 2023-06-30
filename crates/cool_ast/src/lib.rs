@@ -43,13 +43,37 @@ impl<'a> AstGenerator<'a> {
         self.resolve.ty_consts()
     }
 
-    pub fn resolve_expr_ty_id(
-        &self,
+    // pub fn resolve_ty_id(
+    //     &self,
+    //     span: Span,
+    //     found_ty_id: TyId,
+    //     expected_ty_id: TyId,
+    // ) -> AstResult<TyId> {
+    //     self.resolve
+    //         .resolve_ty_id(found_ty_id, expected_ty_id)
+    //         .map(|(ty_id, _)| ty_id)
+    //         .ok_or(AstError::new(
+    //             span,
+    //             TyError {
+    //                 ty_id: found_ty_id,
+    //                 kind: TyErrorKind::TyMismatch { expected_ty_id },
+    //             },
+    //         ))
+    // }
+
+    pub fn resolve_expr<E, F>(
+        &mut self,
         span: Span,
         found_ty_id: TyId,
         expected_ty_id: TyId,
-    ) -> AstResult<(TyId, TyResolutionMethod)> {
-        self.resolve
+        expr_builder: F,
+    ) -> AstResult<ExprAst>
+    where
+        E: Into<ExprAst>,
+        F: FnOnce(&mut ResolveContext, Span, TyId) -> E,
+    {
+        let (ty_id, method) = self
+            .resolve
             .resolve_ty_id(found_ty_id, expected_ty_id)
             .ok_or(AstError::new(
                 span,
@@ -57,6 +81,17 @@ impl<'a> AstGenerator<'a> {
                     ty_id: found_ty_id,
                     kind: TyErrorKind::TyMismatch { expected_ty_id },
                 },
-            ))
+            ))?;
+
+        let expr = match method {
+            TyResolutionMethod::WrapInVariant { wrapped_ty_id } => {
+                let inner = expr_builder(&mut self.resolve, span, wrapped_ty_id).into();
+                self.continue_gen_variant_wrap_expr(Box::new(inner), ty_id)?
+                    .into()
+            }
+            _ => expr_builder(&mut self.resolve, span, ty_id).into(),
+        };
+
+        Ok(expr)
     }
 }

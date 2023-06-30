@@ -33,7 +33,7 @@ impl AstGenerator<'_> {
         expr: &CondExpr,
     ) -> AstResult<CondExprAst> {
         let expected_ty_id = (!expr.is_exhaustive())
-            .then(|| self.resolve_direct_ty_id(expr.span(), self.tys().unit, expected_ty_id))
+            .then(|| self.resolve_ty_id(expr.span(), self.tys().unit, expected_ty_id))
             .transpose()?
             .unwrap_or(expected_ty_id);
 

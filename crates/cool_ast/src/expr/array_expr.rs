@@ -38,8 +38,8 @@ impl AstGenerator<'_> {
         frame_id: FrameId,
         expected_ty_id: TyId,
         expr: &ArrayExpr,
-    ) -> AstResult<ArrayExprAst> {
-        let (ty_id, elems) = match expr.elems.split_first() {
+    ) -> AstResult<ExprAst> {
+        let (found_ty_id, elems) = match expr.elems.split_first() {
             Some((first_elem, other_elems)) => {
                 let expected_elem_ty_id = self.get_expected_array_elem_ty_id(expected_ty_id);
                 let first_elem = self.gen_expr(frame_id, expected_elem_ty_id, first_elem)?;
@@ -56,13 +56,18 @@ impl AstGenerator<'_> {
             None => (self.tys().infer_empty_array, vec![]),
         };
 
-        let ty_id = self.resolve_direct_ty_id(expr.span(), ty_id, expected_ty_id)?;
-
-        Ok(ArrayExprAst {
-            span: expr.span,
-            expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-            elems,
-        })
+        self.resolve_expr(
+            expr.span(),
+            found_ty_id,
+            expected_ty_id,
+            |resolve, span, ty_id| {
+                ArrayExprAst {
+                    span,
+                    expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                    elems,
+                }
+            },
+        )
     }
 
     pub fn gen_array_repeat_expr(
@@ -70,23 +75,29 @@ impl AstGenerator<'_> {
         frame_id: FrameId,
         expected_ty_id: TyId,
         expr: &ArrayRepeatExpr,
-    ) -> AstResult<ArrayRepeatExprAst> {
+    ) -> AstResult<ExprAst> {
         let len_expr = self.gen_literal_expr(frame_id, self.tys().usize, &expr.len)?;
-        let len = len_expr.as_int_value().unwrap() as u64;
+        let len = len_expr.as_literal().unwrap().as_int_value().unwrap() as u64;
 
         let expected_elem_ty_id = self.get_expected_array_elem_ty_id(expected_ty_id);
         let elem = self.gen_expr(frame_id, expected_elem_ty_id, &expr.elem)?;
         let elem_ty_id = elem.expr_id().ty_id;
 
-        let ty_id = self.resolve.mk_array(len, elem_ty_id);
-        let ty_id = self.resolve_direct_ty_id(expr.span(), ty_id, expected_ty_id)?;
+        let found_ty_id = self.resolve.mk_array(len, elem_ty_id);
 
-        Ok(ArrayRepeatExprAst {
-            span: expr.span,
-            expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-            len,
-            elem: Box::new(elem),
-        })
+        self.resolve_expr(
+            expr.span(),
+            found_ty_id,
+            expected_ty_id,
+            |resolve, span, ty_id| {
+                ArrayRepeatExprAst {
+                    span,
+                    expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                    len,
+                    elem: Box::new(elem),
+                }
+            },
+        )
     }
 
     fn get_expected_array_elem_ty_id(&self, expected_array_ty_id: TyId) -> TyId {

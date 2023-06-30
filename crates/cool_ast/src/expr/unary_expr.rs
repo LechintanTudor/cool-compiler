@@ -27,7 +27,7 @@ impl AstGenerator<'_> {
         let expr = match unary_expr.op.kind {
             UnaryOpKind::Minus => {
                 let expr = self.gen_expr(frame_id, expected_ty_id, &unary_expr.expr)?;
-                let ty_id = self.resolve_direct_ty_id(
+                let ty_id = self.resolve_ty_id(
                     unary_expr.span(),
                     expr.expr_id().ty_id,
                     self.tys().infer_number,
@@ -62,7 +62,7 @@ impl AstGenerator<'_> {
                 let inner_resolve_expr = inner_expr.expr_id();
 
                 let ty_id = self.resolve.mk_ptr(inner_resolve_expr.ty_id, is_mutable);
-                let ty_id = self.resolve_direct_ty_id(unary_expr.span(), ty_id, expected_ty_id)?;
+                let ty_id = self.resolve_ty_id(unary_expr.span(), ty_id, expected_ty_id)?;
 
                 if is_mutable {
                     if !inner_resolve_expr.is_mutably_addressable() {

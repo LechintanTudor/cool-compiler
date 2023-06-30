@@ -24,7 +24,7 @@ impl AstGenerator<'_> {
         frame_id: FrameId,
         expected_ty_id: TyId,
         fn_call_expr: &FnCallExpr,
-    ) -> AstResult<FnCallExprAst> {
+    ) -> AstResult<ExprAst> {
         let fn_expr = self.gen_expr(frame_id, self.tys().infer, &fn_call_expr.base)?;
         let fn_expr_ty_id = fn_expr.expr_id().ty_id;
 
@@ -37,6 +37,7 @@ impl AstGenerator<'_> {
                 },
             );
         };
+
         let is_argument_count_valid = if fn_ty.is_variadic {
             fn_call_expr.args.len() >= fn_ty.params.len()
         } else {
@@ -62,16 +63,18 @@ impl AstGenerator<'_> {
             arg_exprs.push(self.gen_expr(frame_id, param_ty_id, arg_expr)?);
         }
 
-        let ret_ty_id =
-            self.resolve_direct_ty_id(fn_call_expr.span(), fn_ty.ret, expected_ty_id)?;
-
-        let expr_id = self.resolve.add_expr(ResolveExpr::rvalue(ret_ty_id));
-
-        Ok(FnCallExprAst {
-            span: fn_call_expr.span,
-            expr_id,
-            fn_expr: Box::new(fn_expr),
-            arg_exprs,
-        })
+        self.resolve_expr(
+            fn_call_expr.span(),
+            fn_ty.ret,
+            expected_ty_id,
+            |resolve, span, ty_id| {
+                FnCallExprAst {
+                    span,
+                    expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                    fn_expr: Box::new(fn_expr),
+                    arg_exprs,
+                }
+            },
+        )
     }
 }

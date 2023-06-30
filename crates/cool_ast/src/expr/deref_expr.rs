@@ -23,7 +23,7 @@ impl AstGenerator<'_> {
         frame_id: FrameId,
         expected_ty_id: TyId,
         deref_expr: &DerefExpr,
-    ) -> AstResult<DerefExprAst> {
+    ) -> AstResult<ExprAst> {
         let expr = self.gen_expr(frame_id, expected_ty_id, &deref_expr.expr)?;
         let expr_ty_id = expr.expr_id().ty_id;
 
@@ -37,17 +37,17 @@ impl AstGenerator<'_> {
             );
         };
 
-        let ty_id =
-            self.resolve_direct_ty_id(deref_expr.span(), pointer_ty.pointee, expected_ty_id)?;
-
-        let expr_id = self
-            .resolve
-            .add_expr(ResolveExpr::lvalue(ty_id, pointer_ty.is_mutable));
-
-        Ok(DerefExprAst {
-            span: deref_expr.span,
-            expr_id,
-            expr: Box::new(expr),
-        })
+        self.resolve_expr(
+            deref_expr.span(),
+            pointer_ty.pointee,
+            expected_ty_id,
+            |resolve, span, ty_id| {
+                DerefExprAst {
+                    span,
+                    expr_id: resolve.add_expr(ResolveExpr::lvalue(ty_id, pointer_ty.is_mutable)),
+                    expr: Box::new(expr),
+                }
+            },
+        )
     }
 }
