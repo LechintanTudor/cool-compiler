@@ -204,24 +204,38 @@ impl<'a> GeneratedTys<'a> {
                 let dominant_ty =
                     self.insert_ty(context, resolve, tagged_union_ty.dominant_ty_id)?;
 
-                let padding = (tagged_union_ty.padding_before_index != 0).then(|| {
+                let padding_ty = (tagged_union_ty.padding_before_index != 0).then(|| {
                     context
                         .i8_type()
                         .array_type(tagged_union_ty.padding_before_index as u32)
                         .as_basic_type_enum()
                 });
 
-                let index = context.i8_type().as_basic_type_enum();
+                let index_ty = context.i8_type().as_basic_type_enum();
 
-                let (fields, index_index) = match padding {
-                    Some(padding) => (vec![dominant_ty, padding, index], 2),
-                    None => (vec![dominant_ty, index], 1),
+                let (field_map, fields) = match padding_ty {
+                    Some(padding_ty) => {
+                        let mut field_map = FxHashMap::default();
+                        field_map.insert(sym::VARIANT_ELEM, 0);
+                        field_map.insert(sym::VARIANT_PADDING, 1);
+                        field_map.insert(sym::VARIANT_INDEX, 2);
+
+                        let field_map = TyFieldMap::from(field_map);
+                        let fields = vec![dominant_ty, padding_ty, index_ty];
+                        (field_map, fields)
+                    }
+                    None => {
+                        let mut field_map = FxHashMap::default();
+                        field_map.insert(sym::VARIANT_ELEM, 0);
+                        field_map.insert(sym::VARIANT_INDEX, 1);
+
+                        let field_map = TyFieldMap::from(field_map);
+                        let fields = vec![dominant_ty, index_ty];
+                        (field_map, fields)
+                    }
                 };
 
-                let mut field_map = FxHashMap::default();
-                field_map.insert(sym::VARIANT_INDEX, index_index);
-                self.field_maps.insert(ty_id, field_map.into());
-
+                self.field_maps.insert(ty_id, field_map);
                 Some(context.struct_type(&fields, false).as_basic_type_enum())
             }
             ty => unimplemented!("{}", ty),

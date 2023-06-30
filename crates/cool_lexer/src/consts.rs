@@ -193,6 +193,8 @@ define_symbols! {
         66: "punctuation" as DIAG_PUNCTUATION,
         67: "binary operator" as DIAG_BIN_OP,
 
-        68: "index" as VARIANT_INDEX,
+        68: "variant_elem" as VARIANT_ELEM,
+        69: "variant_padding" as VARIANT_PADDING,
+        70: "variant_index" as VARIANT_INDEX,
     },
 }

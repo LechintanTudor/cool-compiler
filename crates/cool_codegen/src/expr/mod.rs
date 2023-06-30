@@ -13,6 +13,7 @@ mod range_expr;
 mod struct_expr;
 mod tuple_expr;
 mod unary_expr;
+mod variant_wrap_expr;
 
 use crate::{BuilderExt, CodeGenerator, LoadedValue, MemoryValue, Value};
 use cool_ast::{BindingExprAst, ExprAst};
@@ -47,6 +48,7 @@ impl<'a> CodeGenerator<'a> {
             ExprAst::Struct(e) => self.gen_struct_expr(e, memory),
             ExprAst::Tuple(e) => self.gen_tuple_expr(e, memory),
             ExprAst::Unary(e) => self.gen_unary_expr(e),
+            ExprAst::VariantWrap(e) => self.gen_variant_wrap_expr(e, memory),
             _ => panic!("unsupported codegen operation: {:#?}", expr),
         }
     }

@@ -10,7 +10,7 @@ impl<'a> CodeGenerator<'a> {
                 let decl_ptr = self.util_gen_named_alloca(decl_ty, binding.symbol.as_str());
                 let value = self.gen_expr(&decl.expr, Some(MemoryValue::new(decl_ptr, decl_ty)));
 
-                if !decl.expr.is_aggregate() && !value.is_void() {
+                if !decl.expr.uses_stack_memory() && !value.is_void() {
                     let value = *self.gen_loaded_value(value).as_basic_value().unwrap();
                     self.builder.build_store(decl_ptr, value);
                 }

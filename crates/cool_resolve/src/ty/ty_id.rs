@@ -24,7 +24,7 @@ impl TyContext {
 
         if expected_ty_id
             .as_variant()
-            .map(|variant| variant.get_variant_index(found_ty_id))
+            .and_then(|variant| variant.get_variant_index(found_ty_id))
             .is_some()
         {
             return Some((

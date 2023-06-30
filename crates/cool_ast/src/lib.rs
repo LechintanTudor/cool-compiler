@@ -43,24 +43,6 @@ impl<'a> AstGenerator<'a> {
         self.resolve.ty_consts()
     }
 
-    // pub fn resolve_ty_id(
-    //     &self,
-    //     span: Span,
-    //     found_ty_id: TyId,
-    //     expected_ty_id: TyId,
-    // ) -> AstResult<TyId> {
-    //     self.resolve
-    //         .resolve_ty_id(found_ty_id, expected_ty_id)
-    //         .map(|(ty_id, _)| ty_id)
-    //         .ok_or(AstError::new(
-    //             span,
-    //             TyError {
-    //                 ty_id: found_ty_id,
-    //                 kind: TyErrorKind::TyMismatch { expected_ty_id },
-    //             },
-    //         ))
-    // }
-
     pub fn resolve_expr<E, F>(
         &mut self,
         span: Span,

@@ -120,10 +120,10 @@ define_expr_ast! {
 
 impl ExprAst {
     #[inline]
-    pub fn is_aggregate(&self) -> bool {
+    pub fn uses_stack_memory(&self) -> bool {
         matches!(
             self,
-            Self::Array(_) | Self::ArrayRepeat(_) | Self::Struct(_),
+            Self::Array(_) | Self::ArrayRepeat(_) | Self::Struct(_) | Self::VariantWrap(_),
         )
     }
 }
