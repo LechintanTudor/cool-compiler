@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, BlockExprAst, ExprAst};
+use crate::{AstGenerator, AstResult, ExprAst};
 use cool_parser::CondBlock;
 use cool_resolve::{FrameId, TyId};
 use cool_span::{Section, Span};
@@ -6,7 +6,7 @@ use cool_span::{Section, Span};
 #[derive(Clone, Debug)]
 pub struct CondBlockAst {
     pub cond: Box<ExprAst>,
-    pub expr: Box<BlockExprAst>,
+    pub expr: Box<ExprAst>,
 }
 
 impl Section for CondBlockAst {

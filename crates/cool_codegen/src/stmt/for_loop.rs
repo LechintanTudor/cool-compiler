@@ -39,14 +39,16 @@ impl<'a> CodeGenerator<'a> {
         }
 
         // Body
+        let first_frame_id = stmt.body.as_block().unwrap().first_frame_id;
+
         self.builder.position_at_end(body_block);
         self.push_jump_block(JumpBlock {
-            first_frame_id: stmt.body.first_frame_id,
+            first_frame_id,
             break_block: end_block,
             continue_block: after_block,
         });
 
-        self.gen_block_expr(&stmt.body);
+        self.gen_expr(&stmt.body, None);
         if !self.builder.current_block_diverges() {
             self.builder.build_unconditional_branch(after_block);
         }

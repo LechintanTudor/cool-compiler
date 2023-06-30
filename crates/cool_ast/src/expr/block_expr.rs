@@ -26,7 +26,7 @@ impl AstGenerator<'_> {
         mut frame_id: FrameId,
         expected_ty_id: TyId,
         block: &BlockExpr,
-    ) -> AstResult<BlockExprAst> {
+    ) -> AstResult<ExprAst> {
         let first_frame_id = frame_id;
         let mut stmts = Vec::<StmtAst>::new();
 
@@ -40,32 +40,37 @@ impl AstGenerator<'_> {
             stmts.push(stmt);
         }
 
-        let (expr, ty_id) = match block.expr.as_ref() {
+        let (expr, found_ty_id) = match block.expr.as_ref() {
             Some(expr) => {
                 let expr = self.gen_expr(frame_id, expected_ty_id, expr)?;
-                let ty_id = expr.expr_id().ty_id;
-                (Some(expr), ty_id)
+                let found_ty_id = expr.expr_id().ty_id;
+
+                (Some(expr), found_ty_id)
             }
             None => {
                 let diverges = stmts.last().map(StmtAst::is_return).is_some();
+                let found_ty_id = (diverges && expected_ty_id.is_value())
+                    .then_some(expected_ty_id)
+                    .unwrap_or(self.tys().unit);
 
-                let ty_id = if diverges && !expected_ty_id.is_infer() {
-                    expected_ty_id
-                } else {
-                    self.resolve_ty_id(block.span(), self.tys().unit, expected_ty_id)?
-                };
-
-                (None, ty_id)
+                (None, found_ty_id)
             }
         };
 
-        Ok(BlockExprAst {
-            span: block.span,
-            first_frame_id,
-            last_frame_id: frame_id,
-            expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-            stmts,
-            expr: expr.map(Box::new),
-        })
+        self.resolve_expr(
+            block.span(),
+            found_ty_id,
+            expected_ty_id,
+            |resolve, span, ty_id| {
+                BlockExprAst {
+                    span,
+                    first_frame_id,
+                    last_frame_id: frame_id,
+                    expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                    stmts,
+                    expr: expr.map(Box::new),
+                }
+            },
+        )
     }
 }

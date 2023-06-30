@@ -49,7 +49,7 @@ impl CodeGenerator<'_> {
             self.bindings.insert(binding_id, param_value);
         }
 
-        let ret_value = self.gen_block_expr(&fn_ast.body);
+        let ret_value = self.gen_loaded_expr(&fn_ast.body);
 
         if !self.builder.current_block_diverges() {
             let ret_value = match &ret_value {

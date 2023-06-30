@@ -24,18 +24,16 @@ impl AstGenerator<'_> {
         frame_id: FrameId,
         expected_ty_id: TyId,
         binary_expr: &BinaryExpr,
-    ) -> AstResult<BinaryExprAst> {
+    ) -> AstResult<ExprAst> {
         let bin_op = binary_expr.bin_op;
 
-        let (ty_id, lhs, rhs) = match binary_expr.bin_op {
+        let (found_ty_id, lhs, rhs) = match binary_expr.bin_op {
             BinOp::Arithmetic(_) => {
                 let lhs = self.gen_expr(frame_id, expected_ty_id, &binary_expr.lhs)?;
                 let lhs_ty_id = lhs.expr_id().ty_id;
                 let rhs = self.gen_expr(frame_id, lhs_ty_id, &binary_expr.rhs)?;
 
-                let ty_id = self.resolve_ty_id(lhs.span(), lhs_ty_id, self.tys().infer_number)?;
-
-                (ty_id, lhs, rhs)
+                (lhs_ty_id, lhs, rhs)
             }
             BinOp::Comparison(_) => {
                 let lhs = self.gen_expr(frame_id, self.tys().infer, &binary_expr.lhs)?;
@@ -52,10 +50,7 @@ impl AstGenerator<'_> {
                     );
                 }
 
-                let ty_id =
-                    self.resolve_ty_id(binary_expr.span(), self.tys().bool, expected_ty_id)?;
-
-                (ty_id, lhs, rhs)
+                (self.tys().bool, lhs, rhs)
             }
             BinOp::Bitwise(bitwise_op) => {
                 let lhs = self.gen_expr(frame_id, expected_ty_id, &binary_expr.lhs)?;
@@ -85,25 +80,27 @@ impl AstGenerator<'_> {
                 };
 
                 let rhs = self.gen_expr(frame_id, rhs_expected_ty_id, &binary_expr.rhs)?;
-
                 (lhs_ty_id, lhs, rhs)
             }
             BinOp::Logical(_) => {
                 let lhs = self.gen_expr(frame_id, self.tys().bool, &binary_expr.lhs)?;
                 let rhs = self.gen_expr(frame_id, self.tys().bool, &binary_expr.rhs)?;
-
-                let ty_id =
-                    self.resolve_ty_id(binary_expr.span(), self.tys().bool, expected_ty_id)?;
-
-                (ty_id, lhs, rhs)
+                (self.tys().bool, lhs, rhs)
             }
         };
 
-        Ok(BinaryExprAst {
-            expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-            bin_op,
-            lhs: Box::new(lhs),
-            rhs: Box::new(rhs),
-        })
+        self.resolve_expr(
+            binary_expr.span(),
+            found_ty_id,
+            expected_ty_id,
+            |resolve, _, ty_id| {
+                BinaryExprAst {
+                    expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                    bin_op,
+                    lhs: Box::new(lhs),
+                    rhs: Box::new(rhs),
+                }
+            },
+        )
     }
 }

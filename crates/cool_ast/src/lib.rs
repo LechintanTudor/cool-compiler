@@ -85,11 +85,11 @@ impl<'a> AstGenerator<'a> {
 
         let expr = match method {
             TyResolutionMethod::WrapInVariant { wrapped_ty_id } => {
-                let inner = expr_builder(&mut self.resolve, span, wrapped_ty_id).into();
+                let inner = expr_builder(self.resolve, span, wrapped_ty_id).into();
                 self.continue_gen_variant_wrap_expr(Box::new(inner), ty_id)?
                     .into()
             }
-            _ => expr_builder(&mut self.resolve, span, ty_id).into(),
+            _ => expr_builder(self.resolve, span, ty_id).into(),
         };
 
         Ok(expr)

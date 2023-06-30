@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, AstResultExt, BlockExprAst, TyError, TyErrorKind};
+use crate::{AstGenerator, AstResult, AstResultExt, ExprAst, TyError, TyErrorKind};
 use cool_parser::FnExpr;
 use cool_resolve::{BindingId, FrameId, ItemId, ModuleId, TyId};
 use cool_span::{Section, Span};
@@ -17,7 +17,7 @@ pub struct FnAst {
     pub ty_id: TyId,
     pub frame_id: FrameId,
     pub binding_ids: SmallVec<[BindingId; 4]>,
-    pub body: BlockExprAst,
+    pub body: ExprAst,
 }
 
 impl AstGenerator<'_> {

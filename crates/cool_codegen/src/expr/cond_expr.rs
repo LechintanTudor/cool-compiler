@@ -37,7 +37,7 @@ impl<'a> CodeGenerator<'a> {
 
             // Body
             self.builder.position_at_end(body_block);
-            let body_value = self.gen_block_expr(&cond_block.expr);
+            let body_value = self.gen_loaded_expr(&cond_block.expr);
 
             if !self.builder.current_block_diverges() {
                 phi_values.push((self.builder.current_block(), body_value));
@@ -48,7 +48,7 @@ impl<'a> CodeGenerator<'a> {
         }
 
         if let Some(else_expr) = else_expr {
-            let else_value = self.gen_block_expr(else_expr);
+            let else_value = self.gen_loaded_expr(else_expr);
 
             if !self.builder.current_block_diverges() {
                 phi_values.push((self.builder.current_block(), else_value));

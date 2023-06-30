@@ -49,78 +49,96 @@ impl AstGenerator<'_> {
     ) -> AstResult<ExprAst> {
         let tys = self.tys();
 
-        let expr = match expr.literal.kind {
+        match expr.literal.kind {
             LiteralKind::Int { .. } => {
-                let (value, ty_id) = parse_int(tys, expr)?;
-                let ty_id = self.resolve_ty_id(expr.span(), ty_id, expected_ty_id)?;
+                let (value, found_ty_id) = parse_int(tys, expr)?;
 
-                if !is_int_in_range(tys, value, ty_id) {
-                    return AstResult::error(
-                        expr.span(),
-                        LiteralError {
-                            literal: expr.literal.symbol,
-                            kind: LiteralErrorKind::IntOutOfRange { ty_id },
-                        },
-                    );
-                }
-
-                if ty_id.is_int() {
-                    LiteralExprAst {
-                        span: expr.span,
-                        expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-                        value: LiteralExprValue::Int(value),
-                    }
-                } else {
-                    LiteralExprAst {
-                        span: expr.span,
-                        expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-                        value: LiteralExprValue::Float(value as _),
-                    }
-                }
+                self.resolve_expr(
+                    expr.span(),
+                    found_ty_id,
+                    expected_ty_id,
+                    |resolve, span, ty_id| {
+                        if ty_id.is_int() {
+                            LiteralExprAst {
+                                span,
+                                expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                                value: LiteralExprValue::Int(value),
+                            }
+                        } else {
+                            LiteralExprAst {
+                                span,
+                                expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                                value: LiteralExprValue::Float(value as _),
+                            }
+                        }
+                    },
+                )
             }
             LiteralKind::Decimal => {
-                let (value, ty_id) = parse_decimal(tys, expr)?;
-                let ty_id = self.resolve_ty_id(expr.span(), ty_id, expected_ty_id)?;
+                let (value, found_ty_id) = parse_decimal(tys, expr)?;
 
-                LiteralExprAst {
-                    span: expr.span,
-                    expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-                    value: LiteralExprValue::Float(value),
-                }
+                self.resolve_expr(
+                    expr.span(),
+                    found_ty_id,
+                    expected_ty_id,
+                    |resolve, span, ty_id| {
+                        LiteralExprAst {
+                            span,
+                            expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                            value: LiteralExprValue::Float(value),
+                        }
+                    },
+                )
             }
             LiteralKind::Bool => {
                 let value = expr.literal.symbol == sym::KW_TRUE;
-                let ty_id = self.resolve_ty_id(expr.span(), self.tys().bool, expected_ty_id)?;
 
-                LiteralExprAst {
-                    span: expr.span,
-                    expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-                    value: LiteralExprValue::Bool(value),
-                }
+                self.resolve_expr(
+                    expr.span(),
+                    tys.bool,
+                    expected_ty_id,
+                    |resolve, span, ty_id| {
+                        LiteralExprAst {
+                            span,
+                            expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                            value: LiteralExprValue::Bool(value),
+                        }
+                    },
+                )
             }
             LiteralKind::Char => {
                 let value = parse_char(expr.literal.symbol);
-                let ty_id = self.resolve_ty_id(expr.span(), self.tys().char, expected_ty_id)?;
 
-                LiteralExprAst {
-                    span: expr.span,
-                    expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-                    value: LiteralExprValue::Char(value),
-                }
+                self.resolve_expr(
+                    expr.span(),
+                    tys.char,
+                    expected_ty_id,
+                    |resolve, span, ty_id| {
+                        LiteralExprAst {
+                            span,
+                            expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                            value: LiteralExprValue::Char(value),
+                        }
+                    },
+                )
             }
             LiteralKind::Str => {
                 let value = parse_str(expr.literal.symbol);
-                let ty_id = self.resolve_ty_id(expr.span(), tys.c_str, expected_ty_id)?;
 
-                LiteralExprAst {
-                    span: expr.span,
-                    expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-                    value: LiteralExprValue::Cstr(value),
-                }
+                self.resolve_expr(
+                    expr.span(),
+                    tys.c_str,
+                    expected_ty_id,
+                    |resolve, span, ty_id| {
+                        LiteralExprAst {
+                            span,
+                            expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                            value: LiteralExprValue::Cstr(value),
+                        }
+                    },
+                )
             }
-        };
-
-        Ok(expr)
+        }
     }
 }
 
@@ -235,6 +253,7 @@ fn parse_suffix(tys: &TyConsts, suffix: &str, kind: NumberKind) -> Option<TyId> 
     Some(ty_id)
 }
 
+#[allow(dead_code)]
 fn is_int_in_range(tys: &TyConsts, value: u128, ty_id: TyId) -> bool {
     if ty_id == tys.infer_int {
         return true;

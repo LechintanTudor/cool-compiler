@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, BlockExprAst, DeclStmtAst, ExprAst, StmtAst};
+use crate::{AstGenerator, AstResult, DeclStmtAst, ExprAst, StmtAst};
 use cool_parser::{ExprOrStmt, ForLoop};
 use cool_resolve::FrameId;
 use cool_span::{Section, Span};
@@ -9,7 +9,7 @@ pub struct ForLoopAst {
     pub decl: Box<DeclStmtAst>,
     pub cond: Box<ExprAst>,
     pub after: Box<StmtAst>,
-    pub body: Box<BlockExprAst>,
+    pub body: Box<ExprAst>,
 }
 
 impl Section for ForLoopAst {
@@ -33,7 +33,7 @@ impl AstGenerator<'_> {
         };
 
         self.push_block_ty_id(self.tys().unit);
-        let body = self.gen_block_expr(frame_id, self.tys().unit, &stmt.body)?;
+        let body = self.gen_block_expr(frame_id, self.tys().unit, &stmt.body);
         self.pop_block_ty_id();
 
         Ok(ForLoopAst {
@@ -41,7 +41,7 @@ impl AstGenerator<'_> {
             decl: Box::new(decl),
             cond: Box::new(cond),
             after: Box::new(after),
-            body: Box::new(body),
+            body: Box::new(body?),
         })
     }
 }

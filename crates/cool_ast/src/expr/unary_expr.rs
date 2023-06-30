@@ -23,72 +23,85 @@ impl AstGenerator<'_> {
         frame_id: FrameId,
         expected_ty_id: TyId,
         unary_expr: &UnaryExpr,
-    ) -> AstResult<UnaryExprAst> {
-        let expr = match unary_expr.op.kind {
+    ) -> AstResult<ExprAst> {
+        match unary_expr.op.kind {
             UnaryOpKind::Minus => {
-                let expr = self.gen_expr(frame_id, expected_ty_id, &unary_expr.expr)?;
-                let ty_id = self.resolve_ty_id(
+                let expr = {
+                    let expected_ty_id = expected_ty_id
+                        .is_number()
+                        .then_some(expected_ty_id)
+                        .unwrap_or(self.tys().infer_number);
+
+                    self.gen_expr(frame_id, expected_ty_id, &unary_expr.expr)?
+                };
+
+                self.resolve_expr(
                     unary_expr.span(),
                     expr.expr_id().ty_id,
-                    self.tys().infer_number,
-                )?;
-
-                UnaryExprAst {
-                    expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-                    op: unary_expr.op,
-                    expr: Box::new(expr),
-                }
+                    expected_ty_id,
+                    |resolve, _, ty_id| {
+                        UnaryExprAst {
+                            expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                            op: unary_expr.op,
+                            expr: Box::new(expr),
+                        }
+                    },
+                )
             }
             UnaryOpKind::Not => {
-                let expr = self.gen_expr(frame_id, expected_ty_id, &unary_expr.expr)?;
-                let ty_id = expr.expr_id().ty_id;
+                let expr = {
+                    let expected_ty_id = (expected_ty_id.is_number() || expected_ty_id.is_bool())
+                        .then_some(expected_ty_id)
+                        .unwrap_or(self.tys().infer);
 
-                if !ty_id.is_number() && ty_id != self.tys().bool {
-                    return AstResult::ty_mismatch(
-                        unary_expr.span(),
-                        ty_id,
-                        self.tys().infer_number,
-                    );
-                }
+                    self.gen_expr(frame_id, expected_ty_id, &unary_expr.expr)?
+                };
 
-                UnaryExprAst {
-                    expr_id: self.resolve.add_expr(ResolveExpr::rvalue(ty_id)),
-                    op: unary_expr.op,
-                    expr: Box::new(expr),
-                }
+                self.resolve_expr(
+                    unary_expr.span(),
+                    expr.expr_id().ty_id,
+                    expected_ty_id,
+                    |resolve, _, ty_id| {
+                        UnaryExprAst {
+                            expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                            op: unary_expr.op,
+                            expr: Box::new(expr),
+                        }
+                    },
+                )
             }
             UnaryOpKind::Addr { is_mutable } => {
                 let inner_expr = self.gen_expr(frame_id, self.tys().infer, &unary_expr.expr)?;
-                let inner_resolve_expr = inner_expr.expr_id();
-
-                let ty_id = self.resolve.mk_ptr(inner_resolve_expr.ty_id, is_mutable);
-                let ty_id = self.resolve_ty_id(unary_expr.span(), ty_id, expected_ty_id)?;
+                let inner_expr_id = inner_expr.expr_id();
 
                 if is_mutable {
-                    if !inner_resolve_expr.is_mutably_addressable() {
+                    if !inner_expr_id.is_mutably_addressable() {
                         return AstResult::error(
                             unary_expr.span(),
                             ExprError::NotAddressableMutably,
                         );
                     }
                 } else {
-                    if !inner_resolve_expr.is_addressable() {
+                    if !inner_expr_id.is_addressable() {
                         return AstResult::error(unary_expr.span(), ExprError::NotAddressable);
                     }
                 }
 
-                let expr_id = self
-                    .resolve
-                    .add_expr(ResolveExpr::lvalue(ty_id, is_mutable));
+                let found_ty_id = self.resolve.mk_ptr(inner_expr_id.ty_id, is_mutable);
 
-                UnaryExprAst {
-                    expr_id,
-                    op: unary_expr.op,
-                    expr: Box::new(inner_expr),
-                }
+                self.resolve_expr(
+                    unary_expr.span(),
+                    found_ty_id,
+                    expected_ty_id,
+                    |resolve, _, ty_id| {
+                        UnaryExprAst {
+                            expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                            op: unary_expr.op,
+                            expr: Box::new(inner_expr),
+                        }
+                    },
+                )
             }
-        };
-
-        Ok(expr)
+        }
     }
 }
