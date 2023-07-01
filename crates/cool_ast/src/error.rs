@@ -216,4 +216,12 @@ pub enum LogicError {
 
     #[display(fmt = "type '{ty_id}' has no field '{field}'")]
     FieldNotFound { ty_id: TyId, field: Symbol },
+
+    #[display(
+        fmt = "variant '{variant_ty_id}' is missing in type '{ty_id}' or was already covered"
+    )]
+    InvalidVariant { ty_id: TyId, variant_ty_id: TyId },
+
+    #[display(fmt = "missing variants for type '{ty_id}'")]
+    MissingVariants { ty_id: TyId },
 }

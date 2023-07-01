@@ -9,6 +9,7 @@ mod fn_call_expr;
 mod index_expr;
 mod layout_expr;
 mod literal_expr;
+mod match_expr;
 mod range_expr;
 mod struct_expr;
 mod tuple_expr;
@@ -42,6 +43,7 @@ impl<'a> CodeGenerator<'a> {
             ExprAst::FnCall(e) => self.gen_fn_call_expr(e).into(),
             ExprAst::Index(e) => self.gen_index_expr(e),
             ExprAst::Literal(e) => self.gen_literal_expr(e).into(),
+            ExprAst::Match(e) => self.gen_match_expr(e).into(),
             ExprAst::OffsetOf(e) => self.gen_offset_of_expr(e).as_basic_value_enum().into(),
             ExprAst::Range(e) => self.gen_range_expr(e, memory),
             ExprAst::SizeOf(e) => self.gen_size_of_expr(e).as_basic_value_enum().into(),

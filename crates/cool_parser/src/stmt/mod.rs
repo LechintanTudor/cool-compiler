@@ -52,6 +52,11 @@ impl StmtKind {
             _ => false,
         }
     }
+
+    #[inline]
+    pub fn is_promotable_to_expr(&self) -> bool {
+        !matches!(self, Self::Decl(_) | Self::Defer(_))
+    }
 }
 
 impl Section for StmtKind {

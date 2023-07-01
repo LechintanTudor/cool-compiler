@@ -13,6 +13,7 @@ mod loop_expr;
 mod match_expr;
 mod offset_of_expr;
 mod size_of_expr;
+mod stmt_expr;
 mod struct_expr;
 mod subscript_expr;
 mod tuple_expr;
@@ -33,6 +34,7 @@ pub use self::loop_expr::*;
 pub use self::match_expr::*;
 pub use self::offset_of_expr::*;
 pub use self::size_of_expr::*;
+pub use self::stmt_expr::*;
 pub use self::struct_expr::*;
 pub use self::subscript_expr::*;
 pub use self::tuple_expr::*;
@@ -83,6 +85,7 @@ define_expr! {
     Paren,
     Range,
     SizeOf,
+    Stmt,
     Struct,
     Tuple,
     Unary,

@@ -10,7 +10,8 @@ pub struct TyConsts {
     pub infer_number: TyId,
     pub infer_int: TyId,
     pub infer_float: TyId,
-    pub infer_empty_array: TyId,
+    pub infer_array: TyId,
+    pub infer_variant: TyId,
 
     // Items
     pub module: TyId,
@@ -70,7 +71,8 @@ impl TyConsts {
             infer_number: insert_ty_shape(TyShape::from(InferTy::Number)),
             infer_int: insert_ty_shape(TyShape::from(InferTy::Int)),
             infer_float: insert_ty_shape(TyShape::from(InferTy::Float)),
-            infer_empty_array: insert_ty_shape(TyShape::from(InferTy::Array)),
+            infer_array: insert_ty_shape(TyShape::from(InferTy::Array)),
+            infer_variant: insert_ty_shape(TyShape::from(InferTy::Variant)),
 
             // Items
             module: insert_ty_shape(TyShape::from(ItemTy::Module)),

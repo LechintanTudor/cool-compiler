@@ -1,4 +1,4 @@
-use crate::{Expr, ExprOrStmt, ParseResult, Parser, Pattern, Ty};
+use crate::{Expr, ParseResult, Parser, Pattern, Ty};
 use cool_lexer::tk;
 use cool_span::{Section, Span};
 
@@ -7,7 +7,7 @@ pub struct MatchArm {
     pub span: Span,
     pub ty: Box<Ty>,
     pub pattern: Option<Pattern>,
-    pub code: Box<ExprOrStmt>,
+    pub expr: Box<Expr>,
     pub has_trailing_comma: bool,
 }
 
@@ -21,7 +21,7 @@ impl Section for MatchArm {
 #[derive(Clone, Debug)]
 pub struct ElseArm {
     pub span: Span,
-    pub code: Box<ExprOrStmt>,
+    pub expr: Box<Expr>,
     pub has_trailing_comma: bool,
 }
 
@@ -35,7 +35,7 @@ impl Section for ElseArm {
 #[derive(Clone, Debug)]
 pub struct MatchExpr {
     pub span: Span,
-    pub expr: Box<Expr>,
+    pub matched_expr: Box<Expr>,
     pub arms: Vec<MatchArm>,
     pub else_arm: Option<ElseArm>,
 }
@@ -50,7 +50,7 @@ impl Section for MatchExpr {
 impl Parser<'_> {
     pub fn parse_match_expr(&mut self) -> ParseResult<MatchExpr> {
         let open_brace = self.bump_expect(&tk::KW_MATCH)?;
-        let expr = self.parse_non_struct_expr()?;
+        let matched_expr = self.parse_non_struct_expr()?;
         self.bump_expect(&tk::OPEN_BRACE)?;
 
         let mut arms = Vec::<MatchArm>::new();
@@ -71,7 +71,7 @@ impl Parser<'_> {
 
         Ok(MatchExpr {
             span: open_brace.span.to(close_brace.span),
-            expr: Box::new(expr),
+            matched_expr: Box::new(matched_expr),
             arms,
             else_arm,
         })
@@ -98,11 +98,13 @@ impl Parser<'_> {
             }
         };
 
+        let expr = code.try_into_expr().unwrap();
+
         Ok(MatchArm {
             span: ty.span().to(end_span),
             ty: Box::new(ty),
             pattern,
-            code: Box::new(code),
+            expr: Box::new(expr),
             has_trailing_comma,
         })
     }
@@ -118,9 +120,11 @@ impl Parser<'_> {
             None => (code.span(), false),
         };
 
+        let expr = code.try_into_expr().unwrap();
+
         Ok(ElseArm {
             span: start_token.span.to(end_span),
-            code: Box::new(code),
+            expr: Box::new(expr),
             has_trailing_comma,
         })
     }

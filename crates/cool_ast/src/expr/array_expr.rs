@@ -53,7 +53,7 @@ impl AstGenerator<'_> {
                 let ty_id = self.resolve.mk_array(elems.len() as u64, elem_ty_id);
                 (ty_id, elems)
             }
-            None => (self.tys().infer_empty_array, vec![]),
+            None => (self.tys().infer_array, vec![]),
         };
 
         self.resolve_expr(

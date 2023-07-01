@@ -1,5 +1,5 @@
 use crate::expr::Expr;
-use crate::{AssignOp, ParseResult, Parser, StmtKind};
+use crate::{AssignOp, ParseResult, Parser, StmtExpr, StmtKind};
 use cool_lexer::tk;
 use cool_span::{Section, Span};
 use derive_more::From;
@@ -17,6 +17,20 @@ impl ExprOrStmt {
             Self::Expr(expr) => StmtKind::Expr(Box::new(expr)),
             Self::Stmt(stmt) => stmt,
         }
+    }
+
+    pub fn try_into_expr(self) -> Option<Expr> {
+        let expr = match self {
+            Self::Expr(expr) => expr,
+            Self::Stmt(stmt) if stmt.is_promotable_to_expr() => {
+                Expr::from(StmtExpr {
+                    stmt: Box::new(stmt),
+                })
+            }
+            _ => return None,
+        };
+
+        Some(expr)
     }
 
     #[inline]

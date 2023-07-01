@@ -121,7 +121,7 @@ impl TyContext {
                 || (found_ty_id == tys.infer_number && expected_ty_id.is_number())
                 || (found_ty_id == tys.infer_int && expected_ty_id.is_number())
                 || (found_ty_id == tys.infer_float && expected_ty_id.is_float())
-                || (found_ty_id == tys.infer_empty_array && expected_ty_id.is_array());
+                || (found_ty_id == tys.infer_array && expected_ty_id.is_array());
 
             if !can_resolve_directly {
                 return None;

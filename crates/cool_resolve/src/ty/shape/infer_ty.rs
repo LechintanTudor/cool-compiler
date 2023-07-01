@@ -25,4 +25,7 @@ pub enum InferTy {
 
     #[display(fmt = "<slice>")]
     Slice,
+
+    #[display(fmt = "<variant>")]
+    Variant,
 }
