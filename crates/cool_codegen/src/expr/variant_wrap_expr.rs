@@ -1,7 +1,6 @@
-use crate::{BuilderExt, CodeGenerator, MemoryValue, Value};
+use crate::{BuilderExt, CodeGenerator, LoadedValue, MemoryValue, Value};
 use cool_ast::VariantWrapExprAst;
 use cool_lexer::sym;
-use inkwell::values::BasicValue;
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_variant_wrap_expr(
@@ -18,28 +17,16 @@ impl<'a> CodeGenerator<'a> {
             MemoryValue::new(struct_ptr, struct_ty)
         });
 
-        let inner_expr_ty_id = expr.inner.expr_id().ty_id;
-        let inner_expr_ty = self.tys[inner_expr_ty_id].unwrap();
-        let inner_expr_memory = MemoryValue::new(memory.ptr, inner_expr_ty);
-
-        let inner_expr_value = self.gen_expr(&expr.inner, Some(inner_expr_memory));
+        let inner_expr_value = self.gen_loaded_expr(&expr.inner);
         if self.builder.current_block_diverges() {
             return Value::Void;
         }
 
         match inner_expr_value {
-            Value::Fn(fn_value) => {
-                let value = fn_value
-                    .as_global_value()
-                    .as_pointer_value()
-                    .as_basic_value_enum();
-
-                self.builder.build_store(inner_expr_memory.ptr, value);
+            LoadedValue::Register(value) => {
+                self.builder.build_store(memory.ptr, value);
             }
-            Value::Register(value) => {
-                self.builder.build_store(inner_expr_memory.ptr, value);
-            }
-            _ => (),
+            LoadedValue::Void => (),
         }
 
         let index_field_index = self
