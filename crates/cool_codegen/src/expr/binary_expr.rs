@@ -241,27 +241,30 @@ impl<'a> CodeGenerator<'a> {
         self.builder
             .build_conditional_branch(lhs_cond_value, rhs_block, end_block);
 
-        let mut phi_values = SmallVec::<[(&dyn BasicValue, _); 2]>::new();
-        phi_values.push((&self.llvm_false, self.builder.current_block()));
+        let mut phi_values = SmallVec::<[(IntValue, _); 2]>::new();
+        phi_values.push((self.llvm_false, self.builder.current_block()));
 
         // Rhs
         self.builder.position_at_end(rhs_block);
 
         let rhs_value = self
             .gen_loaded_expr(rhs)
-            .map(BasicValueEnum::into_int_value)
-            .filter(|_| !self.builder.current_block_diverges());
+            .map(BasicValueEnum::into_int_value);
 
         if let Some(rhs_value) = rhs_value {
             self.builder.build_unconditional_branch(end_block);
-            phi_values.push((&rhs_value, self.builder.current_block()));
+            phi_values.push((rhs_value, self.builder.current_block()));
         }
 
         // End
         self.builder.position_at_end(end_block);
 
         let phi_value = self.builder.build_phi(self.tys.i8_ty(), "");
-        phi_value.add_incoming(&phi_values);
+
+        for (value, block) in phi_values {
+            phi_value.add_incoming(&[(&value, block)]);
+        }
+
         phi_value.as_basic_value().as_basic_value_enum().into()
     }
 
@@ -286,30 +289,30 @@ impl<'a> CodeGenerator<'a> {
         self.builder
             .build_conditional_branch(lhs_cond_value, end_block, rhs_block);
 
-        let mut phi_values = SmallVec::<[(&dyn BasicValue, _); 2]>::new();
-        phi_values.push((&self.llvm_true, self.builder.current_block()));
+        let mut phi_values = SmallVec::<[(IntValue, _); 2]>::new();
+        phi_values.push((self.llvm_true, self.builder.current_block()));
 
         // Rhs
         self.builder.position_at_end(rhs_block);
 
-        let rhs_value = match self.gen_loaded_expr(rhs) {
-            Some(rhs_value) => rhs_value.into_int_value(),
-            None => {
-                self.builder.position_at_end(end_block);
-                return LoadedValue::None;
-            }
-        };
+        let rhs_value = self
+            .gen_loaded_expr(rhs)
+            .map(BasicValueEnum::into_int_value);
 
-        if !self.builder.current_block_diverges() {
+        if let Some(rhs_value) = rhs_value {
             self.builder.build_unconditional_branch(end_block);
-            phi_values.push((&rhs_value, self.builder.current_block()));
+            phi_values.push((rhs_value, self.builder.current_block()));
         }
 
         // End
         self.builder.position_at_end(end_block);
 
         let phi_value = self.builder.build_phi(self.tys.i8_ty(), "");
-        phi_value.add_incoming(&phi_values);
+
+        for (value, block) in phi_values {
+            phi_value.add_incoming(&[(&value, block)]);
+        }
+
         phi_value.as_basic_value().as_basic_value_enum().into()
     }
 

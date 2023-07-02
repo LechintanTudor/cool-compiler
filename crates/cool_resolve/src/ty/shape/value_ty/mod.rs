@@ -92,7 +92,12 @@ macro_rules! define_value_ty {
                     pub fn [<get_ $WrappedTy:snake:lower>](&self) -> &[<$WrappedTy Ty>] {
                         match self {
                             Self::Value(ValueTy::$WrappedTy(ty)) => ty,
-                            _ => panic!("wrong type"),
+                            _ => {
+                                panic!(
+                                    "{}: wrong type",
+                                    stringify!([<get_ $WrappedTy:snake:lower>]),
+                                );
+                            }
                         }
                     }
                 )*

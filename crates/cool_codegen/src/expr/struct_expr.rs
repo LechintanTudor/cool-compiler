@@ -12,13 +12,6 @@ impl<'a> CodeGenerator<'a> {
         let struct_ty = self.tys[struct_ty_id];
         let memory = memory.or_else(|| struct_ty.map(|ty| self.util_gen_alloca(ty)));
 
-        let fields = self
-            .resolve
-            .get_ty_def(struct_ty_id)
-            .unwrap()
-            .get_aggregate_fields()
-            .unwrap();
-
         for initializer in expr.initializers.iter() {
             match (struct_ty, memory) {
                 (Some(struct_ty), Some(memory)) => {

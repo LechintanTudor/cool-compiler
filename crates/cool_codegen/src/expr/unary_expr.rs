@@ -72,7 +72,7 @@ impl<'a> CodeGenerator<'a> {
                             .into()
                     }
                     Value::Fn(fn_value) => fn_value.as_global_value().as_basic_value_enum().into(),
-                    Value::Register(value) => {
+                    Value::Register(_) => {
                         todo!()
                     }
                     Value::Memory(memory) => memory.as_basic_value_enum().into(),

@@ -48,10 +48,8 @@ impl CodeGenerator<'_> {
             self.bindings.insert(binding_id, param_value);
         }
 
-        let ret_value = self
-            .gen_loaded_expr(&fn_ast.body)
-            .as_ref()
-            .map(|value| value as &dyn BasicValue);
+        let ret_value = self.gen_loaded_expr(&fn_ast.body);
+        let ret_value = ret_value.as_ref().map(|value| value as &dyn BasicValue);
 
         if !self.builder.current_block_diverges() {
             self.builder.build_return(ret_value);

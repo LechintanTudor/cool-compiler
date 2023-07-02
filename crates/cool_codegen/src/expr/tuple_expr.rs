@@ -13,13 +13,6 @@ impl<'a> CodeGenerator<'a> {
         let tuple_ty = self.tys[tuple_ty_id];
         let memory = memory.or_else(|| tuple_ty.map(|ty| self.util_gen_alloca(ty)));
 
-        let fields = self
-            .resolve
-            .get_ty_def(tuple_ty_id)
-            .unwrap()
-            .get_aggregate_fields()
-            .unwrap();
-
         for (i, expr) in expr.elems.iter().enumerate() {
             match (tuple_ty, memory) {
                 (Some(struct_ty), Some(memory)) => {
@@ -27,7 +20,7 @@ impl<'a> CodeGenerator<'a> {
                         .tys
                         .get_field_map(tuple_ty_id)
                         .get(Symbol::insert_u32(i as _)) else {
-                            self.gen_expr(&expr, None);
+                            self.gen_expr(expr, None);
                             if self.builder.current_block_diverges() {
                                 return Value::Void;
                             }
@@ -39,7 +32,7 @@ impl<'a> CodeGenerator<'a> {
                         .build_struct_gep(struct_ty, memory, field_index, "")
                         .unwrap();
 
-                    let field_value = self.gen_expr(&expr, Some(field_ptr));
+                    let field_value = self.gen_expr(expr, Some(field_ptr));
                     if self.builder.current_block_diverges() {
                         return Value::Void;
                     }
@@ -58,7 +51,7 @@ impl<'a> CodeGenerator<'a> {
                     }
                 }
                 _ => {
-                    self.gen_expr(&expr, None);
+                    self.gen_expr(expr, None);
                     if self.builder.current_block_diverges() {
                         return Value::Void;
                     }

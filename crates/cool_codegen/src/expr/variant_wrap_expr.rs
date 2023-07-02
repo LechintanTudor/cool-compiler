@@ -22,11 +22,8 @@ impl<'a> CodeGenerator<'a> {
             return Value::Void;
         }
 
-        match inner_expr_value {
-            LoadedValue::Some(value) => {
-                self.builder.build_store(memory, value);
-            }
-            LoadedValue::None => (),
+        if let LoadedValue::Some(value) = inner_expr_value {
+            self.builder.build_store(memory, value);
         }
 
         let index_field_index = self

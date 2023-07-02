@@ -59,12 +59,13 @@ impl<'a> CodeGenerator<'a> {
         to: Option<IntValue<'a>>,
         memory: PointerValue<'a>,
     ) -> Value<'a> {
+        let elem_ty_id = expr.base.expr_id().ty_id.get_array().elem;
+
         let ptr_value = match base {
             Value::Void => todo!("handle zst array"),
             Value::Fn(_) => unreachable!(),
-            Value::Register(value) => unsafe {
+            Value::Register(value) => {
                 let memory = self.util_gen_init(value);
-                let elem_ty_id = expr.expr_id.ty_id.get_array().elem;
 
                 match self.tys[elem_ty_id] {
                     Some(elem_ty) => unsafe {
@@ -72,10 +73,8 @@ impl<'a> CodeGenerator<'a> {
                     },
                     None => memory,
                 }
-            },
+            }
             Value::Memory(memory) => {
-                let elem_ty_id = expr.expr_id.ty_id.get_array().elem;
-
                 match self.tys[elem_ty_id] {
                     Some(elem_ty) => unsafe {
                         self.builder.build_gep(elem_ty, memory, &[from], "")

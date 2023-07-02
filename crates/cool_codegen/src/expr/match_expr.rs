@@ -49,12 +49,14 @@ impl<'a> CodeGenerator<'a> {
             self.builder.position_at_end(block);
 
             if let Some(binding_id) = arm.binding_id {
-                let bindind_ty = self.tys[self.resolve[binding_id].ty_id];
-
-                let binding_value = bindind_ty
-                    .map(|ty| self.builder.build_load(ty, matched_expr_ptr, ""))
-                    .map(Value::Register)
-                    .unwrap_or(Value::Void);
+                let binding_ty_id = self.resolve[binding_id].ty_id;
+                let binding_value = match self.tys[binding_ty_id] {
+                    Some(binding_ty) => {
+                        let value = self.builder.build_load(binding_ty, matched_expr_ptr, "");
+                        Value::Memory(self.util_gen_init(value))
+                    }
+                    None => Value::Void,
+                };
 
                 self.bindings.insert(binding_id, binding_value);
             }

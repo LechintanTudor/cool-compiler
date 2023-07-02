@@ -1,4 +1,4 @@
-use crate::{BuilderExt, CodeGenerator, Value};
+use crate::{BuilderExt, CodeGenerator, LoadedValue, Value};
 use cool_ast::{AccessExprAst, ArrayLenExprAst};
 use cool_lexer::Symbol;
 use cool_resolve::TyId;
@@ -11,11 +11,11 @@ impl<'a> CodeGenerator<'a> {
         self.util_gen_field_access(base_ty_id, base_value, expr.ident.symbol)
     }
 
-    pub fn gen_array_len_expr(&mut self, expr: &ArrayLenExprAst) -> Value<'a> {
+    pub fn gen_array_len_expr(&mut self, expr: &ArrayLenExprAst) -> LoadedValue<'a> {
         self.gen_expr(&expr.base, None);
 
         if self.builder.current_block_diverges() {
-            return Value::Void;
+            return LoadedValue::None;
         }
 
         let array_len = expr.base.expr_id().ty_id.get_array().len;

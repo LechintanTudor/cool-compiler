@@ -7,9 +7,7 @@ impl<'a> CodeGenerator<'a> {
         let value = stmt
             .expr
             .as_ref()
-            .and_then(|expr| self.gen_loaded_expr(expr))
-            .as_ref()
-            .map(|value| value as &dyn BasicValue);
+            .and_then(|expr| self.gen_loaded_expr(expr));
 
         if self.builder.current_block_diverges() {
             return Value::Void;
@@ -20,7 +18,9 @@ impl<'a> CodeGenerator<'a> {
             return Value::Void;
         }
 
+        let value = value.as_ref().map(|value| value as &dyn BasicValue);
         self.builder.build_return(value);
+
         Value::Void
     }
 }
