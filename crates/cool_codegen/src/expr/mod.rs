@@ -18,7 +18,9 @@ mod variant_wrap_expr;
 
 use crate::{BuilderExt, CodeGenerator, LoadedValue, Value};
 use cool_ast::{BindingExprAst, ExprAst};
-use inkwell::values::{BasicValue, PointerValue};
+use cool_lexer::Symbol;
+use cool_resolve::TyId;
+use inkwell::values::{BasicValue, BasicValueEnum, PointerValue};
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_expr(&mut self, expr: &ExprAst, memory: Option<PointerValue<'a>>) -> Value<'a> {
@@ -60,7 +62,34 @@ impl<'a> CodeGenerator<'a> {
     }
 
     #[inline]
-    pub fn gen_ident_expr(&mut self, expr: &BindingExprAst) -> Value<'a> {
+    pub fn gen_ident_expr(&self, expr: &BindingExprAst) -> Value<'a> {
         self.bindings[&expr.binding_id]
+    }
+
+    pub fn util_gen_loaded_field(
+        &self,
+        aggregate_ty_id: TyId,
+        memory: PointerValue<'a>,
+        field: Symbol,
+    ) -> Option<BasicValueEnum<'a>> {
+        let aggregate_ty = self.tys[aggregate_ty_id]?;
+        let field_index = self.tys.get_field_map(aggregate_ty_id).get(field)?;
+
+        let field_ptr = self
+            .builder
+            .build_struct_gep(aggregate_ty, memory, field_index, "")
+            .unwrap();
+
+        let field_ty_id = self
+            .resolve
+            .get_ty_def(aggregate_ty_id)
+            .unwrap()
+            .get_aggregate_field(field)
+            .unwrap()
+            .ty_id;
+
+        let field_ty = self.tys[field_ty_id]?;
+
+        self.builder.build_load(field_ty, field_ptr, "").into()
     }
 }

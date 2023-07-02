@@ -33,11 +33,6 @@ pub struct SliceTy {
     pub is_mutable: bool,
 }
 
-impl SliceTy {
-    pub const PTR_FIELD_INDEX: u32 = 0;
-    pub const LEN_FIELD_INDEX: u32 = 1;
-}
-
 impl fmt::Display for SliceTy {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut_display_str = if self.is_mutable { "mut " } else { "" };

@@ -1,8 +1,8 @@
-use crate::{BuilderExt, CodeGenerator, LoadedValue, Value};
+use crate::{BuilderExt, CodeGenerator, Value};
 use cool_ast::RangeExprAst;
 use cool_lexer::sym;
-use cool_resolve::{SliceTy, ValueTy};
-use inkwell::values::{IntValue, PointerValue};
+use cool_resolve::{TyId, ValueTy};
+use inkwell::values::{BasicValueEnum, IntValue, PointerValue};
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_range_expr(
@@ -10,6 +10,7 @@ impl<'a> CodeGenerator<'a> {
         expr: &RangeExprAst,
         memory: Option<PointerValue<'a>>,
     ) -> Value<'a> {
+        // Base
         let base = self.gen_expr(&expr.base, None);
         if self.builder.current_block_diverges() {
             return Value::Void;
@@ -17,32 +18,30 @@ impl<'a> CodeGenerator<'a> {
 
         let (from, to) = expr.kind.as_from_to_pair();
 
+        // From
         let from = from
-            .map(|from| self.gen_loaded_expr(from))
-            .unwrap_or(LoadedValue::None);
+            .and_then(|from| self.gen_loaded_expr(from))
+            .map(BasicValueEnum::into_int_value)
+            .unwrap_or_else(|| self.tys.isize_ty().const_zero());
 
         if self.builder.current_block_diverges() {
             return Value::Void;
         }
 
-        let from = match from {
-            LoadedValue::None => self.tys.isize_ty().const_zero(),
-            LoadedValue::Register(value) => value.into_int_value(),
-        };
-
+        // To
         let to = to
-            .map(|to| self.gen_loaded_expr(to))
-            .unwrap_or(LoadedValue::None);
+            .and_then(|to| self.gen_loaded_expr(to))
+            .map(BasicValueEnum::into_int_value);
 
         if self.builder.current_block_diverges() {
             return Value::Void;
         }
 
+        // Slice
         let memory = memory.unwrap_or_else(|| {
             let slice_ty_id = expr.expr_id.ty_id;
             let slice_ty = self.tys[slice_ty_id].unwrap();
-            let slice_ptr = self.util_gen_alloca(slice_ty);
-            PointerValue::new(slice_ptr, slice_ty)
+            self.util_gen_alloca(slice_ty)
         });
 
         match expr.base.expr_id().ty_id.as_value().unwrap() {
@@ -57,39 +56,43 @@ impl<'a> CodeGenerator<'a> {
         expr: &RangeExprAst,
         base: Value<'a>,
         from: IntValue<'a>,
-        to: LoadedValue<'a>,
+        to: Option<IntValue<'a>>,
         memory: PointerValue<'a>,
     ) -> Value<'a> {
-        let elem_ty = self.tys[expr.base.expr_id().ty_id]
-            .unwrap()
-            .into_array_type()
-            .get_element_type();
-
         let ptr_value = match base {
             Value::Void => todo!("handle zst array"),
             Value::Fn(_) => unreachable!(),
             Value::Register(value) => unsafe {
-                let array_ptr = self.util_gen_init(value);
-                self.builder.build_gep(elem_ty, array_ptr, &[from], "")
-            },
-            Value::Memory(array_memory) => unsafe {
-                self.builder
-                    .build_gep(elem_ty, array_memory.ptr, &[from], "")
-            },
-        };
+                let memory = self.util_gen_init(value);
+                let elem_ty_id = expr.expr_id.ty_id.get_array().elem;
 
-        let to = match to {
-            LoadedValue::Register(value) => value.into_int_value(),
-            LoadedValue::None => {
-                let base_len = expr.base.expr_id().ty_id.get_array().len;
+                match self.tys[elem_ty_id] {
+                    Some(elem_ty) => unsafe {
+                        self.builder.build_gep(elem_ty, memory, &[from], "")
+                    },
+                    None => memory,
+                }
+            },
+            Value::Memory(memory) => {
+                let elem_ty_id = expr.expr_id.ty_id.get_array().elem;
 
-                self.tys.isize_ty().const_int(base_len, false)
+                match self.tys[elem_ty_id] {
+                    Some(elem_ty) => unsafe {
+                        self.builder.build_gep(elem_ty, memory, &[from], "")
+                    },
+                    None => memory,
+                }
             }
         };
 
+        let to = to.unwrap_or_else(|| {
+            let base_len = expr.base.expr_id().ty_id.get_array().len;
+            self.tys.isize_ty().const_int(base_len, false)
+        });
+
         let len_value = self.builder.build_int_sub(to, from, "");
-        self.util_gen_slice(memory, ptr_value, len_value);
-        memory.into()
+        self.util_gen_slice(expr.expr_id.ty_id, memory, ptr_value, len_value);
+        Value::Memory(memory)
     }
 
     fn gen_slice_range_expr(
@@ -97,7 +100,7 @@ impl<'a> CodeGenerator<'a> {
         expr: &RangeExprAst,
         base: Value<'a>,
         from: IntValue<'a>,
-        to: LoadedValue<'a>,
+        to: Option<IntValue<'a>>,
         memory: PointerValue<'a>,
     ) -> Value<'a> {
         let slice_ty_id = expr.base.expr_id().ty_id;
@@ -112,22 +115,18 @@ impl<'a> CodeGenerator<'a> {
 
                 let ptr_value = self
                     .builder
-                    .build_extract_value(slice_value, SliceTy::PTR_FIELD_INDEX, "")
+                    .build_extract_value(slice_value, 0, "")
                     .unwrap()
                     .into_pointer_value();
 
                 let ptr_value = unsafe { self.builder.build_gep(elem_ty, ptr_value, &[from], "") };
 
-                let len_value = self
-                    .builder
-                    .build_extract_value(slice_value, SliceTy::LEN_FIELD_INDEX, "")
-                    .unwrap()
-                    .into_int_value();
-
-                let to = match to {
-                    LoadedValue::None => len_value,
-                    LoadedValue::Register(value) => value.into_int_value(),
-                };
+                let to = to.unwrap_or_else(|| {
+                    self.builder
+                        .build_extract_value(slice_value, 1, "")
+                        .unwrap()
+                        .into_int_value()
+                });
 
                 let len_value = self.builder.build_int_sub(to, from, "");
 
@@ -135,21 +134,17 @@ impl<'a> CodeGenerator<'a> {
             }
             Value::Memory(slice_memory) => {
                 let ptr_value = self
-                    .util_gen_loaded_field(slice_ty_id, slice_memory.ptr, sym::PTR)
-                    .into_basic_value()
+                    .util_gen_loaded_field(slice_ty_id, slice_memory, sym::PTR)
+                    .unwrap()
                     .into_pointer_value();
 
                 let ptr_value = unsafe { self.builder.build_gep(elem_ty, ptr_value, &[from], "") };
 
-                let len_value = self
-                    .util_gen_loaded_field(slice_ty_id, slice_memory.ptr, sym::LEN)
-                    .into_basic_value()
-                    .into_int_value();
-
-                let to = match to {
-                    LoadedValue::None => len_value,
-                    LoadedValue::Register(value) => value.into_int_value(),
-                };
+                let to = to.unwrap_or_else(|| {
+                    self.util_gen_loaded_field(slice_ty_id, slice_memory, sym::LEN)
+                        .unwrap()
+                        .into_int_value()
+                });
 
                 let len_value = self.builder.build_int_sub(to, from, "");
 
@@ -157,28 +152,40 @@ impl<'a> CodeGenerator<'a> {
             }
         };
 
-        self.util_gen_slice(memory, ptr_value, len_value);
-        memory.into()
+        self.util_gen_slice(slice_ty_id, memory, ptr_value, len_value);
+        Value::Memory(memory)
     }
 
     fn util_gen_slice(
         &self,
+        slice_ty_id: TyId,
         memory: PointerValue<'a>,
         ptr_value: PointerValue<'a>,
         len_value: IntValue<'a>,
     ) {
-        let ptr_ptr = self
-            .builder
-            .build_struct_gep(memory.ty, memory.ptr, SliceTy::PTR_FIELD_INDEX, "")
-            .unwrap();
+        let slice_ty = match self.tys[slice_ty_id] {
+            Some(slice_ty) => slice_ty,
+            None => return,
+        };
 
-        self.builder.build_store(ptr_ptr, ptr_value);
+        let field_map = self.tys.get_field_map(slice_ty_id);
 
-        let len_ptr = self
-            .builder
-            .build_struct_gep(memory.ty, memory.ptr, SliceTy::LEN_FIELD_INDEX, "")
-            .unwrap();
+        if let Some(ptr_field_index) = field_map.get(sym::PTR) {
+            let ptr_field_ptr = self
+                .builder
+                .build_struct_gep(slice_ty, memory, ptr_field_index, "")
+                .unwrap();
 
-        self.builder.build_store(len_ptr, len_value);
+            self.builder.build_store(ptr_field_ptr, ptr_value);
+        }
+
+        if let Some(len_field_index) = field_map.get(sym::LEN) {
+            let len_field_ptr = self
+                .builder
+                .build_struct_gep(slice_ty, memory, len_field_index, "")
+                .unwrap();
+
+            self.builder.build_store(len_field_ptr, len_value);
+        }
     }
 }

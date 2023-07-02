@@ -4,6 +4,7 @@ use cool_parser::{ArithmeticOp, BinOp, BitwiseOp, ComparisonOp, LogicalOp};
 use cool_resolve::TyId;
 use inkwell::values::{BasicValue, BasicValueEnum, IntValue};
 use inkwell::{FloatPredicate as FloatP, IntPredicate as IntP};
+use smallvec::SmallVec;
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_binary_expr(&mut self, expr: &BinaryExprAst) -> LoadedValue<'a> {
@@ -220,59 +221,95 @@ impl<'a> CodeGenerator<'a> {
     }
 
     fn gen_logical_and(&mut self, lhs: &ExprAst, rhs: &ExprAst) -> LoadedValue<'a> {
-        let lhs_value = self
-            .gen_loaded_expr(lhs)
-            .into_basic_value()
-            .into_int_value();
-        let lhs_cond_value = self.builder.build_bool(lhs_value);
+        // Lhs
+        let lhs_value = match self.gen_loaded_expr(lhs) {
+            Some(lhs_value) => lhs_value.into_int_value(),
+            None => return LoadedValue::None,
+        };
 
+        if self.builder.current_block_diverges() {
+            return LoadedValue::None;
+        }
+
+        // Condition
         let lhs_block = self.builder.get_insert_block().unwrap();
         let rhs_block = self.context.insert_basic_block_after(lhs_block, "");
         let end_block = self.context.insert_basic_block_after(rhs_block, "");
+
+        let lhs_cond_value = self.builder.build_bool(lhs_value);
 
         self.builder
             .build_conditional_branch(lhs_cond_value, rhs_block, end_block);
 
+        let mut phi_values = SmallVec::<[(&dyn BasicValue, _); 2]>::new();
+        phi_values.push((&self.llvm_false, self.builder.current_block()));
+
+        // Rhs
         self.builder.position_at_end(rhs_block);
+
         let rhs_value = self
             .gen_loaded_expr(rhs)
-            .into_basic_value()
-            .into_int_value();
-        self.builder.build_unconditional_branch(end_block);
+            .map(BasicValueEnum::into_int_value)
+            .filter(|_| !self.builder.current_block_diverges());
 
+        if let Some(rhs_value) = rhs_value {
+            self.builder.build_unconditional_branch(end_block);
+            phi_values.push((&rhs_value, self.builder.current_block()));
+        }
+
+        // End
         self.builder.position_at_end(end_block);
+
         let phi_value = self.builder.build_phi(self.tys.i8_ty(), "");
-        phi_value.add_incoming(&[(&self.llvm_false, lhs_block)]);
-        phi_value.add_incoming(&[(&rhs_value, rhs_block)]);
+        phi_value.add_incoming(&phi_values);
         phi_value.as_basic_value().as_basic_value_enum().into()
     }
 
     fn gen_logical_or(&mut self, lhs: &ExprAst, rhs: &ExprAst) -> LoadedValue<'a> {
-        let lhs_value = self
-            .gen_loaded_expr(lhs)
-            .into_basic_value()
-            .into_int_value();
-        let lhs_cond_value = self.builder.build_bool(lhs_value);
+        // Lhs
+        let lhs_value = match self.gen_loaded_expr(lhs) {
+            Some(lhs_value) => lhs_value.into_int_value(),
+            None => return LoadedValue::None,
+        };
 
-        let lhs_block = self.builder.get_insert_block().unwrap();
+        if self.builder.current_block_diverges() {
+            return LoadedValue::None;
+        }
+
+        // Condition
+        let lhs_block = self.builder.current_block();
         let rhs_block = self.context.insert_basic_block_after(lhs_block, "");
         let end_block = self.context.insert_basic_block_after(rhs_block, "");
+
+        let lhs_cond_value = self.builder.build_bool(lhs_value);
 
         self.builder
             .build_conditional_branch(lhs_cond_value, end_block, rhs_block);
 
-        self.builder.position_at_end(rhs_block);
-        let rhs_value = self
-            .gen_loaded_expr(rhs)
-            .into_basic_value()
-            .into_int_value();
-        self.builder.build_unconditional_branch(end_block);
+        let mut phi_values = SmallVec::<[(&dyn BasicValue, _); 2]>::new();
+        phi_values.push((&self.llvm_true, self.builder.current_block()));
 
+        // Rhs
+        self.builder.position_at_end(rhs_block);
+
+        let rhs_value = match self.gen_loaded_expr(rhs) {
+            Some(rhs_value) => rhs_value.into_int_value(),
+            None => {
+                self.builder.position_at_end(end_block);
+                return LoadedValue::None;
+            }
+        };
+
+        if !self.builder.current_block_diverges() {
+            self.builder.build_unconditional_branch(end_block);
+            phi_values.push((&rhs_value, self.builder.current_block()));
+        }
+
+        // End
         self.builder.position_at_end(end_block);
 
         let phi_value = self.builder.build_phi(self.tys.i8_ty(), "");
-        phi_value.add_incoming(&[(&self.llvm_true, lhs_block)]);
-        phi_value.add_incoming(&([(&rhs_value, rhs_block)]));
+        phi_value.add_incoming(&phi_values);
         phi_value.as_basic_value().as_basic_value_enum().into()
     }
 

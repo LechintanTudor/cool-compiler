@@ -14,8 +14,7 @@ impl<'a> CodeGenerator<'a> {
 
         let memory = memory.unwrap_or_else(|| {
             let struct_ty = self.tys[expr_ty_id].unwrap();
-            let struct_ptr = self.util_gen_alloca(struct_ty);
-            PointerValue::new(struct_ptr, struct_ty)
+            self.util_gen_alloca(struct_ty)
         });
 
         let inner_expr_value = self.gen_loaded_expr(&expr.inner);
@@ -24,8 +23,8 @@ impl<'a> CodeGenerator<'a> {
         }
 
         match inner_expr_value {
-            LoadedValue::Register(value) => {
-                self.builder.build_store(memory.ptr, value);
+            LoadedValue::Some(value) => {
+                self.builder.build_store(memory, value);
             }
             LoadedValue::None => (),
         }
@@ -38,7 +37,7 @@ impl<'a> CodeGenerator<'a> {
 
         let index_field_ptr = self
             .builder
-            .build_struct_gep(expr_ty, memory.ptr, index_field_index, "")
+            .build_struct_gep(expr_ty, memory, index_field_index, "")
             .unwrap();
 
         let index_field_value = self

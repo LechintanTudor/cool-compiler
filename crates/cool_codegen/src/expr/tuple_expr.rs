@@ -9,56 +9,63 @@ impl<'a> CodeGenerator<'a> {
         expr: &TupleExprAst,
         memory: Option<PointerValue<'a>>,
     ) -> Value<'a> {
-        let expr_ty_id = expr.expr_id.ty_id;
+        let tuple_ty_id = expr.expr_id.ty_id;
+        let tuple_ty = self.tys[tuple_ty_id];
+        let memory = memory.or_else(|| tuple_ty.map(|ty| self.util_gen_alloca(ty)));
 
-        let memory = memory.unwrap_or_else(|| {
-            let struct_ty = self.tys[expr_ty_id].unwrap();
-            let struct_ptr = self.util_gen_alloca(struct_ty);
-            PointerValue::new(struct_ptr, struct_ty)
-        });
+        let fields = self
+            .resolve
+            .get_ty_def(tuple_ty_id)
+            .unwrap()
+            .get_aggregate_fields()
+            .unwrap();
 
-        for (i, elem_initializer) in expr.elems.iter().enumerate() {
-            let symbol = Symbol::insert_u32(i as u32);
-            let Some(field_index) = self
-                .tys
-                .get_field_map(expr_ty_id)
-                .get(symbol) else {
-                    self.gen_expr(elem_initializer, None);
-                    continue;
-                };
+        for (i, expr) in expr.elems.iter().enumerate() {
+            match (tuple_ty, memory) {
+                (Some(struct_ty), Some(memory)) => {
+                    let Some(field_index) = self
+                        .tys
+                        .get_field_map(tuple_ty_id)
+                        .get(Symbol::insert_u32(i as _)) else {
+                            self.gen_expr(&expr, None);
+                            if self.builder.current_block_diverges() {
+                                return Value::Void;
+                            }
+                            continue;
+                        };
 
-            let field_ty = self
-                .resolve
-                .get_ty_def(expr_ty_id)
-                .unwrap()
-                .get_aggregate_field(symbol)
-                .and_then(|field| self.tys[field.ty_id])
-                .unwrap();
+                    let field_ptr = self
+                        .builder
+                        .build_struct_gep(struct_ty, memory, field_index, "")
+                        .unwrap();
 
-            let field_ptr = self
-                .builder
-                .build_struct_gep(memory.ty, memory.ptr, field_index, "")
-                .unwrap();
+                    let field_value = self.gen_expr(&expr, Some(field_ptr));
+                    if self.builder.current_block_diverges() {
+                        return Value::Void;
+                    }
 
-            let field_memory = Some(PointerValue::new(field_ptr, field_ty));
-
-            let elem_expr = self.gen_expr(elem_initializer, field_memory);
-            if self.builder.current_block_diverges() {
-                return Value::Void;
-            }
-
-            match elem_expr {
-                Value::Fn(fn_value) => {
-                    self.builder
-                        .build_store(field_ptr, fn_value.as_global_value().as_pointer_value());
+                    match field_value {
+                        Value::Fn(fn_value) => {
+                            self.builder.build_store(
+                                field_ptr,
+                                fn_value.as_global_value().as_pointer_value(),
+                            );
+                        }
+                        Value::Register(value) => {
+                            self.builder.build_store(field_ptr, value);
+                        }
+                        _ => (),
+                    }
                 }
-                Value::Register(value) => {
-                    self.builder.build_store(field_ptr, value);
+                _ => {
+                    self.gen_expr(&expr, None);
+                    if self.builder.current_block_diverges() {
+                        return Value::Void;
+                    }
                 }
-                _ => (),
             }
         }
 
-        Value::Memory(memory)
+        memory.map(Value::Memory).unwrap_or(Value::Void)
     }
 }

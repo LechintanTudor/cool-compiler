@@ -13,3 +13,4 @@ cool_resolve = { path = "../cool_resolve" }
 derive_more = { workspace = true }
 inkwell = { workspace = true }
 rustc-hash = { workspace = true }
+smallvec = { workspace = true }

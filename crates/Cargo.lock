@@ -218,6 +218,7 @@ dependencies = [
  "derive_more",
  "inkwell",
  "rustc-hash",
+ "smallvec",
 ]
 
 [[package]]
