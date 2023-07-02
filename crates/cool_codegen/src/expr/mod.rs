@@ -16,14 +16,12 @@ mod tuple_expr;
 mod unary_expr;
 mod variant_wrap_expr;
 
-use crate::{BuilderExt, CodeGenerator, LoadedValue, MemoryValue, Value};
+use crate::{BuilderExt, CodeGenerator, LoadedValue, Value};
 use cool_ast::{BindingExprAst, ExprAst};
-use cool_lexer::Symbol;
-use cool_resolve::TyId;
 use inkwell::values::{BasicValue, PointerValue};
 
 impl<'a> CodeGenerator<'a> {
-    pub fn gen_expr(&mut self, expr: &ExprAst, memory: Option<MemoryValue<'a>>) -> Value<'a> {
+    pub fn gen_expr(&mut self, expr: &ExprAst, memory: Option<PointerValue<'a>>) -> Value<'a> {
         if self.builder.current_block_diverges() {
             return Value::Void;
         }
@@ -55,64 +53,14 @@ impl<'a> CodeGenerator<'a> {
         }
     }
 
+    #[inline]
     pub fn gen_loaded_expr(&mut self, expr: &ExprAst) -> LoadedValue<'a> {
         let value = self.gen_expr(expr, None);
-        self.gen_loaded_value(value)
+        self.gen_loaded_value(expr.expr_id().ty_id, value)
     }
 
-    pub fn gen_ident_expr(&self, expr: &BindingExprAst) -> Value<'a> {
+    #[inline]
+    pub fn gen_ident_expr(&mut self, expr: &BindingExprAst) -> Value<'a> {
         self.bindings[&expr.binding_id]
-    }
-
-    pub fn gen_loaded_value(&self, value: Value<'a>) -> LoadedValue<'a> {
-        match value {
-            Value::Void => LoadedValue::Void,
-            Value::Fn(fn_value) => {
-                let value = fn_value
-                    .as_global_value()
-                    .as_pointer_value()
-                    .as_basic_value_enum();
-
-                LoadedValue::Register(value)
-            }
-            Value::Memory(memory) => {
-                let value = self
-                    .builder
-                    .build_load(memory.ty, memory.ptr, "")
-                    .as_basic_value_enum();
-
-                LoadedValue::Register(value)
-            }
-            Value::Register(value) => LoadedValue::Register(value),
-        }
-    }
-
-    pub fn util_gen_loaded_field(
-        &self,
-        struct_ty_id: TyId,
-        struct_ptr: PointerValue<'a>,
-        field: Symbol,
-    ) -> LoadedValue<'a> {
-        let field_ty_id = self
-            .resolve
-            .get_ty_def(struct_ty_id)
-            .unwrap()
-            .get_aggregate_field(field)
-            .unwrap()
-            .ty_id;
-
-        if self.resolve.is_ty_zero_sized(field_ty_id) {
-            return LoadedValue::Void;
-        }
-
-        let struct_ty = self.tys[struct_ty_id].unwrap().into_struct_type();
-        let field_index = self.tys.get_field_map(struct_ty_id)[field];
-        let field_ptr = self
-            .builder
-            .build_struct_gep(struct_ty, struct_ptr, field_index, "")
-            .unwrap();
-
-        let field_ty = self.tys[field_ty_id].unwrap();
-        self.builder.build_load(field_ty, field_ptr, "").into()
     }
 }

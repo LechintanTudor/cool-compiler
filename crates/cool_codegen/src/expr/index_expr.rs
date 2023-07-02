@@ -16,7 +16,7 @@ impl<'a> CodeGenerator<'a> {
             return Value::Void;
         }
 
-        let index = index.as_basic_value().unwrap().into_int_value();
+        let index = index.unwrap().into_int_value();
 
         match expr.base.expr_id().ty_id.get_value() {
             ValueTy::Array(_) => self.continue_gen_array_index_expr(expr, base, index),
@@ -59,7 +59,7 @@ impl<'a> CodeGenerator<'a> {
         let elem_ty = self.tys[elem_ty_id].unwrap();
 
         match self.gen_loaded_value(base) {
-            LoadedValue::Void => Value::Void,
+            LoadedValue::None => Value::Void,
             LoadedValue::Register(ptr_value) => {
                 let ptr_value = ptr_value.into_pointer_value();
                 let ptr_value = unsafe { self.builder.build_gep(elem_ty, ptr_value, &[index], "") };

@@ -1,12 +1,13 @@
-use crate::{BuilderExt, CodeGenerator, LoadedValue, MemoryValue, Value};
+use crate::{BuilderExt, CodeGenerator, LoadedValue, Value};
 use cool_ast::VariantWrapExprAst;
 use cool_lexer::sym;
+use inkwell::values::PointerValue;
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_variant_wrap_expr(
         &mut self,
         expr: &VariantWrapExprAst,
-        memory: Option<MemoryValue<'a>>,
+        memory: Option<PointerValue<'a>>,
     ) -> Value<'a> {
         let expr_ty_id = expr.expr_id.ty_id;
         let expr_ty = self.tys[expr_ty_id].unwrap();
@@ -14,7 +15,7 @@ impl<'a> CodeGenerator<'a> {
         let memory = memory.unwrap_or_else(|| {
             let struct_ty = self.tys[expr_ty_id].unwrap();
             let struct_ptr = self.util_gen_alloca(struct_ty);
-            MemoryValue::new(struct_ptr, struct_ty)
+            PointerValue::new(struct_ptr, struct_ty)
         });
 
         let inner_expr_value = self.gen_loaded_expr(&expr.inner);
@@ -26,7 +27,7 @@ impl<'a> CodeGenerator<'a> {
             LoadedValue::Register(value) => {
                 self.builder.build_store(memory.ptr, value);
             }
-            LoadedValue::Void => (),
+            LoadedValue::None => (),
         }
 
         let index_field_index = self

@@ -1,65 +1,68 @@
-use crate::{BuilderExt, CodeGenerator, LoadedValue, MemoryValue, Value};
+use crate::{BuilderExt, CodeGenerator, Value};
 use cool_ast::{ArrayExprAst, ArrayRepeatExprAst};
+use inkwell::values::PointerValue;
 use inkwell::IntPredicate;
 
 impl<'a> CodeGenerator<'a> {
-    // TODO: Support ZST
     pub fn gen_array_expr(
         &mut self,
         expr: &ArrayExprAst,
-        memory: Option<MemoryValue<'a>>,
+        memory: Option<PointerValue<'a>>,
     ) -> Value<'a> {
-        let memory = memory.unwrap_or_else(|| {
+        let memory = memory.or_else(|| {
             let ty_id = expr.expr_id.ty_id;
-            let ty = self.tys[ty_id].unwrap();
-            let ptr = self.util_gen_alloca(ty);
-            MemoryValue::new(ptr, ty)
+            self.tys[ty_id].map(|ty| self.util_gen_alloca(ty))
         });
 
         let index_ty = self.tys.isize_ty();
-        let elem_ty = memory.ty.into_array_type().get_element_type();
 
         for (i, elem) in expr.elems.iter().enumerate() {
-            let elem_index = index_ty.const_int(i as u64, false);
-
             let elem_value = {
                 let elem_value = self.gen_loaded_expr(elem);
+
                 if self.builder.current_block_diverges() {
                     return Value::Void;
                 }
 
-                elem_value.into_basic_value()
+                match elem_value {
+                    Some(elem_value) => elem_value,
+                    None => continue,
+                }
             };
 
-            let elem_pointer = unsafe {
-                self.builder
-                    .build_gep(elem_ty, memory.ptr, &[elem_index], "")
+            let Some(memory) = memory else {
+                continue;
             };
 
-            self.builder.build_store(elem_pointer, elem_value);
+            let elem_ptr = unsafe {
+                let elem_type = elem_value.get_type();
+                let elem_index = index_ty.const_int(i as u64, false);
+                self.builder.build_gep(elem_type, memory, &[elem_index], "")
+            };
+
+            self.builder.build_store(elem_ptr, elem_value);
         }
 
-        Value::Memory(memory)
+        memory.map(Value::Memory).unwrap_or(Value::Void)
     }
 
     pub fn gen_array_repeat_expr(
         &mut self,
         expr: &ArrayRepeatExprAst,
-        memory: Option<MemoryValue<'a>>,
+        memory: Option<PointerValue<'a>>,
     ) -> Value<'a> {
         if expr.len == 0 {
             return Value::Void;
         }
 
-        let LoadedValue::Register(elem_value) = self.gen_loaded_expr(&expr.elem) else {
+        let Some(elem_value) = self.gen_loaded_expr(&expr.elem) else {
             return Value::Void;
         };
 
         let memory = memory.unwrap_or_else(|| {
             let ty_id = expr.expr_id.ty_id;
             let ty = self.tys[ty_id].unwrap();
-            let ptr = self.util_gen_alloca(ty);
-            MemoryValue::new(ptr, ty)
+            self.util_gen_alloca(ty)
         });
 
         let start_block = self.builder.get_insert_block().unwrap();
@@ -68,7 +71,7 @@ impl<'a> CodeGenerator<'a> {
         let end_block = self.context.insert_basic_block_after(body_block, "");
 
         let index_ty = self.tys.isize_ty();
-        let elem_ty = memory.ty.into_array_type().get_element_type();
+        let elem_ty = elem_value.get_type();
 
         let elem_index_ptr = self.util_gen_init(index_ty.const_zero());
         let array_len_value = index_ty.const_int(expr.len, false);
@@ -97,7 +100,7 @@ impl<'a> CodeGenerator<'a> {
 
         let elem_ptr = unsafe {
             self.builder
-                .build_gep(elem_ty, memory.ptr, &[elem_index_value], "")
+                .build_gep(elem_ty, memory, &[elem_index_value], "")
         };
 
         self.builder.build_store(elem_ptr, elem_value);

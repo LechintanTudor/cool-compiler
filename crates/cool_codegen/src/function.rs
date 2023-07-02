@@ -1,4 +1,4 @@
-use crate::{mangle_item_path, BuilderExt, CodeGenerator, FnState, LoadedValue, Value};
+use crate::{mangle_item_path, BuilderExt, CodeGenerator, FnState, Value};
 use cool_ast::{ExternFnAst, FnAst};
 use inkwell::values::BasicValue;
 
@@ -41,22 +41,19 @@ impl CodeGenerator<'_> {
             } else {
                 let value = param_value_iter.next().unwrap().as_basic_value_enum();
                 let ptr = self.util_gen_named_init(value, param.symbol.as_str());
-                let ty = value.get_type();
-                Value::memory(ptr, ty)
+                Value::Memory(ptr)
             };
 
             debug_assert!(!self.bindings.contains_key(&binding_id));
             self.bindings.insert(binding_id, param_value);
         }
 
-        let ret_value = self.gen_loaded_expr(&fn_ast.body);
+        let ret_value = self
+            .gen_loaded_expr(&fn_ast.body)
+            .as_ref()
+            .map(|value| value as &dyn BasicValue);
 
         if !self.builder.current_block_diverges() {
-            let ret_value = match &ret_value {
-                LoadedValue::Void => None,
-                LoadedValue::Register(value) => Some(value as &dyn BasicValue),
-            };
-
             self.builder.build_return(ret_value);
         }
 

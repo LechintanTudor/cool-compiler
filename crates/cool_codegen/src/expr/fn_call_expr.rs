@@ -1,4 +1,4 @@
-use crate::{BuilderExt, CallableValue, CodeGenerator, LoadedValue};
+use crate::{BuilderExt, CodeGenerator, LoadedValue};
 use cool_ast::FnCallExprAst;
 use inkwell::values::BasicMetadataValueEnum;
 
@@ -8,7 +8,7 @@ impl<'a> CodeGenerator<'a> {
         let fn_value = {
             let fn_value = self.gen_loaded_expr(&expr.fn_expr);
             if self.builder.current_block_diverges() {
-                return LoadedValue::Void;
+                return LoadedValue::None;
             }
 
             fn_value.into_callable_value()
@@ -19,7 +19,7 @@ impl<'a> CodeGenerator<'a> {
         for arg_expr in expr.arg_exprs.iter() {
             let arg_value = self.gen_loaded_expr(arg_expr);
             if self.builder.current_block_diverges() {
-                return LoadedValue::Void;
+                return LoadedValue::None;
             }
 
             if let LoadedValue::Register(arg_value) = arg_value {
@@ -33,7 +33,7 @@ impl<'a> CodeGenerator<'a> {
                     .build_call(fn_value, &arg_values, "")
                     .try_as_basic_value()
                     .map_left(LoadedValue::Register)
-                    .left_or(LoadedValue::Void)
+                    .left_or(LoadedValue::None)
             }
             CallableValue::Register(fn_pointer) => {
                 let ty_id = expr.fn_expr.expr_id().ty_id;
@@ -43,7 +43,7 @@ impl<'a> CodeGenerator<'a> {
                     .build_indirect_call(fn_type, fn_pointer, &arg_values, "")
                     .try_as_basic_value()
                     .map_left(LoadedValue::Register)
-                    .left_or(LoadedValue::Void)
+                    .left_or(LoadedValue::None)
             }
         };
 

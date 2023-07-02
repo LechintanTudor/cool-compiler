@@ -15,7 +15,7 @@ impl<'a> CodeGenerator<'a> {
             if self.builder.current_block_diverges() {
                 if i == 0 {
                     end_block.remove_from_function().unwrap();
-                    return LoadedValue::Void;
+                    return LoadedValue::None;
                 }
 
                 else_expr = None;
@@ -60,7 +60,7 @@ impl<'a> CodeGenerator<'a> {
 
         let expr_ty_id = expr.expr_id.ty_id;
         if self.resolve.is_ty_zero_sized(expr_ty_id) || phi_values.is_empty() {
-            return LoadedValue::Void;
+            return LoadedValue::None;
         }
 
         let expr_ty = self.tys[expr_ty_id].unwrap();

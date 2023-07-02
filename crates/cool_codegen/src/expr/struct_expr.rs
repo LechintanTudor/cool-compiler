@@ -1,18 +1,19 @@
-use crate::{BuilderExt, CodeGenerator, MemoryValue, Value};
+use crate::{BuilderExt, CodeGenerator, Value};
 use cool_ast::StructExprAst;
+use inkwell::values::PointerValue;
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_struct_expr(
         &mut self,
         expr: &StructExprAst,
-        memory: Option<MemoryValue<'a>>,
+        memory: Option<PointerValue<'a>>,
     ) -> Value<'a> {
         let expr_ty_id = expr.expr_id.ty_id;
 
         let memory = memory.unwrap_or_else(|| {
             let struct_ty = self.tys[expr_ty_id].unwrap();
             let struct_ptr = self.util_gen_alloca(struct_ty);
-            MemoryValue::new(struct_ptr, struct_ty)
+            PointerValue::new(struct_ptr, struct_ty)
         });
 
         let fields = self
@@ -42,7 +43,7 @@ impl<'a> CodeGenerator<'a> {
                 .build_struct_gep(memory.ty, memory.ptr, field_index, "")
                 .unwrap();
 
-            let field_memory = Some(MemoryValue::new(field_ptr, field_ty));
+            let field_memory = Some(PointerValue::new(field_ptr, field_ty));
 
             let field_expr = self.gen_expr(&initializer.expr, field_memory);
             if self.builder.current_block_diverges() {

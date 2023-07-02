@@ -1,4 +1,4 @@
-use crate::{BuilderExt, CodeGenerator, LoadedValue, MemoryValue, Value};
+use crate::{BuilderExt, CodeGenerator, LoadedValue, Value};
 use cool_ast::RangeExprAst;
 use cool_lexer::sym;
 use cool_resolve::{SliceTy, ValueTy};
@@ -8,7 +8,7 @@ impl<'a> CodeGenerator<'a> {
     pub fn gen_range_expr(
         &mut self,
         expr: &RangeExprAst,
-        memory: Option<MemoryValue<'a>>,
+        memory: Option<PointerValue<'a>>,
     ) -> Value<'a> {
         let base = self.gen_expr(&expr.base, None);
         if self.builder.current_block_diverges() {
@@ -19,20 +19,20 @@ impl<'a> CodeGenerator<'a> {
 
         let from = from
             .map(|from| self.gen_loaded_expr(from))
-            .unwrap_or(LoadedValue::Void);
+            .unwrap_or(LoadedValue::None);
 
         if self.builder.current_block_diverges() {
             return Value::Void;
         }
 
         let from = match from {
-            LoadedValue::Void => self.tys.isize_ty().const_zero(),
+            LoadedValue::None => self.tys.isize_ty().const_zero(),
             LoadedValue::Register(value) => value.into_int_value(),
         };
 
         let to = to
             .map(|to| self.gen_loaded_expr(to))
-            .unwrap_or(LoadedValue::Void);
+            .unwrap_or(LoadedValue::None);
 
         if self.builder.current_block_diverges() {
             return Value::Void;
@@ -42,7 +42,7 @@ impl<'a> CodeGenerator<'a> {
             let slice_ty_id = expr.expr_id.ty_id;
             let slice_ty = self.tys[slice_ty_id].unwrap();
             let slice_ptr = self.util_gen_alloca(slice_ty);
-            MemoryValue::new(slice_ptr, slice_ty)
+            PointerValue::new(slice_ptr, slice_ty)
         });
 
         match expr.base.expr_id().ty_id.as_value().unwrap() {
@@ -58,7 +58,7 @@ impl<'a> CodeGenerator<'a> {
         base: Value<'a>,
         from: IntValue<'a>,
         to: LoadedValue<'a>,
-        memory: MemoryValue<'a>,
+        memory: PointerValue<'a>,
     ) -> Value<'a> {
         let elem_ty = self.tys[expr.base.expr_id().ty_id]
             .unwrap()
@@ -80,7 +80,7 @@ impl<'a> CodeGenerator<'a> {
 
         let to = match to {
             LoadedValue::Register(value) => value.into_int_value(),
-            LoadedValue::Void => {
+            LoadedValue::None => {
                 let base_len = expr.base.expr_id().ty_id.get_array().len;
 
                 self.tys.isize_ty().const_int(base_len, false)
@@ -98,7 +98,7 @@ impl<'a> CodeGenerator<'a> {
         base: Value<'a>,
         from: IntValue<'a>,
         to: LoadedValue<'a>,
-        memory: MemoryValue<'a>,
+        memory: PointerValue<'a>,
     ) -> Value<'a> {
         let slice_ty_id = expr.base.expr_id().ty_id;
         let elem_ty_id = slice_ty_id.get_slice().elem;
@@ -125,7 +125,7 @@ impl<'a> CodeGenerator<'a> {
                     .into_int_value();
 
                 let to = match to {
-                    LoadedValue::Void => len_value,
+                    LoadedValue::None => len_value,
                     LoadedValue::Register(value) => value.into_int_value(),
                 };
 
@@ -147,7 +147,7 @@ impl<'a> CodeGenerator<'a> {
                     .into_int_value();
 
                 let to = match to {
-                    LoadedValue::Void => len_value,
+                    LoadedValue::None => len_value,
                     LoadedValue::Register(value) => value.into_int_value(),
                 };
 
@@ -163,7 +163,7 @@ impl<'a> CodeGenerator<'a> {
 
     fn util_gen_slice(
         &self,
-        memory: MemoryValue<'a>,
+        memory: PointerValue<'a>,
         ptr_value: PointerValue<'a>,
         len_value: IntValue<'a>,
     ) {

@@ -8,7 +8,7 @@ impl<'a> CodeGenerator<'a> {
             .expr
             .as_ref()
             .map(|expr| self.gen_loaded_expr(expr))
-            .unwrap_or(LoadedValue::Void);
+            .unwrap_or(LoadedValue::None);
 
         if self.builder.current_block_diverges() {
             return Value::Void;

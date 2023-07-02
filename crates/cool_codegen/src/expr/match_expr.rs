@@ -8,7 +8,7 @@ impl<'a> CodeGenerator<'a> {
     pub fn gen_match_expr(&mut self, expr: &MatchExprAst) -> LoadedValue<'a> {
         let matched_expr_value = self.gen_expr(&expr.matched_expr, None);
         if self.builder.current_block_diverges() {
-            return LoadedValue::Void;
+            return LoadedValue::None;
         }
 
         let matched_expr_ty_id = expr.matched_expr.expr_id().ty_id;
@@ -106,7 +106,7 @@ impl<'a> CodeGenerator<'a> {
 
                 phi_value.as_basic_value().into()
             }
-            _ => LoadedValue::Void,
+            _ => LoadedValue::None,
         }
     }
 }

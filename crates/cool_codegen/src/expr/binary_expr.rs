@@ -14,7 +14,7 @@ impl<'a> CodeGenerator<'a> {
         let lhs = {
             let lhs = self.gen_loaded_expr(&expr.lhs);
             if self.builder.current_block_diverges() {
-                return LoadedValue::Void;
+                return LoadedValue::None;
             }
 
             lhs.into_basic_value()
@@ -23,7 +23,7 @@ impl<'a> CodeGenerator<'a> {
         let rhs = {
             let rhs = self.gen_loaded_expr(&expr.rhs);
             if self.builder.current_block_diverges() {
-                return LoadedValue::Void;
+                return LoadedValue::None;
             }
 
             rhs.into_basic_value()

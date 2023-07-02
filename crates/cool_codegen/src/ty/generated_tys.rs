@@ -1,4 +1,4 @@
-use crate::{mangle_item_path, BaiscTypeEnumOptionExt, TyFieldMap};
+use crate::{mangle_item_path, TyFieldMap};
 use cool_lexer::{sym, Symbol};
 use cool_resolve::{Field, ItemId, ResolveContext, TyId, ValueTy};
 use inkwell::context::Context;
@@ -115,7 +115,7 @@ impl<'a> GeneratedTys<'a> {
         ty_id: TyId,
         fields: &[Field],
     ) {
-        let struct_decl = self.tys[&ty_id].into_struct_type();
+        let struct_decl = self.tys[&ty_id].unwrap().into_struct_type();
         let mut field_tys = Vec::<BasicTypeEnum>::new();
         let mut field_map = FxHashMap::<Symbol, u32>::default();
 
