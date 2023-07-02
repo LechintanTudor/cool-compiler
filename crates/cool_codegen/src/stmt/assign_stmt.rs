@@ -1,18 +1,10 @@
 use crate::{BuilderExt, CodeGenerator, Value};
 use cool_ast::AssignStmtAst;
 use cool_parser::AssignOp;
-use inkwell::values::BasicValue;
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_assign_stmt(&mut self, assign: &AssignStmtAst) {
         let lhs = self.gen_expr(&assign.lhs, None);
-        let lhs_ty_id = assign.lhs.expr_id().ty_id;
-
-        if self.resolve.is_ty_zero_sized(lhs_ty_id) {
-            self.gen_expr(&assign.rhs, None);
-            return;
-        }
-
         if self.builder.current_block_diverges() {
             return;
         }
@@ -21,7 +13,7 @@ impl<'a> CodeGenerator<'a> {
             panic!("assignment lhs is not an lvalue");
         };
 
-        let gen_int_values = |gen: &mut Self| {
+        let gen_int_values = |gen: &mut Self| -> Option<_> {
             let lhs = gen
                 .gen_loaded_value(lhs)
                 .into_basic_value()
@@ -32,10 +24,10 @@ impl<'a> CodeGenerator<'a> {
                 .into_basic_value()
                 .into_int_value();
 
-            (lhs, rhs)
+            Some((lhs, rhs))
         };
 
-        let gen_float_values = |gen: &mut Self| {
+        let gen_float_values = |gen: &mut Self| -> Option<_> {
             let lhs = gen
                 .gen_loaded_value(lhs)
                 .into_basic_value()
@@ -46,7 +38,7 @@ impl<'a> CodeGenerator<'a> {
                 .into_basic_value()
                 .into_float_value();
 
-            (lhs, rhs)
+            Some((lhs, rhs))
         };
 
         let result_value = match assign.assign_op {

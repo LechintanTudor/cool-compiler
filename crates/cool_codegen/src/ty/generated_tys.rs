@@ -4,7 +4,7 @@ use cool_resolve::{Field, ItemId, ResolveContext, TyId, ValueTy};
 use inkwell::context::Context;
 use inkwell::targets::TargetData;
 use inkwell::types::{
-    BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType, IntType, VoidType,
+    BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType, IntType, PointerType, VoidType,
 };
 use rustc_hash::FxHashMap;
 use std::ops;
@@ -16,6 +16,7 @@ pub struct GeneratedTys<'a> {
     field_maps: FxHashMap<TyId, TyFieldMap>,
     void_ty: VoidType<'a>,
     i8_ty: IntType<'a>,
+    i8_ptr_ty: PointerType<'a>,
     isize_ty: IntType<'a>,
 }
 
@@ -31,6 +32,7 @@ impl<'a> GeneratedTys<'a> {
             field_maps: Default::default(),
             void_ty: context.void_type(),
             i8_ty: context.i8_type(),
+            i8_ptr_ty: context.i8_type().ptr_type(Default::default()),
             isize_ty: context.ptr_sized_int_type(target_data, Default::default()),
         };
 
@@ -290,6 +292,11 @@ impl<'a> GeneratedTys<'a> {
     #[inline]
     pub fn i8_ty(&self) -> IntType<'a> {
         self.i8_ty
+    }
+
+    #[inline]
+    pub fn i8_ptr_ty(&self) -> PointerType<'a> {
+        self.i8_ptr_ty
     }
 
     #[inline]

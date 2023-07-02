@@ -16,7 +16,7 @@ impl<'a> CodeGenerator<'a> {
                         return Value::Void;
                     }
 
-                    value.into_basic_value()
+                    value.unwrap()
                 };
 
                 if ty_id.is_int() {
@@ -40,7 +40,7 @@ impl<'a> CodeGenerator<'a> {
                         return Value::Void;
                     }
 
-                    value.into_basic_value().into_int_value()
+                    value.unwrap().into_int_value()
                 };
 
                 if ty_id.is_int() {
@@ -60,11 +60,22 @@ impl<'a> CodeGenerator<'a> {
                 }
             }
             UnaryOpKind::Addr { .. } => {
-                let value = self.gen_expr(&unary_expr.expr, None);
+                match self.gen_expr(&unary_expr.expr, None) {
+                    Value::Void => {
+                        let base_ty_id = unary_expr.expr.expr_id().ty_id;
+                        let base_align = self.resolve.get_ty_def(base_ty_id).unwrap().align;
+                        let ptr_value = self.tys.isize_ty().const_int(base_align, false);
 
-                match value {
-                    Value::Memory(memory) => Value::Register(memory.ptr.as_basic_value_enum()),
-                    _ => todo!(),
+                        self.builder
+                            .build_int_to_ptr(ptr_value, self.tys.i8_ptr_ty(), "")
+                            .as_basic_value_enum()
+                            .into()
+                    }
+                    Value::Fn(fn_value) => fn_value.as_global_value().as_basic_value_enum().into(),
+                    Value::Register(value) => {
+                        todo!()
+                    }
+                    Value::Memory(memory) => memory.as_basic_value_enum().into(),
                 }
             }
         }

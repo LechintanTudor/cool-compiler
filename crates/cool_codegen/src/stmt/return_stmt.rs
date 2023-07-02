@@ -1,4 +1,4 @@
-use crate::{BuilderExt, CodeGenerator, LoadedValue, Value};
+use crate::{BuilderExt, CodeGenerator, Value};
 use cool_ast::ReturnStmtAst;
 use inkwell::values::BasicValue;
 
@@ -7,8 +7,9 @@ impl<'a> CodeGenerator<'a> {
         let value = stmt
             .expr
             .as_ref()
-            .map(|expr| self.gen_loaded_expr(expr))
-            .unwrap_or(LoadedValue::None);
+            .and_then(|expr| self.gen_loaded_expr(expr))
+            .as_ref()
+            .map(|value| value as &dyn BasicValue);
 
         if self.builder.current_block_diverges() {
             return Value::Void;
@@ -19,7 +20,6 @@ impl<'a> CodeGenerator<'a> {
             return Value::Void;
         }
 
-        let value = value.as_basic_value().map(|value| value as &dyn BasicValue);
         self.builder.build_return(value);
         Value::Void
     }

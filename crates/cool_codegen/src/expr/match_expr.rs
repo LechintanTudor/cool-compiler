@@ -2,7 +2,7 @@ use crate::{BuilderExt, CodeGenerator, LoadedValue, Value};
 use cool_ast::MatchExprAst;
 use cool_lexer::sym;
 use inkwell::basic_block::BasicBlock;
-use inkwell::values::IntValue;
+use inkwell::values::{BasicValueEnum, IntValue};
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_match_expr(&mut self, expr: &MatchExprAst) -> LoadedValue<'a> {
@@ -15,9 +15,9 @@ impl<'a> CodeGenerator<'a> {
         let matched_expr_ty = self.tys[matched_expr_ty_id].unwrap();
 
         let matched_expr_ptr = match matched_expr_value {
-            Value::Memory(memory) => memory.ptr,
+            Value::Memory(memory) => memory,
             Value::Register(value) => self.util_gen_init(value),
-            Value::Void | Value::Fn(_) => unreachable!(),
+            Value::Void | Value::Fn(_) => panic!("invalid value for matched expression"),
         };
 
         let index_value = {
@@ -42,7 +42,7 @@ impl<'a> CodeGenerator<'a> {
         let end_block = self.append_block_after(else_block);
 
         let mut arm_blocks = Vec::<(IntValue<'a>, BasicBlock<'a>)>::new();
-        let mut phi_values = Vec::<(BasicBlock, LoadedValue)>::new();
+        let mut phi_values = Vec::<(BasicBlock, BasicValueEnum<'a>)>::new();
 
         for arm in expr.arms.iter() {
             let block = self.append_block_after_current_block();
@@ -62,7 +62,10 @@ impl<'a> CodeGenerator<'a> {
             let value = self.gen_loaded_expr(&arm.expr);
 
             if !self.builder.current_block_diverges() {
-                phi_values.push((self.builder.current_block(), value));
+                if let Some(value) = value {
+                    phi_values.push((self.builder.current_block(), value));
+                }
+
                 self.builder.build_unconditional_branch(end_block);
             }
 
@@ -81,7 +84,10 @@ impl<'a> CodeGenerator<'a> {
                 let value = self.gen_loaded_expr(else_arm);
 
                 if !self.builder.current_block_diverges() {
-                    phi_values.push((self.builder.current_block(), value));
+                    if let Some(value) = value {
+                        phi_values.push((self.builder.current_block(), value));
+                    }
+
                     self.builder.build_unconditional_branch(end_block);
                 }
             }
@@ -101,7 +107,7 @@ impl<'a> CodeGenerator<'a> {
                 let phi_value = self.builder.build_phi(ty, "");
 
                 for (block, value) in phi_values {
-                    phi_value.add_incoming(&[(&value.into_basic_value(), block)]);
+                    phi_value.add_incoming(&[(&value, block)]);
                 }
 
                 phi_value.as_basic_value().into()

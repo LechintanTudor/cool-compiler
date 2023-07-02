@@ -15,7 +15,7 @@ impl<'a> CodeGenerator<'a> {
                 return;
             }
 
-            let cond_value = cond_value.into_basic_value().into_int_value();
+            let cond_value = cond_value.unwrap().into_int_value();
             self.builder.build_bool(cond_value)
         };
 

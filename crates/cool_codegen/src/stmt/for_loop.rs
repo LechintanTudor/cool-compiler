@@ -20,7 +20,7 @@ impl<'a> CodeGenerator<'a> {
             return;
         }
 
-        let cond_value = cond_value.into_basic_value().into_int_value();
+        let cond_value = cond_value.unwrap().into_int_value();
         let cond_value = self.builder.build_bool(cond_value);
 
         let body_block = self.append_block_after(cond_block);

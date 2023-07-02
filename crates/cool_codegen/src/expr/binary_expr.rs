@@ -11,24 +11,8 @@ impl<'a> CodeGenerator<'a> {
             return self.gen_logical_expr(&expr.lhs, &expr.rhs, op);
         }
 
-        let lhs = {
-            let lhs = self.gen_loaded_expr(&expr.lhs);
-            if self.builder.current_block_diverges() {
-                return LoadedValue::None;
-            }
-
-            lhs.into_basic_value()
-        };
-
-        let rhs = {
-            let rhs = self.gen_loaded_expr(&expr.rhs);
-            if self.builder.current_block_diverges() {
-                return LoadedValue::None;
-            }
-
-            rhs.into_basic_value()
-        };
-
+        let lhs = self.gen_loaded_expr(&expr.lhs)?;
+        let rhs = self.gen_loaded_expr(&expr.rhs)?;
         let lhs_ty_id = expr.lhs.expr_id().ty_id;
 
         match expr.bin_op {
