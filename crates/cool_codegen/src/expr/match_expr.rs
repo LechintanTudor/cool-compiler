@@ -1,8 +1,10 @@
 use crate::{BuilderExt, CodeGenerator, LoadedValue, Value};
 use cool_ast::MatchExprAst;
 use cool_lexer::sym;
+use cool_resolve::TaggedUnionKind;
 use inkwell::basic_block::BasicBlock;
 use inkwell::values::{BasicValueEnum, IntValue};
+use inkwell::IntPredicate;
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_match_expr(&mut self, expr: &MatchExprAst) -> LoadedValue<'a> {
@@ -20,21 +22,53 @@ impl<'a> CodeGenerator<'a> {
             Value::Void | Value::Fn(_) => panic!("invalid value for matched expression"),
         };
 
-        let index_value = {
-            let index_field_index = self
-                .tys
-                .get_field_map(matched_expr_ty_id)
-                .get(sym::VARIANT_INDEX)
-                .unwrap();
+        let tagged_union_kind = self
+            .resolve
+            .get_ty_def(matched_expr_ty_id)
+            .unwrap()
+            .kind
+            .as_tagged_union()
+            .unwrap()
+            .kind;
 
-            let index_field_ptr = self
-                .builder
-                .build_struct_gep(matched_expr_ty, matched_expr_ptr, index_field_index, "")
-                .unwrap();
+        let index_value = match tagged_union_kind {
+            TaggedUnionKind::Basic { .. } => {
+                let index_field_index = self
+                    .tys
+                    .get_field_map(matched_expr_ty_id)
+                    .get(sym::VARIANT_INDEX)
+                    .unwrap();
 
-            self.builder
-                .build_load(self.tys.i8_ty(), index_field_ptr, "")
-                .into_int_value()
+                let index_field_ptr = self
+                    .builder
+                    .build_struct_gep(matched_expr_ty, matched_expr_ptr, index_field_index, "")
+                    .unwrap();
+
+                self.builder
+                    .build_load(self.tys.i8_ty(), index_field_ptr, "")
+                    .into_int_value()
+            }
+            TaggedUnionKind::NullablePtr => {
+                let value = self
+                    .builder
+                    .build_load(self.tys.isize_ty(), matched_expr_ptr, "")
+                    .into_int_value();
+
+                let zero_isize = self.tys.isize_ty().const_zero();
+
+                let select_value =
+                    self.builder
+                        .build_int_compare(IntPredicate::NE, value, zero_isize, "");
+
+                self.builder
+                    .build_select(
+                        select_value,
+                        self.tys.i8_ty().const_zero(),
+                        self.tys.i8_ty().const_int(1, false),
+                        "",
+                    )
+                    .into_int_value()
+            }
         };
 
         let switch_block = self.builder.current_block();
@@ -71,10 +105,23 @@ impl<'a> CodeGenerator<'a> {
                 self.builder.build_unconditional_branch(end_block);
             }
 
-            let arm_index = expr
-                .get_variant_index(arm.arm_ty_id)
-                .map(|i| self.tys.i8_ty().const_int(i as _, false))
-                .unwrap();
+            let arm_index = match tagged_union_kind {
+                TaggedUnionKind::Basic { .. } => {
+                    expr.get_variant_index(arm.arm_ty_id)
+                        .map(|i| self.tys.i8_ty().const_int(i as _, false))
+                        .unwrap()
+                }
+
+                TaggedUnionKind::NullablePtr => {
+                    let value = if arm.arm_ty_id.get_value().is_ptr_like() {
+                        0
+                    } else {
+                        1
+                    };
+
+                    self.tys.i8_ty().const_int(value, false)
+                }
+            };
 
             arm_blocks.push((arm_index, block));
         }

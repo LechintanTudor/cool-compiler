@@ -1,12 +1,13 @@
 use crate::{mangle_item_path, TyFieldMap};
 use cool_lexer::{sym, Symbol};
-use cool_resolve::{Field, ItemId, ResolveContext, TyId, ValueTy};
+use cool_resolve::{Field, ItemId, ResolveContext, TaggedUnionKind, TyId, ValueTy};
 use inkwell::context::Context;
 use inkwell::targets::TargetData;
 use inkwell::types::{
     BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType, IntType, PointerType, VoidType,
 };
 use rustc_hash::FxHashMap;
+use smallvec::SmallVec;
 use std::ops;
 
 #[derive(Clone, Debug)]
@@ -81,9 +82,14 @@ impl<'a> GeneratedTys<'a> {
     }
 
     fn insert_derived_tys(&mut self, context: &'a Context, resolve: &'a ResolveContext) {
+        let mut declared_structs = Vec::<TyId>::new();
+
         for ty_id in resolve.iter_value_ty_ids() {
             if let Some(struct_ty) = ty_id.as_struct() {
-                self.declare_struct_ty(context, ty_id, struct_ty.item_id);
+                if !resolve.get_ty_def(ty_id).unwrap().is_zero_sized() {
+                    self.declare_struct_ty(context, ty_id, struct_ty.item_id);
+                    declared_structs.push(ty_id);
+                }
             }
         }
 
@@ -91,16 +97,14 @@ impl<'a> GeneratedTys<'a> {
             self.insert_ty(context, resolve, ty_id);
         }
 
-        for ty_id in resolve.iter_value_ty_ids() {
-            if ty_id.as_struct().is_some() {
-                let fields = resolve
-                    .get_ty_def(ty_id)
-                    .unwrap()
-                    .get_aggregate_fields()
-                    .unwrap();
+        for &ty_id in declared_structs.iter() {
+            let fields = resolve
+                .get_ty_def(ty_id)
+                .unwrap()
+                .get_aggregate_fields()
+                .unwrap();
 
-                self.define_struct_ty(context, resolve, ty_id, fields);
-            }
+            self.define_struct_ty(context, resolve, ty_id, fields);
         }
     }
 
@@ -195,51 +199,7 @@ impl<'a> GeneratedTys<'a> {
 
                 Some(ty)
             }
-            ValueTy::Variant(_) => {
-                let tagged_union_ty = resolve
-                    .get_ty_def(ty_id)
-                    .unwrap()
-                    .kind
-                    .as_tagged_union()
-                    .unwrap();
-
-                let dominant_ty =
-                    self.insert_ty(context, resolve, tagged_union_ty.dominant_ty_id)?;
-
-                let padding_ty = (tagged_union_ty.padding_before_index != 0).then(|| {
-                    context
-                        .i8_type()
-                        .array_type(tagged_union_ty.padding_before_index as u32)
-                        .as_basic_type_enum()
-                });
-
-                let index_ty = context.i8_type().as_basic_type_enum();
-
-                let (field_map, fields) = match padding_ty {
-                    Some(padding_ty) => {
-                        let mut field_map = FxHashMap::default();
-                        field_map.insert(sym::VARIANT_ELEM, 0);
-                        field_map.insert(sym::VARIANT_PADDING, 1);
-                        field_map.insert(sym::VARIANT_INDEX, 2);
-
-                        let field_map = TyFieldMap::from(field_map);
-                        let fields = vec![dominant_ty, padding_ty, index_ty];
-                        (field_map, fields)
-                    }
-                    None => {
-                        let mut field_map = FxHashMap::default();
-                        field_map.insert(sym::VARIANT_ELEM, 0);
-                        field_map.insert(sym::VARIANT_INDEX, 1);
-
-                        let field_map = TyFieldMap::from(field_map);
-                        let fields = vec![dominant_ty, index_ty];
-                        (field_map, fields)
-                    }
-                };
-
-                self.field_maps.insert(ty_id, field_map);
-                Some(context.struct_type(&fields, false).as_basic_type_enum())
-            }
+            ValueTy::Variant(_) => Some(self.insert_variant_ty(context, resolve, ty_id)),
             ty => unimplemented!("{}", ty),
         };
 
@@ -272,6 +232,58 @@ impl<'a> GeneratedTys<'a> {
         self.field_maps.insert(ty_id, field_map);
         let field_tys = non_zst_fields.iter().map(|(_, ty)| *ty).collect::<Vec<_>>();
         (!field_tys.is_empty()).then(|| context.struct_type(&field_tys, false).as_basic_type_enum())
+    }
+
+    fn insert_variant_ty(
+        &mut self,
+        context: &'a Context,
+        resolve: &'a ResolveContext,
+        ty_id: TyId,
+    ) -> BasicTypeEnum<'a> {
+        let tagged_union_ty = resolve
+            .get_ty_def(ty_id)
+            .unwrap()
+            .kind
+            .as_tagged_union()
+            .unwrap();
+
+        let dominant_ty = self
+            .insert_ty(context, resolve, tagged_union_ty.dominant_ty_id)
+            .map(|ty| (ty, sym::VARIANT_ELEM));
+
+        let (padding_ty, index_ty) = match tagged_union_ty.kind {
+            TaggedUnionKind::Basic {
+                padding_before_index,
+            } => {
+                let padding_ty = (padding_before_index != 0)
+                    .then(|| self.i8_ty.array_type(padding_before_index as u32))
+                    .map(|ty| ty.as_basic_type_enum());
+
+                (
+                    padding_ty.map(|ty| (ty, sym::VARIANT_PADDING)),
+                    Some((self.i8_ty.as_basic_type_enum(), sym::VARIANT_INDEX)),
+                )
+            }
+            TaggedUnionKind::NullablePtr => (None, None),
+        };
+
+        let field_map: TyFieldMap = [dominant_ty, padding_ty, index_ty]
+            .into_iter()
+            .flatten()
+            .enumerate()
+            .map(|(i, (_, symbol))| (symbol, i as u32))
+            .collect::<FxHashMap<_, _>>()
+            .into();
+
+        self.field_maps.insert(ty_id, field_map);
+
+        let fields = [dominant_ty, padding_ty, index_ty]
+            .into_iter()
+            .flatten()
+            .map(|(ty, _)| ty)
+            .collect::<SmallVec<[_; 3]>>();
+
+        context.struct_type(&fields, false).as_basic_type_enum()
     }
 
     #[inline]
