@@ -10,7 +10,13 @@ impl<'a> CodeGenerator<'a> {
         }
 
         match expr.kind {
-            CastKind::PtrToPtr => base_value,
+            CastKind::PtrToPtr | CastKind::TupleToSlice => {
+                let expr_ty = self.tys[expr.expr_id.ty_id].unwrap();
+
+                self.builder
+                    .build_bitcast(base_value.unwrap(), expr_ty, "")
+                    .into()
+            }
             CastKind::PtrToUsize => {
                 let base_value = base_value.unwrap().into_pointer_value();
 

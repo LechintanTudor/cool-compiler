@@ -258,7 +258,12 @@ impl Parser<'_> {
                         _ => break,
                     }
                 }
-                _ => break,
+                _ => {
+                    match self.peek().kind {
+                        tk::KW_AS => self.continue_parse_cast_expr(Box::new(expr))?.into(),
+                        _ => break,
+                    }
+                }
             }
         }
 

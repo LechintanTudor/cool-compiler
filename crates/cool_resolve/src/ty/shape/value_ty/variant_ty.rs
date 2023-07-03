@@ -42,6 +42,14 @@ impl VariantTy {
         &self.variants
     }
 
+    #[must_use]
+    pub fn has_variant(&self, ty_id: TyId) -> bool {
+        self.variants
+            .iter()
+            .any(|&variant_ty_id| variant_ty_id == ty_id)
+    }
+
+    #[must_use]
     pub fn get_variant_index(&self, ty_id: TyId) -> Option<u32> {
         self.variants
             .iter()

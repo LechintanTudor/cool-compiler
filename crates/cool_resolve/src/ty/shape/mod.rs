@@ -49,6 +49,11 @@ impl TyShape {
     }
 
     #[inline]
+    pub fn is_usize(&self) -> bool {
+        self.as_value().is_some_and(ValueTy::is_usize)
+    }
+
+    #[inline]
     pub fn is_comparable(&self) -> bool {
         self.as_value().is_some_and(ValueTy::is_comparable)
     }

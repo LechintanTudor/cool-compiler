@@ -1,12 +1,15 @@
-use crate::{AstGenerator, AstResult, AstResultExt, ExprAst, TyError, TyErrorKind};
+use crate::{
+    AstGenerator, AstResult, AstResultExt, ExprAst, TyError, TyErrorKind, VariantWrapExprAst,
+};
 use cool_parser::CastExpr;
-use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId};
+use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId, ValueTy};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum CastKind {
     PtrToPtr,
     PtrToUsize,
+    TupleToSlice,
 }
 
 #[derive(Clone, Debug)]
@@ -35,31 +38,61 @@ impl AstGenerator<'_> {
         let base_ty_id = base.expr_id().ty_id;
         let expr_ty_id = self.resolve_ty(frame_id, &expr.ty)?;
 
+        if base_ty_id == expr_ty_id {
+            return Ok(base);
+        }
+
         let unsupported_cast = || -> AstResult<ExprAst> {
             AstResult::error(
                 expr.span(),
                 TyError {
                     ty_id: base_ty_id,
                     kind: TyErrorKind::UnsupportedCast {
-                        to_ty_id: expected_ty_id,
+                        to_ty_id: expr_ty_id,
                     },
                 },
             )
         };
 
-        let base_value_ty = base_ty_id.as_value().unwrap();
-        let expr_value_ty = expr_ty_id.as_value().unwrap();
-
-        let kind = if base_value_ty.is_ptr() || base_value_ty.is_many_ptr() {
-            if expr_value_ty.is_ptr() || expr_value_ty.is_many_ptr() {
-                CastKind::PtrToPtr
-            } else if expr_value_ty.is_usize() {
-                CastKind::PtrToUsize
-            } else {
+        if let ValueTy::Variant(variant_ty) = expr_ty_id.get_value() {
+            if !variant_ty.has_variant(base_ty_id) {
                 return unsupported_cast();
             }
-        } else {
-            return unsupported_cast();
+
+            return self.resolve_expr(expr.span(), expr_ty_id, expected_ty_id, |resolve, _, _| {
+                VariantWrapExprAst {
+                    expr_id: resolve.add_expr(ResolveExpr::rvalue(expr_ty_id)),
+                    inner: Box::new(base),
+                }
+            });
+        }
+
+        let kind = match base_ty_id.get_value() {
+            ValueTy::Ptr(_) | ValueTy::ManyPtr(_) => {
+                if expr_ty_id.is_ptr() || expr_ty_id.is_many_ptr() {
+                    CastKind::PtrToPtr
+                } else if expr_ty_id.is_usize() {
+                    CastKind::PtrToUsize
+                } else {
+                    return unsupported_cast();
+                }
+            }
+            ValueTy::Tuple(tuple_ty) => {
+                match (tuple_ty.elems(), expr_ty_id.get_value()) {
+                    ([many_ptr_ty_id, len_ty_id], ValueTy::Slice(slice_ty)) => {
+                        let expected_many_ptr_ty_id =
+                            self.resolve.mk_many_ptr(slice_ty.elem, slice_ty.is_mutable);
+
+                        if *many_ptr_ty_id == expected_many_ptr_ty_id && len_ty_id.is_usize() {
+                            CastKind::TupleToSlice
+                        } else {
+                            return unsupported_cast();
+                        }
+                    }
+                    _ => return unsupported_cast(),
+                }
+            }
+            _ => return unsupported_cast(),
         };
 
         self.resolve_expr(
