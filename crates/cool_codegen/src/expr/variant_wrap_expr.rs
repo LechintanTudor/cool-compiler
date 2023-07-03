@@ -59,7 +59,6 @@ impl<'a> CodeGenerator<'a> {
             TaggedUnionKind::NullablePtr => {
                 match inner_expr_value {
                     LoadedValue::Some(value) => {
-                        println!("{:#?}", value);
                         self.builder.build_store(memory, value);
                     }
                     LoadedValue::None => {

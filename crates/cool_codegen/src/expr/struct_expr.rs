@@ -46,6 +46,11 @@ impl<'a> CodeGenerator<'a> {
                         Value::Register(value) => {
                             self.builder.build_store(field_ptr, value);
                         }
+                        Value::Memory(memory) if !initializer.expr.uses_stack_memory() => {
+                            let field_ty = self.tys[initializer.expr.expr_id().ty_id].unwrap();
+                            let field_value = self.builder.build_load(field_ty, memory, "");
+                            self.builder.build_store(field_ptr, field_value);
+                        }
                         _ => (),
                     }
                 }
