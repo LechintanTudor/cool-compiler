@@ -7,6 +7,11 @@ use cool_span::{Section, Span};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum CastKind {
+    IntToFloat,
+    IntToInt,
+    IntToPtr,
+    FloatToFloat,
+    FloatToInt,
     PtrToPtr,
     PtrToUsize,
     TupleToSlice,
@@ -18,6 +23,18 @@ pub struct CastExprAst {
     pub expr_id: ExprId,
     pub base: Box<ExprAst>,
     pub kind: CastKind,
+}
+
+impl CastExprAst {
+    #[inline]
+    pub fn from_ty_id(&self) -> TyId {
+        self.base.expr_id().ty_id
+    }
+
+    #[inline]
+    pub fn to_ty_id(&self) -> TyId {
+        self.expr_id.ty_id
+    }
 }
 
 impl Section for CastExprAst {
@@ -68,6 +85,20 @@ impl AstGenerator<'_> {
         }
 
         let kind = match base_ty_id.get_value() {
+            ValueTy::Int(_) => {
+                match expr_ty_id.get_value() {
+                    ValueTy::Int(_) => CastKind::IntToInt,
+                    ValueTy::Float(_) => CastKind::IntToFloat,
+                    _ => return unsupported_cast(),
+                }
+            }
+            ValueTy::Float(_) => {
+                match expr_ty_id.get_value() {
+                    ValueTy::Int(_) => CastKind::FloatToInt,
+                    ValueTy::Float(_) => CastKind::FloatToFloat,
+                    _ => return unsupported_cast(),
+                }
+            }
             ValueTy::Ptr(_) | ValueTy::ManyPtr(_) => {
                 if expr_ty_id.is_ptr() || expr_ty_id.is_many_ptr() {
                     CastKind::PtrToPtr
