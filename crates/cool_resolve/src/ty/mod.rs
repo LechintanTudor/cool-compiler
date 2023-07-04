@@ -64,7 +64,7 @@ impl TyContext {
         };
 
         let def = match value_ty {
-            ValueTy::Unit => TyDef::for_unit(),
+            ValueTy::Unit | ValueTy::EmptyStruct(_) => TyDef::for_unit(),
             ValueTy::Bool => TyDef::for_bool(&self.primitives),
             ValueTy::Char => TyDef::for_char(&self.primitives),
             ValueTy::Int(int_ty) => TyDef::for_int(*int_ty, &self.primitives),

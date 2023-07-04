@@ -1,6 +1,6 @@
 use crate::{
-    ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveErrorKind,
-    ResolveResult, StructTy, TyDef, TyId, TyResult,
+    EmptyStructTy, ItemId, ItemKind, ModuleElem, ModuleId, ResolveContext, ResolveError,
+    ResolveErrorKind, ResolveResult, StructTy, TyDef, TyId, TyResult, ValueTy,
 };
 use cool_lexer::Symbol;
 
@@ -10,6 +10,7 @@ impl ResolveContext {
         module_id: ModuleId,
         is_exported: bool,
         symbol: Symbol,
+        has_body: bool,
     ) -> ResolveResult<ItemId> {
         let module = &mut self.modules[module_id];
         let item_path = module.child_path(symbol);
@@ -23,7 +24,13 @@ impl ResolveContext {
                 kind: ResolveErrorKind::SymbolAlreadyDefined,
             })?;
 
-        let ty_id = self.tys.insert_value(StructTy { item_id });
+        let ty = if has_body {
+            ValueTy::from(StructTy { item_id })
+        } else {
+            ValueTy::from(EmptyStructTy { item_id })
+        };
+
+        let ty_id = self.tys.insert_value(ty);
         self.items.insert(item_id, ItemKind::Ty(ty_id));
 
         module.elems.insert(

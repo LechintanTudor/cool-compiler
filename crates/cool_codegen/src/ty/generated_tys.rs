@@ -200,6 +200,7 @@ impl<'a> GeneratedTys<'a> {
                 Some(ty)
             }
             ValueTy::Variant(_) => Some(self.insert_variant_ty(context, resolve, ty_id)),
+            ValueTy::EmptyStruct(_) => None,
             ty => unimplemented!("{}", ty),
         };
 

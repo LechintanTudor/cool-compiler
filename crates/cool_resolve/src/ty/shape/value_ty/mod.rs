@@ -118,6 +118,7 @@ define_value_ty! {
         Array,
         Tuple,
         Struct,
+        EmptyStruct,
         Enum,
         Fn,
         Ptr,

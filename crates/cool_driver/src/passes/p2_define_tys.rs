@@ -62,6 +62,10 @@ fn define_structs(ast: &mut AstGenerator, structs: &mut VecDeque<&Struct>) -> bo
             break;
         };
 
+        if !struct_item.item.has_body {
+            continue;
+        }
+
         let Ok(fields) = struct_item
             .item
             .fields

@@ -1,4 +1,4 @@
-use crate::{AstError, AstGenerator, AstResult, ExprAst};
+use crate::{AstError, AstGenerator, AstResult, ExprAst, UnitExprAst};
 use cool_parser::IdentExpr;
 use cool_resolve::{BindingId, ExprId, FrameId, ItemKind, ModuleId, ResolveExpr, TyId};
 use cool_span::{Section, Span};
@@ -76,18 +76,32 @@ impl AstGenerator<'_> {
                 )
             }
             ItemKind::Ty(item_ty_id) => {
-                self.resolve_expr(
-                    ident_expr.span(),
-                    self.tys().ty,
-                    expected_ty_id,
-                    |resolve, span, ty_id| {
-                        TyExprAst {
-                            span,
-                            expr_id: resolve.add_expr(ResolveExpr::lvalue(ty_id, false)),
-                            item_ty_id,
-                        }
-                    },
-                )
+                if item_ty_id.is_unit() || item_ty_id.is_empty_struct() {
+                    self.resolve_expr(
+                        ident_expr.span(),
+                        item_ty_id,
+                        expected_ty_id,
+                        |resolve, span, ty_id| {
+                            UnitExprAst {
+                                span,
+                                expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
+                            }
+                        },
+                    )
+                } else {
+                    self.resolve_expr(
+                        ident_expr.span(),
+                        self.tys().ty,
+                        expected_ty_id,
+                        |resolve, span, ty_id| {
+                            TyExprAst {
+                                span,
+                                expr_id: resolve.add_expr(ResolveExpr::lvalue(ty_id, false)),
+                                item_ty_id,
+                            }
+                        },
+                    )
+                }
             }
             ItemKind::Module(module_id) => {
                 self.resolve_expr(

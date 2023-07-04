@@ -18,6 +18,7 @@ impl Section for StructField {
 #[derive(Clone, Debug)]
 pub struct StructItem {
     pub span: Span,
+    pub has_body: bool,
     pub fields: Vec<StructField>,
     pub has_trailing_comma: bool,
 }
@@ -40,6 +41,16 @@ impl Parser<'_> {
 
     pub fn parse_struct_item(&mut self) -> ParseResult<StructItem> {
         let start_token = self.bump_expect(&tk::KW_STRUCT)?;
+
+        if self.peek().kind != tk::OPEN_BRACE {
+            return Ok(StructItem {
+                span: start_token.span,
+                has_body: false,
+                fields: vec![],
+                has_trailing_comma: false,
+            });
+        }
+
         self.bump_expect(&tk::OPEN_BRACE)?;
 
         let mut fields = Vec::<StructField>::new();
@@ -66,6 +77,7 @@ impl Parser<'_> {
 
         Ok(StructItem {
             span: start_token.span.to(end_token.span),
+            has_body: true,
             fields,
             has_trailing_comma,
         })

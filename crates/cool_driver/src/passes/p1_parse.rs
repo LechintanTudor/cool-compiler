@@ -19,7 +19,7 @@ struct Import {
 }
 
 pub fn p1_parse(
-    resove: &mut ResolveContext,
+    resolve: &mut ResolveContext,
     options: &CompileOptions,
 ) -> Result<Package, (Package, CompileErrorBundle)> {
     let mut errors = Vec::<CompileError>::new();
@@ -38,7 +38,7 @@ pub fn p1_parse(
     };
 
     let crate_symbol = Symbol::insert(&options.crate_name);
-    let crate_module_id = match resove.insert_root_module(crate_symbol) {
+    let crate_module_id = match resolve.insert_root_module(crate_symbol) {
         Ok(crate_module_id) => Some(crate_module_id),
         Err(error) => {
             errors.push(error.into());
@@ -76,7 +76,7 @@ pub fn p1_parse(
 
                         match item_decl.item {
                             Item::Module(child_module) => {
-                                let child_module_id = match resove.insert_module(
+                                let child_module_id = match resolve.insert_module(
                                     module_id,
                                     decl.is_exported,
                                     item_decl.ident.symbol,
@@ -114,7 +114,7 @@ pub fn p1_parse(
                                 }
                             }
                             Item::Alias(item) => {
-                                let item_id = match resove.declare_alias(
+                                let item_id = match resolve.declare_alias(
                                     module_id,
                                     decl.is_exported,
                                     item_decl.ident.symbol,
@@ -135,10 +135,11 @@ pub fn p1_parse(
                                 });
                             }
                             Item::Struct(item) => {
-                                let item_id = match resove.declare_struct(
+                                let item_id = match resolve.declare_struct(
                                     module_id,
                                     decl.is_exported,
                                     item_decl.ident.symbol,
+                                    item.has_body,
                                 ) {
                                     Ok(item_id) => item_id,
                                     Err(error) => {
@@ -156,7 +157,7 @@ pub fn p1_parse(
                                 });
                             }
                             Item::Enum(item) => {
-                                let item_id = match resove.declare_enum(
+                                let item_id = match resolve.declare_enum(
                                     module_id,
                                     decl.is_exported,
                                     item_decl.ident.symbol,
@@ -177,7 +178,7 @@ pub fn p1_parse(
                                 });
                             }
                             Item::ExternFn(item) => {
-                                let item_id = match resove.insert_global_binding(
+                                let item_id = match resolve.insert_global_binding(
                                     module_id,
                                     decl.is_exported,
                                     Mutability::Const,
@@ -199,7 +200,7 @@ pub fn p1_parse(
                                 });
                             }
                             Item::Const(item) => {
-                                let item_id = match resove.insert_global_binding(
+                                let item_id = match resolve.insert_global_binding(
                                     module_id,
                                     decl.is_exported,
                                     Mutability::Const,
@@ -247,7 +248,7 @@ pub fn p1_parse(
 
     let mut import_fail_count = 0_usize;
     while let Some(import) = imports.pop_front() {
-        match resove.insert_use(
+        match resolve.insert_use(
             import.module_id,
             import.is_exported,
             import.path.as_symbol_slice(),
