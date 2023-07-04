@@ -224,4 +224,7 @@ pub enum LogicError {
 
     #[display(fmt = "missing variants for type '{ty_id}'")]
     MissingVariants { ty_id: TyId },
+
+    #[display(fmt = "statement cannot be used as an expression")]
+    StmtNotPromotableToExpr,
 }

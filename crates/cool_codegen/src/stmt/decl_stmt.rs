@@ -1,4 +1,4 @@
-use crate::{CodeGenerator, Value};
+use crate::{CodeGenerator, ExprAstExt, Value};
 use cool_ast::DeclStmtAst;
 
 impl<'a> CodeGenerator<'a> {

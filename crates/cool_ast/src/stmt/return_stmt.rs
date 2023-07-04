@@ -7,7 +7,7 @@ use cool_span::{Section, Span};
 pub struct ReturnStmtAst {
     pub span: Span,
     pub frame_id: FrameId,
-    pub expr: Option<Box<ExprAst>>,
+    pub expr: Box<ExprAst>,
 }
 
 impl Section for ReturnStmtAst {
@@ -29,12 +29,12 @@ impl AstGenerator<'_> {
             .expr
             .as_ref()
             .map(|expr| self.gen_expr(frame_id, expr_ty_id, expr))
-            .transpose()?;
+            .unwrap_or_else(|| self.implicit_unit_expr(stmt.span().end(), expr_ty_id))?;
 
         Ok(ReturnStmtAst {
             span: stmt.span,
             frame_id,
-            expr: expr.map(Box::new),
+            expr: Box::new(expr),
         })
     }
 }

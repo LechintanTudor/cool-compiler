@@ -55,7 +55,16 @@ impl StmtKind {
 
     #[inline]
     pub fn is_promotable_to_expr(&self) -> bool {
-        !matches!(self, Self::Decl(_) | Self::Defer(_))
+        matches!(
+            self,
+            Self::Assign(_)
+                | Self::Break(_)
+                | Self::Continue(_)
+                | Self::Expr(_)
+                | Self::For(_)
+                | Self::Return(_)
+                | Self::While(_),
+        )
     }
 }
 

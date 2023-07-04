@@ -3,8 +3,8 @@ mod defer_code_map;
 mod error;
 mod expr;
 mod expr_or_stmt;
+mod fn_item;
 mod fn_state;
-mod function;
 mod package;
 mod resolve;
 mod stmt;
@@ -14,33 +14,59 @@ pub use self::defer_code_map::*;
 pub use self::error::*;
 pub use self::expr::*;
 pub use self::expr_or_stmt::*;
+pub use self::fn_item::*;
 pub use self::fn_state::*;
-pub use self::function::*;
 pub use self::package::*;
 pub use self::resolve::*;
 pub use self::stmt::*;
-use cool_resolve::{ResolveContext, TyConsts, TyId, TyResolutionMethod};
+use cool_resolve::{ExprId, ResolveContext, ResolveExpr, TyConsts, TyId, TyResolutionMethod};
 use cool_span::Span;
 
 pub struct AstGenerator<'a> {
     pub resolve: &'a mut ResolveContext,
-    pub defer_codes: DeferStmtMap,
+    pub defer_stmts: DeferStmtMap,
     pub fn_states: Vec<FnState>,
+    implicit_unit_expr_id: ExprId,
 }
 
 impl<'a> AstGenerator<'a> {
     #[inline]
     pub fn new(resolve: &'a mut ResolveContext) -> Self {
+        let unit_ty_id = resolve.ty_consts().unit;
+        let implicit_unit_expr_id = resolve.add_expr(ResolveExpr::rvalue(unit_ty_id));
+
         Self {
             resolve,
-            defer_codes: Default::default(),
+            defer_stmts: Default::default(),
             fn_states: Default::default(),
+            implicit_unit_expr_id,
         }
     }
 
     #[inline]
     pub fn tys(&self) -> &TyConsts {
         self.resolve.ty_consts()
+    }
+
+    #[inline]
+    pub fn implicit_unit_expr(
+        &mut self,
+        span_start: u32,
+        expected_ty_id: TyId,
+    ) -> AstResult<ExprAst> {
+        let implicit_unit_expr_id = self.implicit_unit_expr_id;
+
+        self.resolve_expr(
+            Span::new(span_start, 0),
+            self.tys().unit,
+            expected_ty_id,
+            |_, span, _| {
+                UnitExprAst {
+                    span,
+                    expr_id: implicit_unit_expr_id,
+                }
+            },
+        )
     }
 
     pub fn resolve_expr<E, F>(

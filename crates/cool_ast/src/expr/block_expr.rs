@@ -10,7 +10,7 @@ pub struct BlockExprAst {
     pub last_frame_id: FrameId,
     pub expr_id: ExprId,
     pub stmts: Vec<StmtAst>,
-    pub expr: Option<Box<ExprAst>>,
+    pub expr: Box<ExprAst>,
 }
 
 impl Section for BlockExprAst {
@@ -40,26 +40,15 @@ impl AstGenerator<'_> {
             stmts.push(stmt);
         }
 
-        let (expr, found_ty_id) = match block.expr.as_ref() {
-            Some(expr) => {
-                let expr = self.gen_expr(frame_id, expected_ty_id, expr)?;
-                let found_ty_id = expr.expr_id().ty_id;
-
-                (Some(expr), found_ty_id)
-            }
-            None => {
-                let diverges = stmts.last().map(StmtAst::is_return).is_some();
-                let found_ty_id = (diverges && expected_ty_id.is_value())
-                    .then_some(expected_ty_id)
-                    .unwrap_or(self.tys().unit);
-
-                (None, found_ty_id)
-            }
-        };
+        let expr = block
+            .expr
+            .as_ref()
+            .map(|expr| self.gen_expr(frame_id, expected_ty_id, expr))
+            .unwrap_or_else(|| self.implicit_unit_expr(block.span().end() - 1, expected_ty_id))?;
 
         self.resolve_expr(
             block.span(),
-            found_ty_id,
+            expr.expr_id().ty_id,
             expected_ty_id,
             |resolve, span, ty_id| {
                 BlockExprAst {
@@ -68,7 +57,7 @@ impl AstGenerator<'_> {
                     last_frame_id: frame_id,
                     expr_id: resolve.add_expr(ResolveExpr::rvalue(ty_id)),
                     stmts,
-                    expr: expr.map(Box::new),
+                    expr: Box::new(expr),
                 }
             },
         )

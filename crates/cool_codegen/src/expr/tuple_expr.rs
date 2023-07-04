@@ -1,4 +1,4 @@
-use crate::{BuilderExt, CodeGenerator, Value};
+use crate::{BuilderExt, CodeGenerator, ExprAstExt, Value};
 use cool_ast::TupleExprAst;
 use cool_lexer::Symbol;
 use inkwell::values::PointerValue;

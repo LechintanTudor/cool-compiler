@@ -14,9 +14,11 @@ mod match_expr;
 mod offset_of_expr;
 mod range_expr;
 mod size_of_expr;
+mod stmt_expr;
 mod struct_expr;
 mod tuple_expr;
 mod unary_expr;
+mod unit_expr;
 mod variant_wrap_expr;
 
 pub use self::access_expr::*;
@@ -35,9 +37,11 @@ pub use self::match_expr::*;
 pub use self::offset_of_expr::*;
 pub use self::range_expr::*;
 pub use self::size_of_expr::*;
+pub use self::stmt_expr::*;
 pub use self::struct_expr::*;
 pub use self::tuple_expr::*;
 pub use self::unary_expr::*;
+pub use self::unit_expr::*;
 pub use self::variant_wrap_expr::*;
 use crate::{AstGenerator, AstResult};
 use cool_parser::{Expr, ParenExpr};
@@ -114,21 +118,13 @@ define_expr_ast! {
     OffsetOf,
     Range,
     SizeOf,
+    Stmt,
     Struct,
     Tuple,
     Ty,
     Unary,
+    Unit,
     VariantWrap,
-}
-
-impl ExprAst {
-    #[inline]
-    pub fn uses_stack_memory(&self) -> bool {
-        matches!(
-            self,
-            Self::Array(_) | Self::ArrayRepeat(_) | Self::Struct(_) | Self::VariantWrap(_),
-        )
-    }
 }
 
 macro_rules! impl_gen_expr {

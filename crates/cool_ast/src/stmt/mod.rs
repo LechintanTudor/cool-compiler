@@ -49,6 +49,11 @@ impl StmtAst {
     pub fn is_return(&self) -> bool {
         matches!(self, Self::Return(_))
     }
+
+    #[inline]
+    pub fn diverges(&self) -> bool {
+        matches!(self, Self::Break(_) | Self::Continue(_) | Self::Return(_))
+    }
 }
 
 impl Section for StmtAst {

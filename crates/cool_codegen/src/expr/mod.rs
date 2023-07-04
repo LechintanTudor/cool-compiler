@@ -17,10 +17,23 @@ mod unary_expr;
 mod variant_wrap_expr;
 
 use crate::{BuilderExt, CodeGenerator, LoadedValue, Value};
-use cool_ast::{BindingExprAst, ExprAst};
+use cool_ast::{BindingExprAst, ExprAst, StmtExprAst, UnitExprAst};
 use cool_lexer::Symbol;
 use cool_resolve::TyId;
 use inkwell::values::{BasicValue, BasicValueEnum, PointerValue};
+
+pub trait ExprAstExt {
+    fn uses_stack_memory(&self) -> bool;
+}
+
+impl ExprAstExt for ExprAst {
+    fn uses_stack_memory(&self) -> bool {
+        matches!(
+            self,
+            Self::Array(_) | Self::ArrayRepeat(_) | Self::Struct(_) | Self::VariantWrap(_),
+        )
+    }
+}
 
 impl<'a> CodeGenerator<'a> {
     pub fn gen_expr(&mut self, expr: &ExprAst, memory: Option<PointerValue<'a>>) -> Value<'a> {
@@ -46,10 +59,12 @@ impl<'a> CodeGenerator<'a> {
             ExprAst::Match(e) => self.gen_match_expr(e).into(),
             ExprAst::OffsetOf(e) => self.gen_offset_of_expr(e).as_basic_value_enum().into(),
             ExprAst::Range(e) => self.gen_range_expr(e, memory),
+            ExprAst::Stmt(e) => self.gen_stmt_expr(e),
             ExprAst::SizeOf(e) => self.gen_size_of_expr(e).as_basic_value_enum().into(),
             ExprAst::Struct(e) => self.gen_struct_expr(e, memory),
             ExprAst::Tuple(e) => self.gen_tuple_expr(e, memory),
             ExprAst::Unary(e) => self.gen_unary_expr(e),
+            ExprAst::Unit(e) => self.gen_unit_expr(e).into(),
             ExprAst::VariantWrap(e) => self.gen_variant_wrap_expr(e, memory),
             _ => panic!("unsupported codegen operation: {:#?}", expr),
         }
@@ -62,8 +77,19 @@ impl<'a> CodeGenerator<'a> {
     }
 
     #[inline]
+    pub fn gen_unit_expr(&self, _: &UnitExprAst) -> LoadedValue<'a> {
+        LoadedValue::None
+    }
+
+    #[inline]
     pub fn gen_ident_expr(&self, expr: &BindingExprAst) -> Value<'a> {
         self.bindings[&expr.binding_id]
+    }
+
+    #[inline]
+    pub fn gen_stmt_expr(&mut self, expr: &StmtExprAst) -> Value<'a> {
+        self.gen_stmt(&expr.stmt);
+        Value::Void
     }
 
     pub fn util_gen_loaded_field(

@@ -128,12 +128,14 @@ impl AstGenerator<'_> {
                                 )
                                 .map_err(|error| AstError::new(expr.span(), error))?;
 
-                            let expr = self.gen_expr(frame_id, found_ty_id, &arm.expr)?;
+                            let expr =
+                                self.gen_stmt_expr_or_expr(frame_id, found_ty_id, &arm.code)?;
 
                             (Some(binding_id), expr)
                         }
                         None => {
-                            let expr = self.gen_expr(frame_id, found_ty_id, &arm.expr)?;
+                            let expr =
+                                self.gen_stmt_expr_or_expr(frame_id, found_ty_id, &arm.code)?;
 
                             (None, expr)
                         }
@@ -156,7 +158,9 @@ impl AstGenerator<'_> {
                 let else_arm = expr
                     .else_arm
                     .as_ref()
-                    .map(|else_arm| self.gen_expr(frame_id, found_ty_id, &else_arm.expr))
+                    .map(|else_arm| {
+                        self.gen_stmt_expr_or_expr(frame_id, found_ty_id, &else_arm.code)
+                    })
                     .transpose()?;
 
                 (arms, else_arm)

@@ -22,6 +22,10 @@ impl TyContext {
     ) -> Option<(TyId, TyResolutionMethod)> {
         let tys = &self.consts;
 
+        if found_ty_id.is_diverge() && expected_ty_id.is_value() {
+            return Some((expected_ty_id, TyResolutionMethod::Direct));
+        }
+
         if expected_ty_id
             .as_variant()
             .and_then(|variant| variant.get_variant_index(found_ty_id))

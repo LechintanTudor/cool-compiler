@@ -26,7 +26,7 @@ impl AstGenerator<'_> {
     ) -> AstResult<DeferStmtAst> {
         let frame_id = self.resolve.add_frame(frame_id.into());
         let stmt = Arc::new(self.gen_stmt(frame_id, &defer_stmt.stmt)?);
-        self.defer_codes.insert(frame_id, stmt.clone());
+        self.defer_stmts.insert(frame_id, stmt.clone());
 
         Ok(DeferStmtAst {
             span: defer_stmt.span,

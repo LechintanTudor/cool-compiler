@@ -1,4 +1,4 @@
-use crate::{Expr, ParseResult, Parser, Pattern, Ty};
+use crate::{Expr, ExprOrStmt, ParseResult, Parser, Pattern, Ty};
 use cool_lexer::tk;
 use cool_span::{Section, Span};
 
@@ -7,7 +7,7 @@ pub struct MatchArm {
     pub span: Span,
     pub ty: Box<Ty>,
     pub pattern: Option<Pattern>,
-    pub expr: Box<Expr>,
+    pub code: Box<ExprOrStmt>,
     pub has_trailing_comma: bool,
 }
 
@@ -21,7 +21,7 @@ impl Section for MatchArm {
 #[derive(Clone, Debug)]
 pub struct ElseArm {
     pub span: Span,
-    pub expr: Box<Expr>,
+    pub code: Box<ExprOrStmt>,
     pub has_trailing_comma: bool,
 }
 
@@ -98,13 +98,11 @@ impl Parser<'_> {
             }
         };
 
-        let expr = code.try_into_expr().unwrap();
-
         Ok(MatchArm {
             span: ty.span().to(end_span),
             ty: Box::new(ty),
             pattern,
-            expr: Box::new(expr),
+            code: Box::new(code),
             has_trailing_comma,
         })
     }
@@ -120,11 +118,9 @@ impl Parser<'_> {
             None => (code.span(), false),
         };
 
-        let expr = code.try_into_expr().unwrap();
-
         Ok(ElseArm {
             span: start_token.span.to(end_span),
-            expr: Box::new(expr),
+            code: Box::new(code),
             has_trailing_comma,
         })
     }

@@ -15,10 +15,7 @@ impl<'a> CodeGenerator<'a> {
             }
         }
 
-        let value = block
-            .expr
-            .as_ref()
-            .and_then(|expr| self.gen_loaded_expr(expr));
+        let value = self.gen_loaded_expr(&block.expr);
 
         self.gen_defers(block.first_frame_id, block.last_frame_id);
 

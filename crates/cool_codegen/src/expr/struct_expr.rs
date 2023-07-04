@@ -1,4 +1,4 @@
-use crate::{BuilderExt, CodeGenerator, Value};
+use crate::{BuilderExt, CodeGenerator, ExprAstExt, Value};
 use cool_ast::StructExprAst;
 use inkwell::values::PointerValue;
 
