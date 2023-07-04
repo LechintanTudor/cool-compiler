@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, ExprAst, StmtAst};
+use crate::{AstGenerator, AstResult, ExprAst, StmtAst, UnitExprAst};
 use cool_parser::BlockExpr;
 use cool_resolve::{ExprId, FrameId, ResolveExpr, TyId};
 use cool_span::{Section, Span};
@@ -40,15 +40,29 @@ impl AstGenerator<'_> {
             stmts.push(stmt);
         }
 
-        let expr = block
-            .expr
-            .as_ref()
-            .map(|expr| self.gen_expr(frame_id, expected_ty_id, expr))
-            .unwrap_or_else(|| self.implicit_unit_expr(block.span().end() - 1, expected_ty_id))?;
+        let (found_ty_id, expr) = match block.expr.as_ref() {
+            Some(expr) => {
+                let expr = self.gen_expr(frame_id, expected_ty_id, expr)?;
+                (expr.expr_id().ty_id, expr)
+            }
+            None => {
+                if stmts.last().is_some_and(StmtAst::diverges) {
+                    let expr = ExprAst::from(UnitExprAst {
+                        span: Span::new(block.span().end() - 1, 0),
+                        expr_id: self.implicit_unit_expr_id,
+                    });
+
+                    (self.tys().diverge, expr)
+                } else {
+                    let expr = self.implicit_unit_expr(block.span().end() - 1, expected_ty_id)?;
+                    (expr.expr_id().ty_id, expr)
+                }
+            }
+        };
 
         self.resolve_expr(
             block.span(),
-            expr.expr_id().ty_id,
+            found_ty_id,
             expected_ty_id,
             |resolve, span, ty_id| {
                 BlockExprAst {
