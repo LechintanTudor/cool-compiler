@@ -35,10 +35,13 @@ impl AstGenerator<'_> {
         let frame_id = self.resolve.add_frame(module_id.into());
 
         let Some(fn_ty) = ty_id.as_fn().cloned() else {
-            return AstResult::error(fn_expr.span(), TyError {
-                ty_id,
-                kind: TyErrorKind::TyNotCallable,
-            });
+            return AstResult::error(
+                fn_expr.span(),
+                TyError {
+                    ty_id,
+                    kind: TyErrorKind::TyNotCallable,
+                },
+            );
         };
 
         let param_ty_iter = fn_expr

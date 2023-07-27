@@ -19,13 +19,14 @@ impl<'a> CodeGenerator<'a> {
                     let Some(field_index) = self
                         .tys
                         .get_field_map(tuple_ty_id)
-                        .get(Symbol::insert_u32(i as _)) else {
-                            self.gen_expr(expr, None);
-                            if self.builder.current_block_diverges() {
-                                return Value::Void;
-                            }
-                            continue;
-                        };
+                        .get(Symbol::insert_u32(i as _))
+                    else {
+                        self.gen_expr(expr, None);
+                        if self.builder.current_block_diverges() {
+                            return Value::Void;
+                        }
+                        continue;
+                    };
 
                     let field_ptr = self
                         .builder

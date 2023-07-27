@@ -18,13 +18,14 @@ impl<'a> CodeGenerator<'a> {
                     let Some(field_index) = self
                         .tys
                         .get_field_map(struct_ty_id)
-                        .get(initializer.ident.symbol) else {
-                            self.gen_expr(&initializer.expr, None);
-                            if self.builder.current_block_diverges() {
-                                return Value::Void;
-                            }
-                            continue;
-                        };
+                        .get(initializer.ident.symbol)
+                    else {
+                        self.gen_expr(&initializer.expr, None);
+                        if self.builder.current_block_diverges() {
+                            return Value::Void;
+                        }
+                        continue;
+                    };
 
                     let field_ptr = self
                         .builder

@@ -74,10 +74,11 @@ fn define_structs(ast: &mut AstGenerator, structs: &mut VecDeque<&Struct>) -> bo
                 ast.resolve_ty(struct_item.module_id, &field.ty)
                     .map(|ty_id| (field.ident.symbol, ty_id))
             })
-            .collect::<Result<SmallVec<[_; 7]>, _>>() else {
-                structs.push_back(struct_item);
-                continue;
-            };
+            .collect::<Result<SmallVec<[_; 7]>, _>>()
+        else {
+            structs.push_back(struct_item);
+            continue;
+        };
 
         if ast
             .resolve

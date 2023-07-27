@@ -190,12 +190,15 @@ fn parse_int(tys: &TyConsts, expr: &LiteralExpr) -> AstResult<(u128, TyId)> {
     }
 
     let Some(ty_id) = parse_suffix(tys, &suffix, kind) else {
-        return AstResult::error(expr.span(), LiteralError {
-            literal: expr.literal.symbol,
-            kind: LiteralErrorKind::UnknownSuffix {
-                suffix: Symbol::insert(&suffix),
+        return AstResult::error(
+            expr.span(),
+            LiteralError {
+                literal: expr.literal.symbol,
+                kind: LiteralErrorKind::UnknownSuffix {
+                    suffix: Symbol::insert(&suffix),
+                },
             },
-        });
+        );
     };
 
     Ok((value, ty_id))
@@ -322,12 +325,15 @@ fn parse_decimal(tys: &TyConsts, expr: &LiteralExpr) -> AstResult<(f64, TyId)> {
     }
 
     let Some(ty_id) = parse_suffix(tys, &suffix, NumberKind::Decimal) else {
-        return AstResult::error(expr.span(), LiteralError {
-            literal: expr.literal.symbol,
-            kind: LiteralErrorKind::UnknownSuffix {
-                suffix: Symbol::insert(&suffix),
+        return AstResult::error(
+            expr.span(),
+            LiteralError {
+                literal: expr.literal.symbol,
+                kind: LiteralErrorKind::UnknownSuffix {
+                    suffix: Symbol::insert(&suffix),
+                },
             },
-        });
+        );
     };
 
     Ok((value, ty_id))
