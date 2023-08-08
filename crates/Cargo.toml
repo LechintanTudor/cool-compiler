@@ -1,0 +1,11 @@
+[workspace]
+members = [
+    "cool_arena",
+    "cool_driver",
+    "cool_lexer",
+    "cool_parser",
+    "cool_span",
+]
+
+[workspace.dependencies]
+derive_more = { version = "1.0.0-beta.3", features = ["full"] }
