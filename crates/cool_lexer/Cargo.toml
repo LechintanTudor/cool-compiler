@@ -4,3 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+cool_derive = { path = "../cool_derive" }
+cool_span = { path = "../cool_span" }
