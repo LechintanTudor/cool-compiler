@@ -1,3 +1,5 @@
+comment_width = 100
 force_multiline_blocks = true
 imports_granularity = "Module"
 newline_style = "Unix"
+wrap_comments = true

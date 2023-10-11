@@ -10,4 +10,7 @@ members = [
 resolver = "2"
 
 [workspace.dependencies]
+ahash = "0.8"
+bumpalo = "3.14"
 derive_more = { version = "1.0.0-beta.3", features = ["full"] }
+once_cell = "1.18"

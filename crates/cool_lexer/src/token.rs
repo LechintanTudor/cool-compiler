@@ -1,13 +1,18 @@
+use crate::Symbol;
 use cool_derive::Section;
 use cool_span::Span;
 
-#[derive(Clone, Section, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Section, Debug)]
 pub struct Token {
     pub span: Span,
     pub kind: TokenKind,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum TokenKind {
-    // Empty
+    Unknown,
+    Keyword(Symbol),
+    Ident(Symbol),
+    Whitespace,
+    Eof,
 }
