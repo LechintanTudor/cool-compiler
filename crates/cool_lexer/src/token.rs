@@ -35,6 +35,14 @@ pub enum TokenKind {
     Eof,
 }
 
+impl TokenKind {
+    #[inline]
+    #[must_use]
+    pub fn is_lang_part(&self) -> bool {
+        !matches!(self, Self::Whitespace | Self::Comment)
+    }
+}
+
 impl From<Literal> for TokenKind {
     #[inline]
     fn from(literal: Literal) -> Self {

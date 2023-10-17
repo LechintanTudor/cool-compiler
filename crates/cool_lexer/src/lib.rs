@@ -4,6 +4,7 @@ mod literal;
 mod punct;
 mod symbol;
 mod token;
+mod token_stream;
 
 pub use self::consts::*;
 pub use self::cursor::*;
@@ -11,6 +12,7 @@ pub use self::literal::*;
 pub use self::punct::*;
 pub use self::symbol::*;
 pub use self::token::*;
+pub use self::token_stream::*;
 
 use cool_span::Span;
 
@@ -19,7 +21,7 @@ pub mod tk {
     pub use crate::sym_tk::*;
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Lexer<'a> {
     cursor: Cursor<'a>,
     buffer: String,
