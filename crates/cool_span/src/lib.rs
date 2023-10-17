@@ -13,6 +13,17 @@ pub struct Span {
 impl Span {
     #[inline]
     #[must_use]
+    pub const fn from_to(from: u32, to: u32) -> Self {
+        debug_assert!(from <= to);
+
+        Self {
+            start: from,
+            len: to - from,
+        }
+    }
+
+    #[inline]
+    #[must_use]
     pub const fn to(&self, end_span: Span) -> Span {
         Self {
             start: self.start,
