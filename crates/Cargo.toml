@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "cool_arena",
+    "cool_cli",
     "cool_derive",
     "cool_driver",
     "cool_lexer",
@@ -12,6 +13,7 @@ resolver = "2"
 [workspace.dependencies]
 ahash = "0.8"
 bumpalo = "3.14"
+clap = { version = "4.4", features = ["derive"] }
 derive_more = { version = "1.0.0-beta.3", features = ["full"] }
 once_cell = "1.18"
 paste = "1.0"
