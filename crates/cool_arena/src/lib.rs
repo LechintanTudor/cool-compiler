@@ -46,7 +46,8 @@ where
 {
     #[must_use]
     pub fn get(&self, index: I) -> Option<&'a T> {
-        self.values.get(index.get()).copied()
+        let index = index.get().get() as usize - 1;
+        self.values.get(index).copied()
     }
 }
 
@@ -86,7 +87,7 @@ pub unsafe trait ArenaIndex: Copy {
     fn new(value: NonZeroU32) -> Self;
 
     #[must_use]
-    fn get(&self) -> usize;
+    fn get(&self) -> NonZeroU32;
 }
 
 #[macro_export]
@@ -102,8 +103,8 @@ macro_rules! define_arena_index {
             }
 
             #[inline]
-            fn get(&self) -> usize {
-                self.0.get() as _
+            fn get(&self) -> ::std::num::NonZeroU32 {
+                self.0
             }
         }
     };

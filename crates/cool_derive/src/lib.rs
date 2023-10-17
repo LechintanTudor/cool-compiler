@@ -108,7 +108,7 @@ pub fn define_symbols(input: proc_macro::TokenStream) -> proc_macro::TokenStream
         }
 
         #[allow(non_upper_case_globals)]
-        pub mod tk {
+        pub(crate) mod sym_tk {
             #(
                 pub const #keyword_ident_2: crate::TokenKind
                     = crate::TokenKind::Keyword(super::sym::#keyword_ident_2);

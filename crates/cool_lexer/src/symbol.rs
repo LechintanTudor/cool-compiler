@@ -1,6 +1,7 @@
 use crate::sym;
 use cool_arena::{define_arena_index, Arena};
 use once_cell::sync::Lazy;
+use std::fmt;
 use std::num::NonZeroU32;
 use std::sync::Mutex;
 
@@ -35,5 +36,12 @@ impl Symbol {
     #[must_use]
     pub fn is_keyword(&self) -> bool {
         &sym::kw_align_of <= self && self <= &sym::kw_while
+    }
+}
+
+impl fmt::Display for Symbol {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
     }
 }

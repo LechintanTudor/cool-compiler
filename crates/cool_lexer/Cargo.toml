@@ -8,4 +8,7 @@ cool_arena = { path = "../cool_arena" }
 cool_derive = { path = "../cool_derive" }
 cool_span = { path = "../cool_span" }
 
+derive_more = { workspace = true }
 once_cell = { workspace = true }
+paste = { workspace = true }
+unicode-ident = { workspace = true }
