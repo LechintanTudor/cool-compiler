@@ -37,6 +37,12 @@ impl Symbol {
     pub fn is_keyword(&self) -> bool {
         &sym::kw_align_of <= self && self <= &sym::kw_while
     }
+
+    #[inline]
+    #[must_use]
+    pub fn is_bool_literal(&self) -> bool {
+        self == &sym::kw_true || self == &sym::kw_false
+    }
 }
 
 impl fmt::Display for Symbol {

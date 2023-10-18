@@ -41,6 +41,12 @@ impl TokenKind {
     pub fn is_lang_part(&self) -> bool {
         !matches!(self, Self::Whitespace | Self::Comment)
     }
+
+    #[inline]
+    #[must_use]
+    pub fn is_eof(&self) -> bool {
+        matches!(self, Self::Eof)
+    }
 }
 
 impl From<Literal> for TokenKind {

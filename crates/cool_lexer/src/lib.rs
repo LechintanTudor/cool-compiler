@@ -46,9 +46,9 @@ impl<'a> Lexer<'a> {
         } else if c == '/' && self.cursor.consume_if(|c| c == '/') {
             self.comment()
         } else if c == '\'' {
-            self.char_or_str_literal('\'')
+            self.char_or_str_literal(LiteralKind::Char)
         } else if c == '"' {
-            self.char_or_str_literal('"')
+            self.char_or_str_literal(LiteralKind::Str)
         } else if let Ok(punct) = Punct::try_from(c) {
             self.punct(punct)
         } else if chars::is_decimal_digit(c) {
@@ -71,6 +71,8 @@ impl<'a> Lexer<'a> {
             }
         } else if chars::is_whitespace(c) {
             self.whitespace()
+        } else if c == EOF_CHAR {
+            TokenKind::Eof
         } else {
             TokenKind::Unknown
         };
@@ -91,6 +93,12 @@ impl<'a> Lexer<'a> {
 
         if symbol.is_keyword() {
             TokenKind::Keyword(symbol)
+        } else if symbol.is_bool_literal() {
+            Literal {
+                kind: LiteralKind::Bool,
+                value: symbol,
+            }
+            .into()
         } else {
             TokenKind::Ident(symbol)
         }
@@ -154,13 +162,19 @@ impl<'a> Lexer<'a> {
         .into()
     }
 
-    fn char_or_str_literal(&mut self, quote: char) -> TokenKind {
-        if self.cursor.consume_if(|c| c == quote || c == '\n') {
+    fn char_or_str_literal(&mut self, kind: LiteralKind) -> TokenKind {
+        let quote = match kind {
+            LiteralKind::Char => '\'',
+            LiteralKind::Str => '"',
+            _ => panic!("Invalid literal kind"),
+        };
+
+        if self.cursor.consume_if(|c| c == '\n') {
             return TokenKind::Unknown;
         }
 
         self.cursor
-            .push_while(&mut self.buffer, |c| c != quote || c != '\n');
+            .push_while(&mut self.buffer, |c| c != quote && c != '\n');
 
         if !self.cursor.consume_if(|c| c == quote) {
             self.buffer.clear();
@@ -171,7 +185,7 @@ impl<'a> Lexer<'a> {
         self.buffer.clear();
 
         Literal {
-            kind: LiteralKind::Char,
+            kind,
             value: symbol,
         }
         .into()

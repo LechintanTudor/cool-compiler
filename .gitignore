@@ -1,4 +1,6 @@
 /.vscode
+/bin
+/programs
 /programs
 Cargo.lock
 target/
