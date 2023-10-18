@@ -3,7 +3,7 @@ mod lexer_consts;
 use self::lexer_consts::*;
 use proc_macro2::Ident;
 use quote::{format_ident, quote, quote_spanned};
-use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Fields};
+use syn::{parse_macro_input, Data, DataEnum, DataStruct, DeriveInput, Fields};
 
 #[proc_macro_derive(Section)]
 pub fn derive_section(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
@@ -32,6 +32,21 @@ pub fn derive_section(input: proc_macro::TokenStream) -> proc_macro::TokenStream
             } else {
                 quote! {
                     self.span
+                }
+            }
+        }
+        Data::Enum(DataEnum { variants, .. }) => {
+            if variants.is_empty() {
+                quote! {
+                    ::cool_span::Span::default()
+                }
+            } else {
+                let variants = variants.iter().map(|variant| &variant.ident);
+
+                quote! {
+                    match self {
+                        #(Self::#variants(variant) => variant.span())*
+                    }
                 }
             }
         }

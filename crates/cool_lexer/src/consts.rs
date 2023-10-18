@@ -2,6 +2,7 @@ use cool_derive::define_symbols;
 
 define_symbols! {
     keywords: {
+        alias,
         align_of,
         as,
         break,
@@ -28,7 +29,6 @@ define_symbols! {
         super,
         switch,
         true,
-        type,
         use,
         while,
     },
@@ -56,5 +56,6 @@ define_symbols! {
 
         C,
         Cool,
+        identifier,
     },
 }

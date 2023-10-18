@@ -9,20 +9,17 @@ pub struct Token {
     pub kind: TokenKind,
 }
 
-#[derive(Clone, Copy, Debug, Display)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Display)]
 pub enum TokenKind {
     #[display("<unknown>")]
     Unknown,
 
-    #[display("{}", _0.as_str())]
     Keyword(Symbol),
 
-    #[display("{}", _0.as_str())]
     Ident(Symbol),
 
     Literal(Literal),
 
-    #[display("{}", _0.as_str())]
     Punct(Punct),
 
     #[display("<whitespace>")]

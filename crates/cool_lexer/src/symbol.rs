@@ -35,7 +35,7 @@ impl Symbol {
     #[inline]
     #[must_use]
     pub fn is_keyword(&self) -> bool {
-        &sym::kw_align_of <= self && self <= &sym::kw_while
+        &sym::kw_alias <= self && self <= &sym::kw_while
     }
 
     #[inline]

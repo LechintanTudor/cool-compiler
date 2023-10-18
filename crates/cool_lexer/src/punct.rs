@@ -41,14 +41,14 @@ macro_rules! define_punct {
             }
         }
 
-        #[allow(dead_code)]
+        #[allow(non_upper_case_globals)]
         pub(crate) mod punct_tk {
             use crate::{Punct, TokenKind};
             use paste::paste;
 
             paste! {
                 $(
-                    pub const [<$Variant:snake:upper>]: TokenKind
+                    pub const [<$Variant:snake:lower>]: TokenKind
                         = TokenKind::Punct(Punct::$Variant);
                 )+
             }

@@ -9,7 +9,7 @@ pub enum LiteralKind {
     Str,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Literal {
     pub kind: LiteralKind,
     pub value: Symbol,
