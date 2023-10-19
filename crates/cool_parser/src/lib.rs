@@ -29,7 +29,6 @@ impl<'a> Parser<'a> {
     }
 
     #[inline]
-    #[must_use]
     pub fn bump(&mut self) -> Token {
         self.tokens.next_lang()
     }
@@ -54,6 +53,14 @@ impl<'a> Parser<'a> {
         Some(self.bump())
     }
 
+    pub fn bump_any_if_eq(&mut self, expected_token: TokenKind) -> Option<Token> {
+        if self.peek_any().kind != expected_token {
+            return None;
+        }
+
+        Some(self.tokens.next_any())
+    }
+
     pub fn bump_expect(&mut self, expected_token: &'static TokenKind) -> ParseResult<Token> {
         let token = self.bump();
 
@@ -76,6 +83,14 @@ impl<'a> Parser<'a> {
     pub fn peek_error<T>(&mut self, expected: &'static [TokenKind]) -> ParseResult<T> {
         Err(ParseError {
             found: self.peek(),
+            expected,
+        })
+    }
+
+    #[inline]
+    pub fn peek_any_error<T>(&mut self, expected: &'static [TokenKind]) -> ParseResult<T> {
+        Err(ParseError {
+            found: self.peek_any(),
             expected,
         })
     }

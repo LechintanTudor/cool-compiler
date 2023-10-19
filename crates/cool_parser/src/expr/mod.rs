@@ -1,8 +1,10 @@
 mod block_expr;
 mod ident_expr;
+mod literal_expr;
 
 pub use self::block_expr::*;
 pub use self::ident_expr::*;
+pub use self::literal_expr::*;
 
 use crate::{ParseResult, Parser};
 use cool_derive::Section;
@@ -13,6 +15,7 @@ use derive_more::From;
 pub enum Expr {
     Block(BlockExpr),
     Ident(IdentExpr),
+    Literal(LiteralExpr),
 }
 
 impl Parser<'_> {
@@ -23,7 +26,16 @@ impl Parser<'_> {
 
     fn parse_primary_expr(&mut self) -> ParseResult<Expr> {
         let expr = match self.peek().kind {
-            TokenKind::Ident(_) => self.parse_ident_expr()?.into(),
+            TokenKind::Ident(_) => {
+                let ident_expr = self.parse_ident_expr()?;
+
+                if matches!(self.peek_any().kind, TokenKind::Literal(_)) {
+                    self.continue_parse_literal_expr(ident_expr.ident)?.into()
+                } else {
+                    ident_expr.into()
+                }
+            }
+            TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
             tk::open_brace => self.parse_block_expr()?.into(),
             _ => todo!(),
         };

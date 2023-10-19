@@ -56,6 +56,10 @@ define_symbols! {
 
         C,
         Cool,
+
         identifier,
+        literal,
+        character,
+        string,
     },
 }

@@ -91,14 +91,14 @@ impl<'a> Lexer<'a> {
         let symbol = Symbol::insert(&self.buffer);
         self.buffer.clear();
 
-        if symbol.is_keyword() {
-            TokenKind::Keyword(symbol)
-        } else if symbol.is_bool_literal() {
+        if symbol.is_bool_literal() {
             Literal {
                 kind: LiteralKind::Bool,
                 value: symbol,
             }
             .into()
+        } else if symbol.is_keyword() {
+            TokenKind::Keyword(symbol)
         } else {
             TokenKind::Ident(symbol)
         }
