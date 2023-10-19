@@ -3,6 +3,13 @@ use cool_derive::Section;
 use cool_lexer::{tk, LiteralKind as LexerLiteralKind, Symbol, TokenKind};
 use cool_span::Span;
 
+#[derive(Clone, Section, Debug)]
+pub struct LiteralExpr {
+    pub span: Span,
+    pub kind: LiteralKind,
+    pub value: Symbol,
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum LiteralKind {
     Bool,
@@ -21,13 +28,6 @@ impl From<LexerLiteralKind> for LiteralKind {
             LexerLiteralKind::Str => LiteralKind::Str { prefix: None },
         }
     }
-}
-
-#[derive(Clone, Section, Debug)]
-pub struct LiteralExpr {
-    pub span: Span,
-    pub kind: LiteralKind,
-    pub value: Symbol,
 }
 
 impl Parser<'_> {

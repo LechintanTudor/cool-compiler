@@ -4,4 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+cool_lexer = { path = "../cool_lexer" }
+cool_parser = { path = "../cool_parser" }
+
 clap = { workspace = true }

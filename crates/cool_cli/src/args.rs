@@ -2,5 +2,5 @@ use clap::Parser;
 
 #[derive(Parser)]
 pub struct Args {
-    // Empty
+    pub file: String,
 }
