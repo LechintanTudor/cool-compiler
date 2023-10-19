@@ -8,7 +8,7 @@ use std::fs;
 
 fn main() {
     let args = Args::parse();
-    let source = fs::read_to_string(&args.file).unwrap();
+    let source = fs::read_to_string(args.file).unwrap();
     let tokens = TokenStream::new(&source);
 
     let mut parser = Parser::new(tokens);

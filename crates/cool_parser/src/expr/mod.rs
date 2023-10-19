@@ -37,7 +37,7 @@ impl Parser<'_> {
             }
             TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
             tk::open_brace => self.parse_block_expr()?.into(),
-            _ => todo!(),
+            token => todo!("{:?}", token),
         };
 
         Ok(expr)
