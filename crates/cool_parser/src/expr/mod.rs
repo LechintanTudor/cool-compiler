@@ -1,8 +1,10 @@
 mod block_expr;
+mod fn_expr;
 mod ident_expr;
 mod literal_expr;
 
 pub use self::block_expr::*;
+pub use self::fn_expr::*;
 pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 
@@ -14,6 +16,7 @@ use derive_more::From;
 #[derive(Clone, From, Section, Debug)]
 pub enum Expr {
     Block(BlockExpr),
+    Fn(FnExpr),
     Ident(IdentExpr),
     Literal(LiteralExpr),
 }
@@ -37,6 +40,7 @@ impl Parser<'_> {
             }
             TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
             tk::open_brace => self.parse_block_expr()?.into(),
+            tk::kw_extern | tk::kw_fn => self.parse_fn_expr()?.into(),
             token => todo!("{:?}", token),
         };
 
