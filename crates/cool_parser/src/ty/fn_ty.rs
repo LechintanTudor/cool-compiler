@@ -1,7 +1,7 @@
 use crate::{FnAbi, ParseResult, Parser, Ty};
 use cool_derive::Section;
 use cool_lexer::tk;
-use cool_span::{Section as _, Span};
+use cool_span::{Section, Span};
 
 #[derive(Clone, Section, Debug)]
 pub struct FnTy {

@@ -1,6 +1,7 @@
 mod decl;
 mod expr;
 mod item;
+mod op;
 mod stmt;
 mod ty;
 mod utils;
@@ -8,6 +9,7 @@ mod utils;
 pub use self::decl::*;
 pub use self::expr::*;
 pub use self::item::*;
+pub use self::op::*;
 pub use self::stmt::*;
 pub use self::ty::*;
 pub use self::utils::*;

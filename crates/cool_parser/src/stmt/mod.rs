@@ -1,4 +1,16 @@
-#[derive(Clone, Debug)]
+mod assign_stmt;
+mod decl_stmt;
+
+pub use self::assign_stmt::*;
+pub use self::decl_stmt::*;
+
+use crate::Expr;
+use cool_derive::Section;
+use derive_more::From;
+
+#[derive(Clone, From, Section, Debug)]
 pub enum Stmt {
-    // Empty
+    Assign(AssignStmt),
+    Decl(DeclStmt),
+    Expr(Box<Expr>),
 }

@@ -45,7 +45,7 @@ pub fn derive_section(input: proc_macro::TokenStream) -> proc_macro::TokenStream
 
                 quote! {
                     match self {
-                        #(Self::#variants(variant) => variant.span())*
+                        #(Self::#variants(variant) => variant.span(),)*
                     }
                 }
             }
