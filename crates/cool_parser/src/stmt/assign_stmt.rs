@@ -10,7 +10,6 @@ pub struct AssignStmt {
 
 impl Section for AssignStmt {
     #[inline]
-    #[must_use]
     fn span(&self) -> Span {
         self.lhs.span().to(self.rhs.span())
     }

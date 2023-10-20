@@ -15,7 +15,10 @@ impl Parser<'_> {
 
         let span = loop {
             if let Some(eof) = self.bump_if_eq(TokenKind::Eof) {
-                break Span::from_to(0, eof.span.start);
+                break Span {
+                    start: 0,
+                    len: eof.span.start,
+                };
             }
 
             decls.push(self.parse_decl()?);

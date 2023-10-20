@@ -11,7 +11,6 @@ pub struct ItemDecl {
 
 impl Section for ItemDecl {
     #[inline]
-    #[must_use]
     fn span(&self) -> Span {
         self.ident.span.to(self.item.span())
     }

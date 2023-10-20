@@ -8,7 +8,6 @@ pub struct IdentExpr {
 
 impl Section for IdentExpr {
     #[inline]
-    #[must_use]
     fn span(&self) -> Span {
         self.ident.span
     }

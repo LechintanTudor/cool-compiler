@@ -12,7 +12,6 @@ pub struct IdentPath {
 
 impl Section for IdentPath {
     #[inline]
-    #[must_use]
     fn span(&self) -> Span {
         match self.idents.as_slice() {
             [] => Span::empty(),

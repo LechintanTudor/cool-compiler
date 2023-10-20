@@ -60,7 +60,6 @@ pub fn derive_section(input: proc_macro::TokenStream) -> proc_macro::TokenStream
     let impl_tokens = quote! {
         impl #generics ::cool_span::Section for #ident #generics {
             #[inline]
-            #[must_use]
             fn span(&self) -> ::cool_span::Span {
                 #fn_impl_tokens
             }

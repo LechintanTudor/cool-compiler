@@ -11,7 +11,6 @@ pub struct DeclStmt {
 
 impl Section for DeclStmt {
     #[inline]
-    #[must_use]
     fn span(&self) -> Span {
         self.pattern.span.to(self.expr.span())
     }
