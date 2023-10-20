@@ -1,7 +1,7 @@
-use crate::{Expr, ExprOrStmt, ParseResult, Parser, Stmt};
+use crate::{Expr, ExprOrStmt, ExprStmt, ParseResult, Parser, Stmt};
 use cool_derive::Section;
 use cool_lexer::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Section, Debug)]
 pub struct BlockExpr {
@@ -31,13 +31,23 @@ impl Parser<'_> {
                         break (close_brace, Some(Box::new(expr)));
                     }
 
-                    if self.bump_if_eq(tk::semicolon).is_none()
-                        && !is_expr_promotable_to_stmt(&expr)
-                    {
-                        return self.peek_error(&[tk::close_brace]);
-                    }
+                    let (span, has_semicolon) =
+                        if let Some(semicolon) = self.bump_if_eq(tk::semicolon) {
+                            (expr.span().to(semicolon.span), true)
+                        } else if is_expr_promotable_to_stmt(&expr) {
+                            (expr.span(), false)
+                        } else {
+                            return self.peek_error(&[tk::close_brace]);
+                        };
 
-                    stmts.push(Stmt::Expr(Box::new(expr)));
+                    stmts.push(
+                        ExprStmt {
+                            span,
+                            expr: Box::new(expr),
+                            has_semicolon,
+                        }
+                        .into(),
+                    );
                 }
                 ExprOrStmt::Stmt(stmt) => {
                     stmts.push(stmt);

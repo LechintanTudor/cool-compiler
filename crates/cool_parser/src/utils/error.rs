@@ -12,7 +12,7 @@ pub struct ParseError {
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "Unexpected token: {}", self.found.kind)?;
-        write!(f, "Expected:         {}", TokenKindDisplayer(self.expected))
+        write!(f, "Expected: {}", TokenKindDisplayer(self.expected))
     }
 }
 

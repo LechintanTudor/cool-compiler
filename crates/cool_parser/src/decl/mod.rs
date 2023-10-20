@@ -20,6 +20,7 @@ pub struct Decl {
 #[derive(Clone, From, Section, Debug)]
 pub enum DeclKind {
     Item(ItemDecl),
+    Use(UseDecl),
 }
 
 impl Parser<'_> {
@@ -27,7 +28,7 @@ impl Parser<'_> {
         let export_token = self.bump_if_eq(tk::kw_export);
 
         let kind: DeclKind = match self.peek().kind {
-            tk::kw_use => todo!(),
+            tk::kw_use => self.parse_use_decl()?.into(),
             _ => self.parse_item_decl()?.into(),
         };
 

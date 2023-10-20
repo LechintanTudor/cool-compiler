@@ -12,5 +12,8 @@ fn main() {
     let tokens = TokenStream::new(&source);
 
     let mut parser = Parser::new(tokens);
-    println!("{:#?}", parser.parse_fn_expr().unwrap());
+    match parser.parse_source_file() {
+        Ok(file) => println!("{:#?}", file),
+        Err(error) => println!("{}", error),
+    }
 }
