@@ -1,10 +1,12 @@
 mod assign_op;
 mod binary_op;
 mod error;
+mod unary_op;
 
 pub use self::assign_op::*;
 pub use self::binary_op::*;
 pub use self::error::*;
+pub use self::unary_op::*;
 
 macro_rules! define_op{
     { $OpName:ident { $($Op:ident => $display:literal from $Punct:ident,)* } } => {

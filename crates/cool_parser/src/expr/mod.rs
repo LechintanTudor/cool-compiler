@@ -3,16 +3,19 @@ mod block_expr;
 mod fn_call_expr;
 mod fn_expr;
 mod literal_expr;
+mod unary_expr;
 
 pub use self::binary_expr::*;
 pub use self::block_expr::*;
 pub use self::fn_call_expr::*;
 pub use self::fn_expr::*;
 pub use self::literal_expr::*;
+pub use self::unary_expr::*;
 
 use crate::{BinaryOp, Ident, ParseResult, Parser};
 use cool_derive::Section;
 use cool_lexer::{tk, TokenKind};
+use cool_span::Section;
 use derive_more::From;
 
 #[derive(Clone, From, Section, Debug)]
@@ -23,6 +26,7 @@ pub enum Expr {
     FnCall(FnCallExpr),
     Ident(Ident),
     Literal(LiteralExpr),
+    Unary(UnaryExpr),
 }
 
 impl Expr {
@@ -113,7 +117,9 @@ impl Parser<'_> {
     }
 
     fn parse_primary_expr(&mut self) -> ParseResult<Expr> {
-        let mut expr = match self.peek().kind {
+        let peeked_token = self.peek();
+
+        let mut expr = match peeked_token.kind {
             TokenKind::Ident(_) => {
                 let ident = self.parse_ident()?;
 
@@ -124,6 +130,17 @@ impl Parser<'_> {
                 }
             }
             TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
+            tk::minus | tk::not | tk::and => {
+                let unary_op = self.parse_unary_op()?;
+                let expr = self.parse_expr()?;
+
+                UnaryExpr {
+                    span: peeked_token.span.to(expr.span()),
+                    op: unary_op,
+                    expr: Box::new(expr),
+                }
+                .into()
+            }
             tk::open_brace => self.parse_block_expr()?.into(),
             tk::kw_extern | tk::kw_fn => self.parse_fn_expr()?.into(),
             token => todo!("{:?}", token),
