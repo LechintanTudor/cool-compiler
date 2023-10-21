@@ -19,10 +19,10 @@ impl Parser<'_> {
 
         let expr = self.parse_expr()?;
 
-        if let Expr::Ident(expr) = &expr {
+        if let Expr::Ident(ident) = &expr {
             if self.peek().kind == tk::colon {
                 return self
-                    .continue_parse_decl_stmt(expr.ident.into())
+                    .continue_parse_decl_stmt((*ident).into())
                     .map(|decl_stmt| ExprOrStmt::Stmt(decl_stmt.into()));
             }
         }

@@ -1,9 +1,9 @@
 mod assign_op;
-mod bin_op;
+mod binary_op;
 mod error;
 
 pub use self::assign_op::*;
-pub use self::bin_op::*;
+pub use self::binary_op::*;
 pub use self::error::*;
 
 macro_rules! define_op{

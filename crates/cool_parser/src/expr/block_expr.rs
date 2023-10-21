@@ -35,7 +35,7 @@ impl Parser<'_> {
                         let (span, has_semicolon) =
                             if let Some(semicolon) = self.bump_if_eq(tk::semicolon) {
                                 (expr.span().to(semicolon.span), true)
-                            } else if is_expr_promotable_to_stmt(&expr) {
+                            } else if expr.is_promotable_to_stmt() {
                                 (expr.span(), false)
                             } else {
                                 return self.peek_error(&[tk::close_brace]);
@@ -81,10 +81,4 @@ impl Parser<'_> {
             expr,
         })
     }
-}
-
-#[inline]
-#[must_use]
-fn is_expr_promotable_to_stmt(expr: &Expr) -> bool {
-    matches!(expr, Expr::Block(_))
 }
