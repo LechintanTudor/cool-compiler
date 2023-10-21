@@ -5,7 +5,7 @@ use std::fmt;
 use std::num::NonZeroU32;
 use std::sync::Mutex;
 
-define_arena_index!(Symbol);
+define_arena_index!(Symbol; NoDebug);
 
 pub(crate) type SymbolTable<'a> = Arena<'a, Symbol, str>;
 
@@ -42,6 +42,13 @@ impl Symbol {
     #[must_use]
     pub fn is_bool_literal(&self) -> bool {
         self == &sym::kw_true || self == &sym::kw_false
+    }
+}
+
+impl fmt::Debug for Symbol {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "\"{}\"", self.as_str())
     }
 }
 

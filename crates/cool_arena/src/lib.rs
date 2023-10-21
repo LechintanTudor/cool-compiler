@@ -92,6 +92,22 @@ pub unsafe trait ArenaIndex: Copy {
 
 #[macro_export]
 macro_rules! define_arena_index {
+    ($Ident:ident; $(NoDebug)?) => {
+        #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        pub struct $Ident(::std::num::NonZeroU32);
+
+        unsafe impl $crate::ArenaIndex for $Ident {
+            #[inline]
+            fn new(value: ::std::num::NonZeroU32) -> Self {
+                Self(value)
+            }
+
+            #[inline]
+            fn get(&self) -> ::std::num::NonZeroU32 {
+                self.0
+            }
+        }
+    };
     ($Ident:ident) => {
         #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
         pub struct $Ident(::std::num::NonZeroU32);
