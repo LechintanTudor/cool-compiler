@@ -3,6 +3,7 @@ mod block_expr;
 mod fn_call_expr;
 mod fn_expr;
 mod literal_expr;
+mod loop_expr;
 mod unary_expr;
 
 pub use self::binary_expr::*;
@@ -10,6 +11,7 @@ pub use self::block_expr::*;
 pub use self::fn_call_expr::*;
 pub use self::fn_expr::*;
 pub use self::literal_expr::*;
+pub use self::loop_expr::*;
 pub use self::unary_expr::*;
 
 use crate::{BinaryOp, Ident, ParseResult, Parser};
@@ -26,6 +28,7 @@ pub enum Expr {
     FnCall(FnCallExpr),
     Ident(Ident),
     Literal(LiteralExpr),
+    Loop(LoopExpr),
     Unary(UnaryExpr),
 }
 
@@ -33,7 +36,7 @@ impl Expr {
     #[inline]
     #[must_use]
     pub fn is_promotable_to_stmt(&self) -> bool {
-        matches!(self, Self::Block(_))
+        matches!(self, Self::Block(_) | Self::Loop(_))
     }
 }
 
@@ -143,6 +146,7 @@ impl Parser<'_> {
             }
             tk::open_brace => self.parse_block_expr()?.into(),
             tk::kw_extern | tk::kw_fn => self.parse_fn_expr()?.into(),
+            tk::kw_loop => self.parse_loop_expr()?.into(),
             token => todo!("{:?}", token),
         };
 
