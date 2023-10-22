@@ -10,7 +10,6 @@ pub struct BinaryExpr {
 
 impl Section for BinaryExpr {
     #[inline]
-    #[must_use]
     fn span(&self) -> Span {
         self.lhs.span().to(self.rhs.span())
     }
