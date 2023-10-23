@@ -1,17 +1,23 @@
+mod access_expr;
 mod binary_expr;
 mod block_expr;
+mod deref_expr;
 mod fn_call_expr;
 mod fn_expr;
 mod literal_expr;
 mod loop_expr;
+mod struct_expr;
 mod unary_expr;
 
+pub use self::access_expr::*;
 pub use self::binary_expr::*;
 pub use self::block_expr::*;
+pub use self::deref_expr::*;
 pub use self::fn_call_expr::*;
 pub use self::fn_expr::*;
 pub use self::literal_expr::*;
 pub use self::loop_expr::*;
+pub use self::struct_expr::*;
 pub use self::unary_expr::*;
 
 use crate::{BinaryOp, Ident, ParseResult, Parser};
@@ -22,13 +28,16 @@ use derive_more::From;
 
 #[derive(Clone, From, Section, Debug)]
 pub enum Expr {
+    Access(AccessExpr),
     Binary(BinaryExpr),
     Block(BlockExpr),
+    Deref(DerefExpr),
     Fn(FnExpr),
     FnCall(FnCallExpr),
     Ident(Ident),
     Literal(LiteralExpr),
     Loop(LoopExpr),
+    Struct(StructExpr),
     Unary(UnaryExpr),
 }
 
@@ -152,15 +161,45 @@ impl Parser<'_> {
 
         loop {
             expr = match expr {
-                Expr::Ident(_) => {
+                Expr::Access(_) | Expr::Ident(_) => {
                     match self.peek().kind {
                         tk::open_paren => self.continue_parse_fn_call_expr(expr)?.into(),
+                        tk::open_brace => self.continue_parse_struct_expr(expr)?.into(),
+                        tk::dot => self.continue_parse_access_or_deref_expr(expr)?,
                         _ => break,
                     }
                 }
                 _ => break,
             };
         }
+
+        Ok(expr)
+    }
+
+    fn continue_parse_access_or_deref_expr(&mut self, base: Expr) -> ParseResult<Expr> {
+        self.bump_expect(&tk::dot)?;
+        let token = self.bump();
+
+        let expr = match token.kind {
+            TokenKind::Ident(symbol) => {
+                AccessExpr {
+                    base: Box::new(base),
+                    field: Ident {
+                        span: token.span,
+                        symbol,
+                    },
+                }
+                .into()
+            }
+            tk::star => {
+                DerefExpr {
+                    span: base.span().to(token.span),
+                    base: Box::new(base),
+                }
+                .into()
+            }
+            _ => return self.error(token, &[tk::identifier, tk::star]),
+        };
 
         Ok(expr)
     }
