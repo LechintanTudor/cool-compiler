@@ -6,7 +6,9 @@ mod fn_call_expr;
 mod fn_expr;
 mod literal_expr;
 mod loop_expr;
+mod paren_expr;
 mod struct_expr;
+mod tuple_expr;
 mod unary_expr;
 mod while_expr;
 
@@ -18,7 +20,9 @@ pub use self::fn_call_expr::*;
 pub use self::fn_expr::*;
 pub use self::literal_expr::*;
 pub use self::loop_expr::*;
+pub use self::paren_expr::*;
 pub use self::struct_expr::*;
+pub use self::tuple_expr::*;
 pub use self::unary_expr::*;
 pub use self::while_expr::*;
 
@@ -39,7 +43,9 @@ pub enum Expr {
     Ident(Ident),
     Literal(LiteralExpr),
     Loop(LoopExpr),
+    Paren(ParenExpr),
     Struct(StructExpr),
+    Tuple(TupleExpr),
     Unary(UnaryExpr),
     While(WhileExpr),
 }
@@ -165,6 +171,7 @@ impl Parser<'_> {
                 }
                 .into()
             }
+            tk::open_paren => self.parse_paren_or_tuple_expr()?,
             tk::open_brace => self.parse_block_expr()?.into(),
             tk::kw_extern | tk::kw_fn => self.parse_fn_expr()?.into(),
             tk::kw_loop => self.parse_loop_expr()?.into(),
@@ -214,6 +221,48 @@ impl Parser<'_> {
                 .into()
             }
             _ => return self.error(token, &[tk::identifier, tk::star]),
+        };
+
+        Ok(expr)
+    }
+
+    fn parse_paren_or_tuple_expr(&mut self) -> ParseResult<Expr> {
+        let open_paren = self.bump_expect(&tk::open_paren)?;
+        let mut elems = Vec::<Expr>::new();
+
+        let (close_paren, has_trailing_comma) =
+            if let Some(close_paren) = self.bump_if_eq(tk::close_paren) {
+                (close_paren, false)
+            } else {
+                loop {
+                    elems.push(self.parse_expr()?);
+                    let token = self.bump();
+
+                    match token.kind {
+                        tk::comma => {
+                            if let Some(close_paren) = self.bump_if_eq(tk::close_paren) {
+                                break (close_paren, true);
+                            }
+                        }
+                        tk::close_paren => break (token, false),
+                        _ => return self.error(token, &[tk::comma, tk::close_paren]),
+                    }
+                }
+            };
+
+        let expr = if elems.len() == 1 && !has_trailing_comma {
+            ParenExpr {
+                span: open_paren.span.to(close_paren.span),
+                expr: Box::new(elems.pop().unwrap()),
+            }
+            .into()
+        } else {
+            TupleExpr {
+                span: open_paren.span.to(close_paren.span),
+                elems,
+                has_trailing_comma,
+            }
+            .into()
         };
 
         Ok(expr)
