@@ -17,6 +17,12 @@ impl Parser<'_> {
                 .map(|decl_stmt| ExprOrStmt::Stmt(decl_stmt.into()));
         }
 
+        if self.peek().kind == tk::kw_defer {
+            return self
+                .parse_defer_stmt()
+                .map(|defer_stmt| ExprOrStmt::Stmt(defer_stmt.into()));
+        }
+
         let expr = self.parse_expr()?;
 
         if let Expr::Ident(ident) = &expr {
@@ -29,6 +35,8 @@ impl Parser<'_> {
 
         if let TokenKind::Punct(punct) = self.peek().kind {
             if let Ok(assign_op) = AssignOp::try_from(punct) {
+                self.bump();
+
                 return self
                     .continue_parse_assign_stmt(expr, assign_op)
                     .map(|assign_stmt| ExprOrStmt::Stmt(assign_stmt.into()));

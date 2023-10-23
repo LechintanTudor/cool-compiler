@@ -68,7 +68,7 @@ impl Parser<'_> {
                         if let Some(close_brace) = self.bump_if_eq(tk::close_brace) {
                             break (close_brace, None);
                         } else if !has_semicolon {
-                            return self.peek_error(&[tk::close_brace]);
+                            return self.peek_error(&[tk::semicolon, tk::close_brace]);
                         }
                     }
                 }
