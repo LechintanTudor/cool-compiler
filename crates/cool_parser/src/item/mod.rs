@@ -22,7 +22,9 @@ impl Parser<'_> {
             tk::kw_alias => self.parse_alias_item()?.into(),
             tk::kw_extern | tk::kw_fn => self.parse_fn_expr()?.into(),
             tk::kw_struct => self.parse_struct_item()?.into(),
-            _ => return self.peek_error(&[tk::kw_alias]),
+            _ => {
+                return self.peek_error(&[tk::kw_alias, tk::kw_extern, tk::kw_fn, tk::kw_struct]);
+            }
         };
 
         Ok(item)

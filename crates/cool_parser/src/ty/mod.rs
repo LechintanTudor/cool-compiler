@@ -1,9 +1,11 @@
 mod fn_ty;
 mod paren_ty;
+mod ptr_ty;
 mod tuple_ty;
 
 pub use self::fn_ty::*;
 pub use self::paren_ty::*;
+pub use self::ptr_ty::*;
 pub use self::tuple_ty::*;
 
 use crate::{IdentPath, ParseResult, Parser};
@@ -16,6 +18,7 @@ pub enum Ty {
     Fn(FnTy),
     Paren(ParenTy),
     Path(IdentPath),
+    Ptr(PtrTy),
     Tuple(TupleTy),
 }
 
@@ -23,11 +26,13 @@ impl Parser<'_> {
     pub fn parse_ty(&mut self) -> ParseResult<Ty> {
         let ty = match self.peek().kind {
             tk::open_paren => self.parse_paren_or_tuple_ty()?,
+            tk::star => self.parse_ptr_ty()?.into(),
             tk::kw_extern | tk::kw_fn => self.parse_fn_ty()?.into(),
             TokenKind::Ident(_) => self.parse_ident_path()?.into(),
             _ => {
                 return self.peek_error(&[
                     tk::open_paren,
+                    tk::star,
                     tk::kw_extern,
                     tk::kw_fn,
                     tk::identifier,
