@@ -8,6 +8,7 @@ mod literal_expr;
 mod loop_expr;
 mod struct_expr;
 mod unary_expr;
+mod while_expr;
 
 pub use self::access_expr::*;
 pub use self::binary_expr::*;
@@ -19,6 +20,7 @@ pub use self::literal_expr::*;
 pub use self::loop_expr::*;
 pub use self::struct_expr::*;
 pub use self::unary_expr::*;
+pub use self::while_expr::*;
 
 use crate::{BinaryOp, Ident, ParseResult, Parser};
 use cool_derive::Section;
@@ -39,13 +41,14 @@ pub enum Expr {
     Loop(LoopExpr),
     Struct(StructExpr),
     Unary(UnaryExpr),
+    While(WhileExpr),
 }
 
 impl Expr {
     #[inline]
     #[must_use]
     pub fn is_promotable_to_stmt(&self) -> bool {
-        matches!(self, Self::Block(_) | Self::Loop(_))
+        matches!(self, Self::Block(_) | Self::Loop(_) | Self::While(_))
     }
 }
 
@@ -68,12 +71,21 @@ impl ExprPart {
 impl Parser<'_> {
     #[inline]
     pub fn parse_expr(&mut self) -> ParseResult<Expr> {
-        let expr = self.parse_primary_expr()?;
+        self.parse_expr_full(true)
+    }
+
+    #[inline]
+    pub fn parse_non_struct_expr(&mut self) -> ParseResult<Expr> {
+        self.parse_expr_full(false)
+    }
+
+    fn parse_expr_full(&mut self, allow_struct: bool) -> ParseResult<Expr> {
+        let expr = self.parse_primary_expr(allow_struct)?;
 
         let (first_binary_op, second_expr) = match BinaryOp::try_from(self.peek().kind) {
             Ok(binary_op) => {
                 self.bump();
-                (binary_op, self.parse_primary_expr()?)
+                (binary_op, self.parse_primary_expr(allow_struct)?)
             }
             Err(_) => return Ok(expr),
         };
@@ -94,7 +106,7 @@ impl Parser<'_> {
             }
 
             binary_ops.push(binary_op);
-            parts.push(self.parse_primary_expr()?.into());
+            parts.push(self.parse_primary_expr(allow_struct)?.into());
         }
 
         while let Some(binary_op) = binary_ops.pop() {
@@ -128,7 +140,7 @@ impl Parser<'_> {
         Ok(part_stack.pop().unwrap().into_expr())
     }
 
-    fn parse_primary_expr(&mut self) -> ParseResult<Expr> {
+    fn parse_primary_expr(&mut self, allow_struct: bool) -> ParseResult<Expr> {
         let peeked_token = self.peek();
 
         let mut expr = match peeked_token.kind {
@@ -156,6 +168,7 @@ impl Parser<'_> {
             tk::open_brace => self.parse_block_expr()?.into(),
             tk::kw_extern | tk::kw_fn => self.parse_fn_expr()?.into(),
             tk::kw_loop => self.parse_loop_expr()?.into(),
+            tk::kw_while => self.parse_while_expr()?.into(),
             token => todo!("{:?}", token),
         };
 
@@ -164,7 +177,9 @@ impl Parser<'_> {
                 Expr::Access(_) | Expr::Ident(_) => {
                     match self.peek().kind {
                         tk::open_paren => self.continue_parse_fn_call_expr(expr)?.into(),
-                        tk::open_brace => self.continue_parse_struct_expr(expr)?.into(),
+                        tk::open_brace if allow_struct => {
+                            self.continue_parse_struct_expr(expr)?.into()
+                        }
                         tk::dot => self.continue_parse_access_or_deref_expr(expr)?,
                         _ => break,
                     }
