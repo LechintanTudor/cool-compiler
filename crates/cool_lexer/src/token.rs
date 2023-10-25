@@ -50,6 +50,12 @@ impl TokenKind {
 
     #[inline]
     #[must_use]
+    pub fn is_literal(&self) -> bool {
+        matches!(self, Self::Literal(_))
+    }
+
+    #[inline]
+    #[must_use]
     pub fn is_eof(&self) -> bool {
         matches!(self, Self::Eof)
     }

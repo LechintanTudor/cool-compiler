@@ -17,6 +17,7 @@ pub use self::ty::*;
 pub use self::utils::*;
 
 use cool_lexer::{Token, TokenKind, TokenStream};
+use cool_span::Span;
 use std::slice;
 
 #[derive(Clone, Debug)]
@@ -74,6 +75,13 @@ impl<'a> Parser<'a> {
         }
 
         Ok(token)
+    }
+
+    pub fn bump_filter<R, F>(&mut self, f: F) -> Option<(Span, R)>
+    where
+        F: FnOnce(TokenKind) -> Option<R>,
+    {
+        f(self.peek().kind).map(|result| (self.bump().span, result))
     }
 
     #[inline]

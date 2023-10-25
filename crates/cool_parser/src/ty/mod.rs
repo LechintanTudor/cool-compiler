@@ -1,11 +1,17 @@
+mod array_ty;
 mod fn_ty;
+mod many_ptr_ty;
 mod paren_ty;
 mod ptr_ty;
+mod slice_ty;
 mod tuple_ty;
 
+pub use self::array_ty::*;
 pub use self::fn_ty::*;
+pub use self::many_ptr_ty::*;
 pub use self::paren_ty::*;
 pub use self::ptr_ty::*;
+pub use self::slice_ty::*;
 pub use self::tuple_ty::*;
 
 use crate::{IdentPath, ParseResult, Parser};
@@ -15,10 +21,13 @@ use derive_more::From;
 
 #[derive(Clone, From, Section, Debug)]
 pub enum Ty {
+    Array(ArrayTy),
     Fn(FnTy),
+    ManyPtr(ManyPtrTy),
     Paren(ParenTy),
     Path(IdentPath),
     Ptr(PtrTy),
+    Slice(SliceTy),
     Tuple(TupleTy),
 }
 
@@ -26,6 +35,15 @@ impl Parser<'_> {
     pub fn parse_ty(&mut self) -> ParseResult<Ty> {
         let ty = match self.peek().kind {
             tk::open_paren => self.parse_paren_or_tuple_ty()?,
+            tk::open_bracket => {
+                let open_bracket = self.bump();
+
+                match self.peek().kind {
+                    tk::close_bracket => self.continue_parse_slice_ty(open_bracket)?.into(),
+                    tk::star => self.continue_parse_many_ptr_ty(open_bracket)?.into(),
+                    _ => self.continue_parse_array_ty(open_bracket)?.into(),
+                }
+            }
             tk::star => self.parse_ptr_ty()?.into(),
             tk::kw_extern | tk::kw_fn => self.parse_fn_ty()?.into(),
             TokenKind::Ident(_) => self.parse_ident_path()?.into(),
@@ -76,7 +94,7 @@ impl Parser<'_> {
         } else {
             TupleTy {
                 span: open_paren.span.to(close_paren.span),
-                elems,
+                elem_tys: elems,
                 has_trailing_comma,
             }
             .into()

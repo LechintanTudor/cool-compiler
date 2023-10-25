@@ -30,6 +30,12 @@ impl From<LexerLiteralKind> for LiteralKind {
     }
 }
 
+#[derive(Clone, Section, Debug)]
+pub struct IntLiteralExpr {
+    pub span: Span,
+    pub value: Symbol,
+}
+
 impl Parser<'_> {
     pub fn parse_literal_expr(&mut self) -> ParseResult<LiteralExpr> {
         let start_token = self.bump();
@@ -102,6 +108,25 @@ impl Parser<'_> {
                 }
             }
             _ => self.peek_any_error(&[tk::character, tk::string]),
+        }
+    }
+
+    pub fn parse_int_literal_expr(&mut self) -> ParseResult<IntLiteralExpr> {
+        let literal = self
+            .bump_filter(|kind| {
+                kind.as_literal()
+                    .filter(|literal| matches!(literal.kind, LexerLiteralKind::Int))
+            })
+            .map(|(span, literal)| {
+                IntLiteralExpr {
+                    span,
+                    value: literal.value,
+                }
+            });
+
+        match literal {
+            Some(literal) => Ok(literal),
+            _ => self.peek_error(&[tk::literal]),
         }
     }
 }
