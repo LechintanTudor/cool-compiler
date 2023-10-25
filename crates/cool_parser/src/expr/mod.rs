@@ -1,4 +1,6 @@
 mod access_expr;
+mod array_expr;
+mod array_repeat_expr;
 mod binary_expr;
 mod block_expr;
 mod deref_expr;
@@ -13,6 +15,8 @@ mod unary_expr;
 mod while_expr;
 
 pub use self::access_expr::*;
+pub use self::array_expr::*;
+pub use self::array_repeat_expr::*;
 pub use self::binary_expr::*;
 pub use self::block_expr::*;
 pub use self::deref_expr::*;
@@ -35,6 +39,8 @@ use derive_more::From;
 #[derive(Clone, From, Section, Debug)]
 pub enum Expr {
     Access(AccessExpr),
+    Array(ArrayExpr),
+    ArrayRepeat(ArrayRepeatExpr),
     Binary(BinaryExpr),
     Block(BlockExpr),
     Deref(DerefExpr),
@@ -173,6 +179,7 @@ impl Parser<'_> {
             }
             tk::open_paren => self.parse_paren_or_tuple_expr()?,
             tk::open_brace => self.parse_block_expr()?.into(),
+            tk::open_bracket => self.parse_array_or_array_repeat_expr()?,
             tk::kw_extern | tk::kw_fn => self.parse_fn_expr()?.into(),
             tk::kw_loop => self.parse_loop_expr()?.into(),
             tk::kw_while => self.parse_while_expr()?.into(),
@@ -266,5 +273,60 @@ impl Parser<'_> {
         };
 
         Ok(expr)
+    }
+
+    fn parse_array_or_array_repeat_expr(&mut self) -> ParseResult<Expr> {
+        let open_bracket = self.bump_expect(&tk::open_bracket)?;
+
+        if let Some(close_bracket) = self.bump_if_eq(tk::close_bracket) {
+            return Ok(ArrayExpr {
+                span: open_bracket.span.to(close_bracket.span),
+                values: vec![],
+                has_trailing_comma: false,
+            }
+            .into());
+        }
+
+        let first_value = self.parse_expr()?;
+
+        if self.bump_if_eq(tk::semicolon).is_some() {
+            let len = self.parse_array_len()?;
+            let close_bracket = self.bump_expect(&tk::close_bracket)?;
+
+            return Ok(ArrayRepeatExpr {
+                span: open_bracket.span.to(close_bracket.span),
+                len,
+                value: Box::new(first_value),
+            }
+            .into());
+        }
+
+        let mut values = vec![first_value];
+
+        let (close_bracket, has_trailing_comma) =
+            if let Some(close_bracket) = self.bump_if_eq(tk::close_bracket) {
+                (close_bracket, false)
+            } else {
+                loop {
+                    self.bump_expect(&tk::comma)?;
+
+                    if let Some(close_bracket) = self.bump_if_eq(tk::close_bracket) {
+                        break (close_bracket, true);
+                    }
+
+                    values.push(self.parse_expr()?);
+
+                    if let Some(close_bracket) = self.bump_if_eq(tk::close_bracket) {
+                        break (close_bracket, false);
+                    }
+                }
+            };
+
+        Ok(ArrayExpr {
+            span: open_bracket.span.to(close_bracket.span),
+            values,
+            has_trailing_comma,
+        }
+        .into())
     }
 }

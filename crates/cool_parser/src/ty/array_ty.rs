@@ -1,13 +1,7 @@
-use crate::{IdentPath, IntLiteralExpr, ParseResult, Parser, Ty};
+use crate::{ArrayLen, ParseResult, Parser, Ty};
 use cool_derive::Section;
 use cool_lexer::{tk, Token};
 use cool_span::{Section, Span};
-
-#[derive(Clone, Section, Debug)]
-pub enum ArrayLen {
-    Path(IdentPath),
-    Int(IntLiteralExpr),
-}
 
 #[derive(Clone, Section, Debug)]
 pub struct ArrayTy {
@@ -30,15 +24,5 @@ impl Parser<'_> {
             len,
             elem_ty: Box::new(elem_ty),
         })
-    }
-
-    fn parse_array_len(&mut self) -> ParseResult<ArrayLen> {
-        let len = if self.peek().kind.is_literal() {
-            ArrayLen::Int(self.parse_int_literal_expr()?)
-        } else {
-            ArrayLen::Path(self.parse_ident_path()?)
-        };
-
-        Ok(len)
     }
 }
