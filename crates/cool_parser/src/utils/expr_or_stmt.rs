@@ -11,16 +11,33 @@ pub enum ExprOrStmt {
 
 impl Parser<'_> {
     pub fn parse_expr_or_stmt(&mut self) -> ParseResult<ExprOrStmt> {
-        if self.peek().kind == tk::kw_mut {
-            return self
-                .parse_decl_stmt()
-                .map(|decl_stmt| ExprOrStmt::Stmt(decl_stmt.into()));
-        }
-
-        if self.peek().kind == tk::kw_defer {
-            return self
-                .parse_defer_stmt()
-                .map(|defer_stmt| ExprOrStmt::Stmt(defer_stmt.into()));
+        match self.peek().kind {
+            tk::kw_break => {
+                return self
+                    .parse_break_stmt()
+                    .map(|stmt| ExprOrStmt::Stmt(stmt.into()));
+            }
+            tk::kw_continue => {
+                return self
+                    .parse_continue_stmt()
+                    .map(|stmt| ExprOrStmt::Stmt(stmt.into()));
+            }
+            tk::kw_defer => {
+                return self
+                    .parse_defer_stmt()
+                    .map(|stmt| ExprOrStmt::Stmt(stmt.into()));
+            }
+            tk::kw_mut => {
+                return self
+                    .parse_decl_stmt()
+                    .map(|stmt| ExprOrStmt::Stmt(stmt.into()));
+            }
+            tk::kw_return => {
+                return self
+                    .parse_return_stmt()
+                    .map(|stmt| ExprOrStmt::Stmt(stmt.into()));
+            }
+            _ => (),
         }
 
         let expr = self.parse_expr()?;
