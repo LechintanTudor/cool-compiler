@@ -84,12 +84,10 @@ impl<'a> Parser<'a> {
         f(self.peek().kind).map(|result| (self.bump().span, result))
     }
 
-    #[inline]
     pub fn error<T>(&self, found: Token, expected: &'static [TokenKind]) -> ParseResult<T> {
         Err(ParseError { found, expected })
     }
 
-    #[inline]
     pub fn peek_error<T>(&mut self, expected: &'static [TokenKind]) -> ParseResult<T> {
         Err(ParseError {
             found: self.peek(),
@@ -97,7 +95,6 @@ impl<'a> Parser<'a> {
         })
     }
 
-    #[inline]
     pub fn peek_any_error<T>(&mut self, expected: &'static [TokenKind]) -> ParseResult<T> {
         Err(ParseError {
             found: self.peek_any(),
