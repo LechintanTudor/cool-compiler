@@ -1,7 +1,9 @@
 mod alias_item;
+mod module_item;
 mod struct_item;
 
 pub use self::alias_item::*;
+pub use self::module_item::*;
 pub use self::struct_item::*;
 
 use crate::{FnExpr, ParseResult, Parser};
@@ -13,6 +15,7 @@ use derive_more::From;
 pub enum Item {
     Alias(AliasItem),
     Fn(FnExpr),
+    Module(ModuleItem),
     Struct(StructItem),
 }
 
@@ -21,9 +24,16 @@ impl Parser<'_> {
         let item = match self.peek().kind {
             tk::kw_alias => self.parse_alias_item()?.into(),
             tk::kw_extern | tk::kw_fn => self.parse_fn_expr()?.into(),
+            tk::kw_module => self.parse_module_item()?.into(),
             tk::kw_struct => self.parse_struct_item()?.into(),
             _ => {
-                return self.peek_error(&[tk::kw_alias, tk::kw_extern, tk::kw_fn, tk::kw_struct]);
+                return self.peek_error(&[
+                    tk::kw_alias,
+                    tk::kw_extern,
+                    tk::kw_fn,
+                    tk::kw_module,
+                    tk::kw_struct,
+                ]);
             }
         };
 

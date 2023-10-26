@@ -1,5 +1,6 @@
 mod array_ty;
 mod fn_ty;
+mod item_ty;
 mod many_ptr_ty;
 mod paren_ty;
 mod ptr_ty;
@@ -8,6 +9,7 @@ mod tuple_ty;
 
 pub use self::array_ty::*;
 pub use self::fn_ty::*;
+pub use self::item_ty::*;
 pub use self::many_ptr_ty::*;
 pub use self::paren_ty::*;
 pub use self::ptr_ty::*;
@@ -23,6 +25,7 @@ use derive_more::From;
 pub enum Ty {
     Array(ArrayTy),
     Fn(FnTy),
+    Item(ItemTy),
     ManyPtr(ManyPtrTy),
     Paren(ParenTy),
     Path(IdentPath),
@@ -46,13 +49,17 @@ impl Parser<'_> {
             }
             tk::star => self.parse_ptr_ty()?.into(),
             tk::kw_extern | tk::kw_fn => self.parse_fn_ty()?.into(),
+            tk::kw_alias | tk::kw_module => self.parse_item_ty()?.into(),
             TokenKind::Ident(_) => self.parse_ident_path()?.into(),
             _ => {
                 return self.peek_error(&[
                     tk::open_paren,
+                    tk::open_bracket,
                     tk::star,
                     tk::kw_extern,
                     tk::kw_fn,
+                    tk::kw_alias,
+                    tk::kw_module,
                     tk::identifier,
                 ]);
             }
