@@ -1,0 +1,13 @@
+[package]
+name = "cool_resolve"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cool_arena = { path = "../cool_arena" }
+cool_derive = { path = "../cool_derive" }
+cool_lexer = { path = "../cool_lexer" }
+
+ahash = { workspace = true }
+derive_more = { workspace = true }
+smallvec = { workspace = true }

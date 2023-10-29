@@ -2,7 +2,6 @@ use crate::sym;
 use cool_arena::{define_arena_index, Arena};
 use once_cell::sync::Lazy;
 use std::fmt;
-use std::num::NonZeroU32;
 use std::sync::Mutex;
 
 define_arena_index!(Symbol; NoDebug);
@@ -16,11 +15,6 @@ static SYMBOL_TABLE: Lazy<Mutex<SymbolTable<'static>>> = Lazy::new(|| {
 });
 
 impl Symbol {
-    #[inline]
-    pub(crate) const unsafe fn new_unchecked(index: u32) -> Self {
-        Self(NonZeroU32::new_unchecked(index))
-    }
-
     #[inline]
     pub fn insert(str: &str) -> Self {
         SYMBOL_TABLE.lock().unwrap().insert_str(str)

@@ -1,4 +1,5 @@
 mod lexer_consts;
+mod ty_consts;
 
 use self::lexer_consts::*;
 use proc_macro2::Ident;
@@ -136,4 +137,9 @@ pub fn define_symbols(input: proc_macro::TokenStream) -> proc_macro::TokenStream
     };
 
     output.into()
+}
+
+#[proc_macro]
+pub fn define_tys(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    ty_consts::define_tys(input)
 }

@@ -3,6 +3,7 @@ mod unsafe_bump;
 pub use self::unsafe_bump::*;
 
 use ahash::AHashMap;
+use std::fmt;
 use std::hash::Hash;
 use std::num::NonZeroU32;
 
@@ -42,12 +43,27 @@ where
 impl<'a, I, T> Arena<'a, I, T>
 where
     I: ArenaIndex,
-    T: ?Sized + Eq + Hash,
+    T: Eq + Hash,
 {
+    pub fn insert(&mut self, value: T) -> I {
+        let index = self.get_next_index();
+        let value = unsafe { self.bump.alloc(value) };
+        self.indexes.insert(value, index);
+        self.values.push(value);
+
+        index
+    }
+}
+
+impl<'a, I, T> Arena<'a, I, T>
+where
+    I: ArenaIndex,
+    T: ?Sized,
+{
+    #[inline]
     #[must_use]
     pub fn get(&self, index: I) -> Option<&'a T> {
-        let index = index.get().get() as usize - 1;
-        self.values.get(index).copied()
+        self.values.get(index.get_index()).copied()
     }
 }
 
@@ -57,6 +73,27 @@ where
 {
     pub fn new_leak() -> Self {
         unsafe { Self::new(Box::leak(Box::default())) }
+    }
+}
+
+impl<'a, I, T> Arena<'a, I, [T]>
+where
+    I: ArenaIndex,
+{
+    pub fn insert_slice(&mut self, slice: &[T]) -> I
+    where
+        T: Copy + Eq + Hash,
+    {
+        if let Some(&index) = self.indexes.get(slice) {
+            return index;
+        }
+
+        let index = self.get_next_index();
+        let slice = unsafe { self.bump.alloc_slice_copy(slice) };
+        self.indexes.insert(slice, index);
+        self.values.push(slice);
+
+        index
     }
 }
 
@@ -78,6 +115,16 @@ where
     }
 }
 
+impl<'a, I, T> fmt::Debug for Arena<'a, I, T>
+where
+    T: fmt::Debug + ?Sized,
+{
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_list().entries(&self.values).finish()
+    }
+}
+
 /// Strongly-typed index for accessing elements in an [`Arena`].
 ///
 /// # Safety
@@ -88,6 +135,12 @@ pub unsafe trait ArenaIndex: Copy {
 
     #[must_use]
     fn get(&self) -> NonZeroU32;
+
+    #[inline]
+    #[must_use]
+    fn get_index(&self) -> usize {
+        self.get().get() as usize - 1
+    }
 }
 
 #[macro_export]
@@ -95,6 +148,13 @@ macro_rules! define_arena_index {
     ($Ident:ident; $(NoDebug)?) => {
         #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
         pub struct $Ident(::std::num::NonZeroU32);
+
+        impl $Ident {
+            #[inline]
+            pub const unsafe fn new_unchecked(index: u32) -> Self {
+                Self(::std::num::NonZeroU32::new_unchecked(index))
+            }
+        }
 
         unsafe impl $crate::ArenaIndex for $Ident {
             #[inline]
@@ -111,6 +171,13 @@ macro_rules! define_arena_index {
     ($Ident:ident) => {
         #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
         pub struct $Ident(::std::num::NonZeroU32);
+
+        impl $Ident {
+            #[inline]
+            pub const unsafe fn new_unchecked(index: u32) -> Self {
+                Self(::std::num::NonZeroU32::new_unchecked(index))
+            }
+        }
 
         unsafe impl $crate::ArenaIndex for $Ident {
             #[inline]
