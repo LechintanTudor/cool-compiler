@@ -1,8 +1,8 @@
-mod error;
+mod item_error;
 mod item_kind;
 mod module_item;
 
-pub use self::error::*;
+pub use self::item_error::*;
 pub use self::item_kind::*;
 pub use self::module_item::*;
 

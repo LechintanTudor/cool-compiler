@@ -1,10 +1,10 @@
-mod expr;
 mod id_vec;
 mod item;
+mod scope;
 mod ty;
 
-pub use self::expr::*;
 pub use self::item::*;
+pub use self::scope::*;
 pub use self::ty::*;
 
 pub(crate) use self::id_vec::*;
@@ -21,6 +21,8 @@ pub struct ResolveContext<'a> {
     ty_config: TyConfig,
     tys: Arena<'a, TyId, TyKind>,
     ty_defs: AHashMap<TyId, TyDef>,
+    frames: IdVec<FrameId, Frame>,
+    bindings: IdVec<BindingId, Binding>,
 }
 
 impl<'a> ResolveContext<'a> {
@@ -32,6 +34,8 @@ impl<'a> ResolveContext<'a> {
             ty_config,
             tys: Arena::new_leak(),
             ty_defs: Default::default(),
+            frames: Default::default(),
+            bindings: Default::default(),
         };
 
         ctx.init_builtins();
