@@ -20,6 +20,7 @@ pub struct ResolveContext<'a> {
     modules: IdVec<ModuleId, ModuleItem>,
     ty_config: TyConfig,
     tys: Arena<'a, TyId, TyKind>,
+    ty_defs: AHashMap<TyId, TyDef>,
 }
 
 impl<'a> ResolveContext<'a> {
@@ -30,6 +31,7 @@ impl<'a> ResolveContext<'a> {
             modules: Default::default(),
             ty_config,
             tys: Arena::new_leak(),
+            ty_defs: Default::default(),
         };
 
         ctx.init_builtins();

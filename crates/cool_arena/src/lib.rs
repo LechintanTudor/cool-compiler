@@ -6,6 +6,7 @@ use ahash::AHashMap;
 use std::fmt;
 use std::hash::Hash;
 use std::num::NonZeroU32;
+use std::ops::Index;
 
 pub struct Arena<'a, I, T>
 where
@@ -191,4 +192,16 @@ macro_rules! define_arena_index {
             }
         }
     };
+}
+
+impl<'a, I, T> Index<I> for Arena<'a, I, T>
+where
+    I: ArenaIndex,
+    T: ?Sized,
+{
+    type Output = T;
+
+    fn index(&self, index: I) -> &Self::Output {
+        self.values.get(index.get_index()).unwrap()
+    }
 }
