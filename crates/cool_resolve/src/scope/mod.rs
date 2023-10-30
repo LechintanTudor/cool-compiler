@@ -5,12 +5,12 @@ pub use self::binding::*;
 pub use self::scope_error::*;
 
 use crate::{ModuleId, ResolveContext};
-use cool_arena::define_arena_index;
+use cool_collections::define_index_newtype;
 use cool_lexer::Symbol;
 use smallvec::SmallVec;
 use std::ops::{Index, IndexMut};
 
-define_arena_index!(FrameId);
+define_index_newtype!(FrameId);
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Scope {
@@ -25,21 +25,18 @@ pub struct Frame {
 }
 
 impl Frame {
-    pub fn insert(&mut self, symbol: Symbol, binding: BindingId) -> ScopeResult<()> {
-        if self.bindings.iter().any(|(s, _)| *s == symbol) {
-            return Err(ScopeError::SymbolAlreadyExists);
-        }
-
-        self.bindings.push((symbol, binding));
-        Ok(())
-    }
-
     #[must_use]
     pub fn get(&self, symbol: Symbol) -> Option<BindingId> {
         self.bindings
             .iter()
             .find(|(s, _)| *s == symbol)
             .map(|(_, binding)| *binding)
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn contains(&self, symbol: Symbol) -> bool {
+        self.bindings.iter().any(|(s, _)| *s == symbol)
     }
 }
 

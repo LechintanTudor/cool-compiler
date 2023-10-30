@@ -4,6 +4,10 @@ use smallvec::SmallVec;
 
 #[derive(Clone, PartialEq, Eq, Hash, From, Debug)]
 pub enum TyKind {
+    // Inference types
+    Infer(InferTy),
+
+    // Defined types
     Unit,
     Int(IntTy),
     Float(FloatTy),
@@ -14,6 +18,11 @@ pub enum TyKind {
     Tuple(TupleTy),
     Struct(StructTy),
     Fn(FnTy),
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub enum InferTy {
+    Any,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]

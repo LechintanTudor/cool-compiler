@@ -6,4 +6,5 @@ edition = "2021"
 [dependencies]
 cool_driver = { path = "../cool_driver" }
 
+anyhow = { workspace = true }
 clap = { workspace = true }

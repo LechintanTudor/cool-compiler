@@ -1,15 +1,15 @@
-use cool_arena::ArenaIndex;
+use crate::CoolIndex;
 use std::fmt;
 use std::marker::PhantomData;
 use std::num::NonZeroU32;
 use std::ops::{Deref, DerefMut, Index, IndexMut};
 
-pub struct IdVec<I, T> {
+pub struct VecMap<I, T> {
     values: Vec<T>,
     _phantom: PhantomData<I>,
 }
 
-impl<I, T> IdVec<I, T> {
+impl<I, T> VecMap<I, T> {
     #[inline]
     #[must_use]
     pub fn as_slice(&self) -> &[T] {
@@ -23,9 +23,9 @@ impl<I, T> IdVec<I, T> {
     }
 }
 
-impl<I, T> IdVec<I, T>
+impl<I, T> VecMap<I, T>
 where
-    I: ArenaIndex,
+    I: CoolIndex,
 {
     pub fn push(&mut self, value: T) -> I {
         let index = NonZeroU32::new((self.values.len() + 1) as u32)
@@ -37,7 +37,7 @@ where
     }
 }
 
-impl<I, T> Clone for IdVec<I, T>
+impl<I, T> Clone for VecMap<I, T>
 where
     T: Clone,
 {
@@ -49,7 +49,7 @@ where
     }
 }
 
-impl<I, T> Default for IdVec<I, T> {
+impl<I, T> Default for VecMap<I, T> {
     fn default() -> Self {
         Self {
             values: Default::default(),
@@ -58,7 +58,7 @@ impl<I, T> Default for IdVec<I, T> {
     }
 }
 
-impl<I, T> Deref for IdVec<I, T> {
+impl<I, T> Deref for VecMap<I, T> {
     type Target = [T];
 
     #[inline]
@@ -67,16 +67,16 @@ impl<I, T> Deref for IdVec<I, T> {
     }
 }
 
-impl<I, T> DerefMut for IdVec<I, T> {
+impl<I, T> DerefMut for VecMap<I, T> {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.as_mut_slice()
     }
 }
 
-impl<I, T> Index<I> for IdVec<I, T>
+impl<I, T> Index<I> for VecMap<I, T>
 where
-    I: ArenaIndex,
+    I: CoolIndex,
 {
     type Output = T;
 
@@ -86,9 +86,9 @@ where
     }
 }
 
-impl<I, T> IndexMut<I> for IdVec<I, T>
+impl<I, T> IndexMut<I> for VecMap<I, T>
 where
-    I: ArenaIndex,
+    I: CoolIndex,
 {
     #[inline]
     fn index_mut(&mut self, index: I) -> &mut Self::Output {
@@ -96,7 +96,7 @@ where
     }
 }
 
-impl<I, T> fmt::Debug for IdVec<I, T>
+impl<I, T> fmt::Debug for VecMap<I, T>
 where
     T: fmt::Debug,
 {

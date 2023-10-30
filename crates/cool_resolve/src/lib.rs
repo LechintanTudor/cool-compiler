@@ -1,28 +1,28 @@
-mod id_vec;
+mod expr;
 mod item;
 mod scope;
 mod ty;
 
+pub use self::expr::*;
 pub use self::item::*;
 pub use self::scope::*;
 pub use self::ty::*;
 
-pub(crate) use self::id_vec::*;
-
 use ahash::AHashMap;
-use cool_arena::Arena;
+use cool_collections::{Arena, VecMap};
 use cool_lexer::Symbol;
 
 #[derive(Debug)]
 pub struct ResolveContext<'a> {
     paths: Arena<'a, ItemId, [Symbol]>,
     items: AHashMap<ItemId, ItemKind>,
-    modules: IdVec<ModuleId, ModuleItem>,
+    modules: VecMap<ModuleId, ModuleItem>,
     ty_config: TyConfig,
     tys: Arena<'a, TyId, TyKind>,
     ty_defs: AHashMap<TyId, TyDef>,
-    frames: IdVec<FrameId, Frame>,
-    bindings: IdVec<BindingId, Binding>,
+    frames: VecMap<FrameId, Frame>,
+    bindings: VecMap<BindingId, Binding>,
+    exprs: VecMap<ExprId, Expr>,
 }
 
 impl<'a> ResolveContext<'a> {
@@ -36,6 +36,7 @@ impl<'a> ResolveContext<'a> {
             ty_defs: Default::default(),
             frames: Default::default(),
             bindings: Default::default(),
+            exprs: Default::default(),
         };
 
         ctx.init_builtins();

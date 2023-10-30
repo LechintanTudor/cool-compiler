@@ -1,7 +1,4 @@
-mod unsafe_bump;
-
-pub use self::unsafe_bump::*;
-
+use crate::{CoolIndex, UnsafeBump};
 use ahash::AHashMap;
 use std::fmt;
 use std::hash::Hash;
@@ -33,17 +30,17 @@ where
 
     fn get_next_index(&self) -> I
     where
-        I: ArenaIndex,
+        I: CoolIndex,
     {
         NonZeroU32::new((self.values.len() + 1) as u32)
-            .map(ArenaIndex::new)
+            .map(CoolIndex::new)
             .unwrap()
     }
 }
 
 impl<'a, I, T> Arena<'a, I, T>
 where
-    I: ArenaIndex,
+    I: CoolIndex,
     T: Eq + Hash,
 {
     pub fn insert(&mut self, value: T) -> I {
@@ -58,7 +55,7 @@ where
 
 impl<'a, I, T> Arena<'a, I, T>
 where
-    I: ArenaIndex,
+    I: CoolIndex,
     T: ?Sized,
 {
     #[inline]
@@ -79,7 +76,7 @@ where
 
 impl<'a, I, T> Arena<'a, I, [T]>
 where
-    I: ArenaIndex,
+    I: CoolIndex,
 {
     pub fn insert_slice(&mut self, slice: &[T]) -> I
     where
@@ -100,7 +97,7 @@ where
 
 impl<'a, I> Arena<'a, I, str>
 where
-    I: ArenaIndex,
+    I: CoolIndex,
 {
     pub fn insert_str(&mut self, value: &str) -> I {
         if let Some(&index) = self.indexes.get(&value) {
@@ -126,77 +123,9 @@ where
     }
 }
 
-/// Strongly-typed index for accessing elements in an [`Arena`].
-///
-/// # Safety
-/// [`ArenaIndex::get`] must return the value passed in [`ArenaIndex::new`] extended to a
-/// [`usize`].
-pub unsafe trait ArenaIndex: Copy {
-    fn new(value: NonZeroU32) -> Self;
-
-    #[must_use]
-    fn get(&self) -> NonZeroU32;
-
-    #[inline]
-    #[must_use]
-    fn get_index(&self) -> usize {
-        self.get().get() as usize - 1
-    }
-}
-
-#[macro_export]
-macro_rules! define_arena_index {
-    ($Ident:ident; $(NoDebug)?) => {
-        #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-        pub struct $Ident(::std::num::NonZeroU32);
-
-        impl $Ident {
-            #[inline]
-            pub const unsafe fn new_unchecked(index: u32) -> Self {
-                Self(::std::num::NonZeroU32::new_unchecked(index))
-            }
-        }
-
-        unsafe impl $crate::ArenaIndex for $Ident {
-            #[inline]
-            fn new(value: ::std::num::NonZeroU32) -> Self {
-                Self(value)
-            }
-
-            #[inline]
-            fn get(&self) -> ::std::num::NonZeroU32 {
-                self.0
-            }
-        }
-    };
-    ($Ident:ident) => {
-        #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
-        pub struct $Ident(::std::num::NonZeroU32);
-
-        impl $Ident {
-            #[inline]
-            pub const unsafe fn new_unchecked(index: u32) -> Self {
-                Self(::std::num::NonZeroU32::new_unchecked(index))
-            }
-        }
-
-        unsafe impl $crate::ArenaIndex for $Ident {
-            #[inline]
-            fn new(value: ::std::num::NonZeroU32) -> Self {
-                Self(value)
-            }
-
-            #[inline]
-            fn get(&self) -> ::std::num::NonZeroU32 {
-                self.0
-            }
-        }
-    };
-}
-
 impl<'a, I, T> Index<I> for Arena<'a, I, T>
 where
-    I: ArenaIndex,
+    I: CoolIndex,
     T: ?Sized,
 {
     type Output = T;

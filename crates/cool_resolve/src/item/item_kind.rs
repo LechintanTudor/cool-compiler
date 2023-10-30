@@ -1,7 +1,7 @@
 use crate::{BindingId, ModuleId, TyId};
-use derive_more::From;
+use derive_more::{From, TryInto};
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, From, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, From, TryInto, Debug)]
 pub enum ItemKind {
     Module(ModuleId),
     Ty(TyId),

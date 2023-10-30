@@ -1,10 +1,10 @@
 use crate::sym;
-use cool_arena::{define_arena_index, Arena};
+use cool_collections::{define_index_newtype, Arena};
 use once_cell::sync::Lazy;
 use std::fmt;
 use std::sync::Mutex;
 
-define_arena_index!(Symbol; NoDebug);
+define_index_newtype!(Symbol; NoDebug);
 
 pub(crate) type SymbolTable<'a> = Arena<'a, Symbol, str>;
 

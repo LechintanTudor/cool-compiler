@@ -1,9 +1,10 @@
 use cool_lexer::{Token, TokenKind};
+use derive_more::Error;
 use std::fmt;
 
 pub type ParseResult<T> = Result<T, ParseError>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Error, Debug)]
 pub struct ParseError {
     pub found: Token,
     pub expected: &'static [TokenKind],

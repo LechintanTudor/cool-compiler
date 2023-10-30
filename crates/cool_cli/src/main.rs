@@ -1,10 +1,11 @@
 mod args;
 
-use self::args::*;
+use crate::args::*;
 use clap::Parser as _;
+use cool_driver::passes;
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-    let program = cool_driver::p0_parse(&args.name, &args.path);
-    println!("{:#?}", program.files[0].file);
+    passes::p0_parse(&args.name, &args.path)?;
+    Ok(())
 }

@@ -9,13 +9,17 @@ pub use self::ty_error::*;
 pub use self::ty_kind::*;
 
 use crate::ResolveContext;
-use cool_arena::define_arena_index;
+use cool_collections::define_index_newtype;
 use cool_derive::define_tys;
 use cool_lexer::{sym, Symbol};
 
-define_arena_index!(TyId);
+define_index_newtype!(TyId);
 
 define_tys! {
+    // Inference types
+    infer,
+
+    // Defined types
     unit,
     i8,
     i16,
@@ -35,6 +39,9 @@ define_tys! {
 
 impl ResolveContext<'_> {
     pub(crate) fn init_builtins(&mut self) {
+        // Infer
+        self.tys.insert(InferTy::Any.into());
+
         // Unit
         let unit_ty_id = self.tys.insert(TyKind::Unit);
         debug_assert_eq!(unit_ty_id, tys::unit);

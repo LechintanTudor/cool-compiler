@@ -1,10 +1,10 @@
 use crate::{ItemId, ItemResult, ResolveContext};
 use ahash::AHashMap;
-use cool_arena::define_arena_index;
+use cool_collections::define_index_newtype;
 use cool_lexer::Symbol;
 use std::ops::Index;
 
-define_arena_index!(ModuleId);
+define_index_newtype!(ModuleId);
 
 #[derive(Clone, Debug)]
 pub struct ModuleItem {
@@ -31,19 +31,22 @@ pub struct ModuleElem {
 impl ResolveContext<'_> {
     pub fn add_root_module(&mut self, symbol: Symbol) -> ItemResult<ModuleId> {
         let item_id = self.add_path(&[symbol])?;
-        Ok(self.modules.push(ModuleItem::new(item_id)))
+        let module_id = self.modules.push(ModuleItem::new(item_id));
+        self.items.insert(item_id, module_id.into());
+        Ok(module_id)
     }
 
     pub fn add_module(
         &mut self,
-        parent_module_id: ModuleId,
+        parent_id: ModuleId,
         is_exported: bool,
         symbol: Symbol,
     ) -> ItemResult<ModuleId> {
-        let item_id = self.add_path(&[symbol])?;
+        let item_id = self.add_path(&self.make_path(parent_id, symbol))?;
         let module_id = self.modules.push(ModuleItem::new(item_id));
 
-        self.modules[parent_module_id].elems.insert(
+        self.items.insert(item_id, module_id.into());
+        self.modules[parent_id].elems.insert(
             symbol,
             ModuleElem {
                 is_exported,
@@ -60,7 +63,7 @@ impl Index<ModuleId> for ResolveContext<'_> {
 
     #[inline]
     #[must_use]
-    fn index(&self, index: ModuleId) -> &Self::Output {
-        &self.modules[index]
+    fn index(&self, module_id: ModuleId) -> &Self::Output {
+        &self.modules[module_id]
     }
 }
