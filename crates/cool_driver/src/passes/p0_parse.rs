@@ -1,45 +1,64 @@
-use crate::ParsedCrate;
-use cool_lexer::{Symbol, TokenStream};
-use cool_parser::{DeclKind, Item, Parser};
-use cool_resolve::{Mutability, ResolveContext, TyConfig};
-use std::fs;
+use crate::{CompileResult, ModulePaths, ParsedCrate, SourceFile};
+use cool_lexer::Symbol;
+use cool_parser::{DeclKind, Item, Module, ModuleKind};
+use cool_resolve::{ModuleId, ResolveContext, TyConfig};
+use std::collections::VecDeque;
+use std::path::Path;
 
-pub fn p0_parse(name: &str, path: &str) -> anyhow::Result<ParsedCrate> {
-    let source = fs::read_to_string(path)?;
-    let token_stream = TokenStream::new(&source);
-    let mut parser = Parser::new(token_stream);
+pub fn p0_parse(name: &str, path: &Path) -> CompileResult<(ParsedCrate, ResolveContext<'static>)> {
+    let mut context = ResolveContext::new_leak(TyConfig { ptr_size: 8 });
 
-    let source_file = parser.parse_source_file()?;
-    let mut resolve = ResolveContext::new_leak(TyConfig { ptr_size: 8 });
-    let root_id = resolve.add_root_module(Symbol::insert(name))?;
+    let root_id = context.add_root_module(Symbol::insert(name))?;
+    let root_paths = ModulePaths::for_root(path)?;
 
-    for decl in source_file.decls.iter() {
-        match &decl.kind {
-            DeclKind::Item(item_decl) => {
-                match &item_decl.item {
-                    Item::Module(_module_item) => {
-                        let _item_id = resolve.add_module(
-                            root_id,
-                            decl.is_exported,
-                            item_decl.ident.symbol,
-                        )?;
+    let mut file_module_queue = VecDeque::<(ModuleId, ModulePaths)>::new();
+    file_module_queue.push_back((root_id, root_paths));
+
+    let mut parsed_crate = ParsedCrate::default();
+
+    while let Some((module_id, module_paths)) = file_module_queue.pop_front() {
+        let source_file = SourceFile::from_paths(module_paths)?;
+        let module = cool_parser::parse_module(&source_file.source)?;
+
+        let mut modules = VecDeque::<(ModuleId, Module)>::new();
+        modules.push_back((module_id, module));
+
+        while let Some((module_id, module)) = modules.pop_front() {
+            for decl in module.decls {
+                match decl.kind {
+                    DeclKind::Item(item_decl) => {
+                        match item_decl.item {
+                            Item::Module(module) => {
+                                let module_id = context.add_module(
+                                    module_id,
+                                    decl.is_exported,
+                                    item_decl.ident.symbol,
+                                )?;
+
+                                match module.kind {
+                                    ModuleKind::Extern => {
+                                        let module_paths = ModulePaths::for_child(
+                                            &source_file.paths.child_dir,
+                                            item_decl.ident.symbol.as_str(),
+                                        )?;
+
+                                        file_module_queue.push_back((module_id, module_paths));
+                                    }
+                                    ModuleKind::Inline(module) => {
+                                        modules.push_back((module_id, module));
+                                    }
+                                }
+                            }
+                            item => println!("{:#?}", item),
+                        }
                     }
-                    Item::Fn(_fn_item) => {
-                        let _item_id = resolve.add_global_binding(
-                            root_id,
-                            decl.is_exported,
-                            Mutability::Const,
-                            item_decl.ident.symbol,
-                        )?;
-                    }
-                    item => todo!("{:#?}", item),
+                    decl => println!("{:#?}", decl),
                 }
             }
-            DeclKind::Use(_use_decl) => {
-                // Empty
-            }
         }
+
+        parsed_crate.files.push(source_file);
     }
 
-    todo!()
+    Ok((parsed_crate, context))
 }

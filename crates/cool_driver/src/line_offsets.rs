@@ -5,9 +5,9 @@ pub struct LineOffsets {
 
 impl LineOffsets {
     #[inline]
-    pub fn add_line(&mut self, offset: u32) {
-        debug_assert!(self.offsets.last().filter(|&&o| o >= offset).is_none());
-        self.offsets.push(offset);
+    pub fn add_line(&mut self, line_length: u32) {
+        let prev_offset = self.offsets.last().copied().unwrap_or(0);
+        self.offsets.push(prev_offset + line_length);
     }
 
     #[inline]

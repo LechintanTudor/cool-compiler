@@ -1,8 +1,8 @@
 mod decl;
 mod expr;
 mod item;
+mod module;
 mod op;
-mod source_file;
 mod stmt;
 mod ty;
 mod utils;
@@ -10,8 +10,8 @@ mod utils;
 pub use self::decl::*;
 pub use self::expr::*;
 pub use self::item::*;
+pub use self::module::*;
 pub use self::op::*;
-pub use self::source_file::*;
 pub use self::stmt::*;
 pub use self::ty::*;
 pub use self::utils::*;
@@ -20,17 +20,17 @@ use cool_lexer::{Token, TokenKind, TokenStream};
 use cool_span::Span;
 use std::slice;
 
+#[inline]
+pub fn parse_module(source: &str) -> ParseResult<Module> {
+    Parser::from(source).parse_module()
+}
+
 #[derive(Clone, Debug)]
 pub struct Parser<'a> {
     tokens: TokenStream<'a>,
 }
 
 impl<'a> Parser<'a> {
-    #[inline]
-    pub fn new(tokens: TokenStream<'a>) -> Self {
-        Self { tokens }
-    }
-
     #[inline]
     pub fn bump(&mut self) -> Token {
         self.tokens.next_lang()
@@ -100,5 +100,21 @@ impl<'a> Parser<'a> {
             found: self.peek_any(),
             expected,
         })
+    }
+}
+
+impl<'a> From<&'a str> for Parser<'a> {
+    #[inline]
+    fn from(source: &'a str) -> Self {
+        Self {
+            tokens: TokenStream::new(source),
+        }
+    }
+}
+
+impl<'a> From<TokenStream<'a>> for Parser<'a> {
+    #[inline]
+    fn from(tokens: TokenStream<'a>) -> Self {
+        Self { tokens }
     }
 }

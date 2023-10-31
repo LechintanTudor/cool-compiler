@@ -16,9 +16,14 @@ pub use self::token_stream::*;
 
 use cool_span::Span;
 
+#[allow(non_upper_case_globals)]
 pub mod tk {
     pub use crate::punct_tk::*;
     pub use crate::sym_tk::*;
+
+    use crate::TokenKind;
+
+    pub const eof: TokenKind = TokenKind::Eof;
 }
 
 #[derive(Clone, Debug)]

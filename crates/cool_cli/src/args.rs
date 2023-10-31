@@ -1,7 +1,8 @@
 use clap::Parser;
+use std::path::PathBuf;
 
 #[derive(Parser)]
 pub struct Args {
-    pub name: String,
-    pub path: String,
+    pub crate_name: String,
+    pub crate_path: PathBuf,
 }

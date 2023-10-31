@@ -11,3 +11,4 @@ cool_resolve = { path = "../cool_resolve" }
 cool_span = { path = "../cool_span" }
 
 anyhow = { workspace = true }
+derive_more = { workspace = true }
