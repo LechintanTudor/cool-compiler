@@ -1,20 +1,21 @@
 use crate::ItemId;
+use cool_lexer::Symbol;
 use derive_more::{Display, Error};
+use smallvec::SmallVec;
 
 pub type ItemResult<T> = Result<T, ItemError>;
 
 #[derive(Clone, Error, Debug, Display)]
-#[display("Item error: {}", self.kind)]
-pub struct ItemError {
-    pub item_id: ItemId,
-    pub kind: ItemErrorKind,
-}
-
-#[derive(Clone, Debug, Display)]
-pub enum ItemErrorKind {
+pub enum ItemError {
     #[display("Item already exists")]
-    AlreadyExists,
+    AlreadyExists { item_id: ItemId },
 
     #[display("Item not found")]
-    NotFound,
+    NotFound { path: SmallVec<[Symbol; 4]> },
+
+    #[display("Item is not a module")]
+    NotModule { item_id: ItemId },
+
+    #[display("Item is not a module")]
+    NotAccessible { item_id: ItemId },
 }

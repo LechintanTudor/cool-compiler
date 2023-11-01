@@ -58,10 +58,20 @@ where
     I: CoolIndex,
     T: ?Sized,
 {
-    #[inline]
     #[must_use]
     pub fn get(&self, index: I) -> Option<&'a T> {
         self.values.get(index.get_index()).copied()
+    }
+}
+
+impl<'a, I, T> Arena<'a, I, T>
+where
+    I: CoolIndex,
+    T: ?Sized + Eq + Hash,
+{
+    #[must_use]
+    pub fn get_index(&self, value: &T) -> Option<I> {
+        self.indexes.get(value).copied()
     }
 }
 

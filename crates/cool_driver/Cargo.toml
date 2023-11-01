@@ -12,3 +12,4 @@ cool_span = { path = "../cool_span" }
 
 anyhow = { workspace = true }
 derive_more = { workspace = true }
+smallvec = { workspace = true }

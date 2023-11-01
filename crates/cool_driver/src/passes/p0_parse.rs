@@ -4,8 +4,18 @@ use crate::{
 use cool_lexer::Symbol;
 use cool_parser::{DeclKind, Item, Module, ModuleKind};
 use cool_resolve::{ModuleId, Mutability, ResolveContext, TyConfig};
+use cool_span::Span;
+use smallvec::SmallVec;
 use std::collections::VecDeque;
 use std::path::Path;
+
+struct Import {
+    pub span: Span,
+    pub module_id: ModuleId,
+    pub is_exported: bool,
+    pub path: SmallVec<[Symbol; 4]>,
+    pub alias: Option<Symbol>,
+}
 
 pub fn p0_parse(name: &str, path: &Path) -> CompileResult<(ParsedCrate, ResolveContext<'static>)> {
     let mut context = ResolveContext::new_leak(TyConfig { ptr_size: 8 });
@@ -17,6 +27,7 @@ pub fn p0_parse(name: &str, path: &Path) -> CompileResult<(ParsedCrate, ResolveC
     file_module_queue.push_back((root_id, root_paths));
 
     let mut parsed_crate = ParsedCrate::default();
+    let mut imports = VecDeque::<Import>::new();
 
     while let Some((module_id, module_paths)) = file_module_queue.pop_front() {
         let source_file = SourceFile::from_paths(module_paths)?;
@@ -66,7 +77,7 @@ pub fn p0_parse(name: &str, path: &Path) -> CompileResult<(ParsedCrate, ResolveC
                                     item_id,
                                     ty: item_decl.ty,
                                     item: struct_item,
-                                })
+                                });
                             }
                             Item::Fn(fn_item) => {
                                 let item_id = context.add_global_binding(
@@ -99,11 +110,26 @@ pub fn p0_parse(name: &str, path: &Path) -> CompileResult<(ParsedCrate, ResolveC
                                     item_id,
                                     ty: item_decl.ty,
                                     item: alias,
-                                })
+                                });
                             }
                         }
                     }
-                    decl => println!("{:#?}", decl),
+                    DeclKind::Use(use_decl) => {
+                        let path = use_decl
+                            .path
+                            .idents
+                            .iter()
+                            .map(|ident| ident.symbol)
+                            .collect();
+
+                        imports.push_back(Import {
+                            span: use_decl.span,
+                            module_id,
+                            is_exported: decl.is_exported,
+                            path,
+                            alias: use_decl.alias.map(|ident| ident.symbol),
+                        });
+                    }
                 }
             }
         }
