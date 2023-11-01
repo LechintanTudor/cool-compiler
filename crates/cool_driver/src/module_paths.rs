@@ -55,7 +55,7 @@ impl ModulePaths {
     fn for_child_same_dir(parent_child_dir: &Path, module_name: &str) -> Option<ModulePaths> {
         let mut path = PathBuf::new();
         path.push(parent_child_dir);
-        path.push(format!("{module_name}.cl"));
+        path.push(format!("{module_name}.{EXTENSION}"));
 
         if !path.exists() {
             return None;
