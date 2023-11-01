@@ -30,7 +30,7 @@ pub struct ModuleElem {
 
 impl ResolveContext<'_> {
     pub fn add_root_module(&mut self, symbol: Symbol) -> ItemResult<ModuleId> {
-        let item_id = self.add_path(&[symbol])?;
+        let item_id = self.add_raw_path(&[symbol])?;
         let module_id = self.modules.push(ModuleItem::new(item_id));
         self.items.insert(item_id, module_id.into());
         Ok(module_id)
@@ -42,18 +42,9 @@ impl ResolveContext<'_> {
         is_exported: bool,
         symbol: Symbol,
     ) -> ItemResult<ModuleId> {
-        let item_id = self.add_path(&self.make_path(parent_id, symbol))?;
+        let item_id = self.add_path(parent_id, symbol)?;
         let module_id = self.modules.push(ModuleItem::new(item_id));
-
-        self.items.insert(item_id, module_id.into());
-        self.modules[parent_id].elems.insert(
-            symbol,
-            ModuleElem {
-                is_exported,
-                item_id,
-            },
-        );
-
+        self.add_item(module_id, is_exported, symbol, item_id, module_id);
         Ok(module_id)
     }
 }

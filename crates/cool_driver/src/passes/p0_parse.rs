@@ -1,7 +1,9 @@
-use crate::{CompileResult, ModulePaths, ParsedCrate, SourceFile};
+use crate::{
+    CompileResult, ModulePaths, ParsedAlias, ParsedCrate, ParsedFn, ParsedStruct, SourceFile,
+};
 use cool_lexer::Symbol;
 use cool_parser::{DeclKind, Item, Module, ModuleKind};
-use cool_resolve::{ModuleId, ResolveContext, TyConfig};
+use cool_resolve::{ModuleId, Mutability, ResolveContext, TyConfig};
 use std::collections::VecDeque;
 use std::path::Path;
 
@@ -19,6 +21,7 @@ pub fn p0_parse(name: &str, path: &Path) -> CompileResult<(ParsedCrate, ResolveC
     while let Some((module_id, module_paths)) = file_module_queue.pop_front() {
         let source_file = SourceFile::from_paths(module_paths)?;
         let module = cool_parser::parse_module(&source_file.source)?;
+        let source_id = parsed_crate.files.push(source_file);
 
         let mut modules = VecDeque::<(ModuleId, Module)>::new();
         modules.push_back((module_id, module));
@@ -38,7 +41,7 @@ pub fn p0_parse(name: &str, path: &Path) -> CompileResult<(ParsedCrate, ResolveC
                                 match module.kind {
                                     ModuleKind::Extern => {
                                         let module_paths = ModulePaths::for_child(
-                                            &source_file.paths.child_dir,
+                                            &parsed_crate.files[source_id].paths.child_dir,
                                             item_decl.ident.symbol.as_str(),
                                         )?;
 
@@ -49,15 +52,61 @@ pub fn p0_parse(name: &str, path: &Path) -> CompileResult<(ParsedCrate, ResolveC
                                     }
                                 }
                             }
-                            item => println!("{:#?}", item),
+                            Item::Struct(struct_item) => {
+                                let item_id = context.add_struct(
+                                    module_id,
+                                    decl.is_exported,
+                                    item_decl.ident.symbol,
+                                )?;
+
+                                parsed_crate.structs.push(ParsedStruct {
+                                    source_id,
+                                    span: struct_item.span,
+                                    module_id,
+                                    item_id,
+                                    ty: item_decl.ty,
+                                    item: struct_item,
+                                })
+                            }
+                            Item::Fn(fn_item) => {
+                                let item_id = context.add_global_binding(
+                                    module_id,
+                                    decl.is_exported,
+                                    Mutability::Const,
+                                    item_decl.ident.symbol,
+                                )?;
+
+                                parsed_crate.fns.push(ParsedFn {
+                                    source_id,
+                                    span: fn_item.span,
+                                    module_id,
+                                    item_id,
+                                    ty: item_decl.ty,
+                                    item: fn_item,
+                                });
+                            }
+                            Item::Alias(alias) => {
+                                let item_id = context.add_alias(
+                                    module_id,
+                                    decl.is_exported,
+                                    item_decl.ident.symbol,
+                                )?;
+
+                                parsed_crate.aliases.push(ParsedAlias {
+                                    source_id,
+                                    span: alias.span,
+                                    module_id,
+                                    item_id,
+                                    ty: item_decl.ty,
+                                    item: alias,
+                                })
+                            }
                         }
                     }
                     decl => println!("{:#?}", decl),
                 }
             }
         }
-
-        parsed_crate.files.push(source_file);
     }
 
     Ok((parsed_crate, context))

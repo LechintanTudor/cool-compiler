@@ -1,11 +1,13 @@
 mod ty_config;
 mod ty_def;
 mod ty_error;
+mod ty_factory;
 mod ty_kind;
 
 pub use self::ty_config::*;
 pub use self::ty_def::*;
 pub use self::ty_error::*;
+pub use self::ty_factory::*;
 pub use self::ty_kind::*;
 
 use crate::ResolveContext;
@@ -50,27 +52,27 @@ impl ResolveContext<'_> {
         debug_assert!(unit_def.is_ok());
 
         // Signed integers
-        self.insert_primitive_ty(sym::i8, tys::i8, IntTy::I8);
-        self.insert_primitive_ty(sym::i16, tys::i16, IntTy::I16);
-        self.insert_primitive_ty(sym::i32, tys::i32, IntTy::I32);
-        self.insert_primitive_ty(sym::i64, tys::i64, IntTy::I64);
-        self.insert_primitive_ty(sym::i128, tys::i128, IntTy::I128);
-        self.insert_primitive_ty(sym::isize, tys::isize, IntTy::Isize);
+        self.add_primitive_ty(sym::i8, tys::i8, IntTy::I8);
+        self.add_primitive_ty(sym::i16, tys::i16, IntTy::I16);
+        self.add_primitive_ty(sym::i32, tys::i32, IntTy::I32);
+        self.add_primitive_ty(sym::i64, tys::i64, IntTy::I64);
+        self.add_primitive_ty(sym::i128, tys::i128, IntTy::I128);
+        self.add_primitive_ty(sym::isize, tys::isize, IntTy::Isize);
 
         // Unsigned integers
-        self.insert_primitive_ty(sym::u8, tys::u8, IntTy::U8);
-        self.insert_primitive_ty(sym::u16, tys::u16, IntTy::U16);
-        self.insert_primitive_ty(sym::u32, tys::u32, IntTy::U32);
-        self.insert_primitive_ty(sym::u64, tys::u64, IntTy::U64);
-        self.insert_primitive_ty(sym::u128, tys::u128, IntTy::U128);
-        self.insert_primitive_ty(sym::usize, tys::usize, IntTy::Usize);
+        self.add_primitive_ty(sym::u8, tys::u8, IntTy::U8);
+        self.add_primitive_ty(sym::u16, tys::u16, IntTy::U16);
+        self.add_primitive_ty(sym::u32, tys::u32, IntTy::U32);
+        self.add_primitive_ty(sym::u64, tys::u64, IntTy::U64);
+        self.add_primitive_ty(sym::u128, tys::u128, IntTy::U128);
+        self.add_primitive_ty(sym::usize, tys::usize, IntTy::Usize);
 
         // Floats
-        self.insert_primitive_ty(sym::f32, tys::f32, FloatTy::F32);
-        self.insert_primitive_ty(sym::f64, tys::f64, FloatTy::F64);
+        self.add_primitive_ty(sym::f32, tys::f32, FloatTy::F32);
+        self.add_primitive_ty(sym::f64, tys::f64, FloatTy::F64);
     }
 
-    fn insert_primitive_ty<K>(&mut self, symbol: Symbol, ty_id: TyId, kind: K)
+    fn add_primitive_ty<K>(&mut self, symbol: Symbol, ty_id: TyId, kind: K)
     where
         K: Into<TyKind>,
     {

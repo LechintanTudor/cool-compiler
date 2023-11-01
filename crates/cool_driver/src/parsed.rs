@@ -3,6 +3,7 @@ use cool_collections::{define_index_newtype, VecMap};
 use cool_parser::{AliasItem, FnExpr, StructItem, Ty};
 use cool_resolve::{ItemId, ModuleId};
 use cool_span::Span;
+use std::fmt;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
@@ -20,7 +21,7 @@ pub struct ParsedCrate {
     pub fns: Vec<ParsedFn>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct SourceFile {
     pub paths: ModulePaths,
     pub source: String,
@@ -52,12 +53,20 @@ impl SourceFile {
     }
 }
 
+impl fmt::Debug for SourceFile {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SourceFile")
+            .field("paths", &self.paths)
+            .finish_non_exhaustive()
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct ParsedItem<I> {
     pub source_id: SourceId,
     pub span: Span,
     pub module_id: ModuleId,
     pub item_id: ItemId,
-    pub ty: Option<Ty>,
+    pub ty: Option<Box<Ty>>,
     pub item: I,
 }
