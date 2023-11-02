@@ -44,7 +44,7 @@ impl ResolveContext<'_> {
     ) -> ItemResult<ModuleId> {
         let item_id = self.add_path(parent_id, symbol)?;
         let module_id = self.modules.push(ModuleItem::new(item_id));
-        self.add_item(module_id, is_exported, symbol, item_id, module_id);
+        self.add_item(parent_id, is_exported, symbol, item_id, module_id);
         Ok(module_id)
     }
 }

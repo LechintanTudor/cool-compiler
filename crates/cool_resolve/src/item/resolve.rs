@@ -5,18 +5,17 @@ impl ResolveContext<'_> {
     pub fn resolve_path(&self, module_id: ModuleId, path: &[Symbol]) -> ItemResult<ItemId> {
         let module = &self.modules[module_id];
 
-        let mut current_path: &[Symbol] = if path[0] == sym::kw_crate {
-            &self.get_module_path(module_id)[..1]
+        let (mut current_path, remaining_path) = if path[0] == sym::kw_crate {
+            (&self.get_module_path(module_id)[..1], &path[1..])
         } else if path[0] == sym::kw_super {
-            let path = self.get_module_path(module_id);
-            &path[..(path.len() - 1)]
-        } else if path.len() >= 2 && self[module_id].elems.contains_key(&path[1]) {
-            self.get_module_path(module_id)
+            (pop_from_path(self.get_module_path(module_id)), &path[1..])
+        } else if path.len() >= 2 && module.elems.contains_key(&path[0]) {
+            (self.get_module_path(module_id), path)
         } else {
-            &path[..1]
+            (Default::default(), path)
         };
 
-        for &symbol in &path[1..] {
+        for &symbol in remaining_path {
             if symbol == sym::kw_super {
                 if current_path.is_empty() {
                     return Err(ItemError::TooManySuper);
@@ -66,4 +65,10 @@ impl ResolveContext<'_> {
         let child_path = self.get_path(item_id);
         child_path.starts_with(parent_path)
     }
+}
+
+#[inline]
+#[must_use]
+fn pop_from_path(path: &[Symbol]) -> &[Symbol] {
+    &path[..(path.len() - 1)]
 }

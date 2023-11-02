@@ -1,6 +1,7 @@
 use crate::{
     CompileResult, ModulePaths, ParsedAlias, ParsedCrate, ParsedFn, ParsedStruct, SourceFile,
 };
+use cool_derive::Section;
 use cool_lexer::Symbol;
 use cool_parser::{DeclKind, Item, Module, ModuleKind};
 use cool_resolve::{ModuleId, Mutability, ResolveContext, TyConfig};
@@ -9,6 +10,7 @@ use smallvec::SmallVec;
 use std::collections::VecDeque;
 use std::path::Path;
 
+#[derive(Clone, Section, Debug)]
 struct Import {
     pub span: Span,
     pub module_id: ModuleId,
@@ -17,8 +19,12 @@ struct Import {
     pub alias: Option<Symbol>,
 }
 
-pub fn p0_parse(name: &str, path: &Path) -> CompileResult<(ParsedCrate, ResolveContext<'static>)> {
-    let mut context = ResolveContext::new_leak(TyConfig { ptr_size: 8 });
+pub fn p0_parse(
+    name: &str,
+    path: &Path,
+    ty_config: TyConfig,
+) -> CompileResult<(ParsedCrate, ResolveContext<'static>)> {
+    let mut context = ResolveContext::new_leak(ty_config);
 
     let root_id = context.add_root_module(Symbol::insert(name))?;
     let root_paths = ModulePaths::for_root(path)?;
@@ -131,6 +137,34 @@ pub fn p0_parse(name: &str, path: &Path) -> CompileResult<(ParsedCrate, ResolveC
                         });
                     }
                 }
+            }
+        }
+    }
+
+    let mut made_progress = true;
+
+    'import_loop: while made_progress {
+        let imports_len = imports.len();
+        made_progress = false;
+
+        for _ in 0..imports_len {
+            let Some(import) = imports.pop_front() else {
+                break 'import_loop;
+            };
+
+            let added_import = context
+                .add_import(
+                    import.module_id,
+                    import.is_exported,
+                    &import.path,
+                    import.alias,
+                )
+                .is_ok();
+
+            if added_import {
+                made_progress = true;
+            } else {
+                imports.push_back(import);
             }
         }
     }
