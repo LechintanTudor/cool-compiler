@@ -6,6 +6,7 @@ mod block_expr;
 mod deref_expr;
 mod fn_call_expr;
 mod fn_expr;
+mod for_expr;
 mod if_expr;
 mod index_expr;
 mod literal_expr;
@@ -26,6 +27,7 @@ pub use self::block_expr::*;
 pub use self::deref_expr::*;
 pub use self::fn_call_expr::*;
 pub use self::fn_expr::*;
+pub use self::for_expr::*;
 pub use self::if_expr::*;
 pub use self::index_expr::*;
 pub use self::literal_expr::*;
@@ -53,6 +55,7 @@ pub enum Expr {
     Deref(DerefExpr),
     Fn(FnExpr),
     FnCall(FnCallExpr),
+    For(ForExpr),
     Ident(Ident),
     If(IfExpr),
     Index(IndexExpr),
@@ -72,7 +75,7 @@ impl Expr {
     pub fn is_promotable_to_stmt(&self) -> bool {
         matches!(
             self,
-            Self::Block(_) | Self::If(_) | Self::Loop(_) | Self::While(_)
+            Self::Block(_) | Self::For(_) | Self::If(_) | Self::Loop(_) | Self::While(_)
         )
     }
 }
@@ -197,6 +200,7 @@ impl Parser<'_> {
             tk::kw_if => self.parse_if_expr()?.into(),
             tk::kw_loop => self.parse_loop_expr()?.into(),
             tk::kw_while => self.parse_while_expr()?.into(),
+            tk::kw_for => self.parse_for_expr()?.into(),
             token => todo!("{:?}", token),
         };
 
