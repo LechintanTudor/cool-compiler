@@ -8,7 +8,7 @@ impl ResolveContext<'_> {
         let (mut current_path, remaining_path) = if path[0] == sym::kw_crate {
             (&self.get_module_path(module_id)[..1], &path[1..])
         } else if path[0] == sym::kw_super {
-            (pop_from_path(self.get_module_path(module_id)), &path[1..])
+            (parent_path(self.get_module_path(module_id)), &path[1..])
         } else if path[0] == sym::kw_self {
             (self.get_module_path(module_id), &path[1..])
         } else if path.len() >= 2 && module.elems.contains_key(&path[0]) {
@@ -71,6 +71,6 @@ impl ResolveContext<'_> {
 
 #[inline]
 #[must_use]
-fn pop_from_path(path: &[Symbol]) -> &[Symbol] {
+fn parent_path(path: &[Symbol]) -> &[Symbol] {
     &path[..(path.len() - 1)]
 }
