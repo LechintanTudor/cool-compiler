@@ -163,8 +163,8 @@ impl Parser<'_> {
         let peeked_token = self.peek();
 
         let mut expr = match peeked_token.kind {
-            TokenKind::Ident(_) => {
-                let ident = self.parse_ident()?;
+            TokenKind::Ident(_) | tk::kw_crate | tk::kw_super | tk::kw_self => {
+                let ident = self.parse_path_ident()?;
 
                 if matches!(self.peek_any().kind, TokenKind::Literal(_)) {
                     self.continue_parse_literal_expr(ident)?.into()

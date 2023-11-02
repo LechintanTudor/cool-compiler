@@ -34,6 +34,12 @@ impl Symbol {
 
     #[inline]
     #[must_use]
+    pub fn is_path_keyword(&self) -> bool {
+        [sym::kw_crate, sym::kw_super, sym::kw_self].contains(self)
+    }
+
+    #[inline]
+    #[must_use]
     pub fn is_bool_literal(&self) -> bool {
         self == &sym::kw_true || self == &sym::kw_false
     }

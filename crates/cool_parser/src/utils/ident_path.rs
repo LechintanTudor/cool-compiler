@@ -24,10 +24,10 @@ impl Section for IdentPath {
 impl Parser<'_> {
     pub fn parse_ident_path(&mut self) -> ParseResult<IdentPath> {
         let mut idents = IdentVec::new();
-        idents.push(self.parse_ident()?);
+        idents.push(self.parse_path_ident()?);
 
         while self.bump_if_eq(tk::dot).is_some() {
-            idents.push(self.parse_ident()?);
+            idents.push(self.parse_path_ident()?);
         }
 
         Ok(IdentPath { idents })

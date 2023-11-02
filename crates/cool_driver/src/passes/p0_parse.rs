@@ -169,5 +169,9 @@ pub fn p0_parse(
         }
     }
 
+    if !imports.is_empty() {
+        panic!("Unresolved imports: {:#?}", imports);
+    }
+
     Ok((parsed_crate, context))
 }
