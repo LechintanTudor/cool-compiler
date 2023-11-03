@@ -1,6 +1,6 @@
 use crate::ModulePathsError;
 use cool_parser::ParseError;
-use cool_resolve::ItemError;
+use cool_resolve::ResolveError;
 use derive_more::{Display, Error, From};
 use std::io::Error as IoError;
 
@@ -11,5 +11,5 @@ pub enum CompileError {
     Path(ModulePathsError),
     Io(IoError),
     Parse(ParseError),
-    Item(ItemError),
+    Resolve(ResolveError),
 }

@@ -1,8 +1,6 @@
 mod binding;
-mod scope_error;
 
 pub use self::binding::*;
-pub use self::scope_error::*;
 
 use crate::{ModuleId, ResolveContext};
 use cool_collections::define_index_newtype;

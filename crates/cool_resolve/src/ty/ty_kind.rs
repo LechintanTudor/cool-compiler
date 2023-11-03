@@ -1,4 +1,4 @@
-use crate::{ItemId, TyError, TyId};
+use crate::{ItemId, ResolveError, TyId};
 use cool_lexer::{sym, Symbol};
 use derive_more::From;
 use smallvec::SmallVec;
@@ -104,14 +104,14 @@ pub enum FnAbi {
 }
 
 impl TryFrom<Symbol> for FnAbi {
-    type Error = TyError;
+    type Error = ResolveError;
 
     #[inline]
     fn try_from(abi: Symbol) -> Result<Self, Self::Error> {
         let abi = match abi {
             sym::Cool => FnAbi::Cool,
             sym::C => FnAbi::C,
-            _ => return Err(TyError::UnknownAbi { abi }),
+            _ => return Err(ResolveError::FnAbiIsUnknown { abi }),
         };
 
         Ok(abi)

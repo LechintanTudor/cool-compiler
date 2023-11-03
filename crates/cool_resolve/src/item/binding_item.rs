@@ -1,4 +1,4 @@
-use crate::{tys, Binding, ItemId, ItemResult, ModuleId, Mutability, ResolveContext};
+use crate::{tys, Binding, ItemId, ModuleId, Mutability, ResolveContext, ResolveResult};
 use cool_lexer::Symbol;
 
 impl ResolveContext<'_> {
@@ -8,7 +8,7 @@ impl ResolveContext<'_> {
         is_exported: bool,
         mutability: Mutability,
         symbol: Symbol,
-    ) -> ItemResult<ItemId> {
+    ) -> ResolveResult<ItemId> {
         let item_id = self.add_path(module_id, symbol)?;
         let binding_id = self.bindings.push(Binding {
             symbol,

@@ -1,4 +1,4 @@
-use crate::{ItemError, ItemResult, ModuleElem, ModuleId, ResolveContext};
+use crate::{ModuleElem, ModuleId, ResolveContext, ResolveError, ResolveResult};
 use cool_lexer::Symbol;
 
 impl ResolveContext<'_> {
@@ -8,13 +8,15 @@ impl ResolveContext<'_> {
         is_exported: bool,
         path: &[Symbol],
         alias: Option<Symbol>,
-    ) -> ItemResult<()> {
+    ) -> ResolveResult<()> {
         let item_id = self.resolve_path(module_id, path)?;
         let symbol = alias.unwrap_or(*path.last().unwrap());
         let module = &mut self.modules[module_id];
 
         if module.elems.contains_key(&symbol) {
-            return Err(ItemError::AlreadyExists { item_id });
+            return Err(ResolveError::SymbolAlreadyExists {
+                symbol: *path.last().unwrap(),
+            });
         }
 
         module.elems.insert(

@@ -1,7 +1,6 @@
 mod alias_item;
 mod binding_item;
 mod import;
-mod item_error;
 mod item_kind;
 mod module_item;
 mod resolve;
@@ -10,13 +9,12 @@ mod struct_item;
 pub use self::alias_item::*;
 pub use self::binding_item::*;
 pub use self::import::*;
-pub use self::item_error::*;
 pub use self::item_kind::*;
 pub use self::module_item::*;
 pub use self::resolve::*;
 pub use self::struct_item::*;
 
-use crate::ResolveContext;
+use crate::{ResolveContext, ResolveError, ResolveResult};
 use cool_collections::define_index_newtype;
 use cool_lexer::Symbol;
 use smallvec::SmallVec;
@@ -37,18 +35,20 @@ impl ResolveContext<'_> {
         &self.paths[self.modules[module_id].item_id]
     }
 
-    fn add_path(&mut self, module_id: ModuleId, symbol: Symbol) -> ItemResult<ItemId> {
+    fn add_path(&mut self, module_id: ModuleId, symbol: Symbol) -> ResolveResult<ItemId> {
         let module = &self.modules[module_id];
         let mut path: SmallVec<[Symbol; 12]> = self.paths[module.item_id].into();
         path.push(symbol);
         self.add_raw_path(&path)
     }
 
-    fn add_raw_path(&mut self, path: &[Symbol]) -> ItemResult<ItemId> {
+    fn add_raw_path(&mut self, path: &[Symbol]) -> ResolveResult<ItemId> {
         let item_id = self.paths.insert_slice(path);
 
         if self.items.contains_key(&item_id) {
-            return Err(ItemError::AlreadyExists { item_id });
+            return Err(ResolveError::SymbolAlreadyExists {
+                symbol: *path.last().unwrap(),
+            });
         }
 
         Ok(item_id)

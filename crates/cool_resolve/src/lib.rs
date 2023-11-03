@@ -1,8 +1,10 @@
+mod error;
 mod expr;
 mod item;
 mod scope;
 mod ty;
 
+pub use self::error::*;
 pub use self::expr::*;
 pub use self::item::*;
 pub use self::scope::*;

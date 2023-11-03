@@ -1,4 +1,5 @@
 mod decl;
+mod error;
 mod expr;
 mod item;
 mod module;
@@ -8,6 +9,7 @@ mod ty;
 mod utils;
 
 pub use self::decl::*;
+pub use self::error::*;
 pub use self::expr::*;
 pub use self::item::*;
 pub use self::module::*;

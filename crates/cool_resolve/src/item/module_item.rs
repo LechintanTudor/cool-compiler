@@ -1,4 +1,4 @@
-use crate::{ItemId, ItemResult, ResolveContext};
+use crate::{ItemId, ResolveContext, ResolveResult};
 use ahash::AHashMap;
 use cool_collections::define_index_newtype;
 use cool_lexer::Symbol;
@@ -29,7 +29,7 @@ pub struct ModuleElem {
 }
 
 impl ResolveContext<'_> {
-    pub fn add_root_module(&mut self, symbol: Symbol) -> ItemResult<ModuleId> {
+    pub fn add_root_module(&mut self, symbol: Symbol) -> ResolveResult<ModuleId> {
         let item_id = self.add_raw_path(&[symbol])?;
         let module_id = self.modules.push(ModuleItem::new(item_id));
         self.items.insert(item_id, module_id.into());
@@ -41,7 +41,7 @@ impl ResolveContext<'_> {
         parent_id: ModuleId,
         is_exported: bool,
         symbol: Symbol,
-    ) -> ItemResult<ModuleId> {
+    ) -> ResolveResult<ModuleId> {
         let item_id = self.add_path(parent_id, symbol)?;
         let module_id = self.modules.push(ModuleItem::new(item_id));
         self.add_item(parent_id, is_exported, symbol, item_id, module_id);

@@ -1,16 +1,14 @@
 mod ty_config;
 mod ty_def;
-mod ty_error;
 mod ty_factory;
 mod ty_kind;
 
 pub use self::ty_config::*;
 pub use self::ty_def::*;
-pub use self::ty_error::*;
 pub use self::ty_factory::*;
 pub use self::ty_kind::*;
 
-use crate::ResolveContext;
+use crate::{ResolveContext, ResolveError, ResolveResult};
 use cool_collections::define_index_newtype;
 use cool_derive::define_tys;
 use cool_lexer::{sym, Symbol};
@@ -98,7 +96,7 @@ impl ResolveContext<'_> {
         debug_assert!(def.is_ok());
     }
 
-    fn define_ty(&mut self, ty_id: TyId) -> TyResult<&TyDef> {
+    fn define_ty(&mut self, ty_id: TyId) -> ResolveResult<&TyDef> {
         if self.ty_defs.contains_key(&ty_id) {
             return Ok(&self.ty_defs[&ty_id]);
         }
@@ -128,7 +126,7 @@ impl ResolveContext<'_> {
             TyKind::Ptr(_) | TyKind::ManyPtr(_) | TyKind::Fn(_) => {
                 TyDef::basic(self.ty_config.ptr_size)
             }
-            _ => return Err(TyError::CannotBeDefined),
+            _ => return Err(ResolveError::TyIsIncomplete { ty_id }),
         };
 
         self.ty_defs.insert(ty_id, def);
