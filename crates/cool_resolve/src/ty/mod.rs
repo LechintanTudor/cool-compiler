@@ -26,6 +26,8 @@ impl TyId {
 define_tys! {
     // Undefined types
     infer,
+    infer_number,
+
     alias,
     module,
 
@@ -51,6 +53,8 @@ impl ResolveContext<'_> {
     pub(crate) fn init_builtins(&mut self) {
         // Undefined
         debug_assert_eq!(self.tys.insert(InferTy::Any.into()), tys::infer);
+        debug_assert_eq!(self.tys.insert(InferTy::Number.into()), tys::infer_number);
+
         debug_assert_eq!(self.tys.insert(ItemTy::Alias.into()), tys::alias);
         debug_assert_eq!(self.tys.insert(ItemTy::Module.into()), tys::module);
 

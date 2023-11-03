@@ -25,6 +25,7 @@ pub enum TyKind {
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum InferTy {
     Any,
+    Number,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
