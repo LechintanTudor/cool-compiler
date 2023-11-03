@@ -7,3 +7,14 @@ pub enum ItemKind {
     Ty(TyId),
     Binding(BindingId),
 }
+
+impl ItemKind {
+    #[inline]
+    #[must_use]
+    pub fn try_as_ty(&self) -> Option<TyId> {
+        match self {
+            Self::Ty(ty_id) => Some(*ty_id),
+            _ => None,
+        }
+    }
+}

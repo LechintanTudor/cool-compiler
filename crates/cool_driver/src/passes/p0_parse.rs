@@ -1,5 +1,6 @@
 use crate::{
-    CompileResult, ModulePaths, ParsedAlias, ParsedCrate, ParsedFn, ParsedStruct, SourceFile,
+    CompileResult, ModulePaths, ParsedAlias, ParsedCrate, ParsedFn, ParsedLiteral, ParsedStruct,
+    SourceFile,
 };
 use cool_derive::Section;
 use cool_lexer::Symbol;
@@ -100,6 +101,23 @@ pub fn p0_parse(
                                     item_id,
                                     ty: item_decl.ty,
                                     item: fn_item,
+                                });
+                            }
+                            Item::Literal(literal) => {
+                                let item_id = context.add_global_binding(
+                                    module_id,
+                                    decl.is_exported,
+                                    Mutability::Const,
+                                    item_decl.ident.symbol,
+                                )?;
+
+                                parsed_crate.literals.push(ParsedLiteral {
+                                    source_id,
+                                    span: literal.span,
+                                    module_id,
+                                    item_id,
+                                    ty: item_decl.ty,
+                                    item: literal,
                                 });
                             }
                             Item::Alias(alias) => {

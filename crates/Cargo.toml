@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "cool_ast",
     "cool_collections",
     "cool_cli",
     "cool_derive",

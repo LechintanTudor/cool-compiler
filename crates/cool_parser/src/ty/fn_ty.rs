@@ -1,4 +1,4 @@
-use crate::{FnAbi, ParseResult, Parser, Ty};
+use crate::{FnAbiDecl, ParseResult, Parser, Ty};
 use cool_derive::Section;
 use cool_lexer::tk;
 use cool_span::{Section, Span};
@@ -6,7 +6,7 @@ use cool_span::{Section, Span};
 #[derive(Clone, Section, Debug)]
 pub struct FnTy {
     pub span: Span,
-    pub abi: Option<FnAbi>,
+    pub abi_decl: Option<FnAbiDecl>,
     pub params: FnTyParams,
     pub return_ty: Option<Box<Ty>>,
 }
@@ -21,8 +21,8 @@ pub struct FnTyParams {
 
 impl Parser<'_> {
     pub fn parse_fn_ty(&mut self) -> ParseResult<FnTy> {
-        let abi = (self.peek().kind == tk::kw_extern)
-            .then(|| self.parse_fn_abi())
+        let abi_decl = (self.peek().kind == tk::kw_extern)
+            .then(|| self.parse_fn_abi_decl())
             .transpose()?;
 
         let fn_token = self.bump_expect(&tk::kw_fn)?;
@@ -35,7 +35,10 @@ impl Parser<'_> {
             .transpose()?
             .map(Box::new);
 
-        let start_span = abi.as_ref().map(|abi| abi.span).unwrap_or(fn_token.span);
+        let start_span = abi_decl
+            .as_ref()
+            .map(|abi| abi.span)
+            .unwrap_or(fn_token.span);
 
         let end_span = return_ty
             .as_ref()
@@ -44,7 +47,7 @@ impl Parser<'_> {
 
         Ok(FnTy {
             span: start_span.to(end_span),
-            abi,
+            abi_decl,
             params,
             return_ty,
         })

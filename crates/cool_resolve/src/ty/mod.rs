@@ -17,9 +17,19 @@ use cool_lexer::{sym, Symbol};
 
 define_index_newtype!(TyId);
 
+impl TyId {
+    #[inline]
+    #[must_use]
+    pub fn is_defined(&self) -> bool {
+        ![tys::infer, tys::alias, tys::module].contains(self)
+    }
+}
+
 define_tys! {
-    // Inference types
+    // Undefined types
     infer,
+    alias,
+    module,
 
     // Defined types
     unit,
@@ -41,8 +51,10 @@ define_tys! {
 
 impl ResolveContext<'_> {
     pub(crate) fn init_builtins(&mut self) {
-        // Infer
-        self.tys.insert(InferTy::Any.into());
+        // Undefined
+        debug_assert_eq!(self.tys.insert(InferTy::Any.into()), tys::infer);
+        debug_assert_eq!(self.tys.insert(ItemTy::Alias.into()), tys::alias);
+        debug_assert_eq!(self.tys.insert(ItemTy::Module.into()), tys::module);
 
         // Unit
         let unit_ty_id = self.tys.insert(TyKind::Unit);

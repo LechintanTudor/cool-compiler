@@ -1,4 +1,4 @@
-use crate::{BlockExpr, FnAbi, ParseResult, Parser, Pattern, Ty};
+use crate::{BlockExpr, FnAbiDecl, ParseResult, Parser, Pattern, Ty};
 use cool_derive::Section;
 use cool_lexer::tk;
 use cool_span::{Section, Span};
@@ -6,7 +6,7 @@ use cool_span::{Section, Span};
 #[derive(Clone, Section, Debug)]
 pub struct FnExpr {
     pub span: Span,
-    pub abi: Option<FnAbi>,
+    pub abi: Option<FnAbiDecl>,
     pub params: FnExprParams,
     pub return_ty: Option<Box<Ty>>,
     pub body: Option<Box<BlockExpr>>,
@@ -30,7 +30,7 @@ pub struct FnExprParam {
 impl Parser<'_> {
     pub fn parse_fn_expr(&mut self) -> ParseResult<FnExpr> {
         let abi = (self.peek().kind == tk::kw_extern)
-            .then(|| self.parse_fn_abi())
+            .then(|| self.parse_fn_abi_decl())
             .transpose()?;
 
         self.bump_expect(&tk::kw_fn)?;

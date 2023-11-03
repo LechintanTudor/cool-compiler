@@ -4,13 +4,13 @@ use cool_lexer::{tk, LiteralKind, Symbol, TokenKind};
 use cool_span::Span;
 
 #[derive(Clone, Section, Debug)]
-pub struct FnAbi {
+pub struct FnAbiDecl {
     pub span: Span,
     pub abi: Option<Symbol>,
 }
 
 impl Parser<'_> {
-    pub fn parse_fn_abi(&mut self) -> ParseResult<FnAbi> {
+    pub fn parse_fn_abi_decl(&mut self) -> ParseResult<FnAbiDecl> {
         let extern_token = self.bump_expect(&tk::kw_extern)?;
 
         let (span, abi) = match as_str_literal(self.peek().kind) {
@@ -21,7 +21,7 @@ impl Parser<'_> {
             None => (extern_token.span, None),
         };
 
-        Ok(FnAbi { span, abi })
+        Ok(FnAbiDecl { span, abi })
     }
 }
 

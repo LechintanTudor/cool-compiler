@@ -6,15 +6,16 @@ pub use self::alias_item::*;
 pub use self::module_item::*;
 pub use self::struct_item::*;
 
-use crate::{FnExpr, ParseResult, Parser};
+use crate::{FnExpr, LiteralExpr, ParseResult, Parser};
 use cool_derive::Section;
-use cool_lexer::tk;
+use cool_lexer::{tk, TokenKind};
 use derive_more::From;
 
 #[derive(Clone, From, Section, Debug)]
 pub enum Item {
     Alias(AliasItem),
     Fn(FnExpr),
+    Literal(LiteralExpr),
     Module(ModuleItem),
     Struct(StructItem),
 }
@@ -26,6 +27,7 @@ impl Parser<'_> {
             tk::kw_extern | tk::kw_fn => self.parse_fn_expr()?.into(),
             tk::kw_module => self.parse_module_item()?.into(),
             tk::kw_struct => self.parse_struct_item()?.into(),
+            TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
             _ => {
                 return self.peek_error(&[
                     tk::kw_alias,

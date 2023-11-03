@@ -1,11 +1,13 @@
-use crate::{ItemId, TyId};
+use crate::{ItemId, TyError, TyId};
+use cool_lexer::{sym, Symbol};
 use derive_more::From;
 use smallvec::SmallVec;
 
 #[derive(Clone, PartialEq, Eq, Hash, From, Debug)]
 pub enum TyKind {
-    // Inference types
+    // Undefined types
     Infer(InferTy),
+    Item(ItemTy),
 
     // Defined types
     Unit,
@@ -23,6 +25,12 @@ pub enum TyKind {
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum InferTy {
     Any,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub enum ItemTy {
+    Alias,
+    Module,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -85,6 +93,7 @@ pub struct StructTy {
 pub struct FnTy {
     pub abi: FnAbi,
     pub param_tys: SmallVec<[TyId; 4]>,
+    pub is_variadic: bool,
     pub return_ty: TyId,
 }
 
@@ -92,4 +101,19 @@ pub struct FnTy {
 pub enum FnAbi {
     Cool,
     C,
+}
+
+impl TryFrom<Symbol> for FnAbi {
+    type Error = TyError;
+
+    #[inline]
+    fn try_from(abi: Symbol) -> Result<Self, Self::Error> {
+        let abi = match abi {
+            sym::Cool => FnAbi::Cool,
+            sym::C => FnAbi::C,
+            _ => return Err(TyError::UnknownAbi { abi }),
+        };
+
+        Ok(abi)
+    }
 }

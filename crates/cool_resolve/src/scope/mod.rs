@@ -50,6 +50,21 @@ impl ResolveContext<'_> {
             bindings: Default::default(),
         })
     }
+
+    #[must_use]
+    pub fn get_toplevel_module<S>(&self, scope: S) -> ModuleId
+    where
+        S: Into<Scope>,
+    {
+        let mut scope = scope.into();
+
+        loop {
+            match scope {
+                Scope::Frame(frame_id) => scope = self.frames[frame_id].parent,
+                Scope::Module(module_id) => break module_id,
+            }
+        }
+    }
 }
 
 impl Index<FrameId> for ResolveContext<'_> {

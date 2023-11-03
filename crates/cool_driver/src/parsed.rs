@@ -1,6 +1,6 @@
 use crate::{CompileError, CompileResult, LineOffsets, ModulePaths};
 use cool_collections::{define_index_newtype, VecMap};
-use cool_parser::{AliasItem, FnExpr, StructItem, Ty};
+use cool_parser::{AliasItem, FnExpr, LiteralExpr, StructItem, Ty};
 use cool_resolve::{ItemId, ModuleId};
 use cool_span::Span;
 use std::fmt;
@@ -12,6 +12,7 @@ define_index_newtype!(SourceId);
 pub type ParsedAlias = ParsedItem<AliasItem>;
 pub type ParsedStruct = ParsedItem<StructItem>;
 pub type ParsedFn = ParsedItem<FnExpr>;
+pub type ParsedLiteral = ParsedItem<LiteralExpr>;
 
 #[derive(Default, Debug)]
 pub struct ParsedCrate {
@@ -19,6 +20,7 @@ pub struct ParsedCrate {
     pub aliases: Vec<ParsedAlias>,
     pub structs: Vec<ParsedStruct>,
     pub fns: Vec<ParsedFn>,
+    pub literals: Vec<ParsedLiteral>,
 }
 
 #[derive(Clone)]
