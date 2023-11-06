@@ -6,6 +6,7 @@ mod paren_ty;
 mod ptr_ty;
 mod slice_ty;
 mod tuple_ty;
+mod variant_ty;
 
 pub use self::array_ty::*;
 pub use self::fn_ty::*;
@@ -15,6 +16,7 @@ pub use self::paren_ty::*;
 pub use self::ptr_ty::*;
 pub use self::slice_ty::*;
 pub use self::tuple_ty::*;
+pub use self::variant_ty::*;
 
 use crate::{IdentPath, ParseResult, Parser};
 use cool_derive::Section;
@@ -32,10 +34,21 @@ pub enum Ty {
     Ptr(PtrTy),
     Slice(SliceTy),
     Tuple(TupleTy),
+    Variant(VariantTy),
 }
 
 impl Parser<'_> {
     pub fn parse_ty(&mut self) -> ParseResult<Ty> {
+        let ty = self.parse_non_variant_ty()?;
+
+        if self.peek().kind == tk::or {
+            return Ok(self.continue_parse_variant_ty(ty)?.into());
+        };
+
+        Ok(ty)
+    }
+
+    pub fn parse_non_variant_ty(&mut self) -> ParseResult<Ty> {
         let ty = match self.peek().kind {
             tk::open_paren => self.parse_paren_or_tuple_ty()?,
             tk::open_bracket => {

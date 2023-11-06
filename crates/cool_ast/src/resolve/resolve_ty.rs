@@ -90,6 +90,9 @@ pub fn resolve_ty_inner(
 
             context.add_tuple_ty(elem_tys)
         }
+        Ty::Variant(variant_ty) => {
+            panic!("Unimplemented: {:#?}", variant_ty);
+        }
     };
 
     Ok(ty_id)
