@@ -1,7 +1,8 @@
-use crate::{CompileResult, ParsedAlias, ParsedCrate, ParsedLiteral};
+use crate::{CompileResult, ParsedAlias, ParsedCrate, ParsedLiteral, ParsedStruct};
 use cool_ast::{resolve_int_literal, resolve_ty};
 use cool_parser::LiteralKind;
-use cool_resolve::{tys, ConstItemValue, ResolveContext};
+use cool_resolve::{tys, ConstItemValue, ResolveContext, TyId};
+use smallvec::SmallVec;
 use std::collections::VecDeque;
 
 pub fn p1_define_items(
@@ -9,14 +10,25 @@ pub fn p1_define_items(
     context: &mut ResolveContext,
 ) -> CompileResult<()> {
     let mut made_progress = true;
+    let mut undefined_tys = Vec::new();
 
     while made_progress {
+        undefined_tys.clear();
+        undefined_tys.extend(context.iter_undefined_ty_ids());
+
         made_progress = false;
         made_progress |= define_items(&mut parsed_crate.aliases, context, define_alias);
         made_progress |= define_items(&mut parsed_crate.literals, context, define_literal);
+        made_progress |= define_items(&mut parsed_crate.structs, context, define_struct);
+        made_progress |= define_tys(&undefined_tys, context);
     }
 
-    if !parsed_crate.aliases.is_empty() || !parsed_crate.literals.is_empty() {
+    let is_fully_defined = parsed_crate.aliases.is_empty()
+        && parsed_crate.literals.is_empty()
+        && parsed_crate.structs.is_empty()
+        && undefined_tys.is_empty();
+
+    if !is_fully_defined {
         panic!("Failed to define items");
     }
 
@@ -43,6 +55,18 @@ where
             made_progress = true;
         } else {
             items.push_back(item);
+        }
+    }
+
+    made_progress
+}
+
+fn define_tys(ty_ids: &[TyId], context: &mut ResolveContext) -> bool {
+    let mut made_progress = false;
+
+    for &ty_id in ty_ids {
+        if context.define_ty(ty_id).is_ok() {
+            made_progress = true;
         }
     }
 
@@ -81,5 +105,22 @@ fn define_literal(literal: &ParsedLiteral, context: &mut ResolveContext) -> Comp
     };
 
     context.update_const(literal.item_id, tys::usize, ConstItemValue::Int(value));
+    Ok(())
+}
+
+fn define_struct(struct_item: &ParsedStruct, context: &mut ResolveContext) -> CompileResult<()> {
+    let ty_id = context[struct_item.item_id].try_as_ty().unwrap();
+
+    let fields = struct_item
+        .item
+        .fields
+        .iter()
+        .map(|field| {
+            resolve_ty(context, struct_item.module_id, &field.ty)
+                .map(|ty_id| (field.ident.symbol, ty_id))
+        })
+        .collect::<Result<SmallVec<[_; 8]>, _>>()?;
+
+    context.define_aggregate_ty(ty_id, &fields)?;
     Ok(())
 }

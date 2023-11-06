@@ -28,6 +28,13 @@ where
         }
     }
 
+    pub fn iter_indexes(&self) -> impl Iterator<Item = I>
+    where
+        I: CoolIndex,
+    {
+        (1..(self.values.len() as u32 + 1)).map(|i| CoolIndex::new(NonZeroU32::new(i).unwrap()))
+    }
+
     fn get_next_index(&self) -> I
     where
         I: CoolIndex,

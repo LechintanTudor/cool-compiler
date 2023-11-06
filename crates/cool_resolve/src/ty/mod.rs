@@ -12,14 +12,16 @@ use crate::{ResolveContext, ResolveError, ResolveResult};
 use cool_collections::define_index_newtype;
 use cool_derive::define_tys;
 use cool_lexer::{sym, Symbol};
+use smallvec::SmallVec;
+use std::fmt::Write;
 
 define_index_newtype!(TyId);
 
 impl TyId {
     #[inline]
     #[must_use]
-    pub fn is_defined(&self) -> bool {
-        ![tys::infer, tys::alias, tys::module].contains(self)
+    pub fn is_definable(&self) -> bool {
+        ![tys::infer, tys::infer_number, tys::alias, tys::module].contains(self)
     }
 }
 
@@ -100,12 +102,12 @@ impl ResolveContext<'_> {
         debug_assert!(def.is_ok());
     }
 
-    fn define_ty(&mut self, ty_id: TyId) -> ResolveResult<&TyDef> {
+    pub fn define_ty(&mut self, ty_id: TyId) -> ResolveResult<&TyDef> {
         if self.ty_defs.contains_key(&ty_id) {
             return Ok(&self.ty_defs[&ty_id]);
         }
 
-        let def = match &self.tys[ty_id] {
+        let def = match self.tys[ty_id] {
             TyKind::Unit => TyDef::basic(0),
             TyKind::Int(int_ty) => {
                 let size = match int_ty {
@@ -130,10 +132,55 @@ impl ResolveContext<'_> {
             TyKind::Ptr(_) | TyKind::ManyPtr(_) | TyKind::Fn(_) => {
                 TyDef::basic(self.ty_config.ptr_size)
             }
+            TyKind::Array(array_ty) => {
+                let elem_def = self.define_ty(array_ty.elem_ty)?;
+
+                TyDef {
+                    align: elem_def.align,
+                    size: elem_def.size * array_ty.len,
+                    kind: TyDefKind::Basic,
+                }
+            }
+            TyKind::Slice(slice_ty) => {
+                let fields = [
+                    (
+                        sym::ptr,
+                        self.add_many_ptr_ty(slice_ty.elem_ty, slice_ty.is_mutable),
+                    ),
+                    (sym::len, tys::usize),
+                ];
+
+                return self.define_aggregate_ty(ty_id, &fields);
+            }
+            TyKind::Tuple(ref tuple_ty) => {
+                let mut buffer = String::new();
+
+                let fields = tuple_ty
+                    .elem_tys
+                    .iter()
+                    .enumerate()
+                    .map(|(index, ty_id)| {
+                        write!(&mut buffer, "{index}").unwrap();
+                        let field_symbol = Symbol::insert(&buffer);
+                        buffer.clear();
+
+                        (field_symbol, *ty_id)
+                    })
+                    .collect::<SmallVec<[_; 8]>>();
+
+                return self.define_aggregate_ty(ty_id, &fields);
+            }
             _ => return Err(ResolveError::TyIsIncomplete { ty_id }),
         };
 
         self.ty_defs.insert(ty_id, def);
         Ok(&self.ty_defs[&ty_id])
+    }
+
+    #[inline]
+    pub fn iter_undefined_ty_ids(&self) -> impl Iterator<Item = TyId> + '_ {
+        self.tys
+            .iter_indexes()
+            .filter(|ty_id| ty_id.is_definable() && !self.ty_defs.contains_key(ty_id))
     }
 }
