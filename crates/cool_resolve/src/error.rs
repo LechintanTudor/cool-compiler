@@ -25,6 +25,12 @@ pub enum ResolveError {
     #[display("Item is not a type")]
     ItemNotTy { item_id: ItemId },
 
+    #[display("Item is not a constant")]
+    ItemNotConst { item_id: ItemId },
+
+    #[display("Item is not a constant usize")]
+    ItemNotUsize { item_id: ItemId },
+
     #[display("Type is incomplete")]
     TyIsIncomplete { ty_id: TyId },
 

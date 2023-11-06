@@ -24,6 +24,7 @@ pub struct ResolveContext<'a> {
     ty_defs: AHashMap<TyId, TyDef>,
     frames: VecMap<FrameId, Frame>,
     bindings: VecMap<BindingId, Binding>,
+    consts: VecMap<ConstId, ConstItem>,
     exprs: VecMap<ExprId, Expr>,
 }
 
@@ -38,6 +39,7 @@ impl<'a> ResolveContext<'a> {
             ty_defs: Default::default(),
             frames: Default::default(),
             bindings: Default::default(),
+            consts: Default::default(),
             exprs: Default::default(),
         };
 

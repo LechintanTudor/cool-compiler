@@ -3,6 +3,7 @@ use cool_collections::{define_index_newtype, VecMap};
 use cool_parser::{AliasItem, FnExpr, LiteralExpr, StructItem, Ty};
 use cool_resolve::{ItemId, ModuleId};
 use cool_span::Span;
+use std::collections::VecDeque;
 use std::fmt;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -17,10 +18,10 @@ pub type ParsedLiteral = ParsedItem<LiteralExpr>;
 #[derive(Default, Debug)]
 pub struct ParsedCrate {
     pub files: VecMap<SourceId, SourceFile>,
-    pub aliases: Vec<ParsedAlias>,
-    pub structs: Vec<ParsedStruct>,
-    pub fns: Vec<ParsedFn>,
-    pub literals: Vec<ParsedLiteral>,
+    pub aliases: VecDeque<ParsedAlias>,
+    pub structs: VecDeque<ParsedStruct>,
+    pub fns: VecDeque<ParsedFn>,
+    pub literals: VecDeque<ParsedLiteral>,
 }
 
 #[derive(Clone)]

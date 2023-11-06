@@ -8,9 +8,9 @@ use cool_resolve::TyConfig;
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    let (parsed_crate, _context) =
+    let (parsed_crate, mut context) =
         passes::p0_parse(&args.crate_name, &args.crate_path, TyConfig { ptr_size: 8 })?;
 
-    println!("{:#?}", parsed_crate);
+    passes::p1_define_items(parsed_crate, &mut context)?;
     Ok(())
 }

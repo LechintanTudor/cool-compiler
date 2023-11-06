@@ -1,5 +1,6 @@
 mod alias_item;
 mod binding_item;
+mod const_item;
 mod import;
 mod item_kind;
 mod module_item;
@@ -8,6 +9,7 @@ mod struct_item;
 
 pub use self::alias_item::*;
 pub use self::binding_item::*;
+pub use self::const_item::*;
 pub use self::import::*;
 pub use self::item_kind::*;
 pub use self::module_item::*;

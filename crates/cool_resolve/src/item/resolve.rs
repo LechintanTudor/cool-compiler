@@ -11,10 +11,10 @@ impl ResolveContext<'_> {
             (parent_path(self.get_module_path(module_id)), &path[1..])
         } else if path[0] == sym::kw_self {
             (self.get_module_path(module_id), &path[1..])
-        } else if path.len() >= 2 && module.elems.contains_key(&path[0]) {
+        } else if module.elems.contains_key(&path[0]) {
             (self.get_module_path(module_id), path)
         } else {
-            ([].as_slice(), path)
+            (&path[..1], &path[1..])
         };
 
         for &symbol in remaining_path {

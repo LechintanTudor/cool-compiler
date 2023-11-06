@@ -1,4 +1,5 @@
 use crate::ModulePathsError;
+use cool_ast::{AstError, LiteralError};
 use cool_parser::ParseError;
 use cool_resolve::ResolveError;
 use derive_more::{Display, Error, From};
@@ -12,4 +13,15 @@ pub enum CompileError {
     Io(IoError),
     Parse(ParseError),
     Resolve(ResolveError),
+    Literal(LiteralError),
+}
+
+impl From<AstError> for CompileError {
+    #[inline]
+    fn from(error: AstError) -> Self {
+        match error {
+            AstError::Resolve(e) => Self::Resolve(e),
+            AstError::Literal(e) => Self::Literal(e),
+        }
+    }
 }

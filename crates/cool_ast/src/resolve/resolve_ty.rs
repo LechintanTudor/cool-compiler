@@ -1,5 +1,5 @@
-use crate::AstResult;
-use cool_parser::{ItemKind, Ty};
+use crate::{resolve_int_literal, AstResult};
+use cool_parser::{ArrayLen, ItemKind, Ty};
 use cool_resolve::{tys, FnAbi, ModuleId, ResolveContext, ResolveError, Scope, TyId};
 use smallvec::SmallVec;
 
@@ -17,7 +17,9 @@ pub fn resolve_ty_inner(
 ) -> AstResult<TyId> {
     let ty_id = match ty {
         Ty::Array(array_ty) => {
-            todo!("{:#?}", array_ty);
+            let elem_ty = resolve_ty_inner(context, module_id, &array_ty.elem_ty)?;
+            let len = resolve_array_len(context, module_id, &array_ty.len)?;
+            context.add_array_ty(elem_ty, len)
         }
         Ty::Fn(fn_ty) => {
             let abi = match &fn_ty.abi_decl {
@@ -91,4 +93,37 @@ pub fn resolve_ty_inner(
     };
 
     Ok(ty_id)
+}
+
+fn resolve_array_len(
+    context: &ResolveContext,
+    module_id: ModuleId,
+    len: &ArrayLen,
+) -> AstResult<u64> {
+    let value = match len {
+        ArrayLen::Int(value) => {
+            let (value, _) = resolve_int_literal(value.value.as_str())?;
+            value as u64
+        }
+        ArrayLen::Path(path) => {
+            let path = path
+                .idents
+                .iter()
+                .map(|ident| ident.symbol)
+                .collect::<SmallVec<[_; 8]>>();
+
+            let item_id = context.resolve_path(module_id, &path)?;
+
+            let const_id = context[item_id]
+                .try_as_const()
+                .ok_or(ResolveError::ItemNotConst { item_id })?;
+
+            context[const_id]
+                .value
+                .try_as_int()
+                .ok_or(ResolveError::ItemNotUsize { item_id })? as u64
+        }
+    };
+
+    Ok(value)
 }

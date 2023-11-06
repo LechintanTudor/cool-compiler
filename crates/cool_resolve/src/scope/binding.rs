@@ -6,16 +6,9 @@ use std::ops::{Index, IndexMut};
 define_index_newtype!(BindingId);
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum Mutability {
-    Const,
-    Immutable,
-    Mutable,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct Binding {
     pub symbol: Symbol,
-    pub mutability: Mutability,
+    pub is_mutable: bool,
     pub ty_id: TyId,
 }
 

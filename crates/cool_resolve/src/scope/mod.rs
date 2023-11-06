@@ -5,12 +5,13 @@ pub use self::binding::*;
 use crate::{ModuleId, ResolveContext};
 use cool_collections::define_index_newtype;
 use cool_lexer::Symbol;
+use derive_more::From;
 use smallvec::SmallVec;
 use std::ops::{Index, IndexMut};
 
 define_index_newtype!(FrameId);
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, From, Debug)]
 pub enum Scope {
     Module(ModuleId),
     Frame(FrameId),

@@ -5,7 +5,7 @@ use crate::{
 use cool_derive::Section;
 use cool_lexer::Symbol;
 use cool_parser::{DeclKind, Item, Module, ModuleKind};
-use cool_resolve::{ModuleId, Mutability, ResolveContext, TyConfig};
+use cool_resolve::{tys, ConstItemValue, ModuleId, ResolveContext, TyConfig};
 use cool_span::Span;
 use smallvec::SmallVec;
 use std::collections::VecDeque;
@@ -77,7 +77,7 @@ pub fn p0_parse(
                                     item_decl.ident.symbol,
                                 )?;
 
-                                parsed_crate.structs.push(ParsedStruct {
+                                parsed_crate.structs.push_back(ParsedStruct {
                                     source_id,
                                     span: struct_item.span,
                                     module_id,
@@ -87,14 +87,15 @@ pub fn p0_parse(
                                 });
                             }
                             Item::Fn(fn_item) => {
-                                let item_id = context.add_global_binding(
+                                let item_id = context.add_const(
                                     module_id,
                                     decl.is_exported,
-                                    Mutability::Const,
                                     item_decl.ident.symbol,
+                                    tys::infer,
+                                    ConstItemValue::Fn,
                                 )?;
 
-                                parsed_crate.fns.push(ParsedFn {
+                                parsed_crate.fns.push_back(ParsedFn {
                                     source_id,
                                     span: fn_item.span,
                                     module_id,
@@ -104,14 +105,15 @@ pub fn p0_parse(
                                 });
                             }
                             Item::Literal(literal) => {
-                                let item_id = context.add_global_binding(
+                                let item_id = context.add_const(
                                     module_id,
                                     decl.is_exported,
-                                    Mutability::Const,
                                     item_decl.ident.symbol,
+                                    tys::infer,
+                                    ConstItemValue::Undefined,
                                 )?;
 
-                                parsed_crate.literals.push(ParsedLiteral {
+                                parsed_crate.literals.push_back(ParsedLiteral {
                                     source_id,
                                     span: literal.span,
                                     module_id,
@@ -127,7 +129,7 @@ pub fn p0_parse(
                                     item_decl.ident.symbol,
                                 )?;
 
-                                parsed_crate.aliases.push(ParsedAlias {
+                                parsed_crate.aliases.push_back(ParsedAlias {
                                     source_id,
                                     span: alias.span,
                                     module_id,
