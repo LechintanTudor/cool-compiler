@@ -183,4 +183,10 @@ impl ResolveContext<'_> {
             .iter_indexes()
             .filter(|ty_id| ty_id.is_definable() && !self.ty_defs.contains_key(ty_id))
     }
+
+    #[inline]
+    #[must_use]
+    pub fn get_ty_def(&self, ty_id: TyId) -> Option<&TyDef> {
+        self.ty_defs.get(&ty_id)
+    }
 }

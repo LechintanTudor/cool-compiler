@@ -1,7 +1,8 @@
-use crate::{ItemId, ResolveError, TyId};
+use crate::{ItemId, ResolveContext, ResolveError, TyId};
 use cool_lexer::{sym, Symbol};
 use derive_more::From;
 use smallvec::SmallVec;
+use std::ops::Index;
 
 #[derive(Clone, PartialEq, Eq, Hash, From, Debug)]
 pub enum TyKind {
@@ -20,6 +21,17 @@ pub enum TyKind {
     Tuple(TupleTy),
     Struct(StructTy),
     Fn(FnTy),
+}
+
+impl TyKind {
+    #[inline]
+    #[must_use]
+    pub fn try_as_fn(&self) -> Option<&FnTy> {
+        match self {
+            Self::Fn(fn_ty) => Some(fn_ty),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -116,5 +128,15 @@ impl TryFrom<Symbol> for FnAbi {
         };
 
         Ok(abi)
+    }
+}
+
+impl Index<TyId> for ResolveContext<'_> {
+    type Output = TyKind;
+
+    #[inline]
+    #[must_use]
+    fn index(&self, ty_id: TyId) -> &Self::Output {
+        &self.tys[ty_id]
     }
 }

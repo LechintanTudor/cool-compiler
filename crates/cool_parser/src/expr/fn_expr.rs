@@ -6,7 +6,7 @@ use cool_span::{Section, Span};
 #[derive(Clone, Section, Debug)]
 pub struct FnExpr {
     pub span: Span,
-    pub abi: Option<FnAbiDecl>,
+    pub abi_decl: Option<FnAbiDecl>,
     pub params: FnExprParams,
     pub return_ty: Option<Box<Ty>>,
     pub body: Option<Box<BlockExpr>>,
@@ -29,7 +29,7 @@ pub struct FnExprParam {
 
 impl Parser<'_> {
     pub fn parse_fn_expr(&mut self) -> ParseResult<FnExpr> {
-        let abi = (self.peek().kind == tk::kw_extern)
+        let abi_decl = (self.peek().kind == tk::kw_extern)
             .then(|| self.parse_fn_abi_decl())
             .transpose()?;
 
@@ -45,7 +45,7 @@ impl Parser<'_> {
             .then(|| self.parse_block_expr())
             .transpose()?;
 
-        let start_span = abi.as_ref().map(|abi| abi.span).unwrap_or(params.span);
+        let start_span = abi_decl.as_ref().map(|abi| abi.span).unwrap_or(params.span);
 
         let end_span = body
             .as_ref()
@@ -55,7 +55,7 @@ impl Parser<'_> {
 
         Ok(FnExpr {
             span: start_span.to(end_span),
-            abi,
+            abi_decl,
             params,
             return_ty: return_ty.map(Box::new),
             body: body.map(Box::new),

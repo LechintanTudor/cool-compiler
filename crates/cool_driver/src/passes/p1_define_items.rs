@@ -1,32 +1,42 @@
-use crate::{CompileResult, ParsedAlias, ParsedCrate, ParsedLiteral, ParsedStruct};
-use cool_ast::{resolve_int_literal, resolve_ty};
+use crate::{CompileResult, ParsedAlias, ParsedCrate, ParsedFn, ParsedLiteral, ParsedStruct};
+use cool_ast::{resolve_fn, resolve_int_literal, resolve_ty};
 use cool_parser::LiteralKind;
 use cool_resolve::{tys, ConstItemValue, ResolveContext, TyId};
 use smallvec::SmallVec;
 use std::collections::VecDeque;
 
 pub fn p1_define_items(
-    mut parsed_crate: ParsedCrate,
+    parsed_crate: &mut ParsedCrate,
     context: &mut ResolveContext,
 ) -> CompileResult<()> {
-    let mut made_progress = true;
     let mut undefined_tys = Vec::new();
 
-    while made_progress {
+    loop {
         undefined_tys.clear();
         undefined_tys.extend(context.iter_undefined_ty_ids());
 
-        made_progress = false;
+        let mut made_progress = false;
         made_progress |= define_items(&mut parsed_crate.aliases, context, define_alias);
         made_progress |= define_items(&mut parsed_crate.literals, context, define_literal);
         made_progress |= define_items(&mut parsed_crate.structs, context, define_struct);
         made_progress |= define_tys(&undefined_tys, context);
+
+        if !made_progress {
+            break;
+        }
+    }
+
+    loop {
+        if !define_items(&mut parsed_crate.fns, context, define_fn) {
+            break;
+        }
     }
 
     let is_fully_defined = parsed_crate.aliases.is_empty()
         && parsed_crate.literals.is_empty()
         && parsed_crate.structs.is_empty()
-        && undefined_tys.is_empty();
+        && undefined_tys.is_empty()
+        && parsed_crate.fns.is_empty();
 
     if !is_fully_defined {
         panic!("Failed to define items");
@@ -99,12 +109,12 @@ fn define_literal(literal: &ParsedLiteral, context: &mut ResolveContext) -> Comp
         .transpose()?
         .unwrap_or(tys::infer);
 
-    let (value, _ty_id) = match literal.item.kind {
+    let (value, ty_id) = match literal.item.kind {
         LiteralKind::Int => resolve_int_literal(literal.item.value.as_str())?,
         _ => todo!(),
     };
 
-    context.update_const(literal.item_id, tys::usize, ConstItemValue::Int(value));
+    context.update_const(literal.item_id, ty_id, ConstItemValue::Int(value));
     Ok(())
 }
 
@@ -122,5 +132,17 @@ fn define_struct(struct_item: &ParsedStruct, context: &mut ResolveContext) -> Co
         .collect::<Result<SmallVec<[_; 8]>, _>>()?;
 
     context.define_aggregate_ty(ty_id, &fields)?;
+    Ok(())
+}
+
+fn define_fn(fn_item: &ParsedFn, context: &mut ResolveContext) -> CompileResult<()> {
+    let ty_id = resolve_fn(
+        context,
+        fn_item.module_id,
+        fn_item.ty.as_deref(),
+        &fn_item.item,
+    )?;
+
+    context.update_const(fn_item.item_id, ty_id, ConstItemValue::Fn);
     Ok(())
 }

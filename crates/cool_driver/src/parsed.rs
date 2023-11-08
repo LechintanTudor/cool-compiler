@@ -20,8 +20,8 @@ pub struct ParsedCrate {
     pub files: VecMap<SourceId, SourceFile>,
     pub aliases: VecDeque<ParsedAlias>,
     pub structs: VecDeque<ParsedStruct>,
-    pub fns: VecDeque<ParsedFn>,
     pub literals: VecDeque<ParsedLiteral>,
+    pub fns: VecDeque<ParsedFn>,
 }
 
 #[derive(Clone)]
