@@ -1,7 +1,7 @@
 use crate::{resolve_ty, AstResult};
+use cool_collections::SmallVec;
 use cool_parser::{FnAbiDecl, FnExpr, Ty};
 use cool_resolve::{tys, FnAbi, ModuleId, ResolveContext, ResolveError, Scope, TyId};
-use smallvec::SmallVec;
 
 pub fn resolve_fn(
     context: &mut ResolveContext,
@@ -78,7 +78,7 @@ pub fn resolve_fn(
             let abi = resolve_fn_ty_abi(fn_expr.abi_decl.as_ref())?;
 
             let param_tys = {
-                let mut param_tys = SmallVec::<[TyId; 12]>::new();
+                let mut param_tys = SmallVec::<TyId, 12>::new();
 
                 for param in fn_expr.params.params.iter() {
                     let Some(param_ty) = param.ty.as_ref() else {

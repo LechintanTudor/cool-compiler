@@ -1,7 +1,7 @@
 use crate::{resolve_int_literal, AstResult};
+use cool_collections::SmallVec;
 use cool_parser::{ArrayLen, ItemKind, Ty};
 use cool_resolve::{tys, FnAbi, ModuleId, ResolveContext, ResolveError, Scope, TyId};
-use smallvec::SmallVec;
 
 pub fn resolve_ty<S>(context: &mut ResolveContext, scope: S, ty: &Ty) -> AstResult<TyId>
 where
@@ -37,7 +37,7 @@ pub fn resolve_ty_inner(
                 .param_tys
                 .iter()
                 .map(|ty| resolve_ty_inner(context, module_id, ty))
-                .collect::<Result<SmallVec<[_; 12]>, _>>()?;
+                .collect::<Result<SmallVec<_, 12>, _>>()?;
 
             let return_ty = fn_ty
                 .return_ty
@@ -64,7 +64,7 @@ pub fn resolve_ty_inner(
                 .idents
                 .iter()
                 .map(|ident| ident.symbol)
-                .collect::<SmallVec<[_; 8]>>();
+                .collect::<SmallVec<_, 8>>();
 
             let item_id = context.resolve_path(module_id, &path)?;
 
@@ -86,7 +86,7 @@ pub fn resolve_ty_inner(
                 .elem_tys
                 .iter()
                 .map(|ty| resolve_ty_inner(context, module_id, ty))
-                .collect::<Result<SmallVec<[_; 8]>, _>>()?;
+                .collect::<Result<SmallVec<_, 8>, _>>()?;
 
             context.add_tuple_ty(elem_tys)
         }
@@ -113,7 +113,7 @@ fn resolve_array_len(
                 .idents
                 .iter()
                 .map(|ident| ident.symbol)
-                .collect::<SmallVec<[_; 8]>>();
+                .collect::<SmallVec<_, 8>>();
 
             let item_id = context.resolve_path(module_id, &path)?;
 

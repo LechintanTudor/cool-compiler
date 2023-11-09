@@ -1,7 +1,9 @@
 use crate::{Ident, ParseResult, Parser};
+use cool_collections::SmallString;
 use cool_derive::Section;
 use cool_lexer::{tk, LiteralKind as LexerLiteralKind, Symbol, TokenKind};
 use cool_span::Span;
+use std::fmt::Write;
 
 #[derive(Clone, Section, Debug)]
 pub struct LiteralExpr {
@@ -71,10 +73,16 @@ impl Parser<'_> {
 
         let end_token = self.bump();
 
+        let value = {
+            let mut value = SmallString::new();
+            write!(&mut value, "{}.{}", literal.value, next_literal.value).unwrap();
+            Symbol::insert(&value)
+        };
+
         Ok(LiteralExpr {
             span: start_token.span.to(end_token.span),
             kind: LiteralKind::Float,
-            value: Symbol::insert(&format!("{}.{}", literal.value, next_literal.value)),
+            value,
         })
     }
 

@@ -1,9 +1,9 @@
 use crate::{Ident, ParseResult, Parser};
+use cool_collections::SmallVec;
 use cool_lexer::tk;
 use cool_span::{Section, Span};
-use smallvec::SmallVec;
 
-pub type IdentVec = SmallVec<[Ident; 2]>;
+pub type IdentVec = SmallVec<Ident, 2>;
 
 #[derive(Clone, Debug)]
 pub struct IdentPath {

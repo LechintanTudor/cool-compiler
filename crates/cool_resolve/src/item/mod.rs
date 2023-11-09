@@ -17,9 +17,8 @@ pub use self::resolve::*;
 pub use self::struct_item::*;
 
 use crate::{ResolveContext, ResolveError, ResolveResult};
-use cool_collections::define_index_newtype;
+use cool_collections::{define_index_newtype, SmallVec};
 use cool_lexer::Symbol;
-use smallvec::SmallVec;
 use std::ops::Index;
 
 define_index_newtype!(ItemId);
@@ -39,7 +38,7 @@ impl ResolveContext<'_> {
 
     fn add_path(&mut self, module_id: ModuleId, symbol: Symbol) -> ResolveResult<ItemId> {
         let module = &self.modules[module_id];
-        let mut path: SmallVec<[Symbol; 12]> = self.paths[module.item_id].into();
+        let mut path: SmallVec<Symbol, 12> = self.paths[module.item_id].into();
         path.push(symbol);
         self.add_raw_path(&path)
     }

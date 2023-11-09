@@ -3,10 +3,9 @@ mod binding;
 pub use self::binding::*;
 
 use crate::{ModuleId, ResolveContext};
-use cool_collections::define_index_newtype;
+use cool_collections::{define_index_newtype, SmallVec};
 use cool_lexer::Symbol;
 use derive_more::From;
-use smallvec::SmallVec;
 use std::ops::{Index, IndexMut};
 
 define_index_newtype!(FrameId);
@@ -20,7 +19,7 @@ pub enum Scope {
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct Frame {
     pub parent: Scope,
-    pub bindings: SmallVec<[(Symbol, BindingId); 2]>,
+    pub bindings: SmallVec<(Symbol, BindingId), 2>,
 }
 
 impl Frame {

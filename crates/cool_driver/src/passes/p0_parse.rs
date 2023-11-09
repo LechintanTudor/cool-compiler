@@ -2,12 +2,12 @@ use crate::{
     CompileResult, ModulePaths, ParsedAlias, ParsedCrate, ParsedFn, ParsedLiteral, ParsedStruct,
     SourceFile,
 };
+use cool_collections::SmallVec;
 use cool_derive::Section;
 use cool_lexer::Symbol;
 use cool_parser::{DeclKind, Item, Module, ModuleKind};
 use cool_resolve::{tys, ConstItemValue, ModuleId, ResolveContext, TyConfig};
 use cool_span::Span;
-use smallvec::SmallVec;
 use std::collections::VecDeque;
 use std::path::Path;
 
@@ -16,7 +16,7 @@ struct Import {
     pub span: Span,
     pub module_id: ModuleId,
     pub is_exported: bool,
-    pub path: SmallVec<[Symbol; 4]>,
+    pub path: SmallVec<Symbol, 4>,
     pub alias: Option<Symbol>,
 }
 

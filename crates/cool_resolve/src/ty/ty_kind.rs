@@ -1,7 +1,7 @@
 use crate::{ItemId, ResolveContext, ResolveError, TyId};
+use cool_collections::SmallVec;
 use cool_lexer::{sym, Symbol};
 use derive_more::From;
-use smallvec::SmallVec;
 use std::ops::Index;
 
 #[derive(Clone, PartialEq, Eq, Hash, From, Debug)]
@@ -94,7 +94,7 @@ pub struct ArrayTy {
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TupleTy {
-    pub elem_tys: SmallVec<[TyId; 4]>,
+    pub elem_tys: SmallVec<TyId, 4>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -105,7 +105,7 @@ pub struct StructTy {
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct FnTy {
     pub abi: FnAbi,
-    pub param_tys: SmallVec<[TyId; 4]>,
+    pub param_tys: SmallVec<TyId, 4>,
     pub is_variadic: bool,
     pub return_ty: TyId,
 }

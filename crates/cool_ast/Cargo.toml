@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+cool_collections = { path = "../cool_collections" }
 cool_parser = { path = "../cool_parser" }
 cool_resolve = { path = "../cool_resolve" }
 
 derive_more = { workspace = true }
-smallvec = { workspace = true }

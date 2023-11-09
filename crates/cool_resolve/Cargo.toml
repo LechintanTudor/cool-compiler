@@ -10,4 +10,3 @@ cool_lexer = { path = "../cool_lexer" }
 
 ahash = { workspace = true }
 derive_more = { workspace = true }
-smallvec = { workspace = true }

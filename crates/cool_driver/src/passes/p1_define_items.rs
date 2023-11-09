@@ -1,8 +1,8 @@
 use crate::{CompileResult, ParsedAlias, ParsedCrate, ParsedFn, ParsedLiteral, ParsedStruct};
 use cool_ast::{resolve_fn, resolve_int_literal, resolve_ty};
+use cool_collections::SmallVec;
 use cool_parser::LiteralKind;
 use cool_resolve::{tys, ConstItemValue, ResolveContext, TyId};
-use smallvec::SmallVec;
 use std::collections::VecDeque;
 
 pub fn p1_define_items(
@@ -129,7 +129,7 @@ fn define_struct(struct_item: &ParsedStruct, context: &mut ResolveContext) -> Co
             resolve_ty(context, struct_item.module_id, &field.ty)
                 .map(|ty_id| (field.ident.symbol, ty_id))
         })
-        .collect::<Result<SmallVec<[_; 8]>, _>>()?;
+        .collect::<Result<SmallVec<_, 8>, _>>()?;
 
     context.define_aggregate_ty(ty_id, &fields)?;
     Ok(())

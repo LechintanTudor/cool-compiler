@@ -1,6 +1,6 @@
 use crate::{ResolveContext, ResolveResult, TyId};
+use cool_collections::SmallVec;
 use cool_lexer::Symbol;
-use smallvec::SmallVec;
 use std::cmp::Reverse;
 
 #[derive(Clone, Debug)]
@@ -48,7 +48,7 @@ impl ResolveContext<'_> {
                     .cloned()
                     .map(|ty_def| (index, *symbol, *ty_id, ty_def))
             })
-            .collect::<Result<SmallVec<[_; 8]>, _>>()?;
+            .collect::<Result<SmallVec<_, 8>, _>>()?;
 
         fields.sort_by_key(|(_, _, _, ty_def)| Reverse(ty_def.align));
 
@@ -68,7 +68,7 @@ impl ResolveContext<'_> {
                 align = align.max(ty_def.align);
                 (index, field)
             })
-            .collect::<SmallVec<[_; 8]>>();
+            .collect::<SmallVec<_, 8>>();
 
         fields.sort_by_key(|(index, _)| *index);
 

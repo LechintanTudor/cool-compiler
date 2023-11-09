@@ -9,10 +9,9 @@ pub use self::ty_factory::*;
 pub use self::ty_kind::*;
 
 use crate::{ResolveContext, ResolveError, ResolveResult};
-use cool_collections::define_index_newtype;
+use cool_collections::{define_index_newtype, SmallVec};
 use cool_derive::define_tys;
 use cool_lexer::{sym, Symbol};
-use smallvec::SmallVec;
 use std::fmt::Write;
 
 define_index_newtype!(TyId);
@@ -166,7 +165,7 @@ impl ResolveContext<'_> {
 
                         (field_symbol, *ty_id)
                     })
-                    .collect::<SmallVec<[_; 8]>>();
+                    .collect::<SmallVec<_, 8>>();
 
                 return self.define_aggregate_ty(ty_id, &fields);
             }
