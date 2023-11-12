@@ -74,7 +74,7 @@ impl Parser<'_> {
         let end_token = self.bump();
 
         let value = {
-            let mut value = SmallString::new();
+            let mut value: SmallString = SmallString::new();
             write!(&mut value, "{}.{}", literal.value, next_literal.value).unwrap();
             Symbol::insert(&value)
         };

@@ -6,5 +6,4 @@ edition = "2021"
 [dependencies]
 ahash = { workspace = true }
 bumpalo = { workspace = true }
-smallstr = { workspace = true }
 smallvec = { workspace = true }
