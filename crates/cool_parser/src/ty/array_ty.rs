@@ -17,7 +17,7 @@ impl Parser<'_> {
         let len = self.parse_array_len()?;
         self.bump_expect(&tk::close_bracket)?;
 
-        let elem_ty = self.parse_ty()?;
+        let elem_ty = self.parse_non_variant_ty()?;
 
         Ok(ArrayTy {
             span: open_bracket.span.to(elem_ty.span()),

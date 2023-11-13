@@ -14,7 +14,7 @@ impl Parser<'_> {
     pub fn parse_ptr_ty(&mut self) -> ParseResult<PtrTy> {
         let star_token = self.bump_expect(&tk::star)?;
         let is_mutable = self.bump_if_eq(tk::kw_mut).is_some();
-        let pointee_ty = self.parse_ty()?;
+        let pointee_ty = self.parse_non_variant_ty()?;
 
         Ok(PtrTy {
             span: star_token.span.to(pointee_ty.span()),

@@ -9,7 +9,7 @@ pub use self::ty_factory::*;
 pub use self::ty_kind::*;
 
 use crate::{ResolveContext, ResolveError, ResolveResult};
-use cool_collections::{define_index_newtype, SmallVec};
+use cool_collections::{define_index_newtype, SmallString, SmallVec};
 use cool_derive::define_tys;
 use cool_lexer::{sym, Symbol};
 use std::fmt::Write;
@@ -152,7 +152,7 @@ impl ResolveContext<'_> {
                 return self.define_aggregate_ty(ty_id, &fields);
             }
             TyKind::Tuple(ref tuple_ty) => {
-                let mut buffer = String::new();
+                let mut buffer: SmallString = SmallString::new();
 
                 let fields = tuple_ty
                     .elem_tys
@@ -168,6 +168,10 @@ impl ResolveContext<'_> {
                     .collect::<SmallVec<_, 8>>();
 
                 return self.define_aggregate_ty(ty_id, &fields);
+            }
+            TyKind::Variant(ref variant_ty) => {
+                let variant_tys = variant_ty.variant_tys.clone();
+                return self.define_variant_ty(ty_id, &variant_tys);
             }
             _ => return Err(ResolveError::TyIsIncomplete { ty_id }),
         };

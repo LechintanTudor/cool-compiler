@@ -1,6 +1,8 @@
 use crate::{
-    ArrayTy, FnAbi, FnTy, ManyPtrTy, PtrTy, ResolveContext, SliceTy, TupleTy, TyId, TyKind,
+    tys, ArrayTy, FnAbi, FnTy, ManyPtrTy, PtrTy, ResolveContext, SliceTy, TupleTy, TyId, TyKind,
+    VariantTy,
 };
+use cool_collections::SmallVec;
 
 impl ResolveContext<'_> {
     pub fn add_ty<K>(&mut self, kind: K) -> TyId
@@ -61,8 +63,39 @@ impl ResolveContext<'_> {
     where
         E: IntoIterator<Item = TyId>,
     {
-        self.add_ty(TupleTy {
-            elem_tys: elem_tys.into_iter().collect(),
+        let elem_tys = elem_tys.into_iter().collect::<SmallVec<_, 4>>();
+
+        if elem_tys.is_empty() {
+            return tys::unit;
+        }
+
+        self.add_ty(TupleTy { elem_tys })
+    }
+
+    pub fn add_variant_ty<V>(&mut self, variant_tys: V) -> TyId
+    where
+        V: IntoIterator<Item = TyId>,
+    {
+        let mut non_variant_tys = SmallVec::<TyId, 4>::new();
+
+        for ty_id in variant_tys {
+            match &self.tys[ty_id] {
+                TyKind::Variant(variant_ty) => {
+                    non_variant_tys.extend(variant_ty.variant_tys.iter().cloned());
+                }
+                _ => non_variant_tys.push(ty_id),
+            }
+        }
+
+        non_variant_tys.sort();
+        non_variant_tys.dedup();
+
+        if non_variant_tys.len() == 1 {
+            return non_variant_tys[0];
+        }
+
+        self.add_ty(VariantTy {
+            variant_tys: non_variant_tys,
         })
     }
 }

@@ -20,6 +20,7 @@ pub enum TyKind {
     Array(ArrayTy),
     Tuple(TupleTy),
     Struct(StructTy),
+    Variant(VariantTy),
     Fn(FnTy),
 }
 
@@ -31,6 +32,15 @@ impl TyKind {
             Self::Fn(fn_ty) => Some(fn_ty),
             _ => None,
         }
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn is_ptr_or_slice(&self) -> bool {
+        matches!(
+            self,
+            Self::Ptr(_) | Self::ManyPtr(_) | Self::Slice(_) | Self::Fn(_),
+        )
     }
 }
 
@@ -100,6 +110,11 @@ pub struct TupleTy {
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct StructTy {
     pub item_id: ItemId,
+}
+
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+pub struct VariantTy {
+    pub variant_tys: SmallVec<TyId, 4>,
 }
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]

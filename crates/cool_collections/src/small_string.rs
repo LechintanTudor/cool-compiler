@@ -29,6 +29,10 @@ impl<const N: usize> SmallString<N> {
         self.data.extend_from_slice(str.as_bytes())
     }
 
+    pub fn clear(&mut self) {
+        self.data.clear();
+    }
+
     #[must_use]
     pub fn len(&self) -> usize {
         self.data.len()

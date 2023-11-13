@@ -17,7 +17,7 @@ impl Parser<'_> {
         self.bump_expect(&tk::close_bracket)?;
 
         let is_mutable = self.bump_if_eq(tk::kw_mut).is_some();
-        let pointee_ty = self.parse_ty()?;
+        let pointee_ty = self.parse_non_variant_ty()?;
 
         Ok(ManyPtrTy {
             span: open_bracket.span.to(pointee_ty.span()),

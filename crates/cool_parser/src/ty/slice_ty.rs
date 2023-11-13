@@ -16,7 +16,7 @@ impl Parser<'_> {
         self.bump_expect(&tk::close_bracket)?;
 
         let is_mutable = self.bump_if_eq(tk::kw_mut).is_some();
-        let elem_ty = self.parse_ty()?;
+        let elem_ty = self.parse_non_variant_ty()?;
 
         Ok(SliceTy {
             span: open_bracket.span.to(elem_ty.span()),

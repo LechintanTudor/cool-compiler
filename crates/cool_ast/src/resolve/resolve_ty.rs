@@ -91,7 +91,13 @@ pub fn resolve_ty_inner(
             context.add_tuple_ty(elem_tys)
         }
         Ty::Variant(variant_ty) => {
-            panic!("Unimplemented: {:#?}", variant_ty);
+            let variant_tys = variant_ty
+                .variant_tys
+                .iter()
+                .map(|ty| resolve_ty_inner(context, module_id, ty))
+                .collect::<Result<SmallVec<_, 8>, _>>()?;
+
+            context.add_variant_ty(variant_tys)
         }
     };
 
