@@ -131,7 +131,7 @@ fn define_struct(struct_item: &ParsedStruct, context: &mut ResolveContext) -> Co
         })
         .collect::<Result<SmallVec<_, 8>, _>>()?;
 
-    context.define_aggregate_ty(ty_id, &fields)?;
+    context.define_struct_ty(ty_id, fields)?;
     Ok(())
 }
 

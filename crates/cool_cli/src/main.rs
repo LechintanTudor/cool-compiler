@@ -8,8 +8,19 @@ use cool_resolve::TyConfig;
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
+    let ty_config = TyConfig {
+        i8_align: 1,
+        i16_align: 2,
+        i32_align: 4,
+        i64_align: 8,
+        i128_align: 8,
+        f32_align: 4,
+        f64_align: 8,
+        ptr_size: 8,
+    };
+
     let (mut parsed_crate, mut context) =
-        passes::p0_parse(&args.crate_name, &args.crate_path, TyConfig { ptr_size: 8 })?;
+        passes::p0_parse(&args.crate_name, &args.crate_path, ty_config)?;
 
     passes::p1_define_items(&mut parsed_crate, &mut context)?;
     Ok(())

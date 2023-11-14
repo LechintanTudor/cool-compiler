@@ -13,15 +13,6 @@ pub struct TyDef {
 
 impl TyDef {
     #[inline]
-    pub const fn basic(size: u64) -> Self {
-        Self {
-            size,
-            align: size,
-            kind: TyDefKind::Basic,
-        }
-    }
-
-    #[inline]
     #[must_use]
     pub const fn is_zero_sized(&self) -> bool {
         self.size == 0
@@ -44,7 +35,6 @@ pub struct AggregateTyDef {
 #[derive(Clone, Debug)]
 pub struct VariantTyDef {
     pub variant_tys: SmallVec<TyId, 4>,
-    pub is_nullable_ptr: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -61,37 +51,36 @@ pub struct Field {
 }
 
 impl ResolveContext<'_> {
-    pub fn define_aggregate_ty(
-        &mut self,
-        ty_id: TyId,
-        fields: &[(Symbol, TyId)],
-    ) -> ResolveResult<&TyDef> {
+    pub fn compute_aggregate_ty_def<F>(&mut self, fields: F) -> ResolveResult<TyDef>
+    where
+        F: IntoIterator<Item = (Symbol, TyId)>,
+    {
         let mut fields = fields
-            .iter()
+            .into_iter()
             .enumerate()
             .map(|(index, (symbol, ty_id))| {
-                self.define_ty(*ty_id)
-                    .cloned()
-                    .map(|ty_def| (index, *symbol, *ty_id, ty_def))
+                self.define_ty(ty_id)
+                    .map(|ty_def| (index, symbol, ty_id, ty_def.size, ty_def.align))
             })
             .collect::<Result<SmallVec<_, 8>, _>>()?;
 
-        fields.sort_by_key(|(_, _, _, ty_def)| Reverse((ty_def.align, ty_def.size)));
+        fields.sort_by_key(|(_, _, _, size, align)| Reverse((*align, *size)));
 
         let mut offset = 0;
         let mut align = 1;
 
         let mut fields = fields
-            .iter()
-            .map(|(index, symbol, ty_id, ty_def)| {
+            .into_iter()
+            .map(|(index, symbol, ty_id, field_size, field_align)| {
                 let field = Field {
                     offset,
-                    symbol: *symbol,
-                    ty_id: *ty_id,
+                    symbol,
+                    ty_id,
                 };
 
-                offset += ty_def.size + compute_padding_for_align(offset, ty_def.align);
-                align = align.max(ty_def.align);
+                offset += field_size + compute_padding_for_align(offset, field_align);
+                align = align.max(field_align);
+
                 (index, field)
             })
             .collect::<SmallVec<_, 8>>();
@@ -103,91 +92,73 @@ impl ResolveContext<'_> {
             .map(|(_, field)| field)
             .collect::<Vec<_>>();
 
-        self.ty_defs.insert(
-            ty_id,
-            TyDef {
-                size: offset + compute_padding_for_align(offset, align),
-                align,
-                kind: AggregateTyDef { fields }.into(),
-            },
-        );
-
-        Ok(&self.ty_defs[&ty_id])
+        Ok(TyDef {
+            size: offset + compute_padding_for_align(offset, align),
+            align,
+            kind: AggregateTyDef { fields }.into(),
+        })
     }
 
-    pub fn define_variant_ty(
-        &mut self,
-        ty_id: TyId,
-        variant_tys: &[TyId],
-    ) -> ResolveResult<&TyDef> {
+    pub fn compute_variant_ty_def<V>(&mut self, variant_tys: V) -> ResolveResult<TyDef>
+    where
+        V: IntoIterator<Item = TyId>,
+    {
+        let variant_tys = variant_tys.into_iter().collect::<SmallVec<_, 4>>();
+
         let variant_ty_defs = variant_tys
             .iter()
-            .map(|ty_id| {
-                self.define_ty(*ty_id)
-                    .cloned()
-                    .map(|ty_def| (*ty_id, ty_def))
+            .map(|&ty_id| {
+                self.define_ty(ty_id)
+                    .map(|ty_def| (ty_id, ty_def.size, ty_def.align))
             })
             .collect::<Result<SmallVec<_, 8>, _>>()?;
 
         assert!(variant_ty_defs.len() <= 255);
 
-        if variant_tys.len() == 2 {
-            if let Some(ty_def) =
-                self.compute_nullable_ptr_ty(&variant_ty_defs[0], &variant_ty_defs[1])
-            {
-                drop(variant_ty_defs);
-                self.ty_defs.insert(ty_id, ty_def);
-                return Ok(&self.ty_defs[&ty_id]);
+        if variant_ty_defs.len() == 2 {
+            let (ty_id_1, ty_size_1, ty_align_1) = variant_ty_defs[0];
+            let (ty_id_2, ty_size_2, ty_align_2) = variant_ty_defs[1];
+
+            if let Some(ty_def) = self.try_compute_nullable_ptr_ty_def(
+                ty_id_1, ty_size_1, ty_align_1, ty_id_2, ty_size_2, ty_align_2,
+            ) {
+                return Ok(ty_def);
             }
         }
 
-        let offset = 1 + variant_ty_defs
+        let (offset, align) = variant_ty_defs
             .iter()
-            .map(|(_, ty_def)| ty_def.size)
-            .max()
-            .unwrap_or(0);
+            .map(|(_, size, align)| (*size, *align))
+            .fold((0, 1), |(s, a), (size, align)| (s.max(size), a.max(align)));
 
-        let align = variant_ty_defs
-            .iter()
-            .map(|(_, ty_def)| ty_def.align)
-            .max()
-            .unwrap_or(1);
-
-        drop(variant_ty_defs);
-
-        self.ty_defs.insert(
-            ty_id,
-            TyDef {
-                size: offset + compute_padding_for_align(offset, align),
-                align,
-                kind: VariantTyDef {
-                    variant_tys: variant_tys.iter().cloned().collect(),
-                    is_nullable_ptr: false,
-                }
-                .into(),
-            },
-        );
-
-        Ok(&self.ty_defs[&ty_id])
+        Ok(TyDef {
+            size: compute_padding_for_align(offset, align),
+            align,
+            kind: VariantTyDef { variant_tys }.into(),
+        })
     }
 
-    fn compute_nullable_ptr_ty(
+    fn try_compute_nullable_ptr_ty_def(
         &self,
-        (ty_id_1, ty_def_1): &(TyId, TyDef),
-        (ty_id_2, ty_def_2): &(TyId, TyDef),
+        ty_id_1: TyId,
+        ty_size_1: u64,
+        ty_align_1: u64,
+        ty_id_2: TyId,
+        ty_size_2: u64,
+        ty_align_2: u64,
     ) -> Option<TyDef> {
-        let (ptr_ty, zero_sized_ty, ty_def) =
-            if self.tys[*ty_id_1].is_ptr_or_slice() && ty_def_2.is_zero_sized() {
-                (*ty_id_1, *ty_id_2, ty_def_1)
-            } else if self.tys[*ty_id_2].is_ptr_or_slice() && ty_def_1.is_zero_sized() {
-                (*ty_id_2, *ty_id_1, ty_def_2)
+        let (ptr_ty, zero_sized_ty, size, align) =
+            if self.tys[ty_id_1].is_ptr_or_slice() && ty_size_2 == 0 {
+                (ty_id_1, ty_id_2, ty_size_1, ty_align_1)
+            } else if self.tys[ty_id_2].is_ptr_or_slice() && ty_size_2 == 0 {
+                (ty_id_2, ty_id_1, ty_size_2, ty_align_2)
             } else {
                 return None;
             };
 
         Some(TyDef {
-            size: ty_def.size,
-            align: ty_def.align,
+            size,
+            align,
             kind: NullablePtrTyDef {
                 ptr_ty,
                 zero_sized_ty,

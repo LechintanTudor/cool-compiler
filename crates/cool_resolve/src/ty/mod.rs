@@ -107,29 +107,49 @@ impl ResolveContext<'_> {
         }
 
         let def = match self.tys[ty_id] {
-            TyKind::Unit => TyDef::basic(0),
+            TyKind::Unit => {
+                TyDef {
+                    size: 0,
+                    align: 1,
+                    kind: TyDefKind::Basic,
+                }
+            }
             TyKind::Int(int_ty) => {
-                let size = match int_ty {
-                    IntTy::I8 | IntTy::U8 => 1,
-                    IntTy::I16 | IntTy::U16 => 2,
-                    IntTy::I32 | IntTy::U32 => 4,
-                    IntTy::I64 | IntTy::U64 => 8,
-                    IntTy::I128 | IntTy::U128 => 16,
-                    IntTy::Isize | IntTy::Usize => self.ty_config.ptr_size,
+                let (size, align) = match int_ty {
+                    IntTy::I8 | IntTy::U8 => (1, self.ty_config.i8_align),
+                    IntTy::I16 | IntTy::U16 => (2, self.ty_config.i16_align),
+                    IntTy::I32 | IntTy::U32 => (4, self.ty_config.i32_align),
+                    IntTy::I64 | IntTy::U64 => (8, self.ty_config.i64_align),
+                    IntTy::I128 | IntTy::U128 => (16, self.ty_config.i128_align),
+                    IntTy::Isize | IntTy::Usize => {
+                        (self.ty_config.ptr_size, self.ty_config.ptr_size)
+                    }
                 };
 
-                TyDef::basic(size)
+                TyDef {
+                    size,
+                    align,
+                    kind: TyDefKind::Basic,
+                }
             }
             TyKind::Float(float_ty) => {
-                let size = match float_ty {
-                    FloatTy::F32 => 4,
-                    FloatTy::F64 => 8,
+                let (size, align) = match float_ty {
+                    FloatTy::F32 => (4, self.ty_config.f32_align),
+                    FloatTy::F64 => (8, self.ty_config.f64_align),
                 };
 
-                TyDef::basic(size)
+                TyDef {
+                    size,
+                    align,
+                    kind: TyDefKind::Basic,
+                }
             }
             TyKind::Ptr(_) | TyKind::ManyPtr(_) | TyKind::Fn(_) => {
-                TyDef::basic(self.ty_config.ptr_size)
+                TyDef {
+                    size: self.ty_config.ptr_size,
+                    align: self.ty_config.ptr_size,
+                    kind: TyDefKind::Basic,
+                }
             }
             TyKind::Array(array_ty) => {
                 let elem_def = self.define_ty(array_ty.elem_ty)?;
@@ -141,15 +161,8 @@ impl ResolveContext<'_> {
                 }
             }
             TyKind::Slice(slice_ty) => {
-                let fields = [
-                    (
-                        sym::ptr,
-                        self.add_many_ptr_ty(slice_ty.elem_ty, slice_ty.is_mutable),
-                    ),
-                    (sym::len, tys::usize),
-                ];
-
-                return self.define_aggregate_ty(ty_id, &fields);
+                let many_ptr_ty = self.add_many_ptr_ty(slice_ty.elem_ty, slice_ty.is_mutable);
+                self.compute_aggregate_ty_def([(sym::ptr, many_ptr_ty), (sym::len, tys::usize)])?
             }
             TyKind::Tuple(ref tuple_ty) => {
                 let mut buffer: SmallString = SmallString::new();
@@ -162,21 +175,29 @@ impl ResolveContext<'_> {
                         write!(&mut buffer, "{index}").unwrap();
                         let field_symbol = Symbol::insert(&buffer);
                         buffer.clear();
-
                         (field_symbol, *ty_id)
                     })
                     .collect::<SmallVec<_, 8>>();
 
-                return self.define_aggregate_ty(ty_id, &fields);
+                self.compute_aggregate_ty_def(fields)?
             }
             TyKind::Variant(ref variant_ty) => {
                 let variant_tys = variant_ty.variant_tys.clone();
-                return self.define_variant_ty(ty_id, &variant_tys);
+                self.compute_variant_ty_def(variant_tys)?
             }
             _ => return Err(ResolveError::TyIsIncomplete { ty_id }),
         };
 
         self.ty_defs.insert(ty_id, def);
+        Ok(&self.ty_defs[&ty_id])
+    }
+
+    pub fn define_struct_ty<F>(&mut self, ty_id: TyId, fields: F) -> ResolveResult<&TyDef>
+    where
+        F: IntoIterator<Item = (Symbol, TyId)>,
+    {
+        let ty_def = self.compute_aggregate_ty_def(fields)?;
+        self.ty_defs.insert(ty_id, ty_def);
         Ok(&self.ty_defs[&ty_id])
     }
 
