@@ -37,6 +37,9 @@ pub enum ResolveError {
     #[display("Type is not a function")]
     TyNotFn { ty_id: TyId },
 
+    #[display("Types cannot be unified")]
+    TysCannotBeUnified { ty_id: TyId, expected_ty_id: TyId },
+
     #[display("Function has an unknown ABI: '{abi}'")]
     FnAbiIsUnknown { abi: Symbol },
 

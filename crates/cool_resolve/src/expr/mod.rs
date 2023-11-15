@@ -21,6 +21,20 @@ impl ResolveContext<'_> {
     pub fn add_expr(&mut self, expr: Expr) -> ExprId {
         self.exprs.push(expr)
     }
+
+    pub fn add_rvalue_expr(&mut self, ty_id: TyId) -> ExprId {
+        self.add_expr(Expr {
+            kind: ExprKind::Rvalue,
+            ty_id,
+        })
+    }
+
+    pub fn add_lvalue_expr(&mut self, is_mutable: bool, ty_id: TyId) -> ExprId {
+        self.add_expr(Expr {
+            kind: ExprKind::Lvalue { is_mutable },
+            ty_id,
+        })
+    }
 }
 
 impl Index<ExprId> for ResolveContext<'_> {

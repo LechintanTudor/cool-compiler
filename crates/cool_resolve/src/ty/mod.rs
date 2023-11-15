@@ -2,11 +2,13 @@ mod ty_config;
 mod ty_def;
 mod ty_factory;
 mod ty_kind;
+mod ty_unify;
 
 pub use self::ty_config::*;
 pub use self::ty_def::*;
 pub use self::ty_factory::*;
 pub use self::ty_kind::*;
+pub use self::ty_unify::*;
 
 use crate::{ResolveContext, ResolveError, ResolveResult};
 use cool_collections::{define_index_newtype, SmallString, SmallVec};
@@ -19,8 +21,32 @@ define_index_newtype!(TyId);
 impl TyId {
     #[inline]
     #[must_use]
-    pub fn is_definable(&self) -> bool {
-        ![tys::infer, tys::infer_number, tys::alias, tys::module].contains(self)
+    pub fn is_infer(&self) -> bool {
+        *self == tys::infer
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn is_infer_number(&self) -> bool {
+        *self == tys::infer_number
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn is_defined(&self) -> bool {
+        !self.is_undefined()
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn is_undefined(&self) -> bool {
+        [tys::infer, tys::infer_number, tys::alias, tys::module].contains(self)
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn is_int(&self) -> bool {
+        tys::i8 <= *self && *self <= tys::usize
     }
 }
 
@@ -205,7 +231,7 @@ impl ResolveContext<'_> {
     pub fn iter_undefined_ty_ids(&self) -> impl Iterator<Item = TyId> + '_ {
         self.tys
             .iter_indexes()
-            .filter(|ty_id| ty_id.is_definable() && !self.ty_defs.contains_key(ty_id))
+            .filter(|ty_id| ty_id.is_undefined() && !self.ty_defs.contains_key(ty_id))
     }
 
     #[inline]

@@ -70,7 +70,7 @@ pub fn resolve_ty_inner(
 
             context[item_id]
                 .try_as_ty()
-                .filter(TyId::is_definable)
+                .filter(TyId::is_undefined)
                 .ok_or(ResolveError::ItemNotTy { item_id })?
         }
         Ty::Ptr(ptr_ty) => {

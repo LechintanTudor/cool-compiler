@@ -1,4 +1,6 @@
-use crate::{CompileResult, ParsedAlias, ParsedCrate, ParsedFn, ParsedLiteral, ParsedStruct};
+use crate::{
+    CompileResult, DefinedCrate, ParsedAlias, ParsedCrate, ParsedFn, ParsedLiteral, ParsedStruct,
+};
 use cool_ast::{resolve_fn, resolve_int_literal, resolve_ty};
 use cool_collections::SmallVec;
 use cool_parser::LiteralKind;
@@ -6,10 +8,11 @@ use cool_resolve::{tys, ConstItemValue, ResolveContext, TyId};
 use std::collections::VecDeque;
 
 pub fn p1_define_items(
-    parsed_crate: &mut ParsedCrate,
+    mut parsed_crate: ParsedCrate,
     context: &mut ResolveContext,
-) -> CompileResult<()> {
+) -> CompileResult<DefinedCrate> {
     let mut undefined_tys = Vec::new();
+    let parsed_fns = parsed_crate.fns.iter().cloned().collect::<Vec<_>>();
 
     loop {
         undefined_tys.clear();
@@ -42,7 +45,10 @@ pub fn p1_define_items(
         panic!("Failed to define items");
     }
 
-    Ok(())
+    Ok(DefinedCrate {
+        files: parsed_crate.files,
+        fns: parsed_fns,
+    })
 }
 
 fn define_items<I, F>(

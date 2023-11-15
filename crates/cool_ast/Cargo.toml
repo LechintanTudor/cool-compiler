@@ -5,7 +5,9 @@ edition = "2021"
 
 [dependencies]
 cool_collections = { path = "../cool_collections" }
+cool_derive = { path = "../cool_derive" }
 cool_parser = { path = "../cool_parser" }
 cool_resolve = { path = "../cool_resolve" }
+cool_span = { path = "../cool_span" }
 
 derive_more = { workspace = true }

@@ -7,7 +7,7 @@ use cool_span::{Section, Span};
 pub struct BlockExpr {
     pub span: Span,
     pub stmts: Vec<BlockExprStmt>,
-    pub expr: Option<Box<Expr>>,
+    pub end_expr: Option<Box<Expr>>,
 }
 
 #[derive(Clone, Section, Debug)]
@@ -22,7 +22,7 @@ impl Parser<'_> {
         let open_brace = self.bump_expect(&tk::open_brace)?;
         let mut stmts = Vec::<BlockExprStmt>::new();
 
-        let (close_brace, expr) = if let Some(close_brace) = self.bump_if_eq(tk::close_brace) {
+        let (close_brace, end_expr) = if let Some(close_brace) = self.bump_if_eq(tk::close_brace) {
             (close_brace, None)
         } else {
             loop {
@@ -78,7 +78,7 @@ impl Parser<'_> {
         Ok(BlockExpr {
             span: open_brace.span.to(close_brace.span),
             stmts,
-            expr,
+            end_expr,
         })
     }
 }
