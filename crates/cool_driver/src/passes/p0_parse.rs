@@ -1,13 +1,13 @@
 use crate::{
-    CompileResult, ModulePaths, ParsedAlias, ParsedCrate, ParsedFn, ParsedLiteral, ParsedStruct,
-    SourceFile,
+    CompileResult, ModulePaths, ParsedAlias, ParsedCrate, ParsedExternFn, ParsedFn, ParsedLiteral,
+    ParsedStruct, SourceFile,
 };
 use cool_collections::SmallVec;
 use cool_derive::Section;
 use cool_lexer::Symbol;
 use cool_parser::{DeclKind, Item, Module, ModuleKind};
 use cool_resolve::{tys, ConstItemValue, ModuleId, ResolveContext, TyConfig};
-use cool_span::Span;
+use cool_span::{Section, Span};
 use std::collections::VecDeque;
 use std::path::Path;
 
@@ -86,6 +86,24 @@ pub fn p0_parse(
                                     item: struct_item,
                                 });
                             }
+                            Item::ExternFn(fn_item) => {
+                                let item_id = context.add_const(
+                                    module_id,
+                                    decl.is_exported,
+                                    item_decl.ident.symbol,
+                                    tys::infer,
+                                    ConstItemValue::Fn,
+                                )?;
+
+                                parsed_crate.extern_fns.push_back(ParsedExternFn {
+                                    source_id,
+                                    span: fn_item.span(),
+                                    module_id,
+                                    item_id,
+                                    ty: item_decl.ty,
+                                    item: fn_item,
+                                });
+                            }
                             Item::Fn(fn_item) => {
                                 let item_id = context.add_const(
                                     module_id,
@@ -97,7 +115,7 @@ pub fn p0_parse(
 
                                 parsed_crate.fns.push_back(ParsedFn {
                                     source_id,
-                                    span: fn_item.span,
+                                    span: fn_item.span(),
                                     module_id,
                                     item_id,
                                     ty: item_decl.ty,

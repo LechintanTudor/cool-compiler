@@ -12,7 +12,7 @@ impl ResolveContext<'_> {
         ty_id: TyId,
         expected_ty_id: TyId,
     ) -> ResolveResult<(TyId, UnificationMethod)> {
-        if ty_id.is_defined() && (ty_id == expected_ty_id || ty_id.is_infer()) {
+        if ty_id.is_definable() && (ty_id == expected_ty_id || ty_id.is_infer()) {
             return Ok((ty_id, UnificationMethod::Direct));
         }
 

@@ -33,14 +33,14 @@ impl TyId {
 
     #[inline]
     #[must_use]
-    pub fn is_defined(&self) -> bool {
-        !self.is_undefined()
+    pub fn is_definable(&self) -> bool {
+        ![tys::infer, tys::infer_number, tys::alias, tys::module].contains(self)
     }
 
     #[inline]
     #[must_use]
-    pub fn is_undefined(&self) -> bool {
-        [tys::infer, tys::infer_number, tys::alias, tys::module].contains(self)
+    pub fn is_undefinable(&self) -> bool {
+        !self.is_definable()
     }
 
     #[inline]
@@ -231,7 +231,7 @@ impl ResolveContext<'_> {
     pub fn iter_undefined_ty_ids(&self) -> impl Iterator<Item = TyId> + '_ {
         self.tys
             .iter_indexes()
-            .filter(|ty_id| ty_id.is_undefined() && !self.ty_defs.contains_key(ty_id))
+            .filter(|ty_id| ty_id.is_definable() && !self.ty_defs.contains_key(ty_id))
     }
 
     #[inline]

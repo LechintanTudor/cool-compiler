@@ -2,68 +2,102 @@ use crate::{BlockExpr, FnAbiDecl, ParseResult, Parser, Pattern, Ty};
 use cool_derive::Section;
 use cool_lexer::tk;
 use cool_span::{Section, Span};
+use derive_more::From;
 
-#[derive(Clone, Section, Debug)]
+#[derive(Clone, From, Section, Debug)]
+pub enum FnOrExternFnExpr {
+    Fn(FnExpr),
+    ExternFn(ExternFnExpr),
+}
+
+#[derive(Clone, Debug)]
 pub struct FnExpr {
-    pub span: Span,
-    pub abi_decl: Option<FnAbiDecl>,
-    pub params: FnExprParams,
-    pub return_ty: Option<Box<Ty>>,
-    pub body: Option<Box<BlockExpr>>,
+    pub prototype: FnExprPrototype,
+    pub body: Box<BlockExpr>,
+}
+
+impl Section for FnExpr {
+    #[inline]
+    fn span(&self) -> Span {
+        self.prototype.span.to(self.body.span)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct ExternFnExpr {
+    pub prototype: FnExprPrototype,
+}
+
+impl Section for ExternFnExpr {
+    #[inline]
+    fn span(&self) -> Span {
+        self.prototype.span
+    }
 }
 
 #[derive(Clone, Section, Debug)]
-pub struct FnExprParams {
+pub struct FnExprPrototype {
     pub span: Span,
+    pub abi_decl: Option<FnAbiDecl>,
     pub params: Vec<FnExprParam>,
     pub is_variadic: bool,
     pub has_trailing_comma: bool,
+    pub return_ty: Option<Box<Ty>>,
 }
 
-#[derive(Clone, Section, Debug)]
+#[derive(Clone, Debug)]
 pub struct FnExprParam {
-    pub span: Span,
     pub pattern: Pattern,
     pub ty: Option<Ty>,
 }
 
+impl Section for FnExprParam {
+    #[inline]
+    fn span(&self) -> Span {
+        match self.ty.as_ref() {
+            Some(ty) => self.pattern.span.to(ty.span()),
+            None => self.pattern.span,
+        }
+    }
+}
+
 impl Parser<'_> {
-    pub fn parse_fn_expr(&mut self) -> ParseResult<FnExpr> {
-        let abi_decl = (self.peek().kind == tk::kw_extern)
-            .then(|| self.parse_fn_abi_decl())
-            .transpose()?;
-
-        self.bump_expect(&tk::kw_fn)?;
-        let params = self.parse_fn_expr_params()?;
-
-        let return_ty = self
-            .bump_if_eq(tk::arrow)
-            .map(|_| self.parse_ty())
-            .transpose()?;
+    pub fn parse_fn_or_extern_fn_expr(&mut self) -> ParseResult<FnOrExternFnExpr> {
+        let prototype = self.parse_fn_expr_prototype()?;
 
         let body = (self.peek().kind == tk::open_brace)
             .then(|| self.parse_block_expr())
             .transpose()?;
 
-        let start_span = abi_decl.as_ref().map(|abi| abi.span).unwrap_or(params.span);
+        let expr: FnOrExternFnExpr = match body {
+            Some(body) => {
+                FnExpr {
+                    prototype,
+                    body: Box::new(body),
+                }
+                .into()
+            }
+            None => ExternFnExpr { prototype }.into(),
+        };
 
-        let end_span = body
-            .as_ref()
-            .map(|body| body.span)
-            .or(return_ty.as_ref().map(|ty| ty.span()))
-            .unwrap_or(params.span());
+        Ok(expr)
+    }
 
+    pub fn parse_fn_expr(&mut self) -> ParseResult<FnExpr> {
         Ok(FnExpr {
-            span: start_span.to(end_span),
-            abi_decl,
-            params,
-            return_ty: return_ty.map(Box::new),
-            body: body.map(Box::new),
+            prototype: self.parse_fn_expr_prototype()?,
+            body: Box::new(self.parse_block_expr()?),
         })
     }
 
-    fn parse_fn_expr_params(&mut self) -> ParseResult<FnExprParams> {
-        let open_paren = self.bump_expect(&tk::open_paren)?;
+    fn parse_fn_expr_prototype(&mut self) -> ParseResult<FnExprPrototype> {
+        let abi_decl = (self.peek().kind == tk::kw_extern)
+            .then(|| self.parse_fn_abi_decl())
+            .transpose()?;
+
+        let fn_token = self.bump_expect(&tk::kw_fn)?;
+        self.bump_expect(&tk::open_paren)?;
+
         let mut params = Vec::<FnExprParam>::new();
 
         let (close_paren, is_variadic, has_trailing_comma) =
@@ -93,11 +127,28 @@ impl Parser<'_> {
                 }
             };
 
-        Ok(FnExprParams {
-            span: open_paren.span.to(close_paren.span),
+        let return_ty = self
+            .bump_if_eq(tk::arrow)
+            .map(|_| self.parse_ty())
+            .transpose()?;
+
+        let start_span = abi_decl
+            .as_ref()
+            .map(|decl| decl.span)
+            .unwrap_or(fn_token.span);
+
+        let end_span = return_ty
+            .as_ref()
+            .map(|ty| ty.span())
+            .unwrap_or(close_paren.span);
+
+        Ok(FnExprPrototype {
+            span: start_span.to(end_span),
+            abi_decl,
             params,
             is_variadic,
             has_trailing_comma,
+            return_ty: return_ty.map(Box::new),
         })
     }
 
@@ -109,12 +160,6 @@ impl Parser<'_> {
             .map(|_| self.parse_ty())
             .transpose()?;
 
-        let end_span = ty.as_ref().map(|ty| ty.span()).unwrap_or(pattern.span);
-
-        Ok(FnExprParam {
-            span: pattern.span.to(end_span),
-            pattern,
-            ty,
-        })
+        Ok(FnExprParam { pattern, ty })
     }
 }

@@ -1,5 +1,6 @@
 use crate::{
-    CompileResult, DefinedCrate, ParsedAlias, ParsedCrate, ParsedFn, ParsedLiteral, ParsedStruct,
+    CompileResult, DefinedCrate, ParsedAlias, ParsedCrate, ParsedExternFn, ParsedFn, ParsedLiteral,
+    ParsedStruct,
 };
 use cool_ast::{resolve_fn, resolve_int_literal, resolve_ty};
 use cool_collections::SmallVec;
@@ -12,16 +13,16 @@ pub fn p1_define_items(
     context: &mut ResolveContext,
 ) -> CompileResult<DefinedCrate> {
     let mut undefined_tys = Vec::new();
-    let parsed_fns = parsed_crate.fns.iter().cloned().collect::<Vec<_>>();
+    let fns = parsed_crate.fns.iter().cloned().collect::<Vec<_>>();
 
     loop {
-        undefined_tys.clear();
-        undefined_tys.extend(context.iter_undefined_ty_ids());
-
         let mut made_progress = false;
         made_progress |= define_items(&mut parsed_crate.aliases, context, define_alias);
         made_progress |= define_items(&mut parsed_crate.literals, context, define_literal);
         made_progress |= define_items(&mut parsed_crate.structs, context, define_struct);
+
+        undefined_tys.clear();
+        undefined_tys.extend(context.iter_undefined_ty_ids());
         made_progress |= define_tys(&undefined_tys, context);
 
         if !made_progress {
@@ -30,24 +31,23 @@ pub fn p1_define_items(
     }
 
     loop {
-        if !define_items(&mut parsed_crate.fns, context, define_fn) {
+        let mut made_progress = false;
+        made_progress |= define_items(&mut parsed_crate.extern_fns, context, define_extern_fn);
+        made_progress |= define_items(&mut parsed_crate.fns, context, define_fn);
+
+        if !made_progress {
             break;
         }
     }
 
-    let is_fully_defined = parsed_crate.aliases.is_empty()
-        && parsed_crate.literals.is_empty()
-        && parsed_crate.structs.is_empty()
-        && undefined_tys.is_empty()
-        && parsed_crate.fns.is_empty();
-
-    if !is_fully_defined {
-        panic!("Failed to define items");
-    }
+    assert!(parsed_crate.aliases.is_empty());
+    assert!(parsed_crate.literals.is_empty());
+    assert!(parsed_crate.extern_fns.is_empty());
+    assert!(parsed_crate.fns.is_empty());
 
     Ok(DefinedCrate {
         files: parsed_crate.files,
-        fns: parsed_fns,
+        fns,
     })
 }
 
@@ -141,12 +141,24 @@ fn define_struct(struct_item: &ParsedStruct, context: &mut ResolveContext) -> Co
     Ok(())
 }
 
+fn define_extern_fn(fn_item: &ParsedExternFn, context: &mut ResolveContext) -> CompileResult<()> {
+    let ty_id = resolve_fn(
+        context,
+        fn_item.module_id,
+        fn_item.ty.as_deref(),
+        &fn_item.item.prototype,
+    )?;
+
+    context.update_const(fn_item.item_id, ty_id, ConstItemValue::Fn);
+    Ok(())
+}
+
 fn define_fn(fn_item: &ParsedFn, context: &mut ResolveContext) -> CompileResult<()> {
     let ty_id = resolve_fn(
         context,
         fn_item.module_id,
         fn_item.ty.as_deref(),
-        &fn_item.item,
+        &fn_item.item.prototype,
     )?;
 
     context.update_const(fn_item.item_id, ty_id, ConstItemValue::Fn);
