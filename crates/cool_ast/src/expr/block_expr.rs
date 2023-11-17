@@ -36,7 +36,7 @@ impl AstGenerator<'_> {
         let ty_id = end_expr
             .as_ref()
             .map(|expr| self.context[expr.expr_id()].ty_id)
-            .unwrap_or(tys::infer);
+            .unwrap_or(tys::unit);
 
         self.resolve_expr(expr.span, ty_id, expected_ty_id, |context, span, ty_id| {
             BlockExprAst {

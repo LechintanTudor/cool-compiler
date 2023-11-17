@@ -51,6 +51,10 @@ where
     T: Eq + Hash,
 {
     pub fn insert(&mut self, value: T) -> I {
+        if let Some(index) = self.get_index(&value) {
+            return index;
+        }
+
         let index = self.get_next_index();
         let value = unsafe { self.bump.alloc(value) };
         self.indexes.insert(value, index);

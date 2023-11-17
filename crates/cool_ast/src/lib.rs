@@ -20,4 +20,10 @@ impl<'a> AstGenerator<'a> {
     pub fn new(context: &'a mut ResolveContext<'static>) -> Self {
         Self { context }
     }
+
+    #[inline]
+    #[must_use]
+    pub fn context(&self) -> &ResolveContext {
+        self.context
+    }
 }

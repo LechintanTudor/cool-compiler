@@ -20,8 +20,7 @@ impl AstGenerator<'_> {
     ) -> AstResult<ExprAst> {
         let fn_ty_id = self.context[expected_ty_id]
             .try_as_fn()
-            .is_some()
-            .then(|| expected_ty_id);
+            .map(|_| expected_ty_id);
 
         let ty_id = resolve_fn(self.context, module_id, fn_ty_id, &expr.prototype)?;
         let fn_ty = self.context[ty_id].try_as_fn().unwrap().clone();

@@ -22,6 +22,8 @@ fn main() -> anyhow::Result<()> {
     let (parsed_crate, mut context) =
         passes::p0_parse(&args.crate_name, &args.crate_path, ty_config)?;
 
-    passes::p1_define_items(parsed_crate, &mut context)?;
+    let defined_crate = passes::p1_define_items(parsed_crate, &mut context)?;
+    passes::p2_generate_ast(&defined_crate, &mut context)?;
+
     Ok(())
 }
