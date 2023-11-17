@@ -16,6 +16,10 @@ impl ResolveContext<'_> {
             return Ok((ty_id, UnificationMethod::Direct));
         }
 
+        if ty_id.is_infer() && expected_ty_id.is_definable() {
+            return Ok((expected_ty_id, UnificationMethod::Direct));
+        }
+
         let expected_ty = &self.tys[ty_id];
 
         let error = Err(ResolveError::TysCannotBeUnified {

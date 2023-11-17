@@ -45,7 +45,10 @@ impl AstGenerator<'_> {
     ) -> AstResult<ExprAst> {
         let expr = match expr {
             Expr::Block(e) => self.gen_block_expr(e, frame_id, expected_ty_id)?,
-            Expr::Fn(e) => self.gen_fn_expr(e, frame_id, expected_ty_id)?,
+            Expr::Fn(e) => {
+                let module_id = self.context.get_toplevel_module(frame_id);
+                self.gen_fn_expr(e, module_id, expected_ty_id)?
+            }
             Expr::Literal(e) => self.gen_literal_expr(e, expected_ty_id)?,
             _ => todo!(),
         };

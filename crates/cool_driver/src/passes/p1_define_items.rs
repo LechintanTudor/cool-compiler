@@ -142,10 +142,16 @@ fn define_struct(struct_item: &ParsedStruct, context: &mut ResolveContext) -> Co
 }
 
 fn define_extern_fn(fn_item: &ParsedExternFn, context: &mut ResolveContext) -> CompileResult<()> {
+    let expected_ty_id = fn_item
+        .ty
+        .as_deref()
+        .map(|ty| resolve_ty(context, fn_item.module_id, ty))
+        .transpose()?;
+
     let ty_id = resolve_fn(
         context,
         fn_item.module_id,
-        fn_item.ty.as_deref(),
+        expected_ty_id,
         &fn_item.item.prototype,
     )?;
 
@@ -154,10 +160,16 @@ fn define_extern_fn(fn_item: &ParsedExternFn, context: &mut ResolveContext) -> C
 }
 
 fn define_fn(fn_item: &ParsedFn, context: &mut ResolveContext) -> CompileResult<()> {
+    let expected_ty_id = fn_item
+        .ty
+        .as_deref()
+        .map(|ty| resolve_ty(context, fn_item.module_id, ty))
+        .transpose()?;
+
     let ty_id = resolve_fn(
         context,
         fn_item.module_id,
-        fn_item.ty.as_deref(),
+        expected_ty_id,
         &fn_item.item.prototype,
     )?;
 

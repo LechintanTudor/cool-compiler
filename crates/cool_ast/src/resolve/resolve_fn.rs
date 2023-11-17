@@ -1,27 +1,27 @@
 use crate::{resolve_ty, AstResult};
 use cool_collections::SmallVec;
-use cool_parser::{FnAbiDecl, FnExprPrototype, Ty};
+use cool_parser::{FnAbiDecl, FnExprPrototype};
 use cool_resolve::{tys, FnAbi, ModuleId, ResolveContext, ResolveError, Scope, TyId};
 
 pub fn resolve_fn(
     context: &mut ResolveContext,
     module_id: ModuleId,
-    explicit_ty: Option<&Ty>,
+    ty_id: Option<TyId>,
     fn_prototype: &FnExprPrototype,
 ) -> AstResult<TyId> {
     let scope = Scope::Module(module_id);
 
-    let explicit_ty = explicit_ty
-        .map(|ty| resolve_ty(context, scope, ty))
-        .transpose()?;
-
-    let ty_id = match explicit_ty {
-        Some(ty_id) => {
-            let fn_ty = context[ty_id]
+    let fn_ty = ty_id
+        .map(|ty_id| {
+            context[ty_id]
                 .try_as_fn()
-                .ok_or(ResolveError::TyNotFn { ty_id })?
-                .clone();
+                .ok_or(ResolveError::TyNotFn { ty_id })
+        })
+        .transpose()?
+        .cloned();
 
+    let ty_id = match fn_ty {
+        Some(fn_ty) => {
             if let Some(expr_abi) = resolve_fn_expr_abi(fn_prototype.abi_decl.as_ref())? {
                 if fn_ty.abi != expr_abi {
                     Err(ResolveError::FnAbiMismatch {
@@ -72,7 +72,7 @@ pub fn resolve_fn(
                 }
             }
 
-            ty_id
+            ty_id.unwrap()
         }
         None => {
             let abi = resolve_fn_ty_abi(fn_prototype.abi_decl.as_ref())?;
