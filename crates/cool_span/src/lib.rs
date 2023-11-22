@@ -11,11 +11,12 @@ pub struct Span {
 }
 
 impl Span {
-    #[inline]
-    #[must_use]
-    pub const fn empty() -> Self {
-        Self { start: 0, len: 0 }
-    }
+    pub const EMPTY: Self = Self { start: 0, len: 0 };
+
+    pub const OUT_OF_BOUNDS: Self = Self {
+        start: u32::MAX,
+        len: 0,
+    };
 
     #[inline]
     #[must_use]
@@ -41,6 +42,12 @@ impl Span {
     #[must_use]
     pub const fn end(&self) -> u32 {
         self.start + self.len
+    }
+
+    #[inline]
+    #[must_use]
+    pub const fn is_out_of_bounds(&self) -> bool {
+        self.start == Self::OUT_OF_BOUNDS.start
     }
 }
 

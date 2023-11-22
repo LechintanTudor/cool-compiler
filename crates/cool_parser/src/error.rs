@@ -1,13 +1,21 @@
 use cool_lexer::{Token, TokenKind};
+use cool_span::{Section, Span};
 use derive_more::Error;
 use std::fmt;
 
 pub type ParseResult<T> = Result<T, ParseError>;
 
-#[derive(Clone, Error, Debug)]
+#[derive(Clone, Copy, Error, Debug)]
 pub struct ParseError {
     pub found: Token,
     pub expected: &'static [TokenKind],
+}
+
+impl Section for ParseError {
+    #[inline]
+    fn span(&self) -> Span {
+        self.found.span
+    }
 }
 
 impl fmt::Display for ParseError {

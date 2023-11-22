@@ -3,7 +3,6 @@ use cool_collections::{define_index_newtype, VecMap};
 use cool_parser::{AliasItem, ExternFnExpr, FnExpr, LiteralExpr, StructItem, Ty};
 use cool_resolve::{ItemId, ModuleId};
 use cool_span::Span;
-use std::collections::VecDeque;
 use std::fmt;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -19,11 +18,11 @@ pub type ParsedStruct = ParsedItem<StructItem>;
 #[derive(Default, Debug)]
 pub struct ParsedCrate {
     pub files: VecMap<SourceId, SourceFile>,
-    pub aliases: VecDeque<ParsedAlias>,
-    pub structs: VecDeque<ParsedStruct>,
-    pub literals: VecDeque<ParsedLiteral>,
-    pub extern_fns: VecDeque<ParsedExternFn>,
-    pub fns: VecDeque<ParsedFn>,
+    pub aliases: Vec<ParsedAlias>,
+    pub structs: Vec<ParsedStruct>,
+    pub literals: Vec<ParsedLiteral>,
+    pub extern_fns: Vec<ParsedExternFn>,
+    pub fns: Vec<ParsedFn>,
 }
 
 #[derive(Clone)]
@@ -46,7 +45,7 @@ impl SourceFile {
             match file_reader.read_line(&mut source) {
                 Ok(0) => break,
                 Ok(n) => line_offsets.add_line(n as u32),
-                Err(error) => return Err(CompileError::Io(error)),
+                Err(error) => Err(CompileError::Io(error))?,
             }
         }
 

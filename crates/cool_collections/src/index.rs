@@ -19,34 +19,23 @@ pub unsafe trait CoolIndex: Copy {
 
 #[macro_export]
 macro_rules! define_index_newtype {
-    ($Ident:ident; $(NoDebug)?) => {
+    ($Ident:ident) => {
+        define_index_newtype!($Ident; NoDebug);
+
+        impl ::std::fmt::Debug for $Ident {
+            #[inline]
+            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+                f.debug_tuple(stringify!($Ident)).field(&self.0).finish()
+            }
+        }
+    };
+    ($Ident:ident; NoDebug) => {
         #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
         pub struct $Ident(::std::num::NonZeroU32);
 
         impl $Ident {
-            #[inline]
-            pub const unsafe fn new_unchecked(index: u32) -> Self {
-                Self(::std::num::NonZeroU32::new_unchecked(index))
-            }
-        }
+            pub const LAST: Self = Self(::std::num::NonZeroU32::MAX);
 
-        unsafe impl $crate::CoolIndex for $Ident {
-            #[inline]
-            fn new(value: ::std::num::NonZeroU32) -> Self {
-                Self(value)
-            }
-
-            #[inline]
-            fn get(&self) -> ::std::num::NonZeroU32 {
-                self.0
-            }
-        }
-    };
-    ($Ident:ident) => {
-        #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
-        pub struct $Ident(::std::num::NonZeroU32);
-
-        impl $Ident {
             #[inline]
             pub const unsafe fn new_unchecked(index: u32) -> Self {
                 Self(::std::num::NonZeroU32::new_unchecked(index))

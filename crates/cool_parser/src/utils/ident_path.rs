@@ -14,7 +14,7 @@ impl Section for IdentPath {
     #[inline]
     fn span(&self) -> Span {
         match self.idents.as_slice() {
-            [] => Span::empty(),
+            [] => Span::EMPTY,
             [first] => first.span,
             [first, .., last] => first.span.to(last.span()),
         }

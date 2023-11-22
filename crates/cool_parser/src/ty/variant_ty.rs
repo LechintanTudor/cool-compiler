@@ -10,7 +10,7 @@ pub struct VariantTy {
 impl Section for VariantTy {
     fn span(&self) -> Span {
         match self.variant_tys.as_slice() {
-            [] => Span::empty(),
+            [] => Span::EMPTY,
             [first] => first.span(),
             [first, .., last] => first.span().to(last.span()),
         }

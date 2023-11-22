@@ -11,7 +11,7 @@ impl Section for Module {
     #[inline]
     fn span(&self) -> Span {
         match self.decls.as_slice() {
-            [] => Span::empty(),
+            [] => Span::EMPTY,
             [first] => first.span(),
             [first, .., last] => first.span().to(last.span()),
         }

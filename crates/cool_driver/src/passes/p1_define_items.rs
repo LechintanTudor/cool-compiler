@@ -9,17 +9,19 @@ use cool_resolve::{tys, ConstItemValue, ResolveContext, TyId};
 use std::collections::VecDeque;
 
 pub fn p1_define_items(
-    mut parsed_crate: ParsedCrate,
+    parsed_crate: ParsedCrate,
     context: &mut ResolveContext,
 ) -> CompileResult<DefinedCrate> {
+    let mut aliases = VecDeque::from(parsed_crate.aliases);
+    let mut literals = VecDeque::from(parsed_crate.literals);
+    let mut structs = VecDeque::from(parsed_crate.structs);
     let mut undefined_tys = Vec::new();
-    let fns = parsed_crate.fns.iter().cloned().collect::<Vec<_>>();
 
     loop {
         let mut made_progress = false;
-        made_progress |= define_items(&mut parsed_crate.aliases, context, define_alias);
-        made_progress |= define_items(&mut parsed_crate.literals, context, define_literal);
-        made_progress |= define_items(&mut parsed_crate.structs, context, define_struct);
+        made_progress |= define_items(&mut aliases, context, define_alias);
+        made_progress |= define_items(&mut literals, context, define_literal);
+        made_progress |= define_items(&mut structs, context, define_struct);
 
         undefined_tys.clear();
         undefined_tys.extend(context.iter_undefined_ty_ids());
@@ -30,24 +32,28 @@ pub fn p1_define_items(
         }
     }
 
+    let mut extern_fns = VecDeque::from(parsed_crate.extern_fns);
+    let mut fns = VecDeque::from(parsed_crate.fns.clone());
+
     loop {
         let mut made_progress = false;
-        made_progress |= define_items(&mut parsed_crate.extern_fns, context, define_extern_fn);
-        made_progress |= define_items(&mut parsed_crate.fns, context, define_fn);
+        made_progress |= define_items(&mut extern_fns, context, define_extern_fn);
+        made_progress |= define_items(&mut fns, context, define_fn);
 
         if !made_progress {
             break;
         }
     }
 
-    assert!(parsed_crate.aliases.is_empty());
-    assert!(parsed_crate.literals.is_empty());
-    assert!(parsed_crate.extern_fns.is_empty());
-    assert!(parsed_crate.fns.is_empty());
+    assert!(aliases.is_empty());
+    assert!(literals.is_empty());
+    assert!(structs.is_empty());
+    assert!(extern_fns.is_empty());
+    assert!(fns.is_empty());
 
     Ok(DefinedCrate {
         files: parsed_crate.files,
-        fns,
+        fns: parsed_crate.fns,
     })
 }
 
