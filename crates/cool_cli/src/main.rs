@@ -2,7 +2,7 @@ mod args;
 
 use crate::args::*;
 use clap::Parser as _;
-use cool_driver::passes;
+use cool_driver::{passes, ErrorLocation};
 use cool_resolve::TyConfig;
 
 fn main() -> anyhow::Result<()> {
@@ -23,7 +23,19 @@ fn main() -> anyhow::Result<()> {
         passes::p0_parse(ty_config, &args.crate_name, &args.crate_path);
 
     for error in errors {
-        println!("{:#?}", error);
+        println!("Error: {}.", error.error);
+
+        match error.location {
+            ErrorLocation::File(path) => println!("Error: {}", path.display()),
+            ErrorLocation::Source((source_id, span)) => {
+                let file = &parsed_crate.files[source_id];
+                let path = file.paths.path.as_path().display();
+                let (line, column) = file.line_offsets.get_position(span.start);
+                println!(" -> '{path}', line {line}, column {column}");
+            }
+        }
+
+        println!()
     }
 
     let defined_crate = passes::p1_define_items(parsed_crate, &mut context)?;

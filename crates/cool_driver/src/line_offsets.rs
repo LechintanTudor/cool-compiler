@@ -1,4 +1,4 @@
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Debug)]
 pub struct LineOffsets {
     offsets: Vec<u32>,
 }
@@ -14,5 +14,26 @@ impl LineOffsets {
     #[must_use]
     pub fn get_line(&self, offset: u32) -> u32 {
         self.offsets.partition_point(|&o| o <= offset) as u32
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn get_position(&self, offset: u32) -> (u32, u32) {
+        let line = self.get_line(offset);
+
+        let column = self
+            .offsets
+            .get((line - 1) as usize)
+            .map(|line_offset| offset - line_offset + 1)
+            .unwrap_or(1);
+
+        (line, column)
+    }
+}
+
+impl Default for LineOffsets {
+    #[inline]
+    fn default() -> Self {
+        Self { offsets: vec![0] }
     }
 }
