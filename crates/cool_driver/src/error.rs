@@ -1,14 +1,14 @@
 use crate::{ModulePathsError, SourceId};
 use cool_ast::{AstError, LiteralError};
 use cool_parser::ParseError;
-use cool_resolve::ResolveError;
+use cool_resolve::{ItemId, ResolveError};
 use cool_span::Span;
 use derive_more::{Display, Error, From};
 use std::io::Error as IoError;
 use std::path::PathBuf;
 
-pub type CompileResult<T = ()> = Result<T, CompileError>;
 pub type SpannedCompileResult<T = ()> = Result<T, SpannedCompileError>;
+pub type CompileResult<T = ()> = Result<T, CompileError>;
 
 #[derive(Error, Debug, Display)]
 #[display("{}", self.error)]
@@ -19,6 +19,19 @@ pub struct SpannedCompileError {
     pub error: CompileError,
 }
 
+impl SpannedCompileError {
+    pub fn new<L, E>(location: L, error: E) -> Self
+    where
+        L: Into<ErrorLocation>,
+        E: Into<CompileError>,
+    {
+        Self {
+            location: location.into(),
+            error: error.into(),
+        }
+    }
+}
+
 #[derive(Clone, From, Debug)]
 pub enum ErrorLocation {
     File(PathBuf),
@@ -26,23 +39,29 @@ pub enum ErrorLocation {
 }
 
 pub trait WithLocation {
-    fn with_location<L>(self, location: L) -> SpannedCompileError
+    type Success;
+
+    fn with_location<L>(self, location: L) -> SpannedCompileResult<Self::Success>
     where
         L: Into<ErrorLocation>;
 }
 
-impl<E> WithLocation for E
+impl<T, E> WithLocation for Result<T, E>
 where
     E: Into<CompileError>,
 {
-    fn with_location<L>(self, location: L) -> SpannedCompileError
+    type Success = T;
+
+    fn with_location<L>(self, location: L) -> SpannedCompileResult<Self::Success>
     where
         L: Into<ErrorLocation>,
     {
-        SpannedCompileError {
-            location: location.into(),
-            error: self.into(),
-        }
+        self.map_err(|error| {
+            SpannedCompileError {
+                location: location.into(),
+                error: error.into(),
+            }
+        })
     }
 }
 
@@ -53,6 +72,7 @@ pub enum CompileError {
     Parse(ParseError),
     Resolve(ResolveError),
     Literal(LiteralError),
+    Define(DefineError),
 }
 
 impl From<AstError> for CompileError {
@@ -63,4 +83,10 @@ impl From<AstError> for CompileError {
             AstError::Literal(e) => Self::Literal(e),
         }
     }
+}
+
+#[derive(Error, Debug, Display)]
+#[display("Item cannot be defined")]
+pub struct DefineError {
+    pub item_id: ItemId,
 }

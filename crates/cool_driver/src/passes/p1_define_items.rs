@@ -1,6 +1,6 @@
 use crate::{
-    CompileResult, DefinedCrate, ParsedAlias, ParsedCrate, ParsedExternFn, ParsedFn, ParsedLiteral,
-    ParsedStruct,
+    CompileResult, DefineError, DefinedCrate, ParsedAlias, ParsedCrate, ParsedExternFn, ParsedFn,
+    ParsedItem, ParsedLiteral, ParsedStruct, SpannedCompileError,
 };
 use cool_ast::{resolve_fn, resolve_int_literal, resolve_ty};
 use cool_collections::SmallVec;
@@ -11,7 +11,8 @@ use std::collections::VecDeque;
 pub fn p1_define_items(
     parsed_crate: ParsedCrate,
     context: &mut ResolveContext,
-) -> CompileResult<DefinedCrate> {
+    errors: &mut Vec<SpannedCompileError>,
+) -> DefinedCrate {
     let mut aliases = VecDeque::from(parsed_crate.aliases);
     let mut literals = VecDeque::from(parsed_crate.literals);
     let mut structs = VecDeque::from(parsed_crate.structs);
@@ -45,16 +46,16 @@ pub fn p1_define_items(
         }
     }
 
-    assert!(aliases.is_empty());
-    assert!(literals.is_empty());
-    assert!(structs.is_empty());
-    assert!(extern_fns.is_empty());
-    assert!(fns.is_empty());
+    report_undefinable_items(errors, aliases);
+    report_undefinable_items(errors, literals);
+    report_undefinable_items(errors, structs);
+    report_undefinable_items(errors, extern_fns);
+    report_undefinable_items(errors, fns);
 
-    Ok(DefinedCrate {
+    DefinedCrate {
         files: parsed_crate.files,
         fns: parsed_crate.fns,
-    })
+    }
 }
 
 fn define_items<I, F>(
@@ -181,4 +182,18 @@ fn define_fn(fn_item: &ParsedFn, context: &mut ResolveContext) -> CompileResult<
 
     context.update_const(fn_item.item_id, ty_id, ConstItemValue::Fn);
     Ok(())
+}
+
+fn report_undefinable_items<I>(
+    errors: &mut Vec<SpannedCompileError>,
+    items: VecDeque<ParsedItem<I>>,
+) {
+    for item in items {
+        errors.push(SpannedCompileError::new(
+            (item.source_id, item.span),
+            DefineError {
+                item_id: item.item_id,
+            },
+        ));
+    }
 }

@@ -1,4 +1,4 @@
-use crate::{resolve_int_literal, AstGenerator, AstResult, ExprAst};
+use crate::{resolve_int_literal, AstGenerator, ExprAst, SpannedAstResult, WithSpan};
 use cool_collections::SmallString;
 use cool_derive::Section;
 use cool_parser::{LiteralExpr, LiteralKind};
@@ -26,11 +26,12 @@ impl AstGenerator<'_> {
         &mut self,
         expr: &LiteralExpr,
         expected_ty_id: TyId,
-    ) -> AstResult<ExprAst> {
+    ) -> SpannedAstResult<ExprAst> {
         let (value, found_ty_id) = match expr.kind {
             LiteralKind::Int => {
                 resolve_int_literal(expr.value.as_str())
-                    .map(|(value, ty_id)| (LiteralExprValue::Int(value), ty_id))?
+                    .map(|(value, ty_id)| (LiteralExprValue::Int(value), ty_id))
+                    .with_span(expr.span)?
             }
             _ => todo!(),
         };

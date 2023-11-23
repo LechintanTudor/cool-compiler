@@ -8,7 +8,7 @@ pub use self::fn_expr::*;
 pub use self::literal_expr::*;
 pub use self::wrap_expr::*;
 
-use crate::{AstGenerator, AstResult};
+use crate::{AstGenerator, SpannedAstResult, WithSpan};
 use cool_derive::Section;
 use cool_parser::Expr;
 use cool_resolve::{ExprId, FrameId, ResolveContext, TyId, UnificationMethod};
@@ -42,7 +42,7 @@ impl AstGenerator<'_> {
         expr: &Expr,
         frame_id: FrameId,
         expected_ty_id: TyId,
-    ) -> AstResult<ExprAst> {
+    ) -> SpannedAstResult<ExprAst> {
         let expr = match expr {
             Expr::Block(e) => self.gen_block_expr(e, frame_id, expected_ty_id)?,
             Expr::Fn(e) => {
@@ -62,12 +62,15 @@ impl AstGenerator<'_> {
         found_ty_id: TyId,
         expected_ty_id: TyId,
         expr_builder: B,
-    ) -> AstResult<ExprAst>
+    ) -> SpannedAstResult<ExprAst>
     where
         E: Into<ExprAst>,
         B: FnOnce(&mut ResolveContext, Span, TyId) -> E,
     {
-        let (ty_id, method) = self.context.unify_tys(found_ty_id, expected_ty_id)?;
+        let (ty_id, method) = self
+            .context
+            .unify_tys(found_ty_id, expected_ty_id)
+            .with_span(span)?;
 
         let expr = match method {
             UnificationMethod::Direct => expr_builder(self.context, span, ty_id).into(),

@@ -19,16 +19,20 @@ fn main() -> anyhow::Result<()> {
         ptr_size: 8,
     };
 
-    let (mut context, parsed_crate, errors) =
+    let (parsed_crate, mut context, mut errors) =
         passes::p0_parse(ty_config, &args.crate_name, &args.crate_path);
 
-    for error in errors {
+    let defined_crate = passes::p1_define_items(parsed_crate, &mut context, &mut errors);
+
+    passes::p2_generate_ast(&defined_crate, &mut context, &mut errors);
+
+    for error in &errors {
         println!("Error: {}.", error.error);
 
         match error.location {
-            ErrorLocation::File(path) => println!("Error: {}", path.display()),
+            ErrorLocation::File(ref path) => println!("Error: {}", path.display()),
             ErrorLocation::Source((source_id, span)) => {
-                let file = &parsed_crate.files[source_id];
+                let file = &defined_crate.files[source_id];
                 let path = file.paths.path.as_path().display();
                 let (line, column) = file.line_offsets.get_position(span.start);
                 println!(" -> '{path}', line {line}, column {column}");
@@ -37,9 +41,6 @@ fn main() -> anyhow::Result<()> {
 
         println!()
     }
-
-    let defined_crate = passes::p1_define_items(parsed_crate, &mut context)?;
-    passes::p2_generate_ast(&defined_crate, &mut context)?;
 
     Ok(())
 }

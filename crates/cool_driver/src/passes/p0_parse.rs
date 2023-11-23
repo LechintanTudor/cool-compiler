@@ -16,8 +16,8 @@ pub fn p0_parse(
     crate_name: &str,
     crate_path: &Path,
 ) -> (
-    ResolveContext<'static>,
     ParsedCrate,
+    ResolveContext<'static>,
     Vec<SpannedCompileError>,
 ) {
     let context = ResolveContext::new_leak(ty_config);
@@ -67,12 +67,12 @@ impl CrateParser {
 
     fn parse_crate(&mut self, crate_name: &str, crate_path: &Path) -> SpannedCompileResult {
         let root_paths = ModulePaths::for_root(crate_path)
-            .map_err(|error| error.with_location(crate_path.to_path_buf()))?;
+            .map_err(|error| SpannedCompileError::new(crate_path.to_path_buf(), error))?;
 
         let root_id = self
             .context
             .add_root_module(Symbol::insert(crate_name))
-            .map_err(|error| error.with_location(crate_path.to_path_buf()))?;
+            .map_err(|error| SpannedCompileError::new(crate_path.to_path_buf(), error))?;
 
         self.file_module_queue.clear();
         self.file_module_queue.push_back((root_id, root_paths));
@@ -92,13 +92,13 @@ impl CrateParser {
         module_paths: ModulePaths,
     ) -> SpannedCompileResult {
         let source_file = SourceFile::from_paths(module_paths.clone())
-            .map_err(|error| error.with_location(module_paths.path))?;
+            .map_err(|error| SpannedCompileError::new(module_paths.path.clone(), error))?;
 
         let source_id = self.parsed_crate.files.push(source_file);
         let source = self.parsed_crate.files.last().unwrap().source.as_str();
 
         let module = cool_parser::parse_module(source)
-            .map_err(|error| error.with_location((source_id, error.span())))?;
+            .map_err(|error| SpannedCompileError::new(module_paths.path, error))?;
 
         self.module_queue.clear();
         self.module_queue.push_front((module_id, module));
@@ -127,9 +127,7 @@ impl CrateParser {
                         let module_id = self
                             .context
                             .add_module(module_id, decl.is_exported, item_decl.ident.symbol)
-                            .map_err(|error| {
-                                error.with_location((source_id, item_decl.ident.span))
-                            })?;
+                            .with_location((source_id, item_decl.ident.span))?;
 
                         match module.kind {
                             ModuleKind::Extern => {
@@ -137,9 +135,7 @@ impl CrateParser {
                                     &self.parsed_crate.files[source_id].paths.child_dir,
                                     item_decl.ident.symbol.as_str(),
                                 )
-                                .map_err(|error| {
-                                    error.with_location((source_id, item_decl.ident.span))
-                                })?;
+                                .with_location((source_id, item_decl.ident.span))?;
 
                                 self.file_module_queue.push_back((module_id, module_paths));
                             }
@@ -152,9 +148,7 @@ impl CrateParser {
                         let item_id = self
                             .context
                             .add_struct(module_id, decl.is_exported, item_decl.ident.symbol)
-                            .map_err(|error| {
-                                error.with_location((source_id, item_decl.ident.span))
-                            })?;
+                            .with_location((source_id, item_decl.ident.span))?;
 
                         self.parsed_crate.structs.push(ParsedStruct {
                             source_id,
@@ -175,9 +169,7 @@ impl CrateParser {
                                 tys::infer,
                                 ConstItemValue::Fn,
                             )
-                            .map_err(|error| {
-                                error.with_location((source_id, item_decl.ident.span))
-                            })?;
+                            .with_location((source_id, item_decl.ident.span))?;
 
                         self.parsed_crate.extern_fns.push(ParsedExternFn {
                             source_id,
@@ -198,9 +190,7 @@ impl CrateParser {
                                 tys::infer,
                                 ConstItemValue::Fn,
                             )
-                            .map_err(|error| {
-                                error.with_location((source_id, item_decl.ident.span))
-                            })?;
+                            .with_location((source_id, item_decl.ident.span))?;
 
                         self.parsed_crate.fns.push(ParsedFn {
                             source_id,
@@ -221,9 +211,7 @@ impl CrateParser {
                                 tys::infer,
                                 ConstItemValue::Undefined,
                             )
-                            .map_err(|error| {
-                                error.with_location((source_id, item_decl.ident.span))
-                            })?;
+                            .with_location((source_id, item_decl.ident.span))?;
 
                         self.parsed_crate.literals.push(ParsedLiteral {
                             source_id,
@@ -238,9 +226,7 @@ impl CrateParser {
                         let item_id = self
                             .context
                             .add_alias(module_id, decl.is_exported, item_decl.ident.symbol)
-                            .map_err(|error| {
-                                error.with_location((source_id, item_decl.ident.span))
-                            })?;
+                            .with_location((source_id, item_decl.ident.span))?;
 
                         self.parsed_crate.aliases.push(ParsedAlias {
                             source_id,
@@ -312,8 +298,10 @@ impl CrateParser {
                 &import.path,
                 import.alias,
             ) {
-                self.errors
-                    .push(error.with_location((import.source_id, import.span)));
+                self.errors.push(SpannedCompileError::new(
+                    (import.source_id, import.span),
+                    error,
+                ));
             }
         }
     }
@@ -322,10 +310,10 @@ impl CrateParser {
     fn into_artifacts(
         self,
     ) -> (
-        ResolveContext<'static>,
         ParsedCrate,
+        ResolveContext<'static>,
         Vec<SpannedCompileError>,
     ) {
-        (self.context, self.parsed_crate, self.errors)
+        (self.parsed_crate, self.context, self.errors)
     }
 }

@@ -1,4 +1,4 @@
-use crate::{AstGenerator, AstResult, ExprAst, StmtAst};
+use crate::{AstGenerator, ExprAst, SpannedAstResult, StmtAst};
 use cool_derive::Section;
 use cool_parser::BlockExpr;
 use cool_resolve::{tys, ExprId, FrameId, TyId};
@@ -18,7 +18,7 @@ impl AstGenerator<'_> {
         expr: &BlockExpr,
         frame_id: FrameId,
         expected_ty_id: TyId,
-    ) -> AstResult<ExprAst> {
+    ) -> SpannedAstResult<ExprAst> {
         let frame_id = self.context.add_frame(frame_id);
 
         let stmts = expr
