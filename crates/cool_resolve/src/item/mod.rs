@@ -1,19 +1,25 @@
 mod alias_item;
+mod binding;
 mod binding_item;
 mod const_item;
+mod expr;
 mod import;
 mod item_kind;
 mod module_item;
 mod resolve;
+mod scope;
 mod struct_item;
 
 pub use self::alias_item::*;
+pub use self::binding::*;
 pub use self::binding_item::*;
 pub use self::const_item::*;
+pub use self::expr::*;
 pub use self::import::*;
 pub use self::item_kind::*;
 pub use self::module_item::*;
 pub use self::resolve::*;
+pub use self::scope::*;
 pub use self::struct_item::*;
 
 use crate::{ResolveContext, ResolveError, ResolveResult};

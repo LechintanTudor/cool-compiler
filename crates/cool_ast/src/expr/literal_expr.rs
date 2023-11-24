@@ -36,7 +36,7 @@ impl AstGenerator<'_> {
             _ => todo!(),
         };
 
-        self.resolve_expr(
+        self.gen_tail_expr(
             expr.span,
             found_ty_id,
             expected_ty_id,

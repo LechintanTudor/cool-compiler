@@ -1,10 +1,12 @@
 mod block_expr;
 mod fn_expr;
+mod ident_expr;
 mod literal_expr;
 mod wrap_expr;
 
 pub use self::block_expr::*;
 pub use self::fn_expr::*;
+pub use self::ident_expr::*;
 pub use self::literal_expr::*;
 pub use self::wrap_expr::*;
 
@@ -19,6 +21,7 @@ use derive_more::From;
 pub enum ExprAst {
     Block(BlockExprAst),
     Fn(FnExprAst),
+    Ident(IdentExprAst),
     Literal(LiteralExprAst),
     Wrap(WrapExprAst),
 }
@@ -30,6 +33,7 @@ impl ExprAst {
         match self {
             ExprAst::Block(e) => e.expr_id,
             ExprAst::Fn(e) => e.expr_id,
+            ExprAst::Ident(e) => e.expr_id,
             ExprAst::Literal(e) => e.expr_id,
             ExprAst::Wrap(e) => e.expr_id,
         }
@@ -49,6 +53,7 @@ impl AstGenerator<'_> {
                 let module_id = self.context.get_toplevel_module(frame_id);
                 self.gen_fn_expr(e, module_id, expected_ty_id)?
             }
+            Expr::Ident(e) => self.gen_ident_expr(e, frame_id, expected_ty_id)?,
             Expr::Literal(e) => self.gen_literal_expr(e, expected_ty_id)?,
             _ => todo!(),
         };
@@ -56,7 +61,7 @@ impl AstGenerator<'_> {
         Ok(expr)
     }
 
-    pub fn resolve_expr<E, B>(
+    pub fn gen_tail_expr<E, B>(
         &mut self,
         span: Span,
         found_ty_id: TyId,

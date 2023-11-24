@@ -12,12 +12,11 @@ impl ResolveContext<'_> {
         ty_id: TyId,
         expected_ty_id: TyId,
     ) -> ResolveResult<(TyId, UnificationMethod)> {
-        let can_unify_directly = match expected_ty_id {
-            tys::infer => ty_id.is_definable(),
-            tys::infer_number => ty_id.is_number(),
-            tys::infer_int_or_bool => ty_id.is_int() || ty_id == tys::bool,
-            _ => ty_id == expected_ty_id,
-        };
+        let can_unify_directly = (expected_ty_id.is_definable() && expected_ty_id == ty_id)
+            || (expected_ty_id == tys::infer && ty_id.is_definable())
+            || (expected_ty_id == tys::infer_number && ty_id.is_number())
+            || (expected_ty_id == tys::infer_int_or_bool && ty_id.is_int() || ty_id == tys::bool)
+            || (expected_ty_id.is_number() && ty_id == tys::infer_number);
 
         if can_unify_directly {
             return Ok((ty_id, UnificationMethod::Direct));

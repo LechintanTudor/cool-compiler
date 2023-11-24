@@ -41,7 +41,7 @@ impl AstGenerator<'_> {
 
         let body = self.gen_block_expr(&expr.body, params_frame_id, fn_ty.return_ty)?;
 
-        self.resolve_expr(
+        self.gen_tail_expr(
             expr.span(),
             ty_id,
             expected_ty_id,

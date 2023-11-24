@@ -1,7 +1,32 @@
-use crate::{ItemId, ModuleId, ResolveContext, ResolveError, ResolveResult};
+use crate::{ItemId, ItemKind, ModuleId, ResolveContext, ResolveError, ResolveResult, Scope};
 use cool_lexer::{sym, Symbol};
 
 impl ResolveContext<'_> {
+    pub fn get_symbol<S>(&self, scope: S, symbol: Symbol) -> ResolveResult<ItemKind>
+    where
+        S: Into<Scope>,
+    {
+        let mut scope = scope.into();
+
+        loop {
+            match scope {
+                Scope::Frame(frame_id) => {
+                    let frame = &self[frame_id];
+
+                    match frame.get(symbol) {
+                        Some(binding_id) => return Ok(binding_id.into()),
+                        None => scope = frame.parent,
+                    }
+                }
+                Scope::Module(module_id) => {
+                    return self
+                        .resolve_path(module_id, &[symbol])
+                        .map(|item_id| self[item_id]);
+                }
+            }
+        }
+    }
+
     pub fn resolve_path(&self, module_id: ModuleId, path: &[Symbol]) -> ResolveResult<ItemId> {
         let module = &self.modules[module_id];
 

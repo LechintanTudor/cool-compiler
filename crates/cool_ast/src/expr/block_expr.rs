@@ -19,13 +19,18 @@ impl AstGenerator<'_> {
         frame_id: FrameId,
         expected_ty_id: TyId,
     ) -> SpannedAstResult<ExprAst> {
-        let frame_id = self.context.add_frame(frame_id);
+        let mut frame_id = self.context.add_frame(frame_id);
+        let mut stmts = Vec::<StmtAst>::new();
 
-        let stmts = expr
-            .stmts
-            .iter()
-            .map(|stmt| self.gen_stmt(&stmt.stmt, frame_id))
-            .collect::<Result<Vec<_>, _>>()?;
+        for stmt in expr.stmts.iter() {
+            let stmt = self.gen_stmt(&stmt.stmt, frame_id)?;
+
+            if let StmtAst::Decl(decl) = &stmt {
+                frame_id = decl.frame_id;
+            }
+
+            stmts.push(stmt);
+        }
 
         let end_expr = expr
             .end_expr
@@ -38,7 +43,7 @@ impl AstGenerator<'_> {
             .map(|expr| self.context[expr.expr_id()].ty_id)
             .unwrap_or(tys::unit);
 
-        self.resolve_expr(expr.span, ty_id, expected_ty_id, |context, span, ty_id| {
+        self.gen_tail_expr(expr.span, ty_id, expected_ty_id, |context, span, ty_id| {
             BlockExprAst {
                 span,
                 expr_id: context.add_rvalue_expr(ty_id),

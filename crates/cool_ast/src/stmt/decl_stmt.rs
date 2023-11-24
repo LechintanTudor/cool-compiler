@@ -1,13 +1,13 @@
 use crate::{resolve_ty, AstGenerator, ExprAst, SpannedAstResult};
 use cool_derive::Section;
 use cool_parser::DeclStmt;
-use cool_resolve::{tys, Binding, BindingId, FrameId};
+use cool_resolve::{tys, Binding, FrameId};
 use cool_span::{Section, Span};
 
 #[derive(Clone, Section, Debug)]
 pub struct DeclStmtAst {
     pub span: Span,
-    pub binding_id: BindingId,
+    pub frame_id: FrameId,
     pub expr: Box<ExprAst>,
 }
 
@@ -28,8 +28,7 @@ impl AstGenerator<'_> {
 
         let frame_id = self.context.add_frame(frame_id);
 
-        let binding_id = self
-            .context
+        self.context
             .add_binding(
                 frame_id,
                 Binding {
@@ -42,7 +41,7 @@ impl AstGenerator<'_> {
 
         Ok(DeclStmtAst {
             span: stmt.span(),
-            binding_id,
+            frame_id,
             expr: Box::new(expr),
         })
     }

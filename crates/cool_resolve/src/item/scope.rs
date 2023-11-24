@@ -1,8 +1,4 @@
-mod binding;
-
-pub use self::binding::*;
-
-use crate::{ModuleId, ResolveContext};
+use crate::{BindingId, ModuleId, ResolveContext};
 use cool_collections::{define_index_newtype, SmallVec};
 use cool_lexer::Symbol;
 use derive_more::From;
