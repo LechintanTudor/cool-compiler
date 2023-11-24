@@ -1,10 +1,12 @@
 mod error;
 mod expr;
+mod op;
 mod resolve;
 mod stmt;
 
 pub use self::error::*;
 pub use self::expr::*;
+pub use self::op::*;
 pub use self::resolve::*;
 pub use self::stmt::*;
 

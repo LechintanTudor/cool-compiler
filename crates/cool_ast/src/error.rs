@@ -1,4 +1,4 @@
-use cool_resolve::ResolveError;
+use cool_resolve::{ExprId, ResolveError};
 use cool_span::Span;
 use derive_more::{Display, Error, From};
 
@@ -31,12 +31,19 @@ impl SpannedAstError {
 pub enum AstError {
     Resolve(ResolveError),
     Literal(LiteralError),
+    Semantic(SemanticError),
 }
 
 #[derive(Clone, Error, Debug, Display)]
 pub enum LiteralError {
     ValueTooLarge,
     SuffixUnknown,
+}
+
+#[derive(Clone, Error, Debug, Display)]
+pub enum SemanticError {
+    #[display("Expression is not assignable")]
+    ExprNotAssignable { expr_id: ExprId },
 }
 
 pub trait WithSpan {

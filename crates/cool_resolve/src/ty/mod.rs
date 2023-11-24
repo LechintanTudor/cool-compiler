@@ -21,20 +21,20 @@ define_index_newtype!(TyId);
 impl TyId {
     #[inline]
     #[must_use]
-    pub fn is_infer(&self) -> bool {
-        *self == tys::infer
+    pub fn is_any_infer(&self) -> bool {
+        [tys::infer, tys::infer_number].contains(self)
     }
 
     #[inline]
     #[must_use]
-    pub fn is_infer_number(&self) -> bool {
-        *self == tys::infer_number
+    pub fn is_item(&self) -> bool {
+        [tys::alias, tys::module].contains(self)
     }
 
     #[inline]
     #[must_use]
     pub fn is_definable(&self) -> bool {
-        ![tys::infer, tys::infer_number, tys::alias, tys::module].contains(self)
+        !self.is_any_infer() && !self.is_item()
     }
 
     #[inline]
@@ -48,18 +48,48 @@ impl TyId {
     pub fn is_int(&self) -> bool {
         tys::i8 <= *self && *self <= tys::usize
     }
+
+    #[inline]
+    #[must_use]
+    pub fn is_signed_int(&self) -> bool {
+        tys::i8 <= *self && *self <= tys::isize
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn is_unsigned_int(&self) -> bool {
+        tys::u8 <= *self && *self <= tys::usize
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn is_float(&self) -> bool {
+        [tys::f32, tys::f64].contains(self)
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn is_number(&self) -> bool {
+        self.is_int() || self.is_float()
+    }
 }
 
 define_tys! {
-    // Undefined types
+    // Infer
     infer,
     infer_number,
+    infer_int,
+    infer_int_or_bool,
 
+    // Item
     alias,
     module,
 
-    // Defined types
+    // Defined
     unit,
+    bool,
+    char,
+
     i8,
     i16,
     i32,
@@ -81,6 +111,11 @@ impl ResolveContext<'_> {
         // Undefined
         debug_assert_eq!(self.tys.insert(InferTy::Any.into()), tys::infer);
         debug_assert_eq!(self.tys.insert(InferTy::Number.into()), tys::infer_number);
+        debug_assert_eq!(self.tys.insert(InferTy::Int.into()), tys::infer_int);
+        debug_assert_eq!(
+            self.tys.insert(InferTy::IntOrBool.into()),
+            tys::infer_int_or_bool
+        );
 
         debug_assert_eq!(self.tys.insert(ItemTy::Alias.into()), tys::alias);
         debug_assert_eq!(self.tys.insert(ItemTy::Module.into()), tys::module);
@@ -91,6 +126,10 @@ impl ResolveContext<'_> {
 
         let unit_def = self.define_ty(unit_ty_id);
         debug_assert!(unit_def.is_ok());
+
+        // Other
+        self.add_primitive_ty(sym::bool, tys::bool, TyKind::Bool);
+        self.add_primitive_ty(sym::char, tys::char, TyKind::Char);
 
         // Signed integers
         self.add_primitive_ty(sym::i8, tys::i8, IntTy::I8);
@@ -137,6 +176,20 @@ impl ResolveContext<'_> {
                 TyDef {
                     size: 0,
                     align: 1,
+                    kind: TyDefKind::Basic,
+                }
+            }
+            TyKind::Bool => {
+                TyDef {
+                    size: 1,
+                    align: self.ty_config.i8_align,
+                    kind: TyDefKind::Basic,
+                }
+            }
+            TyKind::Char => {
+                TyDef {
+                    size: 4,
+                    align: self.ty_config.i32_align,
                     kind: TyDefKind::Basic,
                 }
             }

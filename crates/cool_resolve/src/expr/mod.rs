@@ -4,10 +4,18 @@ use std::ops::Index;
 
 define_index_newtype!(ExprId);
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum ExprKind {
     Lvalue { is_mutable: bool },
     Rvalue,
+}
+
+impl ExprKind {
+    #[inline]
+    #[must_use]
+    pub fn is_assignable(&self) -> bool {
+        matches!(self, Self::Lvalue { is_mutable: true })
+    }
 }
 
 #[derive(Clone, Debug)]

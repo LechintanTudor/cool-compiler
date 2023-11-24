@@ -12,6 +12,8 @@ pub enum TyKind {
 
     // Defined types
     Unit,
+    Bool,
+    Char,
     Int(IntTy),
     Float(FloatTy),
     Ptr(PtrTy),
@@ -36,6 +38,15 @@ impl TyKind {
 
     #[inline]
     #[must_use]
+    pub fn try_as_variant(&self) -> Option<&VariantTy> {
+        match self {
+            Self::Variant(variant_ty) => Some(variant_ty),
+            _ => None,
+        }
+    }
+
+    #[inline]
+    #[must_use]
     pub fn is_ptr_or_slice(&self) -> bool {
         matches!(
             self,
@@ -48,6 +59,8 @@ impl TyKind {
 pub enum InferTy {
     Any,
     Number,
+    Int,
+    IntOrBool,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]

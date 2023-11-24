@@ -1,5 +1,5 @@
 use crate::{ModulePathsError, SourceId};
-use cool_ast::{AstError, LiteralError, SpannedAstError};
+use cool_ast::{AstError, LiteralError, SemanticError, SpannedAstError};
 use cool_parser::ParseError;
 use cool_resolve::{ItemId, ResolveError};
 use cool_span::Span;
@@ -89,6 +89,7 @@ pub enum CompileError {
     Resolve(ResolveError),
     Literal(LiteralError),
     Define(DefineError),
+    Semantic(SemanticError),
 }
 
 impl From<AstError> for CompileError {
@@ -97,6 +98,7 @@ impl From<AstError> for CompileError {
         match error {
             AstError::Resolve(e) => Self::Resolve(e),
             AstError::Literal(e) => Self::Literal(e),
+            AstError::Semantic(e) => Self::Semantic(e),
         }
     }
 }
