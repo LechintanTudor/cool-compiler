@@ -22,9 +22,7 @@ impl AstGenerator<'_> {
             .try_as_fn()
             .map(|_| expected_ty_id);
 
-        let ty_id = resolve_fn(self.context, module_id, fn_ty_id, &expr.prototype)
-            .with_span(expr.prototype.span)?;
-
+        let ty_id = resolve_fn(self.context, module_id, fn_ty_id, &expr.prototype)?;
         let fn_ty = self.context[ty_id].try_as_fn().unwrap().clone();
 
         let params_frame_id = self.context.add_frame(module_id);

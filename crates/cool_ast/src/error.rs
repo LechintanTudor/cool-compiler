@@ -15,6 +15,18 @@ pub struct SpannedAstError {
     pub error: AstError,
 }
 
+impl SpannedAstError {
+    pub fn new<E>(span: Span, error: E) -> Self
+    where
+        E: Into<AstError>,
+    {
+        Self {
+            span,
+            error: error.into(),
+        }
+    }
+}
+
 #[derive(Clone, Error, From, Debug, Display)]
 pub enum AstError {
     Resolve(ResolveError),

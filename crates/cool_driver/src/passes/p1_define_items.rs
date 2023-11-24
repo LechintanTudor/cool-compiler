@@ -1,6 +1,7 @@
 use crate::{
-    CompileResult, DefineError, DefinedCrate, ParsedAlias, ParsedCrate, ParsedExternFn, ParsedFn,
-    ParsedItem, ParsedLiteral, ParsedStruct, SpannedCompileError,
+    DefineError, DefinedCrate, ParsedAlias, ParsedCrate, ParsedExternFn, ParsedFn, ParsedItem,
+    ParsedLiteral, ParsedStruct, SpannedCompileError, SpannedCompileResult, WithLocation,
+    WithSourceId,
 };
 use cool_ast::{resolve_fn, resolve_int_literal, resolve_ty};
 use cool_collections::SmallVec;
@@ -64,7 +65,7 @@ fn define_items<I, F>(
     mut define_item: F,
 ) -> bool
 where
-    F: FnMut(&I, &mut ResolveContext) -> CompileResult<()>,
+    F: FnMut(&I, &mut ResolveContext) -> SpannedCompileResult<()>,
 {
     let mut made_progress = false;
     let items_len = items.len();
@@ -96,34 +97,43 @@ fn define_tys(ty_ids: &[TyId], context: &mut ResolveContext) -> bool {
     made_progress
 }
 
-fn define_alias(alias: &ParsedAlias, context: &mut ResolveContext) -> CompileResult<()> {
+fn define_alias(alias: &ParsedAlias, context: &mut ResolveContext) -> SpannedCompileResult<()> {
     let item_ty = alias
         .ty
         .as_ref()
         .map(|ty| resolve_ty(context, alias.module_id, ty))
-        .transpose()?
+        .transpose()
+        .with_source_id(alias.source_id)?
         .unwrap_or(tys::alias);
 
     if item_ty != tys::alias {
         panic!("Invalid item type");
     }
 
-    let ty_id = resolve_ty(context, alias.module_id, &alias.item.ty)?;
+    let ty_id =
+        resolve_ty(context, alias.module_id, &alias.item.ty).with_source_id(alias.source_id)?;
 
     context.update_alias(alias.item_id, ty_id);
     Ok(())
 }
 
-fn define_literal(literal: &ParsedLiteral, context: &mut ResolveContext) -> CompileResult<()> {
+fn define_literal(
+    literal: &ParsedLiteral,
+    context: &mut ResolveContext,
+) -> SpannedCompileResult<()> {
     let _item_ty = literal
         .ty
         .as_ref()
         .map(|ty| resolve_ty(context, literal.module_id, ty))
-        .transpose()?
+        .transpose()
+        .with_source_id(literal.source_id)?
         .unwrap_or(tys::infer);
 
     let (value, ty_id) = match literal.item.kind {
-        LiteralKind::Int => resolve_int_literal(literal.item.value.as_str())?,
+        LiteralKind::Int => {
+            resolve_int_literal(literal.item.value.as_str())
+                .with_location((literal.source_id, literal.span))?
+        }
         _ => todo!(),
     };
 
@@ -131,7 +141,10 @@ fn define_literal(literal: &ParsedLiteral, context: &mut ResolveContext) -> Comp
     Ok(())
 }
 
-fn define_struct(struct_item: &ParsedStruct, context: &mut ResolveContext) -> CompileResult<()> {
+fn define_struct(
+    struct_item: &ParsedStruct,
+    context: &mut ResolveContext,
+) -> SpannedCompileResult<()> {
     let ty_id = context[struct_item.item_id].try_as_ty().unwrap();
 
     let fields = struct_item
@@ -142,43 +155,54 @@ fn define_struct(struct_item: &ParsedStruct, context: &mut ResolveContext) -> Co
             resolve_ty(context, struct_item.module_id, &field.ty)
                 .map(|ty_id| (field.ident.symbol, ty_id))
         })
-        .collect::<Result<SmallVec<_, 8>, _>>()?;
+        .collect::<Result<SmallVec<_, 8>, _>>()
+        .with_source_id(struct_item.source_id)?;
 
-    context.define_struct_ty(ty_id, fields)?;
+    context
+        .define_struct_ty(ty_id, fields)
+        .with_location((struct_item.source_id, struct_item.span))?;
+
     Ok(())
 }
 
-fn define_extern_fn(fn_item: &ParsedExternFn, context: &mut ResolveContext) -> CompileResult<()> {
+fn define_extern_fn(
+    fn_item: &ParsedExternFn,
+    context: &mut ResolveContext,
+) -> SpannedCompileResult<()> {
     let expected_ty_id = fn_item
         .ty
         .as_deref()
         .map(|ty| resolve_ty(context, fn_item.module_id, ty))
-        .transpose()?;
+        .transpose()
+        .with_source_id(fn_item.source_id)?;
 
     let ty_id = resolve_fn(
         context,
         fn_item.module_id,
         expected_ty_id,
         &fn_item.item.prototype,
-    )?;
+    )
+    .with_source_id(fn_item.source_id)?;
 
     context.update_const(fn_item.item_id, ty_id, ConstItemValue::Fn);
     Ok(())
 }
 
-fn define_fn(fn_item: &ParsedFn, context: &mut ResolveContext) -> CompileResult<()> {
+fn define_fn(fn_item: &ParsedFn, context: &mut ResolveContext) -> SpannedCompileResult<()> {
     let expected_ty_id = fn_item
         .ty
         .as_deref()
         .map(|ty| resolve_ty(context, fn_item.module_id, ty))
-        .transpose()?;
+        .transpose()
+        .with_source_id(fn_item.source_id)?;
 
     let ty_id = resolve_fn(
         context,
         fn_item.module_id,
         expected_ty_id,
         &fn_item.item.prototype,
-    )?;
+    )
+    .with_source_id(fn_item.source_id)?;
 
     context.update_const(fn_item.item_id, ty_id, ConstItemValue::Fn);
     Ok(())

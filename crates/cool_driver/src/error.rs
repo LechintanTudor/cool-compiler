@@ -1,5 +1,5 @@
 use crate::{ModulePathsError, SourceId};
-use cool_ast::{AstError, LiteralError};
+use cool_ast::{AstError, LiteralError, SpannedAstError};
 use cool_parser::ParseError;
 use cool_resolve::{ItemId, ResolveError};
 use cool_span::Span;
@@ -61,6 +61,22 @@ where
                 location: location.into(),
                 error: error.into(),
             }
+        })
+    }
+}
+
+pub trait WithSourceId {
+    type Success;
+
+    fn with_source_id(self, source_id: SourceId) -> SpannedCompileResult<Self::Success>;
+}
+
+impl<T> WithSourceId for Result<T, SpannedAstError> {
+    type Success = T;
+
+    fn with_source_id(self, source_id: SourceId) -> SpannedCompileResult<Self::Success> {
+        self.map_err(|ast_error| {
+            SpannedCompileError::new((source_id, ast_error.span), ast_error.error)
         })
     }
 }

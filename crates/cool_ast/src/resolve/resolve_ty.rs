@@ -1,9 +1,10 @@
-use crate::{resolve_int_literal, AstResult};
+use crate::{resolve_int_literal, SpannedAstResult, WithSpan};
 use cool_collections::SmallVec;
 use cool_parser::{ArrayLen, ItemKind, Ty};
 use cool_resolve::{tys, FnAbi, ModuleId, ResolveContext, ResolveError, Scope, TyId};
+use cool_span::Section;
 
-pub fn resolve_ty<S>(context: &mut ResolveContext, scope: S, ty: &Ty) -> AstResult<TyId>
+pub fn resolve_ty<S>(context: &mut ResolveContext, scope: S, ty: &Ty) -> SpannedAstResult<TyId>
 where
     S: Into<Scope>,
 {
@@ -14,7 +15,7 @@ pub fn resolve_ty_inner(
     context: &mut ResolveContext,
     module_id: ModuleId,
     ty: &Ty,
-) -> AstResult<TyId> {
+) -> SpannedAstResult<TyId> {
     let ty_id = match ty {
         Ty::Array(array_ty) => {
             let elem_ty = resolve_ty_inner(context, module_id, &array_ty.elem_ty)?;
@@ -25,7 +26,7 @@ pub fn resolve_ty_inner(
             let abi = match &fn_ty.abi_decl {
                 Some(abi_decl) => {
                     match abi_decl.abi {
-                        Some(abi) => FnAbi::try_from(abi)?,
+                        Some(abi) => FnAbi::try_from(abi).with_span(abi_decl.span)?,
                         None => FnAbi::C,
                     }
                 }
@@ -59,19 +60,22 @@ pub fn resolve_ty_inner(
             context.add_many_ptr_ty(pointee_ty, many_ptr_ty.is_mutable)
         }
         Ty::Paren(paren_ty) => resolve_ty_inner(context, module_id, &paren_ty.ty)?,
-        Ty::Path(path) => {
-            let path = path
+        Ty::Path(ident_path) => {
+            let path = ident_path
                 .idents
                 .iter()
                 .map(|ident| ident.symbol)
                 .collect::<SmallVec<_, 8>>();
 
-            let item_id = context.resolve_path(module_id, &path)?;
+            let item_id = context
+                .resolve_path(module_id, &path)
+                .with_span(ident_path.span())?;
 
             context[item_id]
                 .try_as_ty()
                 .filter(TyId::is_definable)
-                .ok_or(ResolveError::ItemNotTy { item_id })?
+                .ok_or(ResolveError::ItemNotTy { item_id })
+                .with_span(ident_path.span())?
         }
         Ty::Ptr(ptr_ty) => {
             let pointee_ty = resolve_ty_inner(context, module_id, &ptr_ty.pointee_ty)?;
@@ -108,29 +112,35 @@ fn resolve_array_len(
     context: &ResolveContext,
     module_id: ModuleId,
     len: &ArrayLen,
-) -> AstResult<u64> {
+) -> SpannedAstResult<u64> {
     let value = match len {
         ArrayLen::Int(value) => {
-            let (value, _) = resolve_int_literal(value.value.as_str())?;
-            value as u64
+            resolve_int_literal(value.value.as_str())
+                .map(|(value, _)| value as u64)
+                .with_span(value.span)?
         }
-        ArrayLen::Path(path) => {
-            let path = path
+        ArrayLen::Path(ident_path) => {
+            let path = ident_path
                 .idents
                 .iter()
                 .map(|ident| ident.symbol)
                 .collect::<SmallVec<_, 8>>();
 
-            let item_id = context.resolve_path(module_id, &path)?;
+            let item_id = context
+                .resolve_path(module_id, &path)
+                .with_span(ident_path.span())?;
 
             let const_id = context[item_id]
                 .try_as_const()
-                .ok_or(ResolveError::ItemNotConst { item_id })?;
+                .ok_or(ResolveError::ItemNotConst { item_id })
+                .with_span(ident_path.span())?;
 
             context[const_id]
                 .value
                 .try_as_int()
-                .ok_or(ResolveError::ItemNotUsize { item_id })? as u64
+                .map(|value| value as u64)
+                .ok_or(ResolveError::ItemNotUsize { item_id })
+                .with_span(ident_path.span())?
         }
     };
 
