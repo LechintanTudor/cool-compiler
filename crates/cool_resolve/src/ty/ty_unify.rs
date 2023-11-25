@@ -15,7 +15,7 @@ impl ResolveContext<'_> {
         let can_unify_directly = (expected_ty_id.is_definable() && expected_ty_id == ty_id)
             || (expected_ty_id == tys::infer && ty_id.is_definable())
             || (expected_ty_id == tys::infer_number && ty_id.is_number())
-            || (expected_ty_id == tys::infer_int_or_bool && ty_id.is_int() || ty_id == tys::bool)
+            || (expected_ty_id == tys::infer_int_or_bool && (ty_id.is_int() || ty_id == tys::bool))
             || (expected_ty_id.is_number() && ty_id == tys::infer_number);
 
         if can_unify_directly {

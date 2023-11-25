@@ -1,8 +1,9 @@
 use crate::{resolve_int_literal, AstGenerator, ExprAst, SpannedAstResult, WithSpan};
 use cool_collections::SmallString;
 use cool_derive::Section;
+use cool_lexer::sym;
 use cool_parser::{LiteralExpr, LiteralKind};
-use cool_resolve::{ExprId, TyId};
+use cool_resolve::{tys, ExprId, TyId};
 use cool_span::Span;
 
 #[derive(Clone, Section, Debug)]
@@ -32,6 +33,12 @@ impl AstGenerator<'_> {
                 resolve_int_literal(expr.value.as_str())
                     .map(|(value, ty_id)| (LiteralExprValue::Int(value), ty_id))
                     .with_span(expr.span)?
+            }
+            LiteralKind::Bool => {
+                (
+                    LiteralExprValue::Bool(expr.value == sym::kw_true),
+                    tys::bool,
+                )
             }
             _ => todo!(),
         };
