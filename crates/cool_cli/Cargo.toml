@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 cool_driver = { path = "../cool_driver" }
+cooler_parser = { path = "../cooler_parser" }
 cool_resolve = { path = "../cool_resolve" }
 
 anyhow = { workspace = true }

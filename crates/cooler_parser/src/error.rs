@@ -47,3 +47,7 @@ impl fmt::Display for TokenKindDisplayer {
         write!(f, " or {last}")
     }
 }
+
+pub fn parse_error<T>(found: Token, expected: &'static [TokenKind]) -> ParseResult<T> {
+    Err(ParseError::new(found, expected))
+}

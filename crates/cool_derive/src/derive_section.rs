@@ -33,7 +33,7 @@ pub fn derive_section(input: proc_macro::TokenStream) -> proc_macro::TokenStream
         Data::Enum(DataEnum { variants, .. }) => {
             if variants.is_empty() {
                 quote! {
-                    ::cool_span::Span::empty()
+                    ::cool_span::Span::EMPTY
                 }
             } else {
                 let variants = variants.iter().map(|variant| &variant.ident);

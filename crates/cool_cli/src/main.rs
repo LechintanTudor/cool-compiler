@@ -4,9 +4,19 @@ use crate::args::*;
 use clap::Parser as _;
 use cool_driver::{passes, ErrorLocation};
 use cool_resolve::TyConfig;
+use cooler_parser::{Parser, ParserData};
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
+
+    let source = std::fs::read_to_string(args.crate_path)?;
+    let mut parser_data = ParserData::default();
+
+    let mut parser = Parser::new(&mut parser_data, &source);
+    parser.parse_file_module_item().unwrap();
+    println!("{:#?}", parser);
+
+    return Ok(());
 
     let ty_config = TyConfig {
         i8_align: 1,

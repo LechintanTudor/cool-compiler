@@ -1,22 +1,25 @@
 mod decl;
+mod error;
 mod expr;
 mod ident;
 mod item;
 mod ty;
 
 pub use self::decl::*;
+pub use self::error::*;
 pub use self::expr::*;
 pub use self::ident::*;
 pub use self::item::*;
 pub use self::ty::*;
 
 use cool_collections::VecMap;
-use cool_lexer::TokenStream;
+use cool_lexer::{Token, TokenKind, TokenStream};
+use std::slice;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Default, Debug)]
 pub struct ParserData {
     pub decls: VecMap<DeclId, Decl>,
-    pub items: VecMap<ItemId, InlineItem>,
+    pub items: VecMap<ItemId, Item>,
     pub modules: VecMap<ModuleId, Module>,
     pub imports: VecMap<ImportId, Import>,
     pub structs: VecMap<StructId, Struct>,
@@ -37,5 +40,65 @@ impl<'a> Parser<'a> {
             data,
             tokens: TokenStream::new(source),
         }
+    }
+
+    #[inline]
+    pub fn bump(&mut self) -> Token {
+        self.tokens.next_lang()
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn peek(&mut self) -> Token {
+        self.tokens.peek_lang()
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn peek_any(&mut self) -> Token {
+        self.tokens.peek_any()
+    }
+
+    pub fn bump_if_eq(&mut self, expected_token: TokenKind) -> Option<Token> {
+        if self.peek().kind != expected_token {
+            return None;
+        }
+
+        Some(self.bump())
+    }
+
+    pub fn bump_any_if_eq(&mut self, expected_token: TokenKind) -> Option<Token> {
+        if self.peek_any().kind != expected_token {
+            return None;
+        }
+
+        Some(self.tokens.next_any())
+    }
+
+    pub fn bump_expect(&mut self, expected_token: &'static TokenKind) -> ParseResult<Token> {
+        let token = self.bump();
+
+        if &token.kind != expected_token {
+            return Err(ParseError {
+                found: token,
+                expected: slice::from_ref(expected_token),
+            });
+        }
+
+        Ok(token)
+    }
+
+    pub fn peek_error<T>(&mut self, expected: &'static [TokenKind]) -> ParseResult<T> {
+        Err(ParseError {
+            found: self.peek(),
+            expected,
+        })
+    }
+
+    pub fn peek_any_error<T>(&mut self, expected: &'static [TokenKind]) -> ParseResult<T> {
+        Err(ParseError {
+            found: self.peek_any(),
+            expected,
+        })
     }
 }
