@@ -7,6 +7,7 @@ members = [
     "cool_driver",
     "cool_lexer",
     "cool_parser",
+    "cooler_parser",
     "cool_resolve",
     "cool_span",
 ]
