@@ -13,4 +13,8 @@ impl Parser<'_> {
     pub fn parse_expr(&mut self) -> ParseResult<ExprId> {
         todo!()
     }
+
+    pub fn parse_const_expr(&mut self) -> ParseResult<ExprId> {
+        todo!()
+    }
 }

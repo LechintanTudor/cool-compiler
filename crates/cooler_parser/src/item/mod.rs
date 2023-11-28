@@ -52,7 +52,7 @@ impl Parser<'_> {
         self.bump_expect(&tk::colon)?;
 
         let ty = (self.peek().kind != tk::colon)
-            .then(|| self.parse_ty())
+            .then(|| self.parse_non_variant_ty())
             .transpose()?;
 
         self.bump_expect(&tk::colon)?;

@@ -1,16 +1,16 @@
 mod decl;
 mod error;
 mod expr;
-mod ident;
 mod item;
 mod ty;
+mod utils;
 
 pub use self::decl::*;
 pub use self::error::*;
 pub use self::expr::*;
-pub use self::ident::*;
 pub use self::item::*;
 pub use self::ty::*;
+pub use self::utils::*;
 
 use cool_collections::VecMap;
 use cool_lexer::{Token, TokenKind, TokenStream};
