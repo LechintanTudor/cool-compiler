@@ -59,12 +59,6 @@ impl TokenKind {
     pub fn is_punct(&self) -> bool {
         matches!(self, Self::Punct(_))
     }
-
-    #[inline]
-    #[must_use]
-    pub fn is_eof(&self) -> bool {
-        matches!(self, Self::Eof)
-    }
 }
 
 impl From<Literal> for TokenKind {

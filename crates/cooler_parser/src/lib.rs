@@ -2,6 +2,7 @@ mod decl;
 mod error;
 mod expr;
 mod item;
+mod stmt;
 mod ty;
 mod utils;
 
@@ -9,6 +10,7 @@ pub use self::decl::*;
 pub use self::error::*;
 pub use self::expr::*;
 pub use self::item::*;
+pub use self::stmt::*;
 pub use self::ty::*;
 pub use self::utils::*;
 
@@ -25,6 +27,7 @@ pub struct ParserData {
     pub structs: VecMap<StructId, Struct>,
     pub tys: VecMap<TyId, Ty>,
     pub exprs: VecMap<ExprId, Expr>,
+    pub stmts: VecMap<StmtId, Stmt>,
 }
 
 #[derive(Debug)]
@@ -45,6 +48,11 @@ impl<'a> Parser<'a> {
     #[inline]
     pub fn bump(&mut self) -> Token {
         self.tokens.next_lang()
+    }
+
+    #[inline]
+    pub fn bump_any(&mut self) -> Token {
+        self.tokens.next_any()
     }
 
     #[inline]
