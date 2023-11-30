@@ -1,4 +1,4 @@
-use crate::{parse_error, ExprId, FnAbiDecl, Ident, ParseResult, Parser, TyId};
+use crate::{parse_error, ExprId, FnAbiDecl, ParseResult, Parser, Pattern, TyId};
 use cool_collections::define_index_newtype;
 use cool_derive::Section;
 use cool_lexer::tk;
@@ -30,11 +30,9 @@ pub struct FnProto {
     pub return_ty: Option<TyId>,
 }
 
-#[derive(Clone, Section, Debug)]
+#[derive(Clone, Debug)]
 pub struct FnParam {
-    pub span: Span,
-    pub is_mutable: bool,
-    pub ident: Ident,
+    pub pattern: Pattern,
     pub ty: Option<TyId>,
 }
 
@@ -136,22 +134,12 @@ impl Parser<'_> {
     }
 
     fn parse_fn_param(&mut self) -> ParseResult<FnParam> {
-        let mutable_token = self.bump_if_eq(tk::kw_mut);
-        let ident = self.parse_ident()?;
+        let pattern = self.parse_pattern()?;
 
-        let ty = self
-            .bump_if_eq(tk::colon)
-            .map(|_| self.parse_ty())
+        let ty = (self.bump_if_eq(tk::colon).is_some())
+            .then(|| self.parse_ty())
             .transpose()?;
 
-        let start_span = mutable_token.map(|token| token.span).unwrap_or(ident.span);
-        let end_span = ty.map(|ty| self[ty].span()).unwrap_or(ident.span);
-
-        Ok(FnParam {
-            span: start_span.to(end_span),
-            is_mutable: mutable_token.is_some(),
-            ident,
-            ty,
-        })
+        Ok(FnParam { pattern, ty })
     }
 }
