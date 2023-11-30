@@ -37,7 +37,6 @@ impl Parser<'_> {
                     param_tys.push(self.parse_ty()?);
 
                     let next_token = self.bump();
-                    println!("{}", next_token.kind);
 
                     match next_token.kind {
                         tk::close_paren => {

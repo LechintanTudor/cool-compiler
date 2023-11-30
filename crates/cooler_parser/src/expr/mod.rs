@@ -45,7 +45,7 @@ impl Parser<'_> {
             TokenKind::Literal(_) => self.parse_literal_expr()?,
             tk::open_brace => self.parse_block_expr()?,
             tk::kw_extern | tk::kw_fn => self.parse_fn_expr()?,
-            _ => todo!(),
+            token => todo!("Cannot parse expr with: {token}"),
         };
 
         Ok(expr)

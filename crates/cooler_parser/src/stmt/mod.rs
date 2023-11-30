@@ -1,13 +1,11 @@
 mod break_stmt;
 mod continue_stmt;
 mod defer_stmt;
-mod expr_stmt;
 mod return_stmt;
 
 pub use self::break_stmt::*;
 pub use self::continue_stmt::*;
 pub use self::defer_stmt::*;
-pub use self::expr_stmt::*;
 pub use self::return_stmt::*;
 
 use crate::{ExprId, ParseResult, Parser};
@@ -23,7 +21,6 @@ pub enum Stmt {
     Break(BreakStmt),
     Continue(ContinueStmt),
     Defer(DeferStmt),
-    Expr(ExprStmt),
     Return(ReturnStmt),
 }
 

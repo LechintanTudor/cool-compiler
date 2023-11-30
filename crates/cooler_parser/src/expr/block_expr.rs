@@ -1,8 +1,8 @@
-use crate::{ExprId, ExprOrStmt, ParseResult, Parser, StmtId};
+use crate::{ExprId, ExprOrStmt, ParseResult, Parser, Stmt, StmtId};
 use cool_collections::SmallVec;
 use cool_derive::Section;
 use cool_lexer::tk;
-use cool_span::{Section, Span};
+use cool_span::Span;
 
 #[derive(Clone, Section, Debug)]
 pub struct BlockExpr {
@@ -11,10 +11,9 @@ pub struct BlockExpr {
     pub end_expr: Option<ExprId>,
 }
 
-#[derive(Clone, Section, Debug)]
+#[derive(Clone, Debug)]
 pub struct BlockExprStmt {
-    pub span: Span,
-    pub stmt: StmtId,
+    pub code: ExprOrStmt,
     pub has_semicolon: bool,
 }
 
@@ -28,25 +27,21 @@ impl Parser<'_> {
         } else {
             loop {
                 match self.parse_expr_or_stmt()? {
-                    ExprOrStmt::Expr(expr) => {
+                    ExprOrStmt::Expr(expr_id) => {
                         if let Some(close_brace) = self.bump_if_eq(tk::close_brace) {
-                            break (close_brace, Some(expr));
+                            break (close_brace, Some(expr_id));
                         }
 
-                        let (span, has_semicolon) =
-                            if let Some(semicolon) = self.bump_if_eq(tk::semicolon) {
-                                (self[expr].span().to(semicolon.span), true)
-                            } else if self[expr].is_promotable_to_stmt() {
-                                (self[expr].span(), false)
-                            } else {
-                                return self.peek_error(&[tk::close_brace]);
-                            };
-
-                        let stmt = self.continue_parse_expr_stmt(expr);
+                        let has_semicolon = if self.bump_if_eq(tk::semicolon).is_some() {
+                            true
+                        } else if self[expr_id].is_promotable_to_stmt() {
+                            false
+                        } else {
+                            return self.peek_error(&[tk::close_brace]);
+                        };
 
                         stmts.push(BlockExprStmt {
-                            span,
-                            stmt,
+                            code: expr_id.into(),
                             has_semicolon,
                         });
 
@@ -54,17 +49,17 @@ impl Parser<'_> {
                             break (close_brace, None);
                         }
                     }
-                    ExprOrStmt::Stmt(stmt) => {
-                        let (span, has_semicolon) =
-                            if let Some(semicolon) = self.bump_if_eq(tk::semicolon) {
-                                (self[stmt].span().to(semicolon.span), true)
-                            } else {
-                                (self[stmt].span(), false)
-                            };
+                    ExprOrStmt::Stmt(stmt_id) => {
+                        let has_semicolon = if self.bump_if_eq(tk::semicolon).is_some() {
+                            true
+                        } else if !self.stmt_needs_semicolon(stmt_id) {
+                            false
+                        } else {
+                            return self.peek_error(&[tk::semicolon]);
+                        };
 
                         stmts.push(BlockExprStmt {
-                            span,
-                            stmt,
+                            code: stmt_id.into(),
                             has_semicolon,
                         });
 
@@ -83,5 +78,25 @@ impl Parser<'_> {
             stmts,
             end_expr,
         }))
+    }
+
+    fn stmt_needs_semicolon(&self, stmt_id: StmtId) -> bool {
+        let mut code = ExprOrStmt::Stmt(stmt_id);
+
+        loop {
+            match code {
+                ExprOrStmt::Expr(expr_id) => {
+                    break !self[expr_id].is_promotable_to_stmt();
+                }
+                ExprOrStmt::Stmt(stmt_id) => {
+                    match &self[stmt_id] {
+                        Stmt::Defer(defer_stmt) => {
+                            code = defer_stmt.code;
+                        }
+                        _ => break true,
+                    }
+                }
+            }
+        }
     }
 }
