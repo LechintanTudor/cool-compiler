@@ -59,6 +59,7 @@ define_parser_data! {
     module: ModuleId => Module,
     import: ImportId => Import,
     struct: StructId => Struct,
+    fn_proto: FnProtoId => FnProto,
     ty: TyId => Ty,
     expr: ExprId => Expr,
     stmt: StmtId => Stmt,

@@ -1,7 +1,9 @@
 mod block_expr;
+mod fn_expr;
 mod literal_expr;
 
 pub use self::block_expr::*;
+pub use self::fn_expr::*;
 pub use self::literal_expr::*;
 
 use crate::{Ident, ParseResult, Parser};
@@ -15,6 +17,7 @@ define_index_newtype!(ExprId);
 #[derive(Clone, Section, From, Debug)]
 pub enum Expr {
     Block(BlockExpr),
+    Fn(FnExpr),
     Ident(Ident),
     Literal(LiteralExpr),
 }
@@ -41,6 +44,7 @@ impl Parser<'_> {
             }
             TokenKind::Literal(_) => self.parse_literal_expr()?,
             tk::open_brace => self.parse_block_expr()?,
+            tk::kw_extern | tk::kw_fn => self.parse_fn_expr()?,
             _ => todo!(),
         };
 

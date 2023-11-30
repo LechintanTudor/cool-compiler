@@ -4,7 +4,7 @@ mod struct_item;
 pub use self::module_item::*;
 pub use self::struct_item::*;
 
-use crate::{ExprId, Ident, ParseResult, Parser, TyId};
+use crate::{ExprId, FnExprOrFnProto, FnProtoId, Ident, ParseResult, Parser, TyId};
 use cool_collections::define_index_newtype;
 use cool_derive::Section;
 use cool_lexer::tk;
@@ -44,6 +44,7 @@ pub enum ItemKind {
     Expr(ExprId),
     Module(ModuleId),
     Struct(StructId),
+    ExternFn(FnProtoId),
 }
 
 impl Parser<'_> {
@@ -72,6 +73,18 @@ impl Parser<'_> {
                 let struct_id = self.parse_struct()?;
                 let span = self[struct_id].span;
                 (struct_id.into(), span)
+            }
+            tk::kw_extern | tk::kw_fn => {
+                match self.parse_fn_expr_or_fn_proto()? {
+                    FnExprOrFnProto::Expr(expr_id) => {
+                        let span = self[expr_id].span();
+                        (expr_id.into(), span)
+                    }
+                    FnExprOrFnProto::Proto(proto_id) => {
+                        let span = self[proto_id].span;
+                        (proto_id.into(), span)
+                    }
+                }
             }
             _ => {
                 let expr_id = self.parse_expr()?;
