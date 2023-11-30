@@ -15,20 +15,19 @@ impl Parser<'_> {
     pub fn continue_parse_variant_ty(&mut self, first_ty: TyId) -> ParseResult<TyId> {
         debug_assert_eq!(self.peek().kind, tk::or);
         let mut variant_tys = smallvec![first_ty];
+        let mut last_ty = first_ty;
 
         while self.bump_if_eq(tk::or).is_some() {
-            variant_tys.push(self.parse_non_variant_ty()?);
+            last_ty = self.parse_non_variant_ty()?;
+            variant_tys.push(last_ty);
         }
 
-        let start_span = self.data.tys.first().unwrap().span();
-        let end_span = self.data.tys.last().unwrap().span();
+        let start_span = self[first_ty].span();
+        let end_span = self[last_ty].span();
 
-        Ok(self.data.tys.push(
-            VariantTy {
-                span: start_span.to(end_span),
-                variant_tys,
-            }
-            .into(),
-        ))
+        Ok(self.add_ty(VariantTy {
+            span: start_span.to(end_span),
+            variant_tys,
+        }))
     }
 }

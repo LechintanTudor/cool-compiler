@@ -16,15 +16,12 @@ impl Parser<'_> {
         let is_mutable = self.bump_if_eq(tk::kw_mut).is_some();
 
         let pointee_ty = self.parse_non_variant_ty()?;
-        let end_span = self.data.tys[pointee_ty].span();
+        let end_span = self[pointee_ty].span();
 
-        Ok(self.data.tys.push(
-            PtrTy {
-                span: star_token.span.to(end_span),
-                pointee_ty,
-                is_mutable,
-            }
-            .into(),
-        ))
+        Ok(self.add_ty(PtrTy {
+            span: star_token.span.to(end_span),
+            pointee_ty,
+            is_mutable,
+        }))
     }
 }

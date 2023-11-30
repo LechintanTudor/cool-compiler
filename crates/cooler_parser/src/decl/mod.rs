@@ -41,7 +41,7 @@ impl Parser<'_> {
             .map(|token| token.span)
             .unwrap_or(peeked_token.span);
 
-        Ok(self.data.decls.push(Decl {
+        Ok(self.add_decl(Decl {
             span: start_span.to(semicolon_token.span),
             is_exported: export_token.is_some(),
             kind,

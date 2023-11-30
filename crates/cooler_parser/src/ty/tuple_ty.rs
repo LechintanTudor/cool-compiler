@@ -23,14 +23,11 @@ impl Parser<'_> {
         let mut elem_tys = SmallVec::new();
 
         if let Some(close_paren) = self.bump_if_eq(tk::close_paren) {
-            return Ok(self.data.tys.push(
-                TupleTy {
-                    span: open_paren.span.to(close_paren.span),
-                    elem_tys,
-                    has_trailing_comma: false,
-                }
-                .into(),
-            ));
+            return Ok(self.add_ty(TupleTy {
+                span: open_paren.span.to(close_paren.span),
+                elem_tys,
+                has_trailing_comma: false,
+            }));
         }
 
         let (close_paren, has_trailing_comma) = loop {
@@ -38,13 +35,10 @@ impl Parser<'_> {
 
             if elem_tys.is_empty() {
                 if let Some(close_paren) = self.bump_if_eq(tk::close_paren) {
-                    return Ok(self.data.tys.push(
-                        ParenTy {
-                            span: open_paren.span.to(close_paren.span),
-                            inner_ty: elem_ty,
-                        }
-                        .into(),
-                    ));
+                    return Ok(self.add_ty(ParenTy {
+                        span: open_paren.span.to(close_paren.span),
+                        inner_ty: elem_ty,
+                    }));
                 }
             }
 
@@ -62,13 +56,10 @@ impl Parser<'_> {
             }
         };
 
-        Ok(self.data.tys.push(
-            TupleTy {
-                span: open_paren.span.to(close_paren.span),
-                elem_tys,
-                has_trailing_comma,
-            }
-            .into(),
-        ))
+        Ok(self.add_ty(TupleTy {
+            span: open_paren.span.to(close_paren.span),
+            elem_tys,
+            has_trailing_comma,
+        }))
     }
 }

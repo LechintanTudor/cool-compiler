@@ -60,27 +60,27 @@ impl Parser<'_> {
         let (kind, kind_span) = match self.peek().kind {
             tk::kw_alias => {
                 let ty_id = self.parse_alias()?;
-                let span = self.data.tys[ty_id].span();
+                let span = self[ty_id].span();
                 (ty_id.into(), span)
             }
             tk::kw_module => {
                 let module_id = self.parse_module()?;
-                let span = self.data.modules[module_id].span;
+                let span = self[module_id].span;
                 (module_id.into(), span)
             }
             tk::kw_struct => {
                 let struct_id = self.parse_struct()?;
-                let span = self.data.structs[struct_id].span;
+                let span = self[struct_id].span;
                 (struct_id.into(), span)
             }
             _ => {
                 let expr_id = self.parse_expr()?;
-                let span = self.data.exprs[expr_id].span();
+                let span = self[expr_id].span();
                 (expr_id.into(), span)
             }
         };
 
-        Ok(self.data.items.push(Item::Inline(InlineItem {
+        Ok(self.add_item(Item::Inline(InlineItem {
             span: ident.span.to(kind_span),
             ident,
             ty,

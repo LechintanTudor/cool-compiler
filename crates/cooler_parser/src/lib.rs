@@ -16,18 +16,52 @@ pub use self::utils::*;
 
 use cool_collections::VecMap;
 use cool_lexer::{Token, TokenKind, TokenStream};
+use paste::paste;
+use std::ops::Index;
 use std::slice;
 
-#[derive(Clone, Default, Debug)]
-pub struct ParserData {
-    pub decls: VecMap<DeclId, Decl>,
-    pub items: VecMap<ItemId, Item>,
-    pub modules: VecMap<ModuleId, Module>,
-    pub imports: VecMap<ImportId, Import>,
-    pub structs: VecMap<StructId, Struct>,
-    pub tys: VecMap<TyId, Ty>,
-    pub exprs: VecMap<ExprId, Expr>,
-    pub stmts: VecMap<StmtId, Stmt>,
+macro_rules! define_parser_data {
+    { $($field:ident: $Key:ty => $Value:ty,)* } => {
+        paste! {
+            #[derive(Clone, Default, Debug)]
+            pub struct ParserData {
+                $(pub [<$field s>]: VecMap<$Key, $Value>,)*
+            }
+
+            impl Parser<'_> {
+                $(
+                    pub fn [<add_ $field>]<T>(&mut self, [<$field _id>]: T) -> $Key
+                    where
+                        T: Into<$Value>,
+                    {
+                        self.data.[<$field s>].push([<$field _id>].into())
+                    }
+                )*
+            }
+
+            $(
+                impl Index<$Key> for Parser<'_> {
+                    type Output = $Value;
+
+                    #[inline]
+                    fn index(&self, [<$field _id>]: $Key) -> &Self::Output {
+                        &self.data.[<$field s>][[<$field _id>]]
+                    }
+                }
+            )*
+        }
+    };
+}
+
+define_parser_data! {
+    decl: DeclId => Decl,
+    item: ItemId => Item,
+    module: ModuleId => Module,
+    import: ImportId => Import,
+    struct: StructId => Struct,
+    ty: TyId => Ty,
+    expr: ExprId => Expr,
+    stmt: StmtId => Stmt,
 }
 
 #[derive(Debug)]

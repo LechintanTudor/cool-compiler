@@ -41,16 +41,13 @@ impl Parser<'_> {
 
         let is_mutable = self.bump_if_eq(tk::kw_mut).is_some();
         let elem_ty = self.parse_non_variant_ty()?;
-        let end_span = self.data.tys[elem_ty].span();
+        let end_span = self[elem_ty].span();
 
-        Ok(self.data.tys.push(
-            SliceTy {
-                span: open_bracket.span.to(end_span),
-                elem_ty,
-                is_mutable,
-            }
-            .into(),
-        ))
+        Ok(self.add_ty(SliceTy {
+            span: open_bracket.span.to(end_span),
+            elem_ty,
+            is_mutable,
+        }))
     }
 
     fn continue_parse_many_ptr_ty(&mut self, open_bracket: Token) -> ParseResult<TyId> {
@@ -60,16 +57,13 @@ impl Parser<'_> {
 
         let is_mutable = self.bump_if_eq(tk::kw_mut).is_some();
         let pointee_ty = self.parse_non_variant_ty()?;
-        let end_span = self.data.tys[pointee_ty].span();
+        let end_span = self[pointee_ty].span();
 
-        Ok(self.data.tys.push(
-            ManyPtrTy {
-                span: open_bracket.span.to(end_span),
-                pointee_ty,
-                is_mutable,
-            }
-            .into(),
-        ))
+        Ok(self.add_ty(ManyPtrTy {
+            span: open_bracket.span.to(end_span),
+            pointee_ty,
+            is_mutable,
+        }))
     }
 
     fn continue_parse_array_ty(&mut self, open_bracket: Token) -> ParseResult<TyId> {
@@ -79,15 +73,12 @@ impl Parser<'_> {
         self.bump_expect(&tk::close_bracket)?;
 
         let elem_ty = self.parse_non_variant_ty()?;
-        let end_span = self.data.tys[elem_ty].span();
+        let end_span = self[elem_ty].span();
 
-        Ok(self.data.tys.push(
-            ArrayTy {
-                span: open_bracket.span.to(end_span),
-                len,
-                elem_ty,
-            }
-            .into(),
-        ))
+        Ok(self.add_ty(ArrayTy {
+            span: open_bracket.span.to(end_span),
+            len,
+            elem_ty,
+        }))
     }
 }

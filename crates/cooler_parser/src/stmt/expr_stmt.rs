@@ -10,7 +10,7 @@ pub struct ExprStmt {
 
 impl Parser<'_> {
     pub fn continue_parse_expr_stmt(&mut self, expr_id: ExprId) -> StmtId {
-        let span = self.data.exprs[expr_id].span();
-        self.data.stmts.push(ExprStmt { span, expr_id }.into())
+        let span = self[expr_id].span();
+        self.add_stmt(ExprStmt { span, expr_id })
     }
 }

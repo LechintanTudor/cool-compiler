@@ -60,7 +60,7 @@ impl Parser<'_> {
     }
 
     fn parse_path_ty(&mut self) -> ParseResult<TyId> {
-        let path_ty = Ty::Path(self.parse_ident_path()?);
-        Ok(self.data.tys.push(path_ty))
+        let path = self.parse_ident_path()?;
+        Ok(self.add_ty(path))
     }
 }

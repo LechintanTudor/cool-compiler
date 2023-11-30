@@ -35,9 +35,9 @@ impl Parser<'_> {
 
                         let (span, has_semicolon) =
                             if let Some(semicolon) = self.bump_if_eq(tk::semicolon) {
-                                (self.data.exprs[expr].span().to(semicolon.span), true)
-                            } else if self.data.exprs[expr].is_promotable_to_stmt() {
-                                (self.data.exprs[expr].span(), false)
+                                (self[expr].span().to(semicolon.span), true)
+                            } else if self[expr].is_promotable_to_stmt() {
+                                (self[expr].span(), false)
                             } else {
                                 return self.peek_error(&[tk::close_brace]);
                             };
@@ -57,9 +57,9 @@ impl Parser<'_> {
                     ExprOrStmt::Stmt(stmt) => {
                         let (span, has_semicolon) =
                             if let Some(semicolon) = self.bump_if_eq(tk::semicolon) {
-                                (self.data.stmts[stmt].span().to(semicolon.span), true)
+                                (self[stmt].span().to(semicolon.span), true)
                             } else {
-                                (self.data.stmts[stmt].span(), false)
+                                (self[stmt].span(), false)
                             };
 
                         stmts.push(BlockExprStmt {
@@ -78,13 +78,10 @@ impl Parser<'_> {
             }
         };
 
-        Ok(self.data.exprs.push(
-            BlockExpr {
-                span: open_brace.span.to(close_brace.span),
-                stmts,
-                end_expr,
-            }
-            .into(),
-        ))
+        Ok(self.add_expr(BlockExpr {
+            span: open_brace.span.to(close_brace.span),
+            stmts,
+            end_expr,
+        }))
     }
 }

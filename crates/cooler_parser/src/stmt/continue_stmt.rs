@@ -12,11 +12,8 @@ impl Parser<'_> {
     pub fn parse_continue_stmt(&mut self) -> ParseResult<StmtId> {
         let continue_token = self.bump_expect(&tk::kw_continue)?;
 
-        Ok(self.data.stmts.push(
-            ContinueStmt {
-                span: continue_token.span,
-            }
-            .into(),
-        ))
+        Ok(self.add_stmt(ContinueStmt {
+            span: continue_token.span,
+        }))
     }
 }

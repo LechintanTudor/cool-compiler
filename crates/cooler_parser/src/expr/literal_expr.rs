@@ -45,14 +45,11 @@ impl Parser<'_> {
             .flatten();
 
         let Some(dot_token) = dot_token else {
-            return Ok(self.data.exprs.push(
-                LiteralExpr {
-                    span: token.span,
-                    kind: literal.kind.into(),
-                    value: literal.value,
-                }
-                .into(),
-            ));
+            return Ok(self.add_expr(LiteralExpr {
+                span: token.span,
+                kind: literal.kind.into(),
+                value: literal.value,
+            }));
         };
 
         let (span, value) = self
@@ -68,14 +65,11 @@ impl Parser<'_> {
                 (token.span.to(dot_token.span), Symbol::insert(&value))
             });
 
-        Ok(self.data.exprs.push(
-            LiteralExpr {
-                span,
-                kind: literal.kind.into(),
-                value,
-            }
-            .into(),
-        ))
+        Ok(self.add_expr(LiteralExpr {
+            span,
+            kind: literal.kind.into(),
+            value,
+        }))
     }
 
     pub fn continue_parse_literal_expr(&mut self, prefix: Ident) -> ParseResult<ExprId> {
@@ -96,14 +90,11 @@ impl Parser<'_> {
             _ => return parse_error(token, &[tk::literal]),
         };
 
-        Ok(self.data.exprs.push(
-            LiteralExpr {
-                span: prefix.span.to(token.span),
-                kind,
-                value,
-            }
-            .into(),
-        ))
+        Ok(self.add_expr(LiteralExpr {
+            span: prefix.span.to(token.span),
+            kind,
+            value,
+        }))
     }
 
     fn try_parse_decimal_part(&mut self) -> Option<(Span, Symbol)> {

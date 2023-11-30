@@ -36,7 +36,7 @@ impl Parser<'_> {
                 if matches!(self.peek().kind, TokenKind::Literal(_)) {
                     self.continue_parse_literal_expr(ident)?
                 } else {
-                    self.data.exprs.push(ident.into())
+                    self.add_expr(ident)
                 }
             }
             TokenKind::Literal(_) => self.parse_literal_expr()?,

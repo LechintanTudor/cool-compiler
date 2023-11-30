@@ -64,19 +64,16 @@ impl Parser<'_> {
             .unwrap_or(fn_token.span);
 
         let end_span = return_ty
-            .map(|ty| self.data.tys[ty].span())
+            .map(|ty| self[ty].span())
             .unwrap_or(close_paren.span);
 
-        Ok(self.data.tys.push(
-            FnTy {
-                span: start_span.to(end_span),
-                abi: abi_decl.map(|decl| decl.abi),
-                param_tys,
-                has_trailing_comma,
-                is_variadic,
-                return_ty,
-            }
-            .into(),
-        ))
+        Ok(self.add_ty(FnTy {
+            span: start_span.to(end_span),
+            abi: abi_decl.map(|decl| decl.abi),
+            param_tys,
+            has_trailing_comma,
+            is_variadic,
+            return_ty,
+        }))
     }
 }

@@ -28,7 +28,7 @@ impl Parser<'_> {
             .map(|ident| ident.span)
             .unwrap_or(path.span());
 
-        Ok(self.data.imports.push(Import {
+        Ok(self.add_import(Import {
             span: use_token.span.to(end_span),
             path,
             alias,

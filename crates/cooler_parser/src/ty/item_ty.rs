@@ -25,12 +25,9 @@ impl Parser<'_> {
             _ => return parse_error(token, &[tk::kw_alias, tk::kw_module]),
         };
 
-        Ok(self.data.tys.push(
-            ItemTy {
-                span: token.span,
-                kind,
-            }
-            .into(),
-        ))
+        Ok(self.add_ty(ItemTy {
+            span: token.span,
+            kind,
+        }))
     }
 }

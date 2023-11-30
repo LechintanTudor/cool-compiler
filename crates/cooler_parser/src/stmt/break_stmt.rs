@@ -18,9 +18,9 @@ impl Parser<'_> {
             .transpose()?;
 
         let span = expr_id
-            .map(|expr_id| break_token.span.to(self.data.exprs[expr_id].span()))
+            .map(|expr_id| break_token.span.to(self[expr_id].span()))
             .unwrap_or(break_token.span);
 
-        Ok(self.data.stmts.push(BreakStmt { span, expr_id }.into()))
+        Ok(self.add_stmt(BreakStmt { span, expr_id }))
     }
 }

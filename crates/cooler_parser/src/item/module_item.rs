@@ -31,20 +31,20 @@ impl Parser<'_> {
             decls.push(self.parse_decl()?);
         };
 
-        let module_id = self.data.modules.push(Module {
+        let module_id = self.add_module(Module {
             span: Span::from_to(0, span_end),
             kind: ModuleKind::File,
             decls,
         });
 
-        Ok(self.data.items.push(Item::File(module_id)))
+        Ok(self.add_item(Item::File(module_id)))
     }
 
     pub fn parse_module(&mut self) -> ParseResult<ModuleId> {
         let module_token = self.bump_expect(&tk::kw_module)?;
 
         if self.bump_if_eq(tk::open_brace).is_none() {
-            return Ok(self.data.modules.push(Module {
+            return Ok(self.add_module(Module {
                 span: module_token.span,
                 kind: ModuleKind::File,
                 decls: SmallVec::new(),
@@ -61,7 +61,7 @@ impl Parser<'_> {
             decls.push(self.parse_decl()?);
         };
 
-        Ok(self.data.modules.push(Module {
+        Ok(self.add_module(Module {
             span: module_token.span.to(end_span),
             kind: ModuleKind::Inline,
             decls,
