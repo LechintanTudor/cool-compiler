@@ -1,10 +1,12 @@
 mod break_stmt;
 mod continue_stmt;
+mod defer_stmt;
 mod expr_stmt;
 mod return_stmt;
 
 pub use self::break_stmt::*;
 pub use self::continue_stmt::*;
+pub use self::defer_stmt::*;
 pub use self::expr_stmt::*;
 pub use self::return_stmt::*;
 
@@ -20,6 +22,7 @@ define_index_newtype!(StmtId);
 pub enum Stmt {
     Break(BreakStmt),
     Continue(ContinueStmt),
+    Defer(DeferStmt),
     Expr(ExprStmt),
     Return(ReturnStmt),
 }
@@ -35,6 +38,7 @@ impl Parser<'_> {
         let expr_or_stmt = match self.peek().kind {
             tk::kw_break => self.parse_break_stmt()?.into(),
             tk::kw_continue => self.parse_continue_stmt()?.into(),
+            tk::kw_defer => self.parse_defer_stmt()?.into(),
             tk::kw_return => self.parse_return_stmt()?.into(),
             _ => self.parse_expr()?.into(),
         };

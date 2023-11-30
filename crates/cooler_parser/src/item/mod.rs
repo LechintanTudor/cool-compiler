@@ -42,9 +42,9 @@ pub struct InlineItem {
 pub enum ItemKind {
     Alias(TyId),
     Expr(ExprId),
+    ExternFn(FnProtoId),
     Module(ModuleId),
     Struct(StructId),
-    ExternFn(FnProtoId),
 }
 
 impl Parser<'_> {
