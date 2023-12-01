@@ -1,10 +1,12 @@
 mod block_expr;
 mod fn_expr;
 mod literal_expr;
+mod tuple_expr;
 
 pub use self::block_expr::*;
 pub use self::fn_expr::*;
 pub use self::literal_expr::*;
+pub use self::tuple_expr::*;
 
 use crate::{Ident, ParseResult, Parser};
 use cool_collections::define_index_newtype;
@@ -20,6 +22,8 @@ pub enum Expr {
     Fn(FnExpr),
     Ident(Ident),
     Literal(LiteralExpr),
+    Paren(ParenExpr),
+    Tuple(TupleExpr),
 }
 
 impl Expr {
