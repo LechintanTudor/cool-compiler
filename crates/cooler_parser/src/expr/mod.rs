@@ -1,5 +1,6 @@
 mod access_expr;
 mod array_expr;
+mod as_expr;
 mod binary_expr;
 mod block_expr;
 mod fn_call_expr;
@@ -14,6 +15,7 @@ mod while_expr;
 
 pub use self::access_expr::*;
 pub use self::array_expr::*;
+pub use self::as_expr::*;
 pub use self::binary_expr::*;
 pub use self::block_expr::*;
 pub use self::fn_call_expr::*;
@@ -39,6 +41,7 @@ pub enum Expr {
     Access(AccessExpr),
     Array(ArrayExpr),
     ArrayRepeat(ArrayRepeatExpr),
+    As(AsExpr),
     Block(BlockExpr),
     Binary(BinaryExpr),
     Deref(DerefExpr),
@@ -108,6 +111,7 @@ impl Parser<'_> {
                 );
 
             expr = match self.peek().kind {
+                tk::kw_as => self.continue_parse_as_expr(expr)?,
                 tk::dot => self.continue_parse_access_or_deref_expr(expr)?,
                 tk::open_brace if can_parse_struct => self.continue_parse_struct_expr(expr)?,
                 tk::open_paren => self.continue_parse_fn_call_expr(expr)?,
