@@ -1,5 +1,6 @@
 mod access_expr;
 mod array_expr;
+mod binary_expr;
 mod block_expr;
 mod fn_call_expr;
 mod fn_expr;
@@ -13,6 +14,7 @@ mod while_expr;
 
 pub use self::access_expr::*;
 pub use self::array_expr::*;
+pub use self::binary_expr::*;
 pub use self::block_expr::*;
 pub use self::fn_call_expr::*;
 pub use self::fn_expr::*;
@@ -38,6 +40,7 @@ pub enum Expr {
     Array(ArrayExpr),
     ArrayRepeat(ArrayRepeatExpr),
     Block(BlockExpr),
+    Binary(BinaryExpr),
     Deref(DerefExpr),
     Fn(FnExpr),
     FnCall(FnCallExpr),
@@ -74,7 +77,7 @@ impl Parser<'_> {
         self.parse_expr_full(false)
     }
 
-    pub fn parse_expr_full(&mut self, allow_struct: bool) -> ParseResult<ExprId> {
+    fn parse_primary_expr(&mut self, allow_struct: bool) -> ParseResult<ExprId> {
         let mut expr = match self.peek().kind {
             TokenKind::Ident(_) | tk::kw_crate | tk::kw_super | tk::kw_self => {
                 let ident = self.parse_path_ident()?;
