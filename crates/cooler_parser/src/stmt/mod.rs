@@ -3,6 +3,7 @@ mod break_stmt;
 mod continue_stmt;
 mod decl_stmt;
 mod defer_stmt;
+mod expr_stmt;
 mod return_stmt;
 
 pub use self::assign_stmt::*;
@@ -10,6 +11,7 @@ pub use self::break_stmt::*;
 pub use self::continue_stmt::*;
 pub use self::decl_stmt::*;
 pub use self::defer_stmt::*;
+pub use self::expr_stmt::*;
 pub use self::return_stmt::*;
 
 use crate::{AssignOp, Expr, ExprId, ParseResult, Parser};
@@ -27,6 +29,7 @@ pub enum Stmt {
     Continue(ContinueStmt),
     Decl(DeclStmt),
     Defer(DeferStmt),
+    Expr(ExprStmt),
     Return(ReturnStmt),
 }
 
@@ -37,13 +40,22 @@ pub enum ExprOrStmt {
 }
 
 impl Parser<'_> {
-    pub fn parse_expr_or_stmt(&mut self) -> ParseResult<ExprOrStmt> {
+    pub fn parse_stmt(&mut self, allow_struct: bool) -> ParseResult<StmtId> {
+        let stmt = match self.parse_expr_or_stmt(allow_struct)? {
+            ExprOrStmt::Expr(expr) => self.continue_parse_expr_stmt(expr),
+            ExprOrStmt::Stmt(stmt) => stmt,
+        };
+
+        Ok(stmt)
+    }
+
+    pub fn parse_expr_or_stmt(&mut self, allow_struct: bool) -> ParseResult<ExprOrStmt> {
         let code = match self.peek().kind {
             tk::kw_break => self.parse_break_stmt()?.into(),
             tk::kw_continue => self.parse_continue_stmt()?.into(),
             tk::kw_defer => self.parse_defer_stmt()?.into(),
             tk::kw_return => self.parse_return_stmt()?.into(),
-            _ => self.parse_expr()?.into(),
+            _ => self.parse_expr_full(allow_struct)?.into(),
         };
 
         if let ExprOrStmt::Expr(expr_id) = code {
@@ -52,14 +64,14 @@ impl Parser<'_> {
             if let Expr::Ident(ident) = &self[expr_id] {
                 if peeked_token == tk::colon {
                     return self
-                        .continue_parse_decl_stmt((*ident).into())
+                        .continue_parse_decl_stmt((*ident).into(), allow_struct)
                         .map(ExprOrStmt::Stmt);
                 }
             }
 
             if AssignOp::try_from(peeked_token).is_ok() {
                 return self
-                    .continue_parse_assign_stmt(expr_id)
+                    .continue_parse_assign_stmt(expr_id, allow_struct)
                     .map(ExprOrStmt::Stmt);
             }
         }

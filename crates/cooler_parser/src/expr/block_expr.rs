@@ -7,13 +7,13 @@ use cool_span::Span;
 #[derive(Clone, Section, Debug)]
 pub struct BlockExpr {
     pub span: Span,
-    pub stmts: SmallVec<BlockExprStmt, 1>,
+    pub stmts: SmallVec<BlockExprStmt, 2>,
     pub end_expr: Option<ExprId>,
 }
 
 #[derive(Clone, Debug)]
 pub struct BlockExprStmt {
-    pub code: ExprOrStmt,
+    pub stmt: StmtId,
     pub has_semicolon: bool,
 }
 
@@ -26,22 +26,22 @@ impl Parser<'_> {
             (close_brace, None)
         } else {
             loop {
-                match self.parse_expr_or_stmt()? {
-                    ExprOrStmt::Expr(expr_id) => {
+                match self.parse_expr_or_stmt(true)? {
+                    ExprOrStmt::Expr(expr) => {
                         if let Some(close_brace) = self.bump_if_eq(tk::close_brace) {
-                            break (close_brace, Some(expr_id));
+                            break (close_brace, Some(expr));
                         }
 
                         let has_semicolon = if self.bump_if_eq(tk::semicolon).is_some() {
                             true
-                        } else if self[expr_id].is_promotable_to_stmt() {
+                        } else if self[expr].is_promotable_to_stmt() {
                             false
                         } else {
                             return self.peek_error(&[tk::close_brace]);
                         };
 
                         stmts.push(BlockExprStmt {
-                            code: expr_id.into(),
+                            stmt: self.continue_parse_expr_stmt(expr),
                             has_semicolon,
                         });
 
@@ -49,17 +49,17 @@ impl Parser<'_> {
                             break (close_brace, None);
                         }
                     }
-                    ExprOrStmt::Stmt(stmt_id) => {
+                    ExprOrStmt::Stmt(stmt) => {
                         let has_semicolon = if self.bump_if_eq(tk::semicolon).is_some() {
                             true
-                        } else if !self.stmt_needs_semicolon(stmt_id) {
+                        } else if !self.stmt_needs_semicolon(stmt) {
                             false
                         } else {
                             return self.peek_error(&[tk::semicolon]);
                         };
 
                         stmts.push(BlockExprStmt {
-                            code: stmt_id.into(),
+                            stmt,
                             has_semicolon,
                         });
 

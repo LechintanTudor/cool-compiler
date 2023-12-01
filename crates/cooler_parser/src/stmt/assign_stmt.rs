@@ -11,9 +11,13 @@ pub struct AssignStmt {
 }
 
 impl Parser<'_> {
-    pub fn continue_parse_assign_stmt(&mut self, lhs: ExprId) -> ParseResult<StmtId> {
+    pub fn continue_parse_assign_stmt(
+        &mut self,
+        lhs: ExprId,
+        allow_struct: bool,
+    ) -> ParseResult<StmtId> {
         let op = AssignOp::try_from(self.bump().kind).unwrap();
-        let rhs = self.parse_expr()?;
+        let rhs = self.parse_expr_full(allow_struct)?;
 
         let start_span = self[lhs].span();
         let end_span = self[rhs].span();

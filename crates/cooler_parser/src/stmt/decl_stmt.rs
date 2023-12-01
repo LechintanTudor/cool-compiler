@@ -12,12 +12,16 @@ pub struct DeclStmt {
 }
 
 impl Parser<'_> {
-    pub fn parse_decl_stmt(&mut self) -> ParseResult<StmtId> {
+    pub fn parse_decl_stmt(&mut self, allow_stuct: bool) -> ParseResult<StmtId> {
         let pattern = self.parse_pattern()?;
-        self.continue_parse_decl_stmt(pattern)
+        self.continue_parse_decl_stmt(pattern, allow_stuct)
     }
 
-    pub fn continue_parse_decl_stmt(&mut self, pattern: Pattern) -> ParseResult<StmtId> {
+    pub fn continue_parse_decl_stmt(
+        &mut self,
+        pattern: Pattern,
+        allow_stuct: bool,
+    ) -> ParseResult<StmtId> {
         self.bump_expect(&tk::colon)?;
 
         let ty = (self.peek().kind != tk::eq)
@@ -26,7 +30,7 @@ impl Parser<'_> {
 
         self.bump_expect(&tk::eq)?;
 
-        let expr = self.parse_expr()?;
+        let expr = self.parse_expr_full(allow_stuct)?;
         let end_span = self[expr].span();
 
         Ok(self.add_stmt(DeclStmt {

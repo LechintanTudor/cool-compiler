@@ -12,7 +12,7 @@ pub struct DeferStmt {
 impl Parser<'_> {
     pub fn parse_defer_stmt(&mut self) -> ParseResult<StmtId> {
         let defer_token = self.bump_expect(&tk::kw_defer)?;
-        let code = self.parse_expr_or_stmt()?;
+        let code = self.parse_expr_or_stmt(true)?;
 
         let end_span = match code {
             ExprOrStmt::Expr(expr_id) => self[expr_id].span(),
