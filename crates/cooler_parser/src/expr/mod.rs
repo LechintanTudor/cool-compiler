@@ -2,6 +2,7 @@ mod access_expr;
 mod block_expr;
 mod fn_expr;
 mod for_expr;
+mod if_expr;
 mod literal_expr;
 mod loop_expr;
 mod struct_expr;
@@ -12,6 +13,7 @@ pub use self::access_expr::*;
 pub use self::block_expr::*;
 pub use self::fn_expr::*;
 pub use self::for_expr::*;
+pub use self::if_expr::*;
 pub use self::literal_expr::*;
 pub use self::loop_expr::*;
 pub use self::struct_expr::*;
@@ -34,6 +36,7 @@ pub enum Expr {
     For(ForExpr),
     Fn(FnExpr),
     Ident(Ident),
+    If(IfExpr),
     Literal(LiteralExpr),
     Loop(LoopExpr),
     Paren(ParenExpr),
@@ -48,7 +51,7 @@ impl Expr {
     pub fn is_promotable_to_stmt(&self) -> bool {
         matches!(
             self,
-            Self::Block(_) | Self::For(_) | Self::Loop(_) | Self::While(_),
+            Self::Block(_) | Self::For(_) | Self::If(_) | Self::Loop(_) | Self::While(_),
         )
     }
 }
@@ -78,6 +81,7 @@ impl Parser<'_> {
             TokenKind::Literal(_) => self.parse_literal_expr()?,
             tk::kw_extern | tk::kw_fn => self.parse_fn_expr()?,
             tk::kw_for => self.parse_for_expr()?,
+            tk::kw_if => self.parse_if_expr()?,
             tk::kw_loop => self.parse_loop_expr()?,
             tk::kw_while => self.parse_while_expr()?,
             tk::open_brace => self.parse_block_expr()?,
