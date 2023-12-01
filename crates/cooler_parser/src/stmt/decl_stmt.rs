@@ -20,7 +20,7 @@ impl Parser<'_> {
     pub fn continue_parse_decl_stmt(&mut self, pattern: Pattern) -> ParseResult<StmtId> {
         self.bump_expect(&tk::colon)?;
 
-        let ty = (self.peek().kind != tk::colon)
+        let ty = (self.peek().kind != tk::eq)
             .then(|| self.parse_ty())
             .transpose()?;
 

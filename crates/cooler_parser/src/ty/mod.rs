@@ -55,7 +55,7 @@ impl Parser<'_> {
             tk::star => self.parse_ptr_ty(),
             tk::open_paren => self.parse_paren_or_tuple_ty(),
             tk::open_bracket => self.parse_array_or_slice_or_many_ptr_ty(),
-            _ => todo!(),
+            token => todo!("Parse type starting with: {token}"),
         }
     }
 

@@ -4,8 +4,9 @@ use cool_collections::SmallVec;
 use cool_derive::Section;
 use cool_lexer::{tk, Symbol, TokenKind};
 use cool_span::{Section, Span};
+use derive_more::Constructor;
 
-#[derive(Clone, Copy, Section, Debug)]
+#[derive(Clone, Copy, Section, Constructor, Debug)]
 pub struct Ident {
     pub span: Span,
     pub symbol: Symbol,
