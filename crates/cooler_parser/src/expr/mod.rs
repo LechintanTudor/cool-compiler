@@ -1,5 +1,7 @@
 mod access_expr;
+mod array_expr;
 mod block_expr;
+mod fn_call_expr;
 mod fn_expr;
 mod for_expr;
 mod if_expr;
@@ -10,7 +12,9 @@ mod tuple_expr;
 mod while_expr;
 
 pub use self::access_expr::*;
+pub use self::array_expr::*;
 pub use self::block_expr::*;
+pub use self::fn_call_expr::*;
 pub use self::fn_expr::*;
 pub use self::for_expr::*;
 pub use self::if_expr::*;
@@ -31,10 +35,13 @@ define_index_newtype!(ExprId);
 #[derive(Clone, Section, From, Debug)]
 pub enum Expr {
     Access(AccessExpr),
+    Array(ArrayExpr),
+    ArrayRepeat(ArrayRepeatExpr),
     Block(BlockExpr),
     Deref(DerefExpr),
-    For(ForExpr),
     Fn(FnExpr),
+    FnCall(FnCallExpr),
+    For(ForExpr),
     Ident(Ident),
     If(IfExpr),
     Literal(LiteralExpr),
@@ -85,21 +92,24 @@ impl Parser<'_> {
             tk::kw_loop => self.parse_loop_expr()?,
             tk::kw_while => self.parse_while_expr()?,
             tk::open_brace => self.parse_block_expr()?,
+            tk::open_bracket => self.parse_array_or_array_repeat_expr()?,
             tk::open_paren => self.parse_paren_or_tuple_expr()?,
             token => todo!("Cannot parse expr with: {token}"),
         };
 
         loop {
-            expr = match &self[expr] {
-                Expr::Access(_) | Expr::Ident(_) => {
-                    match self.peek().kind {
-                        tk::dot => self.continue_parse_access_or_deref_expr(expr)?,
-                        tk::open_brace if allow_struct => self.continue_parse_struct_expr(expr)?,
-                        _ => break,
-                    }
-                }
+            let can_parse_struct = allow_struct
+                && matches!(
+                    &self[expr],
+                    Expr::Access(_) | Expr::Ident(_) | Expr::Paren(_)
+                );
+
+            expr = match self.peek().kind {
+                tk::dot => self.continue_parse_access_or_deref_expr(expr)?,
+                tk::open_brace if can_parse_struct => self.continue_parse_struct_expr(expr)?,
+                tk::open_paren => self.continue_parse_fn_call_expr(expr)?,
                 _ => break,
-            }
+            };
         }
 
         Ok(expr)
