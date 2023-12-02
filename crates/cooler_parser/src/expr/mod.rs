@@ -11,6 +11,7 @@ mod literal_expr;
 mod loop_expr;
 mod struct_expr;
 mod tuple_expr;
+mod unary_expr;
 mod while_expr;
 
 pub use self::access_expr::*;
@@ -26,6 +27,7 @@ pub use self::literal_expr::*;
 pub use self::loop_expr::*;
 pub use self::struct_expr::*;
 pub use self::tuple_expr::*;
+pub use self::unary_expr::*;
 pub use self::while_expr::*;
 
 use crate::{Ident, ParseResult, Parser};
@@ -55,6 +57,7 @@ pub enum Expr {
     Paren(ParenExpr),
     Struct(StructExpr),
     Tuple(TupleExpr),
+    Unary(UnaryExpr),
     While(WhileExpr),
 }
 
@@ -100,6 +103,7 @@ impl Parser<'_> {
             tk::open_brace => self.parse_block_expr()?,
             tk::open_bracket => self.parse_array_or_array_repeat_expr()?,
             tk::open_paren => self.parse_paren_or_tuple_expr()?,
+            tk::and | tk::minus | tk::not => self.parse_unary_expr()?,
             token => todo!("Cannot parse expr with: {token}"),
         };
 
