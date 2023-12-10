@@ -1,96 +1,78 @@
-use crate::{BlockExpr, FnAbiDecl, ParseResult, Parser, Pattern, Ty};
+use crate::{parse_error, ExprId, FnAbiDecl, ParseResult, Parser, Pattern, TyId};
+use cool_collections::define_index_newtype;
 use cool_derive::Section;
 use cool_lexer::tk;
 use cool_span::{Section, Span};
 use derive_more::From;
 
-#[derive(Clone, From, Section, Debug)]
-pub enum FnOrExternFnExpr {
-    Fn(FnExpr),
-    ExternFn(ExternFnExpr),
-}
+define_index_newtype!(FnProtoId);
 
-#[derive(Clone, Debug)]
-pub struct FnExpr {
-    pub prototype: FnExprPrototype,
-    pub body: Box<BlockExpr>,
-}
-
-impl Section for FnExpr {
-    #[inline]
-    fn span(&self) -> Span {
-        self.prototype.span.to(self.body.span)
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct ExternFnExpr {
-    pub prototype: FnExprPrototype,
-}
-
-impl Section for ExternFnExpr {
-    #[inline]
-    fn span(&self) -> Span {
-        self.prototype.span
-    }
+#[derive(Clone, Copy, PartialEq, Eq, Hash, From, Debug)]
+pub enum FnExprOrFnProto {
+    Expr(ExprId),
+    Proto(FnProtoId),
 }
 
 #[derive(Clone, Section, Debug)]
-pub struct FnExprPrototype {
+pub struct FnExpr {
+    pub span: Span,
+    pub proto: FnProtoId,
+    pub body: ExprId,
+}
+
+#[derive(Clone, Section, Debug)]
+pub struct FnProto {
     pub span: Span,
     pub abi_decl: Option<FnAbiDecl>,
-    pub params: Vec<FnExprParam>,
+    pub params: Vec<FnParam>,
     pub is_variadic: bool,
     pub has_trailing_comma: bool,
-    pub return_ty: Option<Box<Ty>>,
+    pub return_ty: Option<TyId>,
 }
 
 #[derive(Clone, Debug)]
-pub struct FnExprParam {
+pub struct FnParam {
     pub pattern: Pattern,
-    pub ty: Option<Ty>,
-}
-
-impl Section for FnExprParam {
-    #[inline]
-    fn span(&self) -> Span {
-        match self.ty.as_ref() {
-            Some(ty) => self.pattern.span.to(ty.span()),
-            None => self.pattern.span,
-        }
-    }
+    pub ty: Option<TyId>,
 }
 
 impl Parser<'_> {
-    pub fn parse_fn_or_extern_fn_expr(&mut self) -> ParseResult<FnOrExternFnExpr> {
-        let prototype = self.parse_fn_expr_prototype()?;
+    pub fn parse_fn_expr_or_fn_proto(&mut self) -> ParseResult<FnExprOrFnProto> {
+        let proto = self.parse_fn_proto()?;
 
-        let body = (self.peek().kind == tk::open_brace)
-            .then(|| self.parse_block_expr())
-            .transpose()?;
+        if self[proto].abi_decl.is_some() && self.peek().kind != tk::open_brace {
+            return Ok(proto.into());
+        }
 
-        let expr: FnOrExternFnExpr = match body {
-            Some(body) => {
-                FnExpr {
-                    prototype,
-                    body: Box::new(body),
-                }
-                .into()
-            }
-            None => ExternFnExpr { prototype }.into(),
-        };
+        let body = self.parse_block_expr()?;
 
-        Ok(expr)
+        let proto_span = self[proto].span;
+        let body_span = self[body].span();
+
+        let expr_id = self.add_expr(FnExpr {
+            span: proto_span.to(body_span),
+            proto,
+            body,
+        });
+
+        Ok(expr_id.into())
     }
 
-    pub fn parse_fn_expr(&mut self) -> ParseResult<FnExpr> {
-        Ok(FnExpr {
-            prototype: self.parse_fn_expr_prototype()?,
-            body: Box::new(self.parse_block_expr()?),
-        })
+    pub fn parse_fn_expr(&mut self) -> ParseResult<ExprId> {
+        let proto = self.parse_fn_proto()?;
+        let body = self.parse_block_expr()?;
+
+        let proto_span = self[proto].span;
+        let body_span = self[body].span();
+
+        Ok(self.add_expr(FnExpr {
+            span: proto_span.to(body_span),
+            proto,
+            body,
+        }))
     }
 
-    fn parse_fn_expr_prototype(&mut self) -> ParseResult<FnExprPrototype> {
+    fn parse_fn_proto(&mut self) -> ParseResult<FnProtoId> {
         let abi_decl = (self.peek().kind == tk::kw_extern)
             .then(|| self.parse_fn_abi_decl())
             .transpose()?;
@@ -98,7 +80,7 @@ impl Parser<'_> {
         let fn_token = self.bump_expect(&tk::kw_fn)?;
         self.bump_expect(&tk::open_paren)?;
 
-        let mut params = Vec::<FnExprParam>::new();
+        let mut params = Vec::<FnParam>::new();
 
         let (close_paren, is_variadic, has_trailing_comma) =
             if let Some(close_paren) = self.bump_if_eq(tk::close_paren) {
@@ -109,7 +91,7 @@ impl Parser<'_> {
                         break (self.bump_expect(&tk::close_paren)?, true, false);
                     }
 
-                    params.push(self.parse_fn_expr_param()?);
+                    params.push(self.parse_fn_param()?);
 
                     let next_token = self.bump();
 
@@ -122,7 +104,7 @@ impl Parser<'_> {
                                 break (close_paren, false, true);
                             }
                         }
-                        _ => return self.error(next_token, &[tk::close_paren, tk::comma]),
+                        _ => return parse_error(next_token, &[tk::close_paren, tk::comma]),
                     }
                 }
             };
@@ -138,28 +120,26 @@ impl Parser<'_> {
             .unwrap_or(fn_token.span);
 
         let end_span = return_ty
-            .as_ref()
-            .map(|ty| ty.span())
+            .map(|ty| self[ty].span())
             .unwrap_or(close_paren.span);
 
-        Ok(FnExprPrototype {
+        Ok(self.add_fn_proto(FnProto {
             span: start_span.to(end_span),
             abi_decl,
             params,
             is_variadic,
             has_trailing_comma,
-            return_ty: return_ty.map(Box::new),
-        })
+            return_ty,
+        }))
     }
 
-    fn parse_fn_expr_param(&mut self) -> ParseResult<FnExprParam> {
+    fn parse_fn_param(&mut self) -> ParseResult<FnParam> {
         let pattern = self.parse_pattern()?;
 
-        let ty = self
-            .bump_if_eq(tk::colon)
-            .map(|_| self.parse_ty())
+        let ty = (self.bump_if_eq(tk::colon).is_some())
+            .then(|| self.parse_ty())
             .transpose()?;
 
-        Ok(FnExprParam { pattern, ty })
+        Ok(FnParam { pattern, ty })
     }
 }

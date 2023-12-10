@@ -74,10 +74,8 @@ pub fn define_symbols(input: proc_macro::TokenStream) -> proc_macro::TokenStream
     let symbol_groups = parse_macro_input!(input as SymbolGroupSet);
 
     // Indexes
-    let mut indexes = (1..=(symbol_groups.keywords.symbols.len()
-        + symbol_groups.other.symbols.len()))
-        .map(|index| index as u32);
-
+    let indexes_end = symbol_groups.keywords.symbols.len() + symbol_groups.other.symbols.len();
+    let mut indexes = 0..(indexes_end as u32);
     let indexes = indexes.by_ref();
 
     // Keywords
@@ -101,13 +99,11 @@ pub fn define_symbols(input: proc_macro::TokenStream) -> proc_macro::TokenStream
         #[allow(non_upper_case_globals)]
         pub mod sym {
             #(
-                pub const #keyword_ident_1: crate::Symbol
-                    = unsafe { crate::Symbol::new_unchecked(#indexes) };
+                pub const #keyword_ident_1: crate::Symbol = crate::Symbol::new(#indexes);
             )*
 
             #(
-                pub const #other_ident_1: crate::Symbol
-                    = unsafe { crate::Symbol::new_unchecked(#indexes) };
+                pub const #other_ident_1: crate::Symbol = crate::Symbol::new(#indexes);
             )*
 
             pub fn insert_symbols(symbols: &mut crate::SymbolTable) {

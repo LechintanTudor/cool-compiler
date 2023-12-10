@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-cool_ast = { path = "../cool_ast" }
 cool_collections = { path = "../cool_collections" }
 cool_derive = { path = "../cool_derive" }
 cool_lexer = { path = "../cool_lexer" }

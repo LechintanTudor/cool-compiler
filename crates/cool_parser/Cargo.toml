@@ -10,3 +10,4 @@ cool_lexer = { path = "../cool_lexer" }
 cool_span = { path = "../cool_span" }
 
 derive_more = { workspace = true }
+paste = { workspace = true }

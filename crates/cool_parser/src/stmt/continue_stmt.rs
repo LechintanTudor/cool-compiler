@@ -1,4 +1,4 @@
-use crate::{ParseResult, Parser};
+use crate::{ParseResult, Parser, StmtId};
 use cool_derive::Section;
 use cool_lexer::tk;
 use cool_span::Span;
@@ -9,9 +9,11 @@ pub struct ContinueStmt {
 }
 
 impl Parser<'_> {
-    pub fn parse_continue_stmt(&mut self) -> ParseResult<ContinueStmt> {
-        Ok(ContinueStmt {
-            span: self.bump_expect(&tk::kw_continue)?.span,
-        })
+    pub fn parse_continue_stmt(&mut self) -> ParseResult<StmtId> {
+        let continue_token = self.bump_expect(&tk::kw_continue)?;
+
+        Ok(self.add_stmt(ContinueStmt {
+            span: continue_token.span,
+        }))
     }
 }

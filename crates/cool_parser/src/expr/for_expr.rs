@@ -1,36 +1,38 @@
-use crate::{BlockExpr, DeclStmt, Expr, ParseResult, Parser, Stmt};
+use crate::{ExprId, ParseResult, Parser, StmtId};
 use cool_derive::Section;
 use cool_lexer::tk;
-use cool_span::Span;
+use cool_span::{Section, Span};
 
 #[derive(Clone, Section, Debug)]
 pub struct ForExpr {
     pub span: Span,
-    pub decl: Box<DeclStmt>,
-    pub cond: Box<Expr>,
-    pub post: Box<Stmt>,
-    pub body: Box<BlockExpr>,
+    pub decl: StmtId,
+    pub cond: ExprId,
+    pub after: StmtId,
+    pub body: ExprId,
 }
 
 impl Parser<'_> {
-    pub fn parse_for_expr(&mut self) -> ParseResult<ForExpr> {
+    pub fn parse_for_expr(&mut self) -> ParseResult<ExprId> {
         let for_token = self.bump_expect(&tk::kw_for)?;
 
-        let decl = self.parse_decl_stmt()?;
+        let decl = self.parse_decl_stmt(true)?;
         self.bump_expect(&tk::semicolon)?;
 
         let cond = self.parse_expr()?;
         self.bump_expect(&tk::semicolon)?;
 
-        let post: Stmt = self.parse_expr_or_stmt()?.into();
+        let after = self.parse_stmt(false)?;
         let body = self.parse_block_expr()?;
 
-        Ok(ForExpr {
-            span: for_token.span.to(body.span),
-            decl: Box::new(decl),
-            cond: Box::new(cond),
-            post: Box::new(post),
-            body: Box::new(body),
-        })
+        let span = for_token.span.to(self[body].span());
+
+        Ok(self.add_expr(ForExpr {
+            span,
+            decl,
+            cond,
+            after,
+            body,
+        }))
     }
 }

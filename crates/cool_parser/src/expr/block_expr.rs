@@ -1,49 +1,47 @@
-use crate::{Expr, ExprOrStmt, ParseResult, Parser, Stmt};
+use crate::{ExprId, ExprOrStmt, ParseResult, Parser, Stmt, StmtId};
+use cool_collections::SmallVec;
 use cool_derive::Section;
 use cool_lexer::tk;
-use cool_span::{Section, Span};
+use cool_span::Span;
 
 #[derive(Clone, Section, Debug)]
 pub struct BlockExpr {
     pub span: Span,
-    pub stmts: Vec<BlockExprStmt>,
-    pub end_expr: Option<Box<Expr>>,
+    pub stmts: SmallVec<BlockExprStmt, 2>,
+    pub end_expr: Option<ExprId>,
 }
 
-#[derive(Clone, Section, Debug)]
+#[derive(Clone, Debug)]
 pub struct BlockExprStmt {
-    pub span: Span,
-    pub stmt: Stmt,
+    pub stmt: StmtId,
     pub has_semicolon: bool,
 }
 
 impl Parser<'_> {
-    pub fn parse_block_expr(&mut self) -> ParseResult<BlockExpr> {
+    pub fn parse_block_expr(&mut self) -> ParseResult<ExprId> {
         let open_brace = self.bump_expect(&tk::open_brace)?;
-        let mut stmts = Vec::<BlockExprStmt>::new();
+        let mut stmts = SmallVec::new();
 
         let (close_brace, end_expr) = if let Some(close_brace) = self.bump_if_eq(tk::close_brace) {
             (close_brace, None)
         } else {
             loop {
-                match self.parse_expr_or_stmt()? {
+                match self.parse_expr_or_stmt(true)? {
                     ExprOrStmt::Expr(expr) => {
                         if let Some(close_brace) = self.bump_if_eq(tk::close_brace) {
-                            break (close_brace, Some(Box::new(expr)));
+                            break (close_brace, Some(expr));
                         }
 
-                        let (span, has_semicolon) =
-                            if let Some(semicolon) = self.bump_if_eq(tk::semicolon) {
-                                (expr.span().to(semicolon.span), true)
-                            } else if expr.is_promotable_to_stmt() {
-                                (expr.span(), false)
-                            } else {
-                                return self.peek_error(&[tk::close_brace]);
-                            };
+                        let has_semicolon = if self.bump_if_eq(tk::semicolon).is_some() {
+                            true
+                        } else if self[expr].is_promotable_to_stmt() {
+                            false
+                        } else {
+                            return self.peek_error(&[tk::close_brace]);
+                        };
 
                         stmts.push(BlockExprStmt {
-                            span,
-                            stmt: Stmt::Expr(Box::new(expr)),
+                            stmt: self.continue_parse_expr_stmt(expr),
                             has_semicolon,
                         });
 
@@ -52,15 +50,15 @@ impl Parser<'_> {
                         }
                     }
                     ExprOrStmt::Stmt(stmt) => {
-                        let (span, has_semicolon) =
-                            if let Some(semicolon) = self.bump_if_eq(tk::semicolon) {
-                                (stmt.span().to(semicolon.span), true)
-                            } else {
-                                (stmt.span(), false)
-                            };
+                        let has_semicolon = if self.bump_if_eq(tk::semicolon).is_some() {
+                            true
+                        } else if !self.stmt_needs_semicolon(stmt) {
+                            false
+                        } else {
+                            return self.peek_error(&[tk::semicolon]);
+                        };
 
                         stmts.push(BlockExprStmt {
-                            span,
                             stmt,
                             has_semicolon,
                         });
@@ -75,10 +73,30 @@ impl Parser<'_> {
             }
         };
 
-        Ok(BlockExpr {
+        Ok(self.add_expr(BlockExpr {
             span: open_brace.span.to(close_brace.span),
             stmts,
             end_expr,
-        })
+        }))
+    }
+
+    fn stmt_needs_semicolon(&self, stmt_id: StmtId) -> bool {
+        let mut code = ExprOrStmt::Stmt(stmt_id);
+
+        loop {
+            match code {
+                ExprOrStmt::Expr(expr_id) => {
+                    break !self[expr_id].is_promotable_to_stmt();
+                }
+                ExprOrStmt::Stmt(stmt_id) => {
+                    match &self[stmt_id] {
+                        Stmt::Defer(defer_stmt) => {
+                            code = defer_stmt.code;
+                        }
+                        _ => break true,
+                    }
+                }
+            }
+        }
     }
 }

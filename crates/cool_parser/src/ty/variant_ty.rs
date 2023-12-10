@@ -1,30 +1,33 @@
-use crate::{ParseResult, Parser, Ty};
+use crate::{ParseResult, Parser, TyId};
+use cool_collections::smallvec::smallvec;
+use cool_collections::SmallVec;
+use cool_derive::Section;
 use cool_lexer::tk;
 use cool_span::{Section, Span};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Section, Debug)]
 pub struct VariantTy {
-    pub variant_tys: Vec<Ty>,
-}
-
-impl Section for VariantTy {
-    fn span(&self) -> Span {
-        match self.variant_tys.as_slice() {
-            [] => Span::EMPTY,
-            [first] => first.span(),
-            [first, .., last] => first.span().to(last.span()),
-        }
-    }
+    pub span: Span,
+    pub variant_tys: SmallVec<TyId, 4>,
 }
 
 impl Parser<'_> {
-    pub fn continue_parse_variant_ty(&mut self, first_ty: Ty) -> ParseResult<VariantTy> {
-        let mut variant_tys = vec![first_ty];
+    pub fn continue_parse_variant_ty(&mut self, first_ty: TyId) -> ParseResult<TyId> {
+        debug_assert_eq!(self.peek().kind, tk::or);
+        let mut variant_tys = smallvec![first_ty];
+        let mut last_ty = first_ty;
 
         while self.bump_if_eq(tk::or).is_some() {
-            variant_tys.push(self.parse_non_variant_ty()?);
+            last_ty = self.parse_non_variant_ty()?;
+            variant_tys.push(last_ty);
         }
 
-        Ok(VariantTy { variant_tys })
+        let start_span = self[first_ty].span();
+        let end_span = self[last_ty].span();
+
+        Ok(self.add_ty(VariantTy {
+            span: start_span.to(end_span),
+            variant_tys,
+        }))
     }
 }

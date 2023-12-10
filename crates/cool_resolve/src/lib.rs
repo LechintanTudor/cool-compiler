@@ -1,45 +1,42 @@
-mod error;
-mod item;
-mod ty;
-
-pub use self::error::*;
-pub use self::item::*;
-pub use self::ty::*;
-
-use ahash::AHashMap;
-use cool_collections::{Arena, VecMap};
+use cool_collections::{define_index_newtype, Arena, VecMap};
 use cool_lexer::Symbol;
 
-#[derive(Debug)]
-pub struct ResolveContext<'a> {
-    paths: Arena<'a, ItemId, [Symbol]>,
-    items: AHashMap<ItemId, ItemKind>,
-    modules: VecMap<ModuleId, ModuleItem>,
-    ty_config: TyConfig,
-    tys: Arena<'a, TyId, TyKind>,
-    ty_defs: AHashMap<TyId, TyDef>,
-    frames: VecMap<FrameId, Frame>,
-    bindings: VecMap<BindingId, Binding>,
-    consts: VecMap<ConstId, ConstItem>,
-    exprs: VecMap<ExprId, Expr>,
+define_index_newtype!(CrateId);
+define_index_newtype!(LocalItemId);
+define_index_newtype!(ItemId);
+define_index_newtype!(TyId);
+
+pub struct ResolveContext {
+    pub crates: VecMap<CrateId, Crate>,
+    pub items: VecMap<ItemId, Item>,
 }
 
-impl<'a> ResolveContext<'a> {
-    pub fn new_leak(ty_config: TyConfig) -> Self {
-        let mut ctx = Self {
-            paths: Arena::new_leak(),
-            items: Default::default(),
-            modules: Default::default(),
-            ty_config,
-            tys: Arena::new_leak(),
-            ty_defs: Default::default(),
-            frames: Default::default(),
-            bindings: Default::default(),
-            consts: Default::default(),
-            exprs: Default::default(),
-        };
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct Item {
+    pub crate_id: CrateId,
+    pub local_id: LocalItemId,
+    pub kind: ItemKind,
+}
 
-        ctx.init_builtins();
-        ctx
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub enum ItemKind {
+    Ty(TyId),
+}
+
+impl ResolveContext {
+    pub fn resolve_path(&self, crate_id: CrateId, path: &[Symbol]) {
+        todo!()
     }
+}
+
+pub struct Crate {
+    pub name: Symbol,
+    pub paths: Arena<'static, LocalItemId, [Symbol]>,
+    pub items: VecMap<LocalItemId, LocalItem>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub enum LocalItem {
+    Crate(CrateId),
+    Item(ItemId),
 }

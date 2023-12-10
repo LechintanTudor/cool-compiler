@@ -1,55 +1,108 @@
-mod alias_item;
 mod module_item;
 mod struct_item;
 
-pub use self::alias_item::*;
 pub use self::module_item::*;
 pub use self::struct_item::*;
 
-use crate::{ExternFnExpr, FnExpr, FnOrExternFnExpr, LiteralExpr, ParseResult, Parser};
+use crate::{ExprId, FnExprOrFnProto, FnProtoId, Ident, ParseResult, Parser, TyId};
+use cool_collections::define_index_newtype;
 use cool_derive::Section;
-use cool_lexer::{tk, TokenKind};
+use cool_lexer::tk;
+use cool_span::{Section, Span};
 use derive_more::From;
 
-#[derive(Clone, From, Section, Debug)]
+define_index_newtype!(ItemId);
+
+#[derive(Clone, Debug)]
 pub enum Item {
-    Alias(AliasItem),
-    ExternFn(ExternFnExpr),
-    Fn(FnExpr),
-    Literal(LiteralExpr),
-    Module(ModuleItem),
-    Struct(StructItem),
+    File(ModuleId),
+    Inline(InlineItem),
 }
 
-impl From<FnOrExternFnExpr> for Item {
+impl Item {
     #[inline]
-    fn from(expr: FnOrExternFnExpr) -> Self {
-        match expr {
-            FnOrExternFnExpr::Fn(expr) => Self::Fn(expr),
-            FnOrExternFnExpr::ExternFn(expr) => Self::ExternFn(expr),
+    #[must_use]
+    pub fn kind(&self) -> ItemKind {
+        match self {
+            Self::File(module_id) => ItemKind::Module(*module_id),
+            Self::Inline(item) => item.kind,
         }
     }
 }
 
+#[derive(Clone, Section, Debug)]
+pub struct InlineItem {
+    pub span: Span,
+    pub ident: Ident,
+    pub ty: Option<TyId>,
+    pub kind: ItemKind,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, From, Debug)]
+pub enum ItemKind {
+    Alias(TyId),
+    Expr(ExprId),
+    ExternFn(FnProtoId),
+    Module(ModuleId),
+    Struct(StructId),
+}
+
 impl Parser<'_> {
-    pub fn parse_item(&mut self) -> ParseResult<Item> {
-        let item = match self.peek().kind {
-            tk::kw_alias => self.parse_alias_item()?.into(),
-            tk::kw_extern | tk::kw_fn => self.parse_fn_or_extern_fn_expr()?.into(),
-            tk::kw_module => self.parse_module_item()?.into(),
-            tk::kw_struct => self.parse_struct_item()?.into(),
-            TokenKind::Literal(_) => self.parse_literal_expr()?.into(),
+    pub fn parse_inline_item(&mut self) -> ParseResult<ItemId> {
+        let ident = self.parse_ident()?;
+        self.bump_expect(&tk::colon)?;
+
+        let ty = (self.peek().kind != tk::colon)
+            .then(|| self.parse_non_variant_ty())
+            .transpose()?;
+
+        self.bump_expect(&tk::colon)?;
+
+        let (kind, kind_span) = match self.peek().kind {
+            tk::kw_alias => {
+                let ty_id = self.parse_alias()?;
+                let span = self[ty_id].span();
+                (ty_id.into(), span)
+            }
+            tk::kw_module => {
+                let module_id = self.parse_module()?;
+                let span = self[module_id].span;
+                (module_id.into(), span)
+            }
+            tk::kw_struct => {
+                let struct_id = self.parse_struct()?;
+                let span = self[struct_id].span;
+                (struct_id.into(), span)
+            }
+            tk::kw_extern | tk::kw_fn => {
+                match self.parse_fn_expr_or_fn_proto()? {
+                    FnExprOrFnProto::Expr(expr_id) => {
+                        let span = self[expr_id].span();
+                        (expr_id.into(), span)
+                    }
+                    FnExprOrFnProto::Proto(proto_id) => {
+                        let span = self[proto_id].span;
+                        (proto_id.into(), span)
+                    }
+                }
+            }
             _ => {
-                return self.peek_error(&[
-                    tk::kw_alias,
-                    tk::kw_extern,
-                    tk::kw_fn,
-                    tk::kw_module,
-                    tk::kw_struct,
-                ]);
+                let expr_id = self.parse_expr()?;
+                let span = self[expr_id].span();
+                (expr_id.into(), span)
             }
         };
 
-        Ok(item)
+        Ok(self.add_item(Item::Inline(InlineItem {
+            span: ident.span.to(kind_span),
+            ident,
+            ty,
+            kind,
+        })))
+    }
+
+    fn parse_alias(&mut self) -> ParseResult<TyId> {
+        self.bump_expect(&tk::kw_alias)?;
+        self.parse_ty()
     }
 }

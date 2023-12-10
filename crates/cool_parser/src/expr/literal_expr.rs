@@ -1,19 +1,19 @@
-use crate::{Ident, ParseResult, Parser};
+use crate::{parse_error, ExprId, Ident, ParseResult, Parser};
 use cool_collections::SmallString;
 use cool_derive::Section;
-use cool_lexer::{tk, LiteralKind as LexerLiteralKind, Symbol, TokenKind};
+use cool_lexer::{tk, LiteralKind, Symbol, TokenKind};
 use cool_span::Span;
 use std::fmt::Write;
 
 #[derive(Clone, Section, Debug)]
 pub struct LiteralExpr {
     pub span: Span,
-    pub kind: LiteralKind,
+    pub kind: LiteralExprKind,
     pub value: Symbol,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum LiteralKind {
+#[derive(Clone, Debug)]
+pub enum LiteralExprKind {
     Bool,
     Int,
     Float,
@@ -21,120 +21,89 @@ pub enum LiteralKind {
     Str { prefix: Option<Symbol> },
 }
 
-impl From<LexerLiteralKind> for LiteralKind {
-    fn from(kind: LexerLiteralKind) -> Self {
+impl From<LiteralKind> for LiteralExprKind {
+    #[inline]
+    fn from(kind: LiteralKind) -> Self {
         match kind {
-            LexerLiteralKind::Bool => LiteralKind::Bool,
-            LexerLiteralKind::Int => LiteralKind::Int,
-            LexerLiteralKind::Char => LiteralKind::Char { prefix: None },
-            LexerLiteralKind::Str => LiteralKind::Str { prefix: None },
+            LiteralKind::Bool => Self::Bool,
+            LiteralKind::Int => Self::Int,
+            LiteralKind::Char => Self::Char { prefix: None },
+            LiteralKind::Str => Self::Str { prefix: None },
         }
     }
-}
-
-#[derive(Clone, Section, Debug)]
-pub struct IntLiteralExpr {
-    pub span: Span,
-    pub value: Symbol,
 }
 
 impl Parser<'_> {
-    pub fn parse_literal_expr(&mut self) -> ParseResult<LiteralExpr> {
-        let start_token = self.bump();
-        let TokenKind::Literal(literal) = start_token.kind else {
-            return self.error(start_token, &[tk::literal]);
+    pub fn parse_literal_expr(&mut self) -> ParseResult<ExprId> {
+        let token = self.bump();
+        let TokenKind::Literal(literal) = token.kind else {
+            return parse_error(token, &[tk::literal]);
         };
 
-        let float_dot_token = (literal.kind == LexerLiteralKind::Int)
+        let dot_token = (literal.kind == LiteralKind::Int)
             .then(|| self.bump_any_if_eq(tk::dot))
             .flatten();
 
-        let Some(float_dot_token) = float_dot_token else {
-            return Ok(LiteralExpr {
-                span: start_token.span,
+        let Some(dot_token) = dot_token else {
+            return Ok(self.add_expr(LiteralExpr {
+                span: token.span,
                 kind: literal.kind.into(),
                 value: literal.value,
-            });
+            }));
         };
 
-        let next_literal = self
-            .peek_any()
-            .kind
-            .as_literal()
-            .filter(|literal| literal.kind == LexerLiteralKind::Int);
-
-        let Some(next_literal) = next_literal else {
-            return Ok(LiteralExpr {
-                span: start_token.span.to(float_dot_token.span),
-                kind: LiteralKind::Float,
-                value: literal.value,
-            });
-        };
-
-        let end_token = self.bump();
-
-        let value = {
-            let mut value: SmallString = SmallString::new();
-            write!(&mut value, "{}.{}", literal.value, next_literal.value).unwrap();
-            Symbol::insert(&value)
-        };
-
-        Ok(LiteralExpr {
-            span: start_token.span.to(end_token.span),
-            kind: LiteralKind::Float,
-            value,
-        })
-    }
-
-    pub fn continue_parse_literal_expr(&mut self, prefix: Ident) -> ParseResult<LiteralExpr> {
-        match self.peek_any().kind {
-            TokenKind::Literal(literal) => {
-                match literal.kind {
-                    LexerLiteralKind::Char => {
-                        let end_span = self.bump().span;
-
-                        Ok(LiteralExpr {
-                            span: prefix.span.to(end_span),
-                            kind: LiteralKind::Char {
-                                prefix: Some(prefix.symbol),
-                            },
-                            value: literal.value,
-                        })
-                    }
-                    LexerLiteralKind::Str => {
-                        let end_span = self.bump().span;
-
-                        Ok(LiteralExpr {
-                            span: prefix.span.to(end_span),
-                            kind: LiteralKind::Str {
-                                prefix: Some(prefix.symbol),
-                            },
-                            value: literal.value,
-                        })
-                    }
-                    _ => self.peek_any_error(&[tk::character, tk::string]),
-                }
-            }
-            _ => self.peek_any_error(&[tk::character, tk::string]),
-        }
-    }
-
-    pub fn parse_int_literal_expr(&mut self) -> ParseResult<IntLiteralExpr> {
-        let literal = self
-            .bump_filter(|kind| {
-                kind.as_literal()
-                    .filter(|literal| matches!(literal.kind, LexerLiteralKind::Int))
+        let (span, value) = self
+            .try_parse_decimal_part()
+            .map(|(decimal_span, decimal)| {
+                let mut value: SmallString = SmallString::new();
+                write!(&mut value, "{}.{}", literal.value, decimal).unwrap();
+                (token.span.to(decimal_span), Symbol::insert(&value))
             })
-            .map(|(span, literal)| {
-                IntLiteralExpr {
-                    span,
-                    value: literal.value,
-                }
+            .unwrap_or_else(|| {
+                let mut value: SmallString = SmallString::new();
+                write!(&mut value, "{}.", literal.value).unwrap();
+                (token.span.to(dot_token.span), Symbol::insert(&value))
             });
 
-        match literal {
-            Some(literal) => Ok(literal),
-            _ => self.peek_error(&[tk::literal]),
+        Ok(self.add_expr(LiteralExpr {
+            span,
+            kind: literal.kind.into(),
+            value,
+        }))
+    }
+
+    pub fn continue_parse_literal_expr(&mut self, prefix: Ident) -> ParseResult<ExprId> {
+        let token = self.bump_any();
+
+        let (kind, value) = match token.kind {
+            TokenKind::Literal(literal) => {
+                let prefix = Some(prefix.symbol);
+
+                let kind = match literal.kind {
+                    LiteralKind::Char => LiteralExprKind::Char { prefix },
+                    LiteralKind::Str => LiteralExprKind::Str { prefix },
+                    _ => return parse_error(token, &[tk::literal]),
+                };
+
+                (kind, literal.value)
+            }
+            _ => return parse_error(token, &[tk::literal]),
+        };
+
+        Ok(self.add_expr(LiteralExpr {
+            span: prefix.span.to(token.span),
+            kind,
+            value,
+        }))
+    }
+
+    fn try_parse_decimal_part(&mut self) -> Option<(Span, Symbol)> {
+        match self.peek_any().kind {
+            TokenKind::Literal(literal) if literal.kind == LiteralKind::Int => {
+                let span = self.bump().span;
+                Some((span, literal.value))
+            }
+            _ => None,
         }
     }
 }

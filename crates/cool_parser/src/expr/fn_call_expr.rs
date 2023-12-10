@@ -1,4 +1,5 @@
-use crate::{Expr, ParseResult, Parser};
+use crate::{ExprId, ParseResult, Parser};
+use cool_collections::SmallVec;
 use cool_derive::Section;
 use cool_lexer::tk;
 use cool_span::{Section, Span};
@@ -6,15 +7,15 @@ use cool_span::{Section, Span};
 #[derive(Clone, Section, Debug)]
 pub struct FnCallExpr {
     pub span: Span,
-    pub base: Box<Expr>,
-    pub args: Vec<Expr>,
+    pub base: ExprId,
+    pub args: SmallVec<ExprId, 4>,
     pub has_trailing_comma: bool,
 }
 
 impl Parser<'_> {
-    pub fn continue_parse_fn_call_expr(&mut self, base: Expr) -> ParseResult<FnCallExpr> {
+    pub fn continue_parse_fn_call_expr(&mut self, base: ExprId) -> ParseResult<ExprId> {
         self.bump_expect(&tk::open_paren)?;
-        let mut args = Vec::<Expr>::new();
+        let mut args = SmallVec::new();
 
         let (close_paren, has_trailing_comma) =
             if let Some(close_paren) = self.bump_if_eq(tk::close_paren) {
@@ -35,11 +36,13 @@ impl Parser<'_> {
                 }
             };
 
-        Ok(FnCallExpr {
-            span: base.span().to(close_paren.span),
-            base: Box::new(base),
+        let span = self[base].span().to(close_paren.span);
+
+        Ok(self.add_expr(FnCallExpr {
+            span,
+            base,
             args,
             has_trailing_comma,
-        })
+        }))
     }
 }

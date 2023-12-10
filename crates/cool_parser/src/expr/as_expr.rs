@@ -1,28 +1,22 @@
-use crate::{Expr, ParseResult, Parser, Ty};
+use crate::{ExprId, ParseResult, Parser, TyId};
+use cool_derive::Section;
 use cool_lexer::tk;
 use cool_span::{Section, Span};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Section, Debug)]
 pub struct AsExpr {
-    pub base: Box<Expr>,
-    pub ty: Ty,
-}
-
-impl Section for AsExpr {
-    #[inline]
-    fn span(&self) -> Span {
-        self.base.span().to(self.ty.span())
-    }
+    pub span: Span,
+    pub base: ExprId,
+    pub ty: TyId,
 }
 
 impl Parser<'_> {
-    pub fn continue_parse_as_expr(&mut self, base: Expr) -> ParseResult<AsExpr> {
+    pub fn continue_parse_as_expr(&mut self, base: ExprId) -> ParseResult<ExprId> {
         self.bump_expect(&tk::kw_as)?;
-        let ty = self.parse_ty()?;
 
-        Ok(AsExpr {
-            base: Box::new(base),
-            ty,
-        })
+        let ty = self.parse_ty()?;
+        let span = self[base].span().to(self[ty].span());
+
+        Ok(self.add_expr(AsExpr { span, base, ty }))
     }
 }

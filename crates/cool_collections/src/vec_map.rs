@@ -1,7 +1,6 @@
 use crate::CoolIndex;
 use std::fmt;
 use std::marker::PhantomData;
-use std::num::NonZeroU32;
 use std::ops::{Deref, DerefMut, Index, IndexMut};
 
 pub struct VecMap<I, T> {
@@ -28,10 +27,7 @@ where
     I: CoolIndex,
 {
     pub fn push(&mut self, value: T) -> I {
-        let index = NonZeroU32::new((self.values.len() + 1) as u32)
-            .map(I::new)
-            .expect("NonZeroU32 overflow");
-
+        let index = I::new(self.values.len() as u32);
         self.values.push(value);
         index
     }
@@ -82,7 +78,7 @@ where
 
     #[inline]
     fn index(&self, index: I) -> &Self::Output {
-        &self.values[index.get_index()]
+        &self.values[index.get() as usize]
     }
 }
 
@@ -92,7 +88,7 @@ where
 {
     #[inline]
     fn index_mut(&mut self, index: I) -> &mut Self::Output {
-        &mut self.values[index.get_index()]
+        &mut self.values[index.get() as usize]
     }
 }
 

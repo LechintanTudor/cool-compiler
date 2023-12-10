@@ -1,4 +1,5 @@
-use crate::{Expr, Ident, ParseResult, Parser};
+use crate::{ExprId, Ident, ParseResult, Parser};
+use cool_collections::SmallVec;
 use cool_derive::Section;
 use cool_lexer::tk;
 use cool_span::{Section, Span};
@@ -6,48 +7,35 @@ use cool_span::{Section, Span};
 #[derive(Clone, Section, Debug)]
 pub struct StructExpr {
     pub span: Span,
-    pub base: Box<Expr>,
-    pub fields: Vec<StructExprFieldInitializer>,
+    pub base: ExprId,
+    pub fields: SmallVec<StructExprField, 1>,
     pub has_trailing_comma: bool,
-    pub update: Option<Box<Expr>>,
+    pub fill: Option<ExprId>,
 }
 
 #[derive(Clone, Debug)]
-pub struct StructExprFieldInitializer {
-    pub field: Ident,
-    pub value: Option<Expr>,
-}
-
-impl Section for StructExprFieldInitializer {
-    #[inline]
-    fn span(&self) -> Span {
-        let end_span = self
-            .value
-            .as_ref()
-            .map(|expr| expr.span())
-            .unwrap_or(self.field.span);
-
-        self.field.span.to(end_span)
-    }
+pub struct StructExprField {
+    pub ident: Ident,
+    pub value: Option<ExprId>,
 }
 
 impl Parser<'_> {
-    pub fn continue_parse_struct_expr(&mut self, base: Expr) -> ParseResult<StructExpr> {
+    pub fn continue_parse_struct_expr(&mut self, base: ExprId) -> ParseResult<ExprId> {
         self.bump_expect(&tk::open_brace)?;
-        let mut fields = Vec::<StructExprFieldInitializer>::new();
+        let mut fields = SmallVec::new();
 
-        let (close_brace, has_trailing_comma, update) =
+        let (close_brace, has_trailing_comma, fill) =
             if let Some(close_brace) = self.bump_if_eq(tk::close_brace) {
                 (close_brace, false, None)
             } else {
                 loop {
                     if self.bump_if_eq(tk::dot_dot).is_some() {
-                        let update = self.parse_expr()?;
+                        let fill = self.parse_expr()?;
                         let close_brace = self.bump_expect(&tk::close_brace)?;
-                        break (close_brace, false, Some(Box::new(update)));
+                        break (close_brace, false, Some(fill));
                     }
 
-                    fields.push(self.parse_struct_expr_field_initializer()?);
+                    fields.push(self.parse_struct_expr_field()?);
 
                     if self.bump_if_eq(tk::comma).is_some() {
                         if let Some(close_brace) = self.bump_if_eq(tk::close_brace) {
@@ -60,23 +48,25 @@ impl Parser<'_> {
                 }
             };
 
-        Ok(StructExpr {
-            span: base.span().to(close_brace.span),
-            base: Box::new(base),
+        let start_span = self[base].span();
+
+        Ok(self.add_expr(StructExpr {
+            span: start_span.to(close_brace.span),
+            base,
             fields,
             has_trailing_comma,
-            update,
-        })
+            fill,
+        }))
     }
 
-    fn parse_struct_expr_field_initializer(&mut self) -> ParseResult<StructExprFieldInitializer> {
-        let field = self.parse_ident()?;
+    fn parse_struct_expr_field(&mut self) -> ParseResult<StructExprField> {
+        let ident = self.parse_ident()?;
 
         let value = self
             .bump_if_eq(tk::eq)
             .map(|_| self.parse_expr())
             .transpose()?;
 
-        Ok(StructExprFieldInitializer { field, value })
+        Ok(StructExprField { ident, value })
     }
 }

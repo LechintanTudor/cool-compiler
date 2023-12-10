@@ -1,4 +1,4 @@
-use crate::{ParseResult, Parser};
+use crate::{parse_error, ParseResult, Parser};
 use cool_lexer::tk;
 use std::fmt;
 
@@ -40,7 +40,7 @@ impl Parser<'_> {
                 let is_mutable = self.bump_if_eq(tk::kw_mut).is_some();
                 UnaryOp::Address { is_mutable }
             }
-            _ => return self.error(token, &[tk::minus, tk::not, tk::and]),
+            _ => return parse_error(token, &[tk::minus, tk::not, tk::and]),
         };
 
         Ok(op)

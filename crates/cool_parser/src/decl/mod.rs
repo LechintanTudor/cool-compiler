@@ -1,14 +1,15 @@
-mod item_decl;
-mod use_decl;
+mod import;
 
-pub use self::item_decl::*;
-pub use self::use_decl::*;
+pub use self::import::*;
 
-use crate::{ParseResult, Parser};
+use crate::{parse_error, ItemId, ParseResult, Parser};
+use cool_collections::define_index_newtype;
 use cool_derive::Section;
-use cool_lexer::tk;
-use cool_span::{Section, Span};
+use cool_lexer::{tk, TokenKind};
+use cool_span::Span;
 use derive_more::From;
+
+define_index_newtype!(DeclId);
 
 #[derive(Clone, Section, Debug)]
 pub struct Decl {
@@ -17,32 +18,33 @@ pub struct Decl {
     pub kind: DeclKind,
 }
 
-#[derive(Clone, From, Section, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, From, Debug)]
 pub enum DeclKind {
-    Item(ItemDecl),
-    Use(UseDecl),
+    Item(ItemId),
+    Import(ImportId),
 }
 
 impl Parser<'_> {
-    pub fn parse_decl(&mut self) -> ParseResult<Decl> {
+    pub fn parse_decl(&mut self) -> ParseResult<DeclId> {
         let export_token = self.bump_if_eq(tk::kw_export);
+        let peeked_token = self.peek();
 
-        let kind: DeclKind = match self.peek().kind {
-            tk::kw_use => self.parse_use_decl()?.into(),
-            _ => self.parse_item_decl()?.into(),
+        let kind = match peeked_token.kind {
+            tk::kw_use => self.parse_import_decl()?.into(),
+            TokenKind::Ident(_) => self.parse_inline_item()?.into(),
+            _ => return parse_error(peeked_token, &[tk::kw_use, tk::identifier]),
         };
 
+        let semicolon_token = self.bump_expect(&tk::semicolon)?;
+
         let start_span = export_token
-            .as_ref()
             .map(|token| token.span)
-            .unwrap_or(kind.span());
+            .unwrap_or(peeked_token.span);
 
-        let semicolon = self.bump_expect(&tk::semicolon)?;
-
-        Ok(Decl {
-            span: start_span.to(semicolon.span),
+        Ok(self.add_decl(Decl {
+            span: start_span.to(semicolon_token.span),
             is_exported: export_token.is_some(),
             kind,
-        })
+        }))
     }
 }

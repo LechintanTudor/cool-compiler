@@ -2,7 +2,6 @@ use crate::{CoolIndex, UnsafeBump};
 use ahash::AHashMap;
 use std::fmt;
 use std::hash::Hash;
-use std::num::NonZeroU32;
 use std::ops::Index;
 
 pub struct Arena<'a, I, T>
@@ -32,16 +31,14 @@ where
     where
         I: CoolIndex,
     {
-        (1..(self.values.len() as u32 + 1)).map(|i| CoolIndex::new(NonZeroU32::new(i).unwrap()))
+        (0..(self.values.len() as u32)).map(I::new)
     }
 
     fn get_next_index(&self) -> I
     where
         I: CoolIndex,
     {
-        NonZeroU32::new((self.values.len() + 1) as u32)
-            .map(CoolIndex::new)
-            .unwrap()
+        I::new(self.values.len() as u32)
     }
 }
 
@@ -71,7 +68,7 @@ where
 {
     #[must_use]
     pub fn get(&self, index: I) -> Option<&'a T> {
-        self.values.get(index.get_index()).copied()
+        self.values.get(index.get() as usize).copied()
     }
 }
 
@@ -152,6 +149,6 @@ where
     type Output = T;
 
     fn index(&self, index: I) -> &Self::Output {
-        self.values.get(index.get_index()).unwrap()
+        &self.values[index.get() as usize]
     }
 }

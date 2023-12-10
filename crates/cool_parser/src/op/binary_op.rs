@@ -1,7 +1,4 @@
-use cool_lexer::TokenKind;
-
 use crate::op::define_op;
-use crate::InvalidOp;
 
 define_op! {
     BinaryOp {
@@ -57,18 +54,6 @@ impl BinaryOp {
 
             Self::LogicalAnd => 0,
             Self::LogicalOr => 0,
-        }
-    }
-}
-
-impl TryFrom<TokenKind> for BinaryOp {
-    type Error = InvalidOp;
-
-    #[inline]
-    fn try_from(token: TokenKind) -> Result<Self, Self::Error> {
-        match token {
-            TokenKind::Punct(punct) => Self::try_from(punct),
-            _ => Err(InvalidOp),
         }
     }
 }

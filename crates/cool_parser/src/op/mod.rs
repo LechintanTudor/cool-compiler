@@ -29,6 +29,17 @@ macro_rules! define_op{
             }
         }
 
+        impl TryFrom<::cool_lexer::TokenKind> for $OpName {
+            type Error = crate::InvalidOp;
+
+            fn try_from(token: ::cool_lexer::TokenKind) -> Result<Self, Self::Error> {
+                match token {
+                    ::cool_lexer::TokenKind::Punct(punct) => Self::try_from(punct),
+                    _ => Err(crate::InvalidOp),
+                }
+            }
+        }
+
         impl TryFrom<::cool_lexer::Punct> for $OpName {
             type Error = crate::InvalidOp;
 

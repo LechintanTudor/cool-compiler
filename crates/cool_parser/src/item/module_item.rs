@@ -1,38 +1,70 @@
-use crate::{Module, ParseResult, Parser};
+use crate::{DeclId, Item, ItemId, ParseResult, Parser};
+use cool_collections::{define_index_newtype, SmallVec};
 use cool_derive::Section;
 use cool_lexer::tk;
 use cool_span::Span;
 
+define_index_newtype!(ModuleId);
+
 #[derive(Clone, Section, Debug)]
-pub struct ModuleItem {
+pub struct Module {
     pub span: Span,
     pub kind: ModuleKind,
+    pub decls: SmallVec<DeclId, 4>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum ModuleKind {
-    Extern,
-    Inline(Module),
+    File,
+    Inline,
 }
 
 impl Parser<'_> {
-    #[inline]
-    pub fn parse_module_item(&mut self) -> ParseResult<ModuleItem> {
+    pub fn parse_file_module_item(&mut self) -> ParseResult<ItemId> {
+        let mut decls = SmallVec::new();
+
+        let span_end = loop {
+            if self.peek().kind == tk::eof {
+                break self.peek().span.end();
+            }
+
+            decls.push(self.parse_decl()?);
+        };
+
+        let module_id = self.add_module(Module {
+            span: Span::from_to(0, span_end),
+            kind: ModuleKind::File,
+            decls,
+        });
+
+        Ok(self.add_item(Item::File(module_id)))
+    }
+
+    pub fn parse_module(&mut self) -> ParseResult<ModuleId> {
         let module_token = self.bump_expect(&tk::kw_module)?;
 
         if self.bump_if_eq(tk::open_brace).is_none() {
-            return Ok(ModuleItem {
+            return Ok(self.add_module(Module {
                 span: module_token.span,
-                kind: ModuleKind::Extern,
-            });
+                kind: ModuleKind::File,
+                decls: SmallVec::new(),
+            }));
         }
 
-        let module = self.parse_module()?;
-        let close_brace = self.bump_expect(&tk::close_brace)?;
+        let mut decls = SmallVec::new();
 
-        Ok(ModuleItem {
-            span: module_token.span.to(close_brace.span),
-            kind: ModuleKind::Inline(module),
-        })
+        let end_span = loop {
+            if let Some(close_brace) = self.bump_if_eq(tk::close_brace) {
+                break close_brace.span;
+            }
+
+            decls.push(self.parse_decl()?);
+        };
+
+        Ok(self.add_module(Module {
+            span: module_token.span.to(end_span),
+            kind: ModuleKind::Inline,
+            decls,
+        }))
     }
 }

@@ -2,7 +2,6 @@ mod decl;
 mod error;
 mod expr;
 mod item;
-mod module;
 mod op;
 mod stmt;
 mod ty;
@@ -12,30 +11,85 @@ pub use self::decl::*;
 pub use self::error::*;
 pub use self::expr::*;
 pub use self::item::*;
-pub use self::module::*;
 pub use self::op::*;
 pub use self::stmt::*;
 pub use self::ty::*;
 pub use self::utils::*;
 
+use cool_collections::VecMap;
 use cool_lexer::{Token, TokenKind, TokenStream};
-use cool_span::Span;
+use paste::paste;
+use std::ops::Index;
 use std::slice;
 
-#[inline]
-pub fn parse_module(source: &str) -> ParseResult<Module> {
-    Parser::from(source).parse_module()
+macro_rules! define_parser_data {
+    { $($field:ident: $Key:ty => $Value:ty,)* } => {
+        paste! {
+            #[derive(Clone, Default, Debug)]
+            pub struct ParserData {
+                $(pub [<$field s>]: VecMap<$Key, $Value>,)*
+            }
+
+            impl Parser<'_> {
+                $(
+                    pub fn [<add_ $field>]<T>(&mut self, [<$field _id>]: T) -> $Key
+                    where
+                        T: Into<$Value>,
+                    {
+                        self.data.[<$field s>].push([<$field _id>].into())
+                    }
+                )*
+            }
+
+            $(
+                impl Index<$Key> for Parser<'_> {
+                    type Output = $Value;
+
+                    #[inline]
+                    fn index(&self, [<$field _id>]: $Key) -> &Self::Output {
+                        &self.data.[<$field s>][[<$field _id>]]
+                    }
+                }
+            )*
+        }
+    };
 }
 
-#[derive(Clone, Debug)]
+define_parser_data! {
+    decl: DeclId => Decl,
+    item: ItemId => Item,
+    module: ModuleId => Module,
+    import: ImportId => Import,
+    struct: StructId => Struct,
+    fn_proto: FnProtoId => FnProto,
+    ty: TyId => Ty,
+    expr: ExprId => Expr,
+    stmt: StmtId => Stmt,
+}
+
+#[derive(Debug)]
 pub struct Parser<'a> {
+    data: &'a mut ParserData,
     tokens: TokenStream<'a>,
 }
 
 impl<'a> Parser<'a> {
     #[inline]
+    pub fn new(data: &'a mut ParserData, source: &'a str) -> Self {
+        Self {
+            data,
+            tokens: TokenStream::new(source),
+        }
+    }
+
+    #[inline]
     pub fn bump(&mut self) -> Token {
         self.tokens.next_lang()
+    }
+
+    #[inline]
+    pub fn bump_any(&mut self) -> Token {
+        self.tokens.next_any()
     }
 
     #[inline]
@@ -79,17 +133,6 @@ impl<'a> Parser<'a> {
         Ok(token)
     }
 
-    pub fn bump_filter<R, F>(&mut self, f: F) -> Option<(Span, R)>
-    where
-        F: FnOnce(TokenKind) -> Option<R>,
-    {
-        f(self.peek().kind).map(|result| (self.bump().span, result))
-    }
-
-    pub fn error<T>(&self, found: Token, expected: &'static [TokenKind]) -> ParseResult<T> {
-        Err(ParseError { found, expected })
-    }
-
     pub fn peek_error<T>(&mut self, expected: &'static [TokenKind]) -> ParseResult<T> {
         Err(ParseError {
             found: self.peek(),
@@ -102,21 +145,5 @@ impl<'a> Parser<'a> {
             found: self.peek_any(),
             expected,
         })
-    }
-}
-
-impl<'a> From<&'a str> for Parser<'a> {
-    #[inline]
-    fn from(source: &'a str) -> Self {
-        Self {
-            tokens: TokenStream::new(source),
-        }
-    }
-}
-
-impl<'a> From<TokenStream<'a>> for Parser<'a> {
-    #[inline]
-    fn from(tokens: TokenStream<'a>) -> Self {
-        Self { tokens }
     }
 }
