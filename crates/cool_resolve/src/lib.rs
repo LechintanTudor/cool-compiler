@@ -1,42 +1,75 @@
-use cool_collections::{define_index_newtype, Arena, VecMap};
+mod error;
+mod item;
+mod ty;
+
+pub use self::error::*;
+pub use self::item::*;
+pub use self::ty::*;
+
+use cool_collections::{Arena, VecMap};
 use cool_lexer::Symbol;
+use std::ops::Index;
 
-define_index_newtype!(CrateId);
-define_index_newtype!(LocalItemId);
-define_index_newtype!(ItemId);
-define_index_newtype!(TyId);
-
+#[derive(Debug)]
 pub struct ResolveContext {
-    pub crates: VecMap<CrateId, Crate>,
-    pub items: VecMap<ItemId, Item>,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub struct Item {
-    pub crate_id: CrateId,
-    pub local_id: LocalItemId,
-    pub kind: ItemKind,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum ItemKind {
-    Ty(TyId),
+    items: VecMap<ItemId, Item>,
+    crates: VecMap<CrateId, Crate>,
+    modules: VecMap<ModuleId, Module>,
+    ty_config: TyConfig,
+    tys: Arena<TyId, TyKind>,
 }
 
 impl ResolveContext {
-    pub fn resolve_path(&self, crate_id: CrateId, path: &[Symbol]) {
-        todo!()
+    pub fn new(ty_config: TyConfig) -> Self {
+        let mut context = Self {
+            items: VecMap::default(),
+            crates: VecMap::default(),
+            modules: VecMap::default(),
+            ty_config,
+            tys: Arena::default(),
+        };
+
+        context.add_crate(Symbol::insert("@builtins"));
+        context
     }
 }
 
-pub struct Crate {
-    pub name: Symbol,
-    pub paths: Arena<'static, LocalItemId, [Symbol]>,
-    pub items: VecMap<LocalItemId, LocalItem>,
+impl Index<ItemId> for ResolveContext {
+    type Output = Item;
+
+    #[inline]
+    #[must_use]
+    fn index(&self, item_id: ItemId) -> &Self::Output {
+        &self.items[item_id]
+    }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum LocalItem {
-    Crate(CrateId),
-    Item(ItemId),
+impl Index<CrateId> for ResolveContext {
+    type Output = Crate;
+
+    #[inline]
+    #[must_use]
+    fn index(&self, crate_id: CrateId) -> &Self::Output {
+        &self.crates[crate_id]
+    }
+}
+
+impl Index<ModuleId> for ResolveContext {
+    type Output = Module;
+
+    #[inline]
+    #[must_use]
+    fn index(&self, module_id: ModuleId) -> &Self::Output {
+        &self.modules[module_id]
+    }
+}
+
+impl Index<TyId> for ResolveContext {
+    type Output = TyKind;
+
+    #[inline]
+    #[must_use]
+    fn index(&self, ty_id: TyId) -> &Self::Output {
+        &self.tys[ty_id]
+    }
 }

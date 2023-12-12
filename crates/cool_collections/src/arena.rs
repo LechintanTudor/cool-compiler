@@ -1,129 +1,91 @@
-use crate::{CoolIndex, UnsafeBump};
-use ahash::AHashMap;
+use crate::{ArenaRef, CoolIndex};
+use bumpalo::Bump;
+use std::collections::HashMap;
 use std::fmt;
-use std::hash::Hash;
+use std::hash::{BuildHasher, Hash};
 use std::ops::Index;
 
-pub struct Arena<'a, I, T>
+pub struct Arena<I, T, S = ahash::RandomState>
 where
     T: ?Sized,
 {
-    bump: &'a UnsafeBump,
-    indexes: AHashMap<&'a T, I>,
-    values: Vec<&'a T>,
+    bump: Bump,
+    indexes: HashMap<ArenaRef<T>, I, S>,
+    values: Vec<ArenaRef<T>>,
 }
 
-impl<'a, I, T> Arena<'a, I, T>
+impl<I, T, S> Arena<I, T, S>
 where
     T: ?Sized,
 {
-    /// # Safety
-    /// The bump must only be used by this arena.
-    pub unsafe fn new(bump: &'a UnsafeBump) -> Self {
-        Self {
-            bump,
-            indexes: Default::default(),
-            values: Default::default(),
-        }
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.values.len()
     }
 
-    pub fn iter_indexes(&self) -> impl Iterator<Item = I>
-    where
-        I: CoolIndex,
-    {
-        (0..(self.values.len() as u32)).map(I::new)
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.values.is_empty()
     }
 
-    fn get_next_index(&self) -> I
-    where
-        I: CoolIndex,
-    {
-        I::new(self.values.len() as u32)
+    pub fn iter(&self) -> impl Iterator<Item = &T> {
+        self.values.iter().map(ArenaRef::get)
     }
 }
 
-impl<'a, I, T> Arena<'a, I, T>
+impl<I, T, S> Arena<I, T, S>
 where
     I: CoolIndex,
-    T: Eq + Hash,
+    T: ?Sized + Eq + Hash,
+    S: BuildHasher,
 {
-    pub fn insert(&mut self, value: T) -> I {
+    pub fn insert(&mut self, value: T) -> I
+    where
+        T: Sized,
+    {
         if let Some(index) = self.get_index(&value) {
             return index;
         }
 
-        let index = self.get_next_index();
-        let value = unsafe { self.bump.alloc(value) };
+        let index = I::new(self.values.len() as u32);
+        let value = unsafe { ArenaRef::new(self.bump.alloc(value)) };
+
         self.indexes.insert(value, index);
         self.values.push(value);
 
         index
     }
-}
 
-impl<'a, I, T> Arena<'a, I, T>
-where
-    I: CoolIndex,
-    T: ?Sized,
-{
     #[must_use]
-    pub fn get(&self, index: I) -> Option<&'a T> {
-        self.values.get(index.get() as usize).copied()
+    pub fn contains(&self, value: &T) -> bool {
+        self.indexes.contains_key(value)
     }
-}
 
-impl<'a, I, T> Arena<'a, I, T>
-where
-    I: CoolIndex,
-    T: ?Sized + Eq + Hash,
-{
+    #[must_use]
+    pub fn get(&self, index: I) -> Option<&T> {
+        self.values.get(index.get() as usize).map(ArenaRef::get)
+    }
+
     #[must_use]
     pub fn get_index(&self, value: &T) -> Option<I> {
         self.indexes.get(value).copied()
     }
 }
 
-impl<I, T> Arena<'static, I, T>
-where
-    T: ?Sized,
-{
-    pub fn new_leak() -> Self {
-        unsafe { Self::new(Box::leak(Box::default())) }
-    }
-}
-
-impl<'a, I, T> Arena<'a, I, [T]>
+impl<I, T, S> Arena<I, [T], S>
 where
     I: CoolIndex,
+    T: Copy + Eq + Hash,
+    S: BuildHasher,
 {
-    pub fn insert_slice(&mut self, slice: &[T]) -> I
-    where
-        T: Copy + Eq + Hash,
-    {
-        if let Some(&index) = self.indexes.get(slice) {
+    pub fn insert_slice(&mut self, value: &[T]) -> I {
+        if let Some(index) = self.get_index(value) {
             return index;
         }
 
-        let index = self.get_next_index();
-        let slice = unsafe { self.bump.alloc_slice_copy(slice) };
-        self.indexes.insert(slice, index);
-        self.values.push(slice);
+        let index = I::new(self.values.len() as u32);
+        let value = unsafe { ArenaRef::new(self.bump.alloc_slice_copy(value)) };
 
-        index
-    }
-}
-
-impl<'a, I> Arena<'a, I, str>
-where
-    I: CoolIndex,
-{
-    pub fn insert_str(&mut self, value: &str) -> I {
-        if let Some(&index) = self.indexes.get(&value) {
-            return index;
-        }
-
-        let index = self.get_next_index();
-        let value = unsafe { self.bump.alloc_str(value) };
         self.indexes.insert(value, index);
         self.values.push(value);
 
@@ -131,24 +93,58 @@ where
     }
 }
 
-impl<'a, I, T> fmt::Debug for Arena<'a, I, T>
+impl<I, S> Arena<I, str, S>
 where
-    T: fmt::Debug + ?Sized,
+    I: CoolIndex,
+    S: BuildHasher,
 {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_list().entries(&self.values).finish()
+    pub fn insert_str(&mut self, value: &str) -> I {
+        if let Some(index) = self.get_index(value) {
+            return index;
+        }
+
+        let index = I::new(self.values.len() as u32);
+        let value = unsafe { ArenaRef::new(self.bump.alloc_str(value)) };
+
+        self.indexes.insert(value, index);
+        self.values.push(value);
+
+        index
     }
 }
 
-impl<'a, I, T> Index<I> for Arena<'a, I, T>
+impl<I, T, S> Default for Arena<I, T, S>
+where
+    T: ?Sized,
+    S: Default,
+{
+    fn default() -> Self {
+        Self {
+            bump: Bump::default(),
+            indexes: HashMap::default(),
+            values: Vec::default(),
+        }
+    }
+}
+
+impl<I, T, S> fmt::Debug for Arena<I, T, S>
+where
+    T: ?Sized + fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_list().entries(self.values.as_slice()).finish()
+    }
+}
+
+impl<I, T, S> Index<I> for Arena<I, T, S>
 where
     I: CoolIndex,
     T: ?Sized,
 {
     type Output = T;
 
+    #[must_use]
     fn index(&self, index: I) -> &Self::Output {
-        &self.values[index.get() as usize]
+        self.values[index.get() as usize].get()
     }
 }

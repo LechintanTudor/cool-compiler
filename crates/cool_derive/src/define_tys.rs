@@ -14,10 +14,10 @@ pub fn define_tys(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let tokens = quote! {
         #[allow(non_upper_case_globals)]
         pub mod tys {
-            use crate::ResolveTyId;
+            use crate::TyId;
 
             #(
-                pub const #ident_iter: ResolveTyId = ResolveTyId::new(#indexes);
+                pub const #ident_iter: TyId = TyId::new(#indexes);
             )*
         }
     };
