@@ -106,7 +106,7 @@ fn parse_version_number(
     number_str: &str,
     number: VersionNumber,
 ) -> Result<u32, VersionNumberError> {
-    if number_str.len() != 1 && number_str.starts_with("0") {
+    if number_str.len() != 1 && number_str.starts_with('0') {
         return Err(VersionNumberError {
             number,
             kind: VersionNumberErrorKind::InvalidLeadingZero,

@@ -1,29 +1,20 @@
-use cool_collections::{define_index_newtype, VecMap};
-use cool_parser::{ItemId, ParserData};
+use cool_collections::{SmallVec, VecMap};
+use cool_parser::ParserData;
+use cool_resolve::{CrateId, ResolveContext};
 use std::path::PathBuf;
-
-define_index_newtype!(CrateId);
-
-#[derive(Clone, Debug)]
-pub struct CrateData {
-    pub name: String,
-    pub path: PathBuf,
-}
 
 #[derive(Clone, Default, Debug)]
 pub struct Project {
     pub crates: VecMap<CrateId, Crate>,
+    pub dependencies: VecMap<CrateId, SmallVec<CrateId, 4>>,
 }
 
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Debug)]
 pub struct Crate {
-    pub items: Vec<ItemId>,
+    pub name: String,
+    pub path: PathBuf,
 }
 
-pub fn p0_parse(data: &mut ParserData, crates: &[CrateData]) -> Project {
-    for crate_data in crates {
-        // Empty
-    }
-
+pub fn p0_parse(project: Project, context: &mut ResolveContext) -> ParserData {
     todo!()
 }

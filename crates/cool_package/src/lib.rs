@@ -1,31 +1,19 @@
+mod project;
 mod version;
 
+pub use self::project::*;
 pub use self::version::*;
 
-use ahash::AHashMap;
-use serde::{Deserialize, Serialize};
+use cool_collections::SmallString;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Workspace {
-    pub members: Vec<String>,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug)]
 pub struct Package {
-    pub package: PackageHeader,
-
-    #[serde(default)]
-    pub dependencies: AHashMap<String, Dependency>,
+    pub header: PackageHeader,
+    pub dependencies: Vec<PackageHeader>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PackageHeader {
-    pub name: String,
-    pub version: Version,
-}
-
-#[derive(Clone, PartialEq, Eq, Hash, Debug, Deserialize, Serialize)]
-pub struct Dependency {
-    pub package: Option<String>,
+    pub name: SmallString,
     pub version: Version,
 }

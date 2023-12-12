@@ -18,6 +18,12 @@ impl<I, T, S> Arena<I, T, S>
 where
     T: ?Sized,
 {
+    pub fn reset(&mut self) {
+        self.indexes.clear();
+        self.values.clear();
+        self.bump.reset();
+    }
+
     #[must_use]
     pub fn len(&self) -> usize {
         self.values.len()

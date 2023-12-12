@@ -24,6 +24,13 @@ impl Crate {
             items: VecMap::default(),
         }
     }
+
+    #[inline]
+    pub fn add_item(&mut self, path: &[Symbol], item_id: ItemId) {
+        let crate_item_id_1 = self.paths.insert_slice(path);
+        let crate_item_id_2 = self.items.push(item_id);
+        debug_assert_eq!(crate_item_id_1, crate_item_id_2);
+    }
 }
 
 impl ResolveContext {

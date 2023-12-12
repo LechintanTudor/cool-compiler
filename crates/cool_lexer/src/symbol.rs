@@ -6,10 +6,10 @@ use std::sync::Mutex;
 
 define_index_newtype!(Symbol; NoDebug);
 
-pub(crate) type SymbolTable<'a> = Arena<'a, Symbol, str>;
+pub(crate) type SymbolTable = Arena<Symbol, str>;
 
-static SYMBOL_TABLE: Lazy<Mutex<SymbolTable<'static>>> = Lazy::new(|| {
-    let mut symbols = SymbolTable::new_leak();
+static SYMBOL_TABLE: Lazy<Mutex<SymbolTable>> = Lazy::new(|| {
+    let mut symbols = SymbolTable::default();
     sym::insert_symbols(&mut symbols);
     Mutex::new(symbols)
 });
@@ -23,7 +23,7 @@ impl Symbol {
     #[inline]
     #[must_use]
     pub fn as_str(&self) -> &'static str {
-        SYMBOL_TABLE.lock().unwrap().get(*self).unwrap()
+        unsafe { &*(&SYMBOL_TABLE.lock().unwrap()[*self] as *const str) }
     }
 
     #[inline]
