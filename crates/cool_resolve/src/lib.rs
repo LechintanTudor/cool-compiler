@@ -12,7 +12,6 @@ use std::ops::Index;
 
 #[derive(Debug)]
 pub struct ResolveContext {
-    items: VecMap<ItemId, Item>,
     crates: VecMap<CrateId, Crate>,
     modules: VecMap<ModuleId, Module>,
     ty_config: TyConfig,
@@ -22,7 +21,6 @@ pub struct ResolveContext {
 impl ResolveContext {
     pub fn new(ty_config: TyConfig) -> Self {
         let mut context = Self {
-            items: VecMap::default(),
             crates: VecMap::default(),
             modules: VecMap::default(),
             ty_config,
@@ -78,18 +76,9 @@ impl ResolveContext {
         let ty_id = self.tys.insert(ty_kind.into());
         debug_assert_eq!(ty_id, expected_ty_id);
 
-        let item_id = self.items.push(ty_id.into());
-        self.crates[CrateId::BUILTINS].add_item(&[symbol], item_id);
-    }
-}
-
-impl Index<ItemId> for ResolveContext {
-    type Output = Item;
-
-    #[inline]
-    #[must_use]
-    fn index(&self, item_id: ItemId) -> &Self::Output {
-        &self.items[item_id]
+        let module_id = self.crates[CrateId::BUILTINS].module_id;
+        self.add_item(module_id, true, symbol, ty_id.into())
+            .unwrap();
     }
 }
 

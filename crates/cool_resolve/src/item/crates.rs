@@ -1,9 +1,10 @@
-use crate::{ItemId, ResolveContext};
+use crate::{Item, ItemId, Module, ModuleId, ResolveContext};
+use cool_collections::ahash::AHashMap;
+use cool_collections::smallvec::smallvec;
 use cool_collections::{define_index_newtype, Arena, VecMap};
 use cool_lexer::Symbol;
 
 define_index_newtype!(CrateId);
-define_index_newtype!(CrateItemId);
 
 impl CrateId {
     pub const BUILTINS: Self = Self::new(0);
@@ -12,31 +13,28 @@ impl CrateId {
 #[derive(Debug)]
 pub struct Crate {
     pub name: Symbol,
-    pub paths: Arena<CrateItemId, [Symbol]>,
-    pub items: VecMap<CrateItemId, ItemId>,
-}
-
-impl Crate {
-    pub fn new(name: Symbol) -> Self {
-        Self {
-            name,
-            paths: Arena::default(),
-            items: VecMap::default(),
-        }
-    }
-
-    #[inline]
-    pub fn add_item(&mut self, path: &[Symbol], item_id: ItemId) {
-        let crate_item_id_1 = self.paths.insert_slice(path);
-        let crate_item_id_2 = self.items.push(item_id);
-        debug_assert_eq!(crate_item_id_1, crate_item_id_2);
-    }
+    pub module_id: ModuleId,
+    pub paths: Arena<ItemId, [Symbol]>,
+    pub items: VecMap<ItemId, Item>,
 }
 
 impl ResolveContext {
     pub fn add_crate(&mut self, name: Symbol) -> CrateId {
-        let crate_id = self.crates.push(Crate::new(name));
-        self.items.push(crate_id.into());
+        let crate_id = self.crates.next_index();
+
+        let module_id = self.modules.push(Module {
+            crate_id,
+            path: smallvec![],
+            items: AHashMap::default(),
+        });
+
+        self.crates.push(Crate {
+            name,
+            module_id,
+            paths: Arena::default(),
+            items: VecMap::default(),
+        });
+
         crate_id
     }
 }

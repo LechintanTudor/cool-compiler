@@ -31,6 +31,11 @@ where
         self.values.push(value);
         index
     }
+
+    #[must_use]
+    pub fn next_index(&self) -> I {
+        I::new(self.values.len() as u32)
+    }
 }
 
 impl<I, T> Clone for VecMap<I, T>

@@ -10,7 +10,7 @@ pub use self::index::*;
 pub use self::small_string::*;
 pub use self::unsafe_bump::*;
 pub use self::vec_map::*;
-pub use smallvec;
+pub use {ahash, smallvec};
 
 pub(crate) use self::arena_ref::*;
 
