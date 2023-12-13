@@ -1,4 +1,4 @@
-use crate::{CrateId, Item};
+use crate::{CrateId, Item, ItemId, ResolveContext, ResolveError, ResolveResult};
 use cool_collections::ahash::AHashMap;
 use cool_collections::{define_index_newtype, SmallVec};
 use cool_lexer::Symbol;
@@ -16,4 +16,49 @@ pub struct Module {
 pub struct ModuleItem {
     pub is_exported: bool,
     pub item: Item,
+}
+
+impl ResolveContext {
+    pub fn add_module(
+        &mut self,
+        parent_id: ModuleId,
+        is_exported: bool,
+        symbol: Symbol,
+    ) -> ResolveResult<ItemId> {
+        if self.modules[parent_id].items.contains_key(&symbol) {
+            return Err(ResolveError::SymbolAlreadyExists { symbol });
+        }
+
+        let path = {
+            let mut path: SmallVec<Symbol, 4> = SmallVec::new();
+            path.extend_from_slice(&self.modules[parent_id].path);
+            path.push(symbol);
+            path
+        };
+
+        let module_id = self.modules.push(Module {
+            crate_id: self.modules[parent_id].crate_id,
+            path,
+            items: AHashMap::default(),
+        });
+
+        let parent_module = &mut self.modules[parent_id];
+
+        parent_module.items.insert(
+            symbol,
+            ModuleItem {
+                is_exported,
+                item: module_id.into(),
+            },
+        );
+
+        let parent_crate = &mut self.crates[parent_module.crate_id];
+        let module_path = self.modules[module_id].path.as_slice();
+
+        let item_id = parent_crate.paths.insert_slice(module_path);
+        let actual_item_id = parent_crate.items.push(module_id.into());
+        debug_assert_eq!(item_id, actual_item_id);
+
+        Ok(item_id)
+    }
 }
