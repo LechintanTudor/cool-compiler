@@ -3,7 +3,7 @@ use cool_collections::SmallVec;
 use cool_lexer::Symbol;
 use derive_more::{Display, Error};
 
-pub type ResolveResult<T> = Result<T, ResolveError>;
+pub type ResolveResult<T = ()> = Result<T, ResolveError>;
 
 #[derive(Clone, Error, Debug, Display)]
 pub enum ResolveError {

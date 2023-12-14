@@ -1,9 +1,11 @@
 mod ty_config;
 mod ty_consts;
+mod ty_factory;
 mod ty_kind;
 
 pub use self::ty_config::*;
 pub use self::ty_consts::*;
+pub use self::ty_factory::*;
 pub use self::ty_kind::*;
 
 use cool_collections::define_index_newtype;

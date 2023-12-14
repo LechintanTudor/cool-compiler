@@ -5,6 +5,10 @@ use cool_lexer::Symbol;
 
 define_index_newtype!(ModuleId);
 
+impl ModuleId {
+    pub const BUILTINS: Self = Self(0);
+}
+
 #[derive(Debug)]
 pub struct Module {
     pub crate_id: CrateId,
@@ -57,6 +61,40 @@ impl ResolveContext {
 
         let item_id = parent_crate.paths.insert_slice(module_path);
         let actual_item_id = parent_crate.items.push(module_id.into());
+        debug_assert_eq!(item_id, actual_item_id);
+
+        Ok(item_id)
+    }
+
+    pub fn add_import(
+        &mut self,
+        module_id: ModuleId,
+        is_exported: bool,
+        symbol: Symbol,
+        item: Item,
+    ) -> ResolveResult<ItemId> {
+        let parent = &mut self.modules[module_id];
+
+        if parent.items.contains_key(&symbol) {
+            return Err(ResolveError::SymbolAlreadyExists { symbol });
+        }
+
+        parent
+            .items
+            .insert(symbol, ModuleItem { is_exported, item });
+
+        let path = {
+            let mut path: SmallVec<Symbol, 8> = SmallVec::new();
+            path.extend_from_slice(&parent.path);
+            path.push(symbol);
+            path
+        };
+
+        let crate_id = self.modules[module_id].crate_id;
+        let parent_crate = &mut self.crates[crate_id];
+
+        let item_id = parent_crate.paths.insert_slice(&path);
+        let actual_item_id = parent_crate.items.push(item);
         debug_assert_eq!(item_id, actual_item_id);
 
         Ok(item_id)

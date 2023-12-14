@@ -1,13 +1,9 @@
 mod args;
 
-use crate::args::*;
-use clap::Parser as _;
-use cool_driver::p0_parse;
+use cool_driver::{p0_parse, Crate, Project};
 use cool_resolve::{ResolveContext, TyConfig};
 
 fn main() -> anyhow::Result<()> {
-    let args = Args::parse();
-
     let ty_config = TyConfig {
         i8_align: 1,
         i16_align: 2,
@@ -19,8 +15,24 @@ fn main() -> anyhow::Result<()> {
         ptr_size: 8,
     };
 
+    let project = Project {
+        crates: vec![
+            Crate {
+                name: "test".into(),
+                path: "../programs/test/src".into(),
+                deps: vec![1],
+            },
+            Crate {
+                name: "libc".into(),
+                path: "../packages/libc/1.0.0/src".into(),
+                deps: vec![],
+            },
+        ],
+    };
+
     let mut context = ResolveContext::new(ty_config);
-    p0_parse(Default::default(), &mut context);
+    p0_parse(&project, &mut context);
+    println!("{:#?}", context);
 
     Ok(())
 }

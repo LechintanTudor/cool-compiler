@@ -30,6 +30,12 @@ macro_rules! define_index_newtype {
             pub const fn new(value: u32) -> Self {
                 Self(value)
             }
+
+            #[inline]
+            #[must_use]
+            pub const fn get(&self) -> u32 {
+                self.0
+            }
         }
 
         unsafe impl $crate::CoolIndex for $Ident {
