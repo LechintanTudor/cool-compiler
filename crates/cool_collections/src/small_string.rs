@@ -1,4 +1,6 @@
 use crate::SmallVec;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::borrow::Borrow;
 use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -49,8 +51,8 @@ impl<const N: usize> SmallString<N> {
     }
 }
 
-impl<const N: usize> PartialEq for SmallString<N> {
-    fn eq(&self, other: &Self) -> bool {
+impl<const N: usize, const M: usize> PartialEq<SmallString<M>> for SmallString<N> {
+    fn eq(&self, other: &SmallString<M>) -> bool {
         self.as_str() == other.as_str()
     }
 }
@@ -80,12 +82,27 @@ impl<const N: usize> Hash for SmallString<N> {
     }
 }
 
+impl<const N: usize> Borrow<str> for SmallString<N> {
+    #[must_use]
+    fn borrow(&self) -> &str {
+        self.as_str()
+    }
+}
+
 impl<const N: usize> Deref for SmallString<N> {
     type Target = str;
 
     #[must_use]
     fn deref(&self) -> &Self::Target {
         self.as_str()
+    }
+}
+
+impl<const N: usize> From<&str> for SmallString<N> {
+    fn from(value: &str) -> Self {
+        Self {
+            data: SmallVec::from_slice(value.as_bytes()),
+        }
     }
 }
 
@@ -105,5 +122,24 @@ impl<const N: usize> fmt::Debug for SmallString<N> {
 impl<const N: usize> fmt::Display for SmallString<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.as_str())
+    }
+}
+
+impl<'a, const N: usize> Deserialize<'a> for SmallString<N> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'a>,
+    {
+        let data = String::deserialize(deserializer)?;
+        Ok(SmallString::from(data.as_str()))
+    }
+}
+
+impl<const N: usize> Serialize for SmallString<N> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(self.as_str())
     }
 }

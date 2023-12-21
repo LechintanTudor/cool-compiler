@@ -7,9 +7,11 @@ edition = "2021"
 cool_collections = { path = "../cool_collections" }
 cool_derive = { path = "../cool_derive" }
 cool_lexer = { path = "../cool_lexer" }
+cool_package = { path = "../cool_package" }
 cool_parser = { path = "../cool_parser" }
 cool_resolve = { path = "../cool_resolve" }
 cool_span = { path = "../cool_span" }
 
 anyhow = { workspace = true }
 derive_more = { workspace = true }
+toml = { workspace = true }

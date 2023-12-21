@@ -36,6 +36,13 @@ where
     pub fn next_index(&self) -> I {
         I::new(self.values.len() as u32)
     }
+
+    pub fn iter_with_index(&self) -> impl Iterator<Item = (I, &T)> {
+        self.values
+            .iter()
+            .enumerate()
+            .map(|(i, v)| (I::new(i as u32), v))
+    }
 }
 
 impl<I, T> Clone for VecMap<I, T>

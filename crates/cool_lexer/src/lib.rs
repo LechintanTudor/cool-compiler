@@ -203,6 +203,23 @@ impl<'a> Lexer<'a> {
     }
 }
 
+#[must_use]
+pub fn is_valid_ident(value: &str) -> bool {
+    let mut char_iter = value.chars();
+
+    let Some(first_char) = char_iter.next().filter(|&c| chars::is_ident_start(c)) else {
+        return false;
+    };
+
+    if first_char == '_' {
+        if char_iter.as_str().is_empty() {
+            return false;
+        }
+    }
+
+    char_iter.all(chars::is_ident_continue)
+}
+
 mod chars {
     #[inline]
     #[must_use]

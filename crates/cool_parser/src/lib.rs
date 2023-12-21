@@ -22,11 +22,11 @@ use paste::paste;
 use std::ops::Index;
 use std::slice;
 
-macro_rules! define_parser_data {
+macro_rules! define_file {
     { $($field:ident: $Key:ty => $Value:ty,)* } => {
         paste! {
             #[derive(Clone, Default, Debug)]
-            pub struct ParserData {
+            pub struct File {
                 $(pub [<$field s>]: VecMap<$Key, $Value>,)*
             }
 
@@ -36,7 +36,7 @@ macro_rules! define_parser_data {
                     where
                         T: Into<$Value>,
                     {
-                        self.data.[<$field s>].push([<$field _id>].into())
+                        self.file.[<$field s>].push([<$field _id>].into())
                     }
                 )*
             }
@@ -47,7 +47,7 @@ macro_rules! define_parser_data {
 
                     #[inline]
                     fn index(&self, [<$field _id>]: $Key) -> &Self::Output {
-                        &self.data.[<$field s>][[<$field _id>]]
+                        &self.file.[<$field s>][[<$field _id>]]
                     }
                 }
             )*
@@ -55,7 +55,7 @@ macro_rules! define_parser_data {
     };
 }
 
-define_parser_data! {
+define_file! {
     decl: DeclId => Decl,
     item: ItemId => Item,
     module: ModuleId => Module,
@@ -67,17 +67,24 @@ define_parser_data! {
     stmt: StmtId => Stmt,
 }
 
+#[inline]
+pub fn parse_file(source: &str) -> ParseResult<File> {
+    let mut parser = Parser::new(source);
+    parser.parse_file_module_item()?;
+    Ok(parser.file)
+}
+
 #[derive(Debug)]
 pub struct Parser<'a> {
-    data: &'a mut ParserData,
+    file: File,
     tokens: TokenStream<'a>,
 }
 
 impl<'a> Parser<'a> {
     #[inline]
-    pub fn new(data: &'a mut ParserData, source: &'a str) -> Self {
+    pub fn new(source: &'a str) -> Self {
         Self {
-            data,
+            file: File::default(),
             tokens: TokenStream::new(source),
         }
     }
