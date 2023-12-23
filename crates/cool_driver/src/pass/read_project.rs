@@ -1,4 +1,4 @@
-use cool_collections::{define_index_newtype, SmallString, VecMap};
+use cool_collections::{SmallString, VecMap};
 use cool_package::{PackageSpec, Version};
 use derive_more::{Display, Error, From};
 use std::fs::File;
@@ -6,11 +6,9 @@ use std::io::{Error as IoError, Read};
 use std::path::{Path, PathBuf};
 use toml::de::Error as TomlError;
 
-define_index_newtype!(CrateId);
-
 #[derive(Clone, Debug)]
 pub struct ProjectData {
-    pub crates: VecMap<CrateId, CrateData>,
+    pub crates: VecMap<ast::CrateId, CrateData>,
 }
 
 #[derive(Clone, Debug)]
@@ -22,6 +20,21 @@ pub struct CrateData {
     pub deps: Vec<DependencyData>,
 }
 
+impl CrateData {
+    #[must_use]
+    pub fn entry_path(&self) -> PathBuf {
+        let file_name = match self.kind {
+            CrateKind::Executable => "@main.cool",
+            CrateKind::Library => "@lib.cool",
+        };
+
+        let mut path = self.path.clone();
+        path.push("src");
+        path.push(file_name);
+        path
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum CrateKind {
     Executable,
@@ -30,7 +43,7 @@ pub enum CrateKind {
 
 #[derive(Clone, Debug)]
 pub struct DependencyData {
-    pub crate_id: CrateId,
+    pub crate_id: ast::CrateId,
     pub mount_name: SmallString,
 }
 
@@ -60,7 +73,7 @@ pub enum ProjectErrorKind {
 
 #[derive(Clone, Debug)]
 pub struct DependencyToSolve {
-    crate_id: CrateId,
+    crate_id: ast::CrateId,
     dep_name: SmallString,
     mount_name: SmallString,
 }
@@ -68,7 +81,7 @@ pub struct DependencyToSolve {
 pub fn read_project(
     crate_paths: &[PathBuf],
 ) -> Result<ProjectData, (ProjectData, Vec<ProjectError>)> {
-    let mut crates = VecMap::<CrateId, CrateData>::default();
+    let mut crates = VecMap::<ast::CrateId, CrateData>::default();
     let mut deps = Vec::<DependencyToSolve>::new();
     let mut errors = Vec::<ProjectError>::new();
 
@@ -123,7 +136,7 @@ pub fn read_project(
             name: package.package.name,
             version: package.package.version,
             kind,
-            path: path_buf.clone(),
+            path: crate_path.clone(),
             deps: Vec::new(),
         });
 

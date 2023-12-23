@@ -1,8 +1,4 @@
-mod import;
-
-pub use self::import::*;
-
-use crate::{parse_error, ItemId, ParseResult, Parser};
+use crate::{parse_error, ImportId, ItemId, ParseResult, Parser};
 use cool_collections::define_index_newtype;
 use cool_derive::Section;
 use cool_lexer::{tk, TokenKind};
@@ -31,7 +27,7 @@ impl Parser<'_> {
 
         let kind = match peeked_token.kind {
             tk::kw_use => self.parse_import_decl()?.into(),
-            TokenKind::Ident(_) => self.parse_inline_item()?.into(),
+            TokenKind::Ident(_) => self.parse_item()?.into(),
             _ => return parse_error(peeked_token, &[tk::kw_use, tk::identifier]),
         };
 

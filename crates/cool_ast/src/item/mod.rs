@@ -13,25 +13,8 @@ use derive_more::From;
 
 define_index_newtype!(ItemId);
 
-#[derive(Clone, Debug)]
-pub enum Item {
-    File(ModuleId),
-    Inline(InlineItem),
-}
-
-impl Item {
-    #[inline]
-    #[must_use]
-    pub fn kind(&self) -> ItemKind {
-        match self {
-            Self::File(module_id) => ItemKind::Module(*module_id),
-            Self::Inline(item) => item.kind,
-        }
-    }
-}
-
 #[derive(Clone, Section, Debug)]
-pub struct InlineItem {
+pub struct Item {
     pub span: Span,
     pub ident: Ident,
     pub ty: Option<TyId>,
@@ -42,13 +25,14 @@ pub struct InlineItem {
 pub enum ItemKind {
     Alias(TyId),
     Expr(ExprId),
-    ExternFn(FnProtoId),
     Module(ModuleId),
     Struct(StructId),
+    ExternFn(FnProtoId),
+    ExternModule,
 }
 
 impl Parser<'_> {
-    pub fn parse_inline_item(&mut self) -> ParseResult<ItemId> {
+    pub fn parse_item(&mut self) -> ParseResult<ItemId> {
         let ident = self.parse_ident()?;
         self.bump_expect(&tk::colon)?;
 
@@ -65,9 +49,15 @@ impl Parser<'_> {
                 (ty_id.into(), span)
             }
             tk::kw_module => {
-                let module_id = self.parse_module()?;
-                let span = self[module_id].span;
-                (module_id.into(), span)
+                let module_token = self.bump();
+
+                if self.peek().kind == tk::open_brace {
+                    let module_id = self.continue_parse_module(module_token)?;
+                    let span = self[module_id].span;
+                    (module_id.into(), span)
+                } else {
+                    (ItemKind::ExternModule, module_token.span)
+                }
             }
             tk::kw_struct => {
                 let struct_id = self.parse_struct()?;
@@ -93,12 +83,12 @@ impl Parser<'_> {
             }
         };
 
-        Ok(self.add_item(Item::Inline(InlineItem {
+        Ok(self.add_item(Item {
             span: ident.span.to(kind_span),
             ident,
             ty,
             kind,
-        })))
+        }))
     }
 
     fn parse_alias(&mut self) -> ParseResult<TyId> {

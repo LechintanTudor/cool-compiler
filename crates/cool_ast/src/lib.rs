@@ -1,78 +1,27 @@
-mod decl;
 mod error;
 mod expr;
+mod file;
 mod item;
 mod op;
 mod stmt;
 mod ty;
 mod utils;
 
-pub use self::decl::*;
 pub use self::error::*;
 pub use self::expr::*;
+pub use self::file::*;
 pub use self::item::*;
 pub use self::op::*;
 pub use self::stmt::*;
 pub use self::ty::*;
 pub use self::utils::*;
 
-use cool_collections::VecMap;
+use cool_collections::define_index_newtype;
 use cool_lexer::{Token, TokenKind, TokenStream};
-use paste::paste;
-use std::ops::Index;
 use std::slice;
 
-macro_rules! define_file {
-    { $($field:ident: $Key:ty => $Value:ty,)* } => {
-        paste! {
-            #[derive(Clone, Default, Debug)]
-            pub struct File {
-                $(pub [<$field s>]: VecMap<$Key, $Value>,)*
-            }
-
-            impl Parser<'_> {
-                $(
-                    pub fn [<add_ $field>]<T>(&mut self, [<$field _id>]: T) -> $Key
-                    where
-                        T: Into<$Value>,
-                    {
-                        self.file.[<$field s>].push([<$field _id>].into())
-                    }
-                )*
-            }
-
-            $(
-                impl Index<$Key> for Parser<'_> {
-                    type Output = $Value;
-
-                    #[inline]
-                    fn index(&self, [<$field _id>]: $Key) -> &Self::Output {
-                        &self.file.[<$field s>][[<$field _id>]]
-                    }
-                }
-            )*
-        }
-    };
-}
-
-define_file! {
-    decl: DeclId => Decl,
-    item: ItemId => Item,
-    module: ModuleId => Module,
-    import: ImportId => Import,
-    struct: StructId => Struct,
-    fn_proto: FnProtoId => FnProto,
-    ty: TyId => Ty,
-    expr: ExprId => Expr,
-    stmt: StmtId => Stmt,
-}
-
-#[inline]
-pub fn parse_file(source: &str) -> ParseResult<File> {
-    let mut parser = Parser::new(source);
-    parser.parse_file_module_item()?;
-    Ok(parser.file)
-}
+define_index_newtype!(CrateId);
+define_index_newtype!(FileId);
 
 #[derive(Debug)]
 pub struct Parser<'a> {

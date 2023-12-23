@@ -1,10 +1,11 @@
-use crate::{Item, ItemId, Module, ModuleId, ResolveContext, ResolveError, ResolveResult};
+use crate::{ItemId, Module, ModuleId, ResolveContext, ResolveError, ResolveResult};
 use cool_collections::ahash::AHashMap;
 use cool_collections::smallvec::smallvec;
 use cool_collections::{define_index_newtype, Arena, VecMap};
 use cool_lexer::Symbol;
 
 define_index_newtype!(CrateId);
+define_index_newtype!(CrateItemId);
 
 impl CrateId {
     pub const BUILTINS: Self = Self::new(0);
@@ -20,8 +21,8 @@ impl CrateId {
 pub struct Crate {
     pub name: Symbol,
     pub deps: AHashMap<Symbol, CrateId>,
-    pub paths: Arena<ItemId, [Symbol]>,
-    pub items: VecMap<ItemId, Item>,
+    pub paths: Arena<CrateItemId, [Symbol]>,
+    pub items: VecMap<CrateItemId, ItemId>,
 }
 
 impl ResolveContext {

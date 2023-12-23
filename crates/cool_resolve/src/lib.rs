@@ -1,10 +1,12 @@
 mod error;
 mod item;
 mod ty;
+mod value;
 
 pub use self::error::*;
 pub use self::item::*;
 pub use self::ty::*;
+pub use self::value::*;
 
 use cool_collections::{Arena, VecMap};
 use cool_lexer::{sym, Symbol};
@@ -12,19 +14,23 @@ use std::ops::Index;
 
 #[derive(Debug)]
 pub struct ResolveContext {
-    crates: VecMap<CrateId, Crate>,
-    modules: VecMap<ModuleId, Module>,
     ty_config: TyConfig,
     tys: Arena<TyId, TyKind>,
+    items: VecMap<ItemId, Item>,
+    crates: VecMap<CrateId, Crate>,
+    modules: VecMap<ModuleId, Module>,
+    bindings: VecMap<BindingId, Binding>,
 }
 
 impl ResolveContext {
     pub fn new(ty_config: TyConfig) -> Self {
         let mut context = Self {
-            crates: VecMap::default(),
-            modules: VecMap::default(),
             ty_config,
             tys: Arena::default(),
+            items: VecMap::default(),
+            crates: VecMap::default(),
+            modules: VecMap::default(),
+            bindings: VecMap::default(),
         };
 
         context.add_crate(Symbol::insert("@builtins"));
@@ -78,6 +84,16 @@ impl ResolveContext {
 
         self.add_import(ModuleId::BUILTINS, true, symbol, ty_id.into())
             .unwrap();
+    }
+}
+
+impl Index<ItemId> for ResolveContext {
+    type Output = Item;
+
+    #[inline]
+    #[must_use]
+    fn index(&self, item_id: ItemId) -> &Self::Output {
+        &self.items[item_id]
     }
 }
 

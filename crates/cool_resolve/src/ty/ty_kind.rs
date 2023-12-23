@@ -1,4 +1,4 @@
-use crate::{CrateId, ItemId, ResolveError, TyId};
+use crate::{ItemId, ResolveError, TyId};
 use cool_collections::SmallVec;
 use cool_lexer::{sym, Symbol};
 use derive_more::From;
@@ -121,7 +121,6 @@ pub struct TupleTy {
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct StructTy {
-    pub crate_id: CrateId,
     pub item_id: ItemId,
 }
 

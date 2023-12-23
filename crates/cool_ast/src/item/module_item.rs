@@ -1,7 +1,7 @@
-use crate::{DeclId, Item, ItemId, ParseResult, Parser};
+use crate::{DeclId, ParseResult, Parser};
 use cool_collections::{define_index_newtype, SmallVec};
 use cool_derive::Section;
-use cool_lexer::tk;
+use cool_lexer::{tk, Token};
 use cool_span::Span;
 
 define_index_newtype!(ModuleId);
@@ -20,7 +20,7 @@ pub enum ModuleKind {
 }
 
 impl Parser<'_> {
-    pub fn parse_file_module_item(&mut self) -> ParseResult<ItemId> {
+    pub fn parse_file_module(&mut self) -> ParseResult<ModuleId> {
         let mut decls = SmallVec::new();
 
         let span_end = loop {
@@ -31,26 +31,17 @@ impl Parser<'_> {
             decls.push(self.parse_decl()?);
         };
 
-        let module_id = self.add_module(Module {
+        Ok(self.add_module(Module {
             span: Span::from_to(0, span_end),
             kind: ModuleKind::File,
             decls,
-        });
-
-        Ok(self.add_item(Item::File(module_id)))
+        }))
     }
 
-    pub fn parse_module(&mut self) -> ParseResult<ModuleId> {
-        let module_token = self.bump_expect(&tk::kw_module)?;
+    pub fn continue_parse_module(&mut self, module_token: Token) -> ParseResult<ModuleId> {
+        debug_assert_eq!(module_token.kind, tk::kw_module);
 
-        if self.bump_if_eq(tk::open_brace).is_none() {
-            return Ok(self.add_module(Module {
-                span: module_token.span,
-                kind: ModuleKind::File,
-                decls: SmallVec::new(),
-            }));
-        }
-
+        self.bump_expect(&tk::open_brace)?;
         let mut decls = SmallVec::new();
 
         let end_span = loop {

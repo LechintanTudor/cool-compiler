@@ -1,69 +1,36 @@
 mod ty_config;
 mod ty_consts;
 mod ty_factory;
+mod ty_id;
 mod ty_kind;
 
 pub use self::ty_config::*;
 pub use self::ty_consts::*;
 pub use self::ty_factory::*;
+pub use self::ty_id::*;
 pub use self::ty_kind::*;
 
-use cool_collections::define_index_newtype;
+use crate::{ItemId, ModuleId, ResolveContext, ResolveResult};
+use cool_lexer::Symbol;
 
-define_index_newtype!(TyId);
-
-impl TyId {
-    #[inline]
-    #[must_use]
-    pub fn is_any_infer(&self) -> bool {
-        [tys::infer, tys::infer_number].contains(self)
+impl ResolveContext {
+    pub fn add_alias(
+        &mut self,
+        module_id: ModuleId,
+        is_exported: bool,
+        symbol: Symbol,
+    ) -> ResolveResult<ItemId> {
+        self.add_item(module_id, is_exported, symbol, |_, _, _| tys::infer)
     }
 
-    #[inline]
-    #[must_use]
-    pub fn is_item(&self) -> bool {
-        [tys::alias, tys::module].contains(self)
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn is_definable(&self) -> bool {
-        !self.is_any_infer() && !self.is_item()
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn is_undefinable(&self) -> bool {
-        !self.is_definable()
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn is_int(&self) -> bool {
-        tys::i8 <= *self && *self <= tys::usize
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn is_signed_int(&self) -> bool {
-        tys::i8 <= *self && *self <= tys::isize
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn is_unsigned_int(&self) -> bool {
-        tys::u8 <= *self && *self <= tys::usize
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn is_float(&self) -> bool {
-        [tys::f32, tys::f64].contains(self)
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn is_number(&self) -> bool {
-        self.is_int() || self.is_float()
+    pub fn add_struct(
+        &mut self,
+        module_id: ModuleId,
+        is_exported: bool,
+        symbol: Symbol,
+    ) -> ResolveResult<ItemId> {
+        self.add_item(module_id, is_exported, symbol, |context, item_id, _| {
+            context.tys.insert(StructTy { item_id }.into())
+        })
     }
 }
