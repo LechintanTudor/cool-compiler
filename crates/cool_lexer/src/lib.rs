@@ -211,10 +211,8 @@ pub fn is_valid_ident(value: &str) -> bool {
         return false;
     };
 
-    if first_char == '_' {
-        if char_iter.as_str().is_empty() {
-            return false;
-        }
+    if first_char == '_' && char_iter.as_str().is_empty() {
+        return false;
     }
 
     char_iter.all(chars::is_ident_continue)

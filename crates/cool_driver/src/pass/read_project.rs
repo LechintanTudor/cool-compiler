@@ -124,7 +124,7 @@ pub fn read_project(
             }
         };
 
-        let kind = match get_crate_kind(&crate_path) {
+        let kind = match get_crate_kind(crate_path) {
             Ok(kind) => kind,
             Err(error) => {
                 errors.push(error);

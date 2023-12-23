@@ -16,6 +16,7 @@ use std::ops::Index;
 pub struct ResolveContext {
     ty_config: TyConfig,
     tys: Arena<TyId, TyKind>,
+    ty_defs: VecMap<TyId, Option<TyDef>>,
     items: VecMap<ItemId, Item>,
     crates: VecMap<CrateId, Crate>,
     modules: VecMap<ModuleId, Module>,
@@ -27,6 +28,7 @@ impl ResolveContext {
         let mut context = Self {
             ty_config,
             tys: Arena::default(),
+            ty_defs: VecMap::default(),
             items: VecMap::default(),
             crates: VecMap::default(),
             modules: VecMap::default(),
@@ -67,23 +69,33 @@ impl ResolveContext {
         context
     }
 
-    fn add_nonitem_ty<K>(&mut self, expected_ty_id: TyId, infer_ty: K)
+    fn add_nonitem_ty<K>(&mut self, expected_ty_id: TyId, ty_kind: K)
     where
         K: Into<TyKind>,
     {
-        let ty_id = self.tys.insert(infer_ty.into());
+        let ty_id = self.add_ty(ty_kind.into());
         debug_assert_eq!(ty_id, expected_ty_id);
+
+        if ty_id.is_definable() {
+            let ty_def = self.define_ty(ty_id);
+            debug_assert!(ty_def.is_some());
+        }
     }
 
     fn add_item_ty<K>(&mut self, symbol: Symbol, expected_ty_id: TyId, ty_kind: K)
     where
         K: Into<TyKind>,
     {
-        let ty_id = self.tys.insert(ty_kind.into());
+        let ty_id = self.add_ty(ty_kind.into());
         debug_assert_eq!(ty_id, expected_ty_id);
 
         self.add_import(ModuleId::BUILTINS, true, symbol, ty_id.into())
             .unwrap();
+
+        if ty_id.is_definable() {
+            let ty_def = self.define_ty(ty_id);
+            debug_assert!(ty_def.is_some());
+        }
     }
 }
 

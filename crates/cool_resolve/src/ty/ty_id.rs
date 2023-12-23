@@ -7,7 +7,7 @@ impl TyId {
     #[inline]
     #[must_use]
     pub fn is_any_infer(&self) -> bool {
-        [tys::infer, tys::infer_number].contains(self)
+        tys::infer <= *self && *self <= tys::infer_int_or_bool
     }
 
     #[inline]

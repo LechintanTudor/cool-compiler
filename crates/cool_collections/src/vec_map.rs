@@ -33,6 +33,11 @@ where
     }
 
     #[must_use]
+    pub fn contains_index(&self, index: I) -> bool {
+        (index.get() as usize) < self.values.len()
+    }
+
+    #[must_use]
     pub fn next_index(&self) -> I {
         I::new(self.values.len() as u32)
     }
