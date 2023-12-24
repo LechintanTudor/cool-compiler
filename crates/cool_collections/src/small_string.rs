@@ -11,13 +11,15 @@ pub struct SmallString<const N: usize = 16> {
     data: SmallVec<u8, N>,
 }
 
-impl<const N: usize> SmallString<N> {
+impl SmallString<16> {
     pub const fn new() -> Self {
         Self {
             data: SmallVec::new_const(),
         }
     }
+}
 
+impl<const N: usize> SmallString<N> {
     pub fn push(&mut self, c: char) {
         if c.len_utf8() == 1 {
             self.data.push(c as u8);

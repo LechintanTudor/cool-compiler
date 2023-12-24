@@ -1,7 +1,7 @@
 use crate::sym;
-use cool_collections::{define_index_newtype, Arena};
+use cool_collections::{define_index_newtype, Arena, SmallString};
 use once_cell::sync::Lazy;
-use std::fmt;
+use std::fmt::{self, Write};
 use std::sync::Mutex;
 
 define_index_newtype!(Symbol; NoDebug);
@@ -18,6 +18,15 @@ impl Symbol {
     #[inline]
     pub fn insert(str: &str) -> Self {
         SYMBOL_TABLE.lock().unwrap().insert_str(str)
+    }
+
+    pub fn insert_fmt<F>(value: &F) -> Self
+    where
+        F: fmt::Display,
+    {
+        let mut buffer = SmallString::new();
+        write!(&mut buffer, "{value}").unwrap();
+        Self::insert(&buffer)
     }
 
     #[inline]
