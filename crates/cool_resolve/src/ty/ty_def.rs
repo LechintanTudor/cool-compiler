@@ -142,7 +142,7 @@ impl ResolveContext {
         self.ty_defs[ty_id].as_ref()
     }
 
-    pub fn get_struct_ty_def(&mut self, fields: &[(Symbol, TyId)]) -> Option<TyDef> {
+    fn get_struct_ty_def(&mut self, fields: &[(Symbol, TyId)]) -> Option<TyDef> {
         #[derive(Clone, Copy)]
         struct DefinedField {
             name: Symbol,

@@ -16,11 +16,8 @@ use crate::{ItemId, ModuleId, ResolveContext, ResolveResult};
 use cool_lexer::Symbol;
 
 impl ResolveContext {
-    pub fn add_ty<T>(&mut self, ty_kind: T) -> TyId
-    where
-        T: Into<TyKind>,
-    {
-        let ty_id_1 = self.tys.insert(ty_kind.into());
+    pub(crate) fn add_ty(&mut self, ty_kind: TyKind) -> TyId {
+        let ty_id_1 = self.tys.insert(ty_kind);
 
         if !self.ty_defs.contains_index(ty_id_1) {
             let ty_id_2 = self.ty_defs.push(None);
@@ -46,7 +43,7 @@ impl ResolveContext {
         symbol: Symbol,
     ) -> ResolveResult<ItemId> {
         self.add_item(module_id, is_exported, symbol, |context, item_id, _| {
-            context.add_ty(StructTy { item_id })
+            context.add_struct_ty(item_id)
         })
     }
 }

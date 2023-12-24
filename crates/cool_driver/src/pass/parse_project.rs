@@ -151,7 +151,7 @@ pub fn parse_project(data: &ProjectData, context: &mut ResolveContext) -> Projec
                                 }
                                 ast::ItemKind::Struct(_) => {
                                     let item_id = context
-                                        .add_module(module_id, decl.is_exported, item.ident.symbol)
+                                        .add_struct(module_id, decl.is_exported, item.ident.symbol)
                                         .unwrap();
 
                                     project.items.push(Item {
