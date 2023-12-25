@@ -1,8 +1,7 @@
-use crate::{ItemId, ResolveContext, ResolveError, ResolveResult};
+use crate::{Item, ItemId, ResolveContext, ResolveResult};
 use cool_collections::ahash::AHashMap;
 use cool_collections::define_index_newtype;
 use cool_lexer::Symbol;
-use std::collections::hash_map::Entry;
 
 define_index_newtype!(ModuleId);
 
@@ -43,17 +42,8 @@ impl ResolveContext {
         module_id: ModuleId,
         is_exported: bool,
         symbol: Symbol,
-        item_id: ItemId,
-    ) -> ResolveResult {
-        let Entry::Occupied(mut entry) = self.modules[module_id].items.entry(symbol) else {
-            return Err(ResolveError::SymbolAlreadyExists { symbol });
-        };
-
-        entry.insert(ModuleItem {
-            is_exported,
-            item_id,
-        });
-
-        Ok(())
+        item: Item,
+    ) -> ResolveResult<ItemId> {
+        self.add_item(module_id, is_exported, symbol, |_| item)
     }
 }
