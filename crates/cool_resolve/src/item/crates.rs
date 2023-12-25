@@ -1,8 +1,8 @@
 use crate::{ItemId, Module, ModuleId, ResolveContext, ResolveError, ResolveResult};
 use cool_collections::ahash::AHashMap;
-use cool_collections::smallvec::smallvec;
 use cool_collections::{define_index_newtype, Arena, VecMap};
 use cool_lexer::Symbol;
+use std::collections::hash_map::Entry;
 
 define_index_newtype!(CrateId);
 define_index_newtype!(CrateItemId);
@@ -17,6 +17,10 @@ impl CrateId {
     }
 }
 
+impl CrateItemId {
+    pub const ROOT: Self = Self::new(0);
+}
+
 #[derive(Debug)]
 pub struct Crate {
     pub name: Symbol,
@@ -27,6 +31,8 @@ pub struct Crate {
 
 impl ResolveContext {
     pub fn add_crate(&mut self, name: Symbol) -> CrateId {
+        assert_eq!(self.crates.len(), self.modules.len());
+
         let crate_id = self.crates.push(Crate {
             name,
             deps: AHashMap::default(),
@@ -34,24 +40,32 @@ impl ResolveContext {
             items: VecMap::default(),
         });
 
+        let item_id = self.items.insert((crate_id, CrateItemId::ROOT));
+
         let module_id = self.modules.push(Module {
-            crate_id,
-            path: smallvec![],
+            item_id,
             items: AHashMap::default(),
         });
 
-        assert_eq!(crate_id.get(), module_id.get());
+        debug_assert_eq!(crate_id.get(), module_id.get());
+
+        let current_crate = &mut self.crates[crate_id];
+        let crate_item_id = current_crate.paths.insert_slice(&[]);
+        let crate_item_id_copy = current_crate.items.push(item_id);
+        debug_assert_eq!(crate_item_id, crate_item_id_copy);
+
+        let item_id_copy = self.item_defs.push(module_id.into());
+        debug_assert_eq!(item_id, item_id_copy);
+
         crate_id
     }
 
     pub fn add_dep(&mut self, crate_id: CrateId, symbol: Symbol, dep_id: CrateId) -> ResolveResult {
-        let parent_crate = &mut self.crates[crate_id];
-
-        if parent_crate.deps.contains_key(&symbol) {
+        let Entry::Vacant(entry) = self.crates[crate_id].deps.entry(symbol) else {
             return Err(ResolveError::SymbolAlreadyExists { symbol });
-        }
+        };
 
-        parent_crate.deps.insert(symbol, dep_id);
+        entry.insert(dep_id);
         Ok(())
     }
 }

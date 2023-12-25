@@ -39,8 +39,8 @@ fn main() -> anyhow::Result<()> {
         ptr_align: 8,
     });
 
-    let project = pass::parse_project(&data, &mut context);
-    println!("{:#?}", project);
+    let _project = pass::parse_project(&data, &mut context);
+    println!("{:#?}", context);
 
     Ok(())
 }

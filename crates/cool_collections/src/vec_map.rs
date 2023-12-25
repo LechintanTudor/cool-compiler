@@ -42,6 +42,10 @@ where
         I::new(self.values.len() as u32)
     }
 
+    pub fn iter_indexes(&self) -> impl Iterator<Item = I> {
+        (0..(self.values.len() as u32)).map(I::new)
+    }
+
     pub fn iter_with_index(&self) -> impl Iterator<Item = (I, &T)> {
         self.values
             .iter()

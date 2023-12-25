@@ -17,7 +17,8 @@ pub struct ResolveContext {
     ty_config: TyConfig,
     tys: Arena<TyId, TyKind>,
     ty_defs: VecMap<TyId, Option<TyDef>>,
-    items: VecMap<ItemId, Item>,
+    items: Arena<ItemId, (CrateId, CrateItemId)>,
+    item_defs: VecMap<ItemId, Item>,
     crates: VecMap<CrateId, Crate>,
     modules: VecMap<ModuleId, Module>,
     bindings: VecMap<BindingId, Binding>,
@@ -29,7 +30,8 @@ impl ResolveContext {
             ty_config,
             tys: Arena::default(),
             ty_defs: VecMap::default(),
-            items: VecMap::default(),
+            items: Arena::default(),
+            item_defs: VecMap::default(),
             crates: VecMap::default(),
             modules: VecMap::default(),
             bindings: VecMap::default(),
@@ -89,7 +91,7 @@ impl ResolveContext {
         let ty_id = self.add_ty(ty_kind.into());
         debug_assert_eq!(ty_id, expected_ty_id);
 
-        self.add_import(ModuleId::BUILTINS, true, symbol, ty_id.into())
+        self.add_item(ModuleId::BUILTINS, true, symbol, |_| ty_id)
             .unwrap();
 
         if ty_id.is_definable() {
@@ -105,7 +107,7 @@ impl Index<ItemId> for ResolveContext {
     #[inline]
     #[must_use]
     fn index(&self, item_id: ItemId) -> &Self::Output {
-        &self.items[item_id]
+        &self.item_defs[item_id]
     }
 }
 

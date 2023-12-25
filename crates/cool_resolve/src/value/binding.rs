@@ -24,7 +24,7 @@ impl ResolveContext {
         is_exported: bool,
         symbol: Symbol,
     ) -> ResolveResult<ItemId> {
-        self.add_item(module_id, is_exported, symbol, |context, _, _| {
+        self.add_item(module_id, is_exported, symbol, |context| {
             context.bindings.push(Binding {
                 mutability: Mutability::Const,
                 ty: tys::infer,

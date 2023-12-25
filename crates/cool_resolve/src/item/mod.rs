@@ -1,8 +1,10 @@
 mod crates;
 mod module;
+mod path;
 
 pub use self::crates::*;
 pub use self::module::*;
+pub use self::path::*;
 
 use crate::{BindingId, ResolveContext, ResolveError, ResolveResult, TyId};
 use cool_collections::{define_index_newtype, SmallVec};
@@ -38,28 +40,42 @@ impl ResolveContext {
     ) -> ResolveResult<ItemId>
     where
         I: Into<Item>,
-        F: FnMut(&mut Self, ItemId, &[Symbol]) -> I,
+        F: FnMut(&mut Self) -> I,
     {
         if self.modules[module_id].items.contains_key(&symbol) {
             return Err(ResolveError::SymbolAlreadyExists { symbol });
         }
 
-        let mut path: SmallVec<Symbol, 8> = SmallVec::new();
-        path.extend_from_slice(&self.modules[module_id].path);
-        path.push(symbol);
+        let item = add_item(self).into();
 
-        let item = add_item(self, self.items.next_index(), &path).into();
-        let item_id = self.items.push(item);
+        let (crate_id, path) = {
+            let item_id = self.modules[module_id].item_id;
+            let (crate_id, crate_item_id) = self.items[item_id];
+            let module_path = &self.crates[crate_id].paths[crate_item_id];
 
-        let parent_module = &mut self.modules[module_id];
-        parent_module
-            .items
-            .insert(*path.last().unwrap(), ModuleItem { is_exported, item });
+            let mut path = SmallVec::<Symbol, 8>::new();
+            path.extend_from_slice(module_path);
+            path.push(symbol);
 
-        let parent_crate = &mut self.crates[parent_module.crate_id];
-        let crate_item_id_1 = parent_crate.paths.insert_slice(&path);
-        let crate_item_id_2 = parent_crate.items.push(item_id);
-        debug_assert_eq!(crate_item_id_1, crate_item_id_2);
+            (crate_id, path)
+        };
+
+        let current_crate = &mut self.crates[crate_id];
+        let crate_item_id = current_crate.paths.insert_slice(&path);
+        let item_id = self.items.insert((crate_id, crate_item_id));
+        let crate_item_id_copy = current_crate.items.push(item_id);
+        let item_id_copy = self.item_defs.push(item);
+
+        debug_assert_eq!(item_id, item_id_copy);
+        debug_assert_eq!(crate_item_id, crate_item_id_copy);
+
+        self.modules[module_id].items.insert(
+            symbol,
+            ModuleItem {
+                is_exported,
+                item_id,
+            },
+        );
 
         Ok(item_id)
     }

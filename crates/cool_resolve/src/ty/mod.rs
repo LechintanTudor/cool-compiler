@@ -33,7 +33,7 @@ impl ResolveContext {
         is_exported: bool,
         symbol: Symbol,
     ) -> ResolveResult<ItemId> {
-        self.add_item(module_id, is_exported, symbol, |_, _, _| tys::infer)
+        self.add_item(module_id, is_exported, symbol, |_| tys::infer)
     }
 
     pub fn add_struct(
@@ -42,8 +42,8 @@ impl ResolveContext {
         is_exported: bool,
         symbol: Symbol,
     ) -> ResolveResult<ItemId> {
-        self.add_item(module_id, is_exported, symbol, |context, item_id, _| {
-            context.add_struct_ty(item_id)
+        self.add_item(module_id, is_exported, symbol, |context| {
+            context.add_struct_ty(context.item_defs.next_index())
         })
     }
 }

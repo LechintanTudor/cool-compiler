@@ -1,7 +1,8 @@
-use crate::{CrateId, Item, ItemId, ResolveContext, ResolveResult};
+use crate::{ItemId, ResolveContext, ResolveError, ResolveResult};
 use cool_collections::ahash::AHashMap;
-use cool_collections::{define_index_newtype, SmallVec};
+use cool_collections::define_index_newtype;
 use cool_lexer::Symbol;
+use std::collections::hash_map::Entry;
 
 define_index_newtype!(ModuleId);
 
@@ -11,15 +12,14 @@ impl ModuleId {
 
 #[derive(Debug)]
 pub struct Module {
-    pub crate_id: CrateId,
-    pub path: SmallVec<Symbol, 4>,
+    pub item_id: ItemId,
     pub items: AHashMap<Symbol, ModuleItem>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct ModuleItem {
     pub is_exported: bool,
-    pub item: Item,
+    pub item_id: ItemId,
 }
 
 impl ResolveContext {
@@ -29,10 +29,9 @@ impl ResolveContext {
         is_exported: bool,
         symbol: Symbol,
     ) -> ResolveResult<ItemId> {
-        self.add_item(module_id, is_exported, symbol, |context, _, path| {
+        self.add_item(module_id, is_exported, symbol, |context| {
             context.modules.push(Module {
-                crate_id: context.modules[module_id].crate_id,
-                path: path.into(),
+                item_id: context.item_defs.next_index(),
                 items: AHashMap::default(),
             })
         })
@@ -44,9 +43,17 @@ impl ResolveContext {
         module_id: ModuleId,
         is_exported: bool,
         symbol: Symbol,
-        item: Item,
+        item_id: ItemId,
     ) -> ResolveResult {
-        self.add_item(module_id, is_exported, symbol, |_, _, _| item)?;
+        let Entry::Occupied(mut entry) = self.modules[module_id].items.entry(symbol) else {
+            return Err(ResolveError::SymbolAlreadyExists { symbol });
+        };
+
+        entry.insert(ModuleItem {
+            is_exported,
+            item_id,
+        });
+
         Ok(())
     }
 }

@@ -67,6 +67,14 @@ pub fn parse_project(data: &ProjectData, context: &mut ResolveContext) -> Projec
         .map(|crate_name| context.add_crate(crate_name))
         .collect::<SmallVec<_, 4>>();
 
+    for (ast_crate_id, &crate_id) in data.crates.iter_indexes().zip(crate_ids.iter()) {
+        for dep in &data.crates[ast_crate_id].deps {
+            let dep_id = crate_ids[dep.crate_id.get() as usize];
+            let dep_name = Symbol::insert(&dep.mount_name);
+            context.add_dep(crate_id, dep_name, dep_id).unwrap();
+        }
+    }
+
     for (crate_id, project_crate) in crate_ids.into_iter().zip(data.crates.iter()) {
         let paths = ModulePaths::for_root(&project_crate.entry_path()).unwrap();
         let ast_crate_id = project.crates.push(Crate::new(crate_id));
