@@ -69,7 +69,7 @@ where
 impl<I, T> Default for VecMap<I, T> {
     fn default() -> Self {
         Self {
-            values: Default::default(),
+            values: Vec::default(),
             _phantom: PhantomData,
         }
     }

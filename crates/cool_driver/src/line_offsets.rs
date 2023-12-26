@@ -24,8 +24,7 @@ impl LineOffsets {
         let column = self
             .offsets
             .get((line - 1) as usize)
-            .map(|line_offset| offset - line_offset + 1)
-            .unwrap_or(1);
+            .map_or(1, |line_offset| offset - line_offset + 1);
 
         (line, column)
     }

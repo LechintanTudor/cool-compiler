@@ -10,3 +10,6 @@ ahash = { workspace = true }
 derive_more = { workspace = true }
 serde = { workspace = true }
 serde_with = { workspace = true }
+
+[lints]
+workspace = true

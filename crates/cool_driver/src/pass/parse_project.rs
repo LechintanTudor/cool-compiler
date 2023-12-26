@@ -24,6 +24,7 @@ pub struct Crate {
 
 impl Crate {
     #[inline]
+    #[must_use]
     pub fn new(crate_id: CrateId) -> Self {
         Self {
             crate_id,
@@ -102,7 +103,7 @@ pub fn parse_project(data: &ProjectData, context: &mut ResolveContext) -> Projec
             while let Some((ast_module_id, module_id)) = module_queue.pop_front() {
                 let module = &parsed_file.modules[ast_module_id];
 
-                for &ast_decl_id in module.decls.iter() {
+                for &ast_decl_id in &module.decls {
                     let decl = &parsed_file.decls[ast_decl_id];
 
                     match parsed_file.decls[ast_decl_id].kind {
@@ -206,7 +207,7 @@ fn read_file(path: &Path) -> (String, LineOffsets) {
         match reader.read_to_string(&mut source) {
             Ok(0) => break,
             Ok(n) => line_offsets.add_line(n as u32),
-            Err(error) => panic!("Failed to read file: {}", error),
+            Err(error) => panic!("Failed to read file: {error}"),
         }
     }
 
@@ -223,8 +224,7 @@ fn get_import_path_and_symbol(import: &ast::Import) -> (SmallVec<Symbol, 4>, Sym
 
     let symbol = import
         .alias
-        .map(|alias| alias.symbol)
-        .unwrap_or(*path.last().unwrap());
+        .map_or_else(|| *path.last().unwrap(), |alias| alias.symbol);
 
     (path, symbol)
 }

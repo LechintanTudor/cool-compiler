@@ -17,16 +17,16 @@ pub fn derive_section(input: proc_macro::TokenStream) -> proc_macro::TokenStream
             let has_span_field = fields
                 .named
                 .iter()
-                .flat_map(|field| field.ident.as_ref())
+                .filter_map(|field| field.ident.as_ref())
                 .any(|ident| ident == "span");
 
-            if !has_span_field {
-                quote_spanned! {
-                   ident.span() => compile_error!("Struct has no 'span' field")
-                }
-            } else {
+            if has_span_field {
                 quote! {
                     self.span
+                }
+            } else {
+                quote_spanned! {
+                   ident.span() => compile_error!("Struct has no 'span' field")
                 }
             }
         }

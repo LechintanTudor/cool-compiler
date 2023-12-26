@@ -160,13 +160,13 @@ pub fn read_project(
                 crates[dep.crate_id].deps.push(DependencyData {
                     crate_id: dep_id,
                     mount_name: dep.mount_name,
-                })
+                });
             }
             None => {
                 errors.push(ProjectError {
                     path: crates[dep.crate_id].path.clone(),
                     kind: ProjectErrorKind::UnsolvedDependency(dep),
-                })
+                });
             }
         }
     }
@@ -215,8 +215,8 @@ fn get_crate_kind(path: &Path) -> Result<CrateKind, ProjectError> {
 }
 
 fn has_any_circular_dependency(crates: &[CrateData]) -> bool {
-    let mut visited = Vec::from_iter((0..crates.len()).map(|_| false));
-    let mut current = Vec::from_iter((0..crates.len()).map(|_| false));
+    let mut visited = (0..crates.len()).map(|_| false).collect::<Vec<_>>();
+    let mut current = (0..crates.len()).map(|_| false).collect::<Vec<_>>();
 
     for i in 0..crates.len() {
         if visited[i] {
@@ -240,7 +240,7 @@ fn has_circular_dependency(
     visited[crate_id] = true;
     current[crate_id] = true;
 
-    for dep in crates[crate_id].deps.iter() {
+    for dep in &crates[crate_id].deps {
         let dep_id = dep.crate_id.get() as usize;
 
         if !visited[dep_id] {

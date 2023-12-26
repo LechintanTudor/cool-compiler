@@ -1,4 +1,5 @@
-use crate::{ArenaRef, CoolIndex};
+use crate::arena_ref::ArenaRef;
+use crate::CoolIndex;
 use bumpalo::Bump;
 use std::collections::HashMap;
 use std::fmt;

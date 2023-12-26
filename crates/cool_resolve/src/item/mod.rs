@@ -22,6 +22,7 @@ pub enum Item {
 
 impl Item {
     #[inline]
+    #[must_use]
     pub const fn into_module(&self) -> ModuleId {
         match self {
             Self::Module(module_id) => *module_id,

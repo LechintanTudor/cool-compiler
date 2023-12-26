@@ -8,3 +8,6 @@ ahash = { workspace = true }
 bumpalo = { workspace = true }
 serde = { workspace = true }
 smallvec = { workspace = true }
+
+[lints]
+workspace = true

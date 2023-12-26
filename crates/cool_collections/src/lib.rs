@@ -12,6 +12,4 @@ pub use self::unsafe_bump::*;
 pub use self::vec_map::*;
 pub use {ahash, smallvec};
 
-pub(crate) use self::arena_ref::*;
-
 pub type SmallVec<T, const N: usize> = smallvec::SmallVec<[T; N]>;

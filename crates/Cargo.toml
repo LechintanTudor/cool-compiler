@@ -28,8 +28,9 @@ unicode-ident = "1.0"
 
 [workspace.lints.clippy]
 pedantic = "warn"
-cast_possible_truncation = "allow"
-match_same_arms = "allow"
-missing_errors_doc = "allow"
-missing_panics_doc = "allow"
-module_name_repetitions = "allow"
+cast_possible_truncation = { level = "allow", priority = 1 }
+match_same_arms = { level = "allow", priority = 1 }
+missing_errors_doc = { level = "allow", priority = 1 }
+missing_panics_doc = { level = "allow", priority = 1 }
+module_name_repetitions = { level = "allow", priority = 1 }
+too_many_lines = { level = "allow", priority = 1 }

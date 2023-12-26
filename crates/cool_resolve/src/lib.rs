@@ -25,6 +25,7 @@ pub struct ResolveContext {
 }
 
 impl ResolveContext {
+    #[must_use]
     pub fn new(ty_config: TyConfig) -> Self {
         let mut context = Self {
             ty_config,

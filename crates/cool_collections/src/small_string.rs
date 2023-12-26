@@ -12,6 +12,7 @@ pub struct SmallString<const N: usize = 16> {
 }
 
 impl SmallString<16> {
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             data: SmallVec::new_const(),
@@ -30,7 +31,7 @@ impl<const N: usize> SmallString<N> {
     }
 
     pub fn push_str(&mut self, str: &str) {
-        self.data.extend_from_slice(str.as_bytes())
+        self.data.extend_from_slice(str.as_bytes());
     }
 
     pub fn clear(&mut self) {

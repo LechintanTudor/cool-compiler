@@ -9,3 +9,6 @@ cool_derive = { path = "../cool_derive" }
 cool_lexer = { path = "../cool_lexer" }
 
 derive_more = { workspace = true }
+
+[lints]
+workspace = true

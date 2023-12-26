@@ -13,7 +13,7 @@ fn main() -> anyhow::Result<()> {
         Ok(data) => data,
         Err((_, errors)) => {
             for error in errors {
-                println!("{}\n", error);
+                println!("{error}\n");
             }
 
             bail!("Failed to read project");
@@ -40,7 +40,7 @@ fn main() -> anyhow::Result<()> {
     });
 
     let _project = pass::parse_project(&data, &mut context);
-    println!("{:#?}", context);
+    println!("{context:#?}");
 
     Ok(())
 }

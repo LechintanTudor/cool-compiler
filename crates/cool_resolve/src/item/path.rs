@@ -35,9 +35,8 @@ impl ResolveContext {
                     .map(|crate_item_id| current_crate.items[crate_item_id])
                     .unwrap()
             } else {
-                let current_module_id = match self.item_defs[item_id] {
-                    Item::Module(current_module_id) => current_module_id,
-                    _ => return Err(ResolveError::ItemNotFound { path: path.into() }),
+                let Item::Module(current_module_id) = self.item_defs[item_id] else {
+                    return Err(ResolveError::ItemNotFound { path: path.into() });
                 };
 
                 let Some(item) = self.modules[current_module_id].items.get(symbol) else {
