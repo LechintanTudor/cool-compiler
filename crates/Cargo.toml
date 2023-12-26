@@ -25,3 +25,11 @@ serde_with = "3.4"
 smallvec = { version = "1.11", features = ["const_generics", "const_new", "serde", "union"] }
 toml = "0.8"
 unicode-ident = "1.0"
+
+[workspace.lints.clippy]
+pedantic = "warn"
+cast_possible_truncation = "allow"
+match_same_arms = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+module_name_repetitions = "allow"

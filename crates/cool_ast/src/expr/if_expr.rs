@@ -33,9 +33,10 @@ impl Parser<'_> {
             }
         }
 
-        let end_span = else_block
-            .map(|expr| self[expr].span())
-            .unwrap_or_else(|| self[cond_blocks.last().unwrap().body].span());
+        let end_span = else_block.map_or_else(
+            || self[cond_blocks.last().unwrap().body].span(),
+            |expr| self[expr].span(),
+        );
 
         Ok(self.add_expr(IfExpr {
             span: if_token.span.to(end_span),

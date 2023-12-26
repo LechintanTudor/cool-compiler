@@ -32,10 +32,7 @@ impl Parser<'_> {
         };
 
         let semicolon_token = self.bump_expect(&tk::semicolon)?;
-
-        let start_span = export_token
-            .map(|token| token.span)
-            .unwrap_or(peeked_token.span);
+        let start_span = export_token.map_or(peeked_token.span, |token| token.span);
 
         Ok(self.add_decl(Decl {
             span: start_span.to(semicolon_token.span),

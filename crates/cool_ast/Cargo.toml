@@ -11,3 +11,6 @@ cool_span = { path = "../cool_span" }
 
 derive_more = { workspace = true }
 paste = { workspace = true }
+
+[lints]
+workspace = true

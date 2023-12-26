@@ -34,6 +34,7 @@ pub struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     #[inline]
+    #[must_use]
     pub fn new(source: &'a str) -> Self {
         Self {
             cursor: Cursor::new(source),
@@ -154,7 +155,7 @@ impl<'a> Lexer<'a> {
             .push_if(&mut self.buffer, chars::is_suffix_start)
         {
             self.cursor
-                .push_while(&mut self.buffer, chars::is_ident_continue)
+                .push_while(&mut self.buffer, chars::is_ident_continue);
         }
 
         let symbol = Symbol::insert(&self.buffer);

@@ -31,6 +31,7 @@ pub struct Parser<'a> {
 
 impl<'a> Parser<'a> {
     #[inline]
+    #[must_use]
     pub fn new(source: &'a str) -> Self {
         Self {
             file: File::default(),

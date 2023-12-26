@@ -23,10 +23,7 @@ impl Parser<'_> {
             .map(|_| self.parse_ident())
             .transpose()?;
 
-        let end_span = alias
-            .as_ref()
-            .map(|ident| ident.span)
-            .unwrap_or(path.span());
+        let end_span = alias.as_ref().map_or(path.span(), |ident| ident.span);
 
         Ok(self.add_import(Import {
             span: use_token.span.to(end_span),

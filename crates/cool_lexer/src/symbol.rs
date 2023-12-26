@@ -2,6 +2,7 @@ use crate::sym;
 use cool_collections::{define_index_newtype, Arena, SmallString};
 use once_cell::sync::Lazy;
 use std::fmt::{self, Write};
+use std::mem;
 use std::sync::Mutex;
 
 define_index_newtype!(Symbol; NoDebug);
@@ -32,7 +33,7 @@ impl Symbol {
     #[inline]
     #[must_use]
     pub fn as_str(&self) -> &'static str {
-        unsafe { &*(&SYMBOL_TABLE.lock().unwrap()[*self] as *const str) }
+        unsafe { mem::transmute(&SYMBOL_TABLE.lock().unwrap()[*self]) }
     }
 
     #[inline]

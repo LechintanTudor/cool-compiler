@@ -10,6 +10,7 @@ pub struct Cursor<'a> {
 
 impl<'a> Cursor<'a> {
     #[inline]
+    #[must_use]
     pub fn new(source: &'a str) -> Self {
         Self {
             chars: source.chars(),

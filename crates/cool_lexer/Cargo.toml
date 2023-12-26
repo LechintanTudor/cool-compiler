@@ -12,3 +12,6 @@ derive_more = { workspace = true }
 once_cell = { workspace = true }
 paste = { workspace = true }
 unicode-ident = { workspace = true }
+
+[lints]
+workspace = true

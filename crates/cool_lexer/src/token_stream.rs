@@ -8,6 +8,7 @@ pub struct TokenStream<'a> {
 
 impl<'a> TokenStream<'a> {
     #[inline]
+    #[must_use]
     pub fn new(source: &'a str) -> Self {
         Self {
             lexer: Lexer::new(source),

@@ -114,14 +114,8 @@ impl Parser<'_> {
             .map(|_| self.parse_ty())
             .transpose()?;
 
-        let start_span = abi_decl
-            .as_ref()
-            .map(|decl| decl.span)
-            .unwrap_or(fn_token.span);
-
-        let end_span = return_ty
-            .map(|ty| self[ty].span())
-            .unwrap_or(close_paren.span);
+        let start_span = abi_decl.as_ref().map_or(fn_token.span, |decl| decl.span);
+        let end_span = return_ty.map_or(close_paren.span, |ty| self[ty].span());
 
         Ok(self.add_fn_proto(FnProto {
             span: start_span.to(end_span),

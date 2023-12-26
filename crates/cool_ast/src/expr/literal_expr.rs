@@ -52,18 +52,18 @@ impl Parser<'_> {
             }));
         };
 
-        let (span, value) = self
-            .try_parse_decimal_part()
-            .map(|(decimal_span, decimal)| {
-                let mut value: SmallString = SmallString::new();
-                write!(&mut value, "{}.{}", literal.value, decimal).unwrap();
-                (token.span.to(decimal_span), Symbol::insert(&value))
-            })
-            .unwrap_or_else(|| {
+        let (span, value) = self.try_parse_decimal_part().map_or_else(
+            || {
                 let mut value: SmallString = SmallString::new();
                 write!(&mut value, "{}.", literal.value).unwrap();
                 (token.span.to(dot_token.span), Symbol::insert(&value))
-            });
+            },
+            |(decimal_span, decimal)| {
+                let mut value: SmallString = SmallString::new();
+                write!(&mut value, "{}.{}", literal.value, decimal).unwrap();
+                (token.span.to(decimal_span), Symbol::insert(&value))
+            },
+        );
 
         Ok(self.add_expr(LiteralExpr {
             span,

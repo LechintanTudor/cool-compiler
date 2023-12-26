@@ -23,10 +23,11 @@ impl ExprPart {
     #[inline]
     #[must_use]
     fn unwrap_expr(self) -> ExprId {
-        match self {
-            Self::Expr(expr) => expr,
-            _ => panic!("Not an expression"),
-        }
+        let Self::Expr(expr_id) = self else {
+            panic!("Part is not an expression");
+        };
+
+        expr_id
     }
 }
 
@@ -85,7 +86,7 @@ impl Parser<'_> {
                             rhs,
                         })
                         .into(),
-                    )
+                    );
                 }
             }
         }

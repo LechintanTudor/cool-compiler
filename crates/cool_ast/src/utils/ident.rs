@@ -32,9 +32,8 @@ impl Parser<'_> {
     pub fn parse_ident(&mut self) -> ParseResult<Ident> {
         let token = self.bump();
 
-        let symbol = match token.kind {
-            TokenKind::Ident(symbol) => symbol,
-            _ => return parse_error(token, &[tk::identifier]),
+        let TokenKind::Ident(symbol) = token.kind else {
+            return parse_error(token, &[tk::identifier]);
         };
 
         Ok(Ident {
