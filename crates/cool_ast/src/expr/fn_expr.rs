@@ -1,4 +1,4 @@
-use crate::{parse_error, ExprId, FnAbiDecl, ParseResult, Parser, Pattern, TyId};
+use crate::{parse_error, ExprId, FnAbi, ParseResult, Parser, Pattern, TyId};
 use cool_collections::define_index_newtype;
 use cool_derive::Section;
 use cool_lexer::tk;
@@ -23,7 +23,7 @@ pub struct FnExpr {
 #[derive(Clone, Section, Debug)]
 pub struct FnProto {
     pub span: Span,
-    pub abi_decl: Option<FnAbiDecl>,
+    pub abi: FnAbi,
     pub params: Vec<FnParam>,
     pub is_variadic: bool,
     pub has_trailing_comma: bool,
@@ -40,7 +40,7 @@ impl Parser<'_> {
     pub fn parse_fn_expr_or_fn_proto(&mut self) -> ParseResult<FnExprOrFnProto> {
         let proto = self.parse_fn_proto()?;
 
-        if self[proto].abi_decl.is_some() && self.peek().kind != tk::open_brace {
+        if self[proto].abi.is_explicit() && self.peek().kind != tk::open_brace {
             return Ok(proto.into());
         }
 
@@ -73,11 +73,10 @@ impl Parser<'_> {
     }
 
     fn parse_fn_proto(&mut self) -> ParseResult<FnProtoId> {
-        let abi_decl = (self.peek().kind == tk::kw_extern)
-            .then(|| self.parse_fn_abi_decl())
-            .transpose()?;
+        let start_span = self.peek().span;
 
-        let fn_token = self.bump_expect(&tk::kw_fn)?;
+        let abi = self.parse_fn_abi()?;
+        self.bump_expect(&tk::kw_fn)?;
         self.bump_expect(&tk::open_paren)?;
 
         let mut params = Vec::<FnParam>::new();
@@ -114,12 +113,11 @@ impl Parser<'_> {
             .map(|_| self.parse_ty())
             .transpose()?;
 
-        let start_span = abi_decl.as_ref().map_or(fn_token.span, |decl| decl.span);
         let end_span = return_ty.map_or(close_paren.span, |ty| self[ty].span());
 
         Ok(self.add_fn_proto(FnProto {
             span: start_span.to(end_span),
-            abi_decl,
+            abi,
             params,
             is_variadic,
             has_trailing_comma,

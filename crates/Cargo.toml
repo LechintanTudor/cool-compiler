@@ -1,10 +1,11 @@
 [workspace]
 members = [
     "cool_ast",
-    "cool_collections",
     "cool_cli",
+    "cool_collections",
     "cool_derive",
     "cool_driver",
+    "cool_ir",
     "cool_lexer",
     "cool_package",
     "cool_resolve",

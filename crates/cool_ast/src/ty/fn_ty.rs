@@ -1,13 +1,13 @@
-use crate::{parse_error, ParseResult, Parser, TyId};
+use crate::{parse_error, FnAbi, ParseResult, Parser, TyId};
 use cool_collections::SmallVec;
 use cool_derive::Section;
-use cool_lexer::{tk, Symbol};
+use cool_lexer::tk;
 use cool_span::{Section, Span};
 
 #[derive(Clone, Section, Debug)]
 pub struct FnTy {
     pub span: Span,
-    pub abi: Option<Option<Symbol>>,
+    pub abi: FnAbi,
     pub param_tys: SmallVec<TyId, 4>,
     pub has_trailing_comma: bool,
     pub is_variadic: bool,
@@ -16,11 +16,10 @@ pub struct FnTy {
 
 impl Parser<'_> {
     pub fn parse_fn_ty(&mut self) -> ParseResult<TyId> {
-        let abi_decl = (self.peek().kind == tk::kw_extern)
-            .then(|| self.parse_fn_abi_decl())
-            .transpose()?;
+        let start_span = self.peek().span;
 
-        let fn_token = self.bump_expect(&tk::kw_fn)?;
+        let abi = self.parse_fn_abi()?;
+        self.bump_expect(&tk::kw_fn)?;
         self.bump_expect(&tk::open_paren)?;
 
         let mut param_tys = SmallVec::new();
@@ -57,12 +56,11 @@ impl Parser<'_> {
             .map(|_| self.parse_ty())
             .transpose()?;
 
-        let start_span = abi_decl.as_ref().map_or(fn_token.span, |abi| abi.span);
         let end_span = return_ty.map_or(close_paren.span, |ty| self[ty].span());
 
         Ok(self.add_ty(FnTy {
             span: start_span.to(end_span),
-            abi: abi_decl.map(|decl| decl.abi),
+            abi,
             param_tys,
             has_trailing_comma,
             is_variadic,

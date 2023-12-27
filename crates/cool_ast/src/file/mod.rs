@@ -20,6 +20,17 @@ macro_rules! define_file {
                 $(pub [<$field s>]: VecMap<$Key, $Value>,)*
             }
 
+            $(
+                impl Index<$Key> for File {
+                    type Output = $Value;
+
+                    #[inline]
+                    fn index(&self, [<$field _id>]: $Key) -> &Self::Output {
+                        &self.[<$field s>][[<$field _id>]]
+                    }
+                }
+            )*
+
             impl Parser<'_> {
                 $(
                     pub fn [<add_ $field>]<T>(&mut self, [<$field _id>]: T) -> $Key

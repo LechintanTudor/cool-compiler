@@ -1,27 +1,32 @@
 use crate::{ParseResult, Parser};
-use cool_derive::Section;
 use cool_lexer::{tk, LiteralKind, Symbol, TokenKind};
-use cool_span::Span;
 
-#[derive(Clone, Section, Debug)]
-pub struct FnAbiDecl {
-    pub span: Span,
-    pub abi: Option<Symbol>,
+#[derive(Clone, Copy, Debug)]
+pub enum FnAbi {
+    Implicit,
+    Explicit(Option<Symbol>),
+}
+
+impl FnAbi {
+    #[inline]
+    #[must_use]
+    pub fn is_explicit(&self) -> bool {
+        matches!(self, Self::Explicit(_))
+    }
 }
 
 impl Parser<'_> {
-    pub fn parse_fn_abi_decl(&mut self) -> ParseResult<FnAbiDecl> {
-        let extern_token = self.bump_expect(&tk::kw_extern)?;
+    pub fn parse_fn_abi(&mut self) -> ParseResult<FnAbi> {
+        if self.peek().kind != tk::kw_extern {
+            return Ok(FnAbi::Implicit);
+        }
 
-        let (span, abi) = match self.parse_str_literal() {
-            Some((end_span, symbol)) => (extern_token.span.to(end_span), Some(symbol)),
-            None => (extern_token.span, None),
-        };
-
-        Ok(FnAbiDecl { span, abi })
+        self.bump_expect(&tk::kw_extern)?;
+        let symbol = self.parse_str_literal();
+        Ok(FnAbi::Explicit(symbol))
     }
 
-    fn parse_str_literal(&mut self) -> Option<(Span, Symbol)> {
+    fn parse_str_literal(&mut self) -> Option<Symbol> {
         let token = self.peek();
 
         let TokenKind::Literal(literal) = token.kind else {
@@ -33,6 +38,6 @@ impl Parser<'_> {
         };
 
         self.bump();
-        Some((token.span, literal.value))
+        Some(literal.value)
     }
 }
