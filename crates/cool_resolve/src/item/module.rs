@@ -1,4 +1,4 @@
-use crate::{Item, ItemId, ResolveContext, ResolveResult};
+use crate::{ItemId, ResolveContext, ResolveResult};
 use cool_collections::ahash::AHashMap;
 use cool_collections::define_index_newtype;
 use cool_lexer::Symbol;
@@ -36,14 +36,14 @@ impl ResolveContext {
         })
     }
 
-    #[inline]
     pub fn add_import(
         &mut self,
         module_id: ModuleId,
         is_exported: bool,
+        path: &[Symbol],
         symbol: Symbol,
-        item: Item,
     ) -> ResolveResult<ItemId> {
+        let item = self[self.resolve_path(module_id, path)?];
         self.add_item(module_id, is_exported, symbol, |_| item)
     }
 }
