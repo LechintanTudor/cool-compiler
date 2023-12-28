@@ -8,11 +8,10 @@ mod ty_kind;
 pub use self::ty_config::*;
 pub use self::ty_consts::*;
 pub use self::ty_def::*;
-pub use self::ty_factory::*;
 pub use self::ty_id::*;
 pub use self::ty_kind::*;
 
-use crate::{ItemId, ModuleId, ResolveContext, ResolveResult};
+use crate::{Item, ItemId, ModuleId, ResolveContext, ResolveResult};
 use cool_lexer::Symbol;
 
 impl ResolveContext {
@@ -27,6 +26,7 @@ impl ResolveContext {
         ty_id_1
     }
 
+    #[inline]
     pub fn add_alias(
         &mut self,
         module_id: ModuleId,
@@ -34,6 +34,15 @@ impl ResolveContext {
         symbol: Symbol,
     ) -> ResolveResult<ItemId> {
         self.add_item(module_id, is_exported, symbol, |_| tys::infer)
+    }
+
+    pub fn define_alias(&mut self, item_id: ItemId, ty_id: TyId) {
+        let Item::Ty(old_ty_id) = &mut self.item_defs[item_id] else {
+            panic!("Item is not an alias");
+        };
+
+        assert_eq!(*old_ty_id, tys::infer, "Alias is already defined");
+        *old_ty_id = ty_id;
     }
 
     pub fn add_struct(

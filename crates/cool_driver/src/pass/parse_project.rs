@@ -45,6 +45,7 @@ pub struct File {
 pub struct Item {
     pub ast_file_id: ast::FileId,
     pub ast_item_id: ast::ItemId,
+    pub module_id: ModuleId,
     pub item_id: ItemId,
 }
 
@@ -132,6 +133,7 @@ pub fn parse_project(data: &ProjectData, context: &mut ResolveContext) -> Projec
                                     project.items.push(Item {
                                         ast_file_id,
                                         ast_item_id,
+                                        module_id,
                                         item_id,
                                     });
                                 }
@@ -147,6 +149,7 @@ pub fn parse_project(data: &ProjectData, context: &mut ResolveContext) -> Projec
                                     project.items.push(Item {
                                         ast_file_id,
                                         ast_item_id,
+                                        module_id,
                                         item_id,
                                     });
                                 }
@@ -166,6 +169,7 @@ pub fn parse_project(data: &ProjectData, context: &mut ResolveContext) -> Projec
                                     project.items.push(Item {
                                         ast_file_id,
                                         ast_item_id,
+                                        module_id,
                                         item_id,
                                     });
                                 }

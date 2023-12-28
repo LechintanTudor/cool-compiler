@@ -41,10 +41,16 @@ fn main() -> anyhow::Result<()> {
 
     let mut project = pass::parse_project(&data, &mut context);
     pass::solve_imports(&mut project, &mut context);
+    pass::define_items(&mut project, &mut context);
 
     if !project.imports.is_empty() {
         println!("{:#?}", project.imports);
         bail!("Failed to solve imports");
+    }
+
+    if !project.items.is_empty() {
+        println!("{:#?}", project.items);
+        bail!("Failed to solve items");
     }
 
     println!("{context:#?}");
