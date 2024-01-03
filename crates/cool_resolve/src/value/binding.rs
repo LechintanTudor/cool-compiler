@@ -31,4 +31,11 @@ impl ResolveContext {
             })
         })
     }
+
+    #[inline]
+    pub fn define_global_binding(&mut self, binding_id: BindingId, ty_id: TyId) {
+        let binding = &mut self.bindings[binding_id];
+        assert_eq!(binding.ty, tys::infer);
+        binding.ty = ty_id;
+    }
 }

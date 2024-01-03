@@ -15,6 +15,8 @@ impl ResolveContext {
             (item.item_id, path.pop_front())
         } else if let Some(item_id) = self.get_dep_item_id(module.item_id, path[0]) {
             (item_id, path.pop_front())
+        } else if let Some(item) = self.modules[ModuleId::BUILTINS].items.get(&path[0]) {
+            (item.item_id, path.pop_front())
         } else {
             return Err(ResolveError::ItemNotFound { path: path.into() });
         };

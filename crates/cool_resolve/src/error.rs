@@ -1,4 +1,4 @@
-use crate::{FnAbi, ItemId, TyId};
+use crate::{ItemId, TyId};
 use cool_collections::SmallVec;
 use cool_lexer::Symbol;
 use derive_more::{Display, Error};
@@ -40,11 +40,14 @@ pub enum ResolveError {
     #[display("Types cannot be unified")]
     TysCannotBeUnified { ty_id: TyId, expected_ty_id: TyId },
 
+    #[display("Struct has duplicared field '{field}'")]
+    StructHasDuplicatedField { field: Symbol },
+
     #[display("Function has an unknown ABI: '{abi}'")]
     FnAbiIsUnknown { abi: Symbol },
 
     #[display("Function abi mismatch")]
-    FnAbiMismatch { found: FnAbi, expected: FnAbi },
+    FnAbiMismatch,
 
     #[display("Function parameter count mismatch: {found}, {expected}")]
     FnParamCountMismatch { found: u32, expected: u32 },

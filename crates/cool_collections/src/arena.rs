@@ -43,6 +43,16 @@ where
 impl<I, T, S> Arena<I, T, S>
 where
     I: CoolIndex,
+    T: ?Sized,
+{
+    pub fn iter_indexes(&self) -> impl Iterator<Item = I> {
+        (0..self.len() as u32).map(I::new)
+    }
+}
+
+impl<I, T, S> Arena<I, T, S>
+where
+    I: CoolIndex,
     T: ?Sized + Eq + Hash,
     S: BuildHasher,
 {

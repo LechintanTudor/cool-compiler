@@ -22,10 +22,28 @@ pub enum Item {
 impl Item {
     #[inline]
     #[must_use]
+    pub const fn into_binding(&self) -> BindingId {
+        match self {
+            Self::Binding(binding_id) => *binding_id,
+            _ => panic!("Item is not a binding"),
+        }
+    }
+
+    #[inline]
+    #[must_use]
     pub const fn into_module(&self) -> ModuleId {
         match self {
             Self::Module(module_id) => *module_id,
             _ => panic!("Item is not a module"),
+        }
+    }
+
+    #[inline]
+    #[must_use]
+    pub const fn into_ty(&self) -> TyId {
+        match self {
+            Self::Ty(ty_id) => *ty_id,
+            _ => panic!("Item is not a type"),
         }
     }
 }

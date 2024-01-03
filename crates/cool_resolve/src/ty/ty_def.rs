@@ -129,6 +129,7 @@ impl ResolveContext {
 
                 self.get_struct_ty_def(&fields)?
             }
+            TyKind::Struct(_) => return None,
             ty_kind => todo!("TyDef: {:#?}", ty_kind),
         };
 
@@ -140,6 +141,12 @@ impl ResolveContext {
         let ty_def = self.get_struct_ty_def(fields)?;
         self.ty_defs[ty_id] = Some(ty_def);
         self.ty_defs[ty_id].as_ref()
+    }
+
+    pub fn iter_tys_to_be_defined(&self) -> impl Iterator<Item = TyId> + '_ {
+        self.tys
+            .iter_indexes()
+            .filter(|&ty| ty.is_definable() && self.ty_defs[ty].is_none())
     }
 
     fn get_struct_ty_def(&mut self, fields: &[(Symbol, TyId)]) -> Option<TyDef> {
