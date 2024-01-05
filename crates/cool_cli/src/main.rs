@@ -41,7 +41,8 @@ fn main() -> anyhow::Result<()> {
 
     let mut project = pass::parse_project(&data, &mut context);
     pass::solve_imports(&mut project, &mut context);
-    pass::define_items(&mut project, &mut context);
+
+    let _fn_items = pass::define_items(&mut project, &mut context);
 
     if !project.imports.is_empty() {
         println!("{:#?}", project.imports);
@@ -53,6 +54,5 @@ fn main() -> anyhow::Result<()> {
         bail!("Failed to solve items");
     }
 
-    println!("{context:#?}");
     Ok(())
 }

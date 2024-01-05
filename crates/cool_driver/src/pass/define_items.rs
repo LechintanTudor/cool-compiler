@@ -7,8 +7,9 @@ use cool_resolve::{tys, ResolveContext, ResolveError, ResolveResult, TyId};
 use std::collections::VecDeque;
 use std::mem;
 
-pub fn define_items(project: &mut Project, context: &mut ResolveContext) {
+pub fn define_items(project: &mut Project, context: &mut ResolveContext) -> Vec<Item> {
     let mut items = VecDeque::<Item>::from(mem::take(&mut project.items));
+    let mut fn_items = Vec::<Item>::new();
     let mut ty_ids = VecDeque::<TyId>::new();
 
     loop {
@@ -18,7 +19,13 @@ pub fn define_items(project: &mut Project, context: &mut ResolveContext) {
             let item = items.pop_front().unwrap();
 
             match define_item(project, context, &item) {
-                Ok(()) => made_progress = true,
+                Ok(is_fn) => {
+                    made_progress = true;
+
+                    if is_fn {
+                        fn_items.push(item);
+                    }
+                }
                 Err(_) => items.push_back(item),
             }
         }
@@ -42,9 +49,14 @@ pub fn define_items(project: &mut Project, context: &mut ResolveContext) {
 
     assert!(ty_ids.is_empty());
     project.items = items.into();
+    fn_items
 }
 
-fn define_item(project: &Project, context: &mut ResolveContext, item: &Item) -> ResolveResult {
+fn define_item(
+    project: &Project,
+    context: &mut ResolveContext,
+    item: &Item,
+) -> ResolveResult<bool> {
     let ast_file = &project.files[item.ast_file_id].parsed_file;
     let ast_item = &ast_file.items[item.ast_item_id];
 
@@ -54,6 +66,8 @@ fn define_item(project: &Project, context: &mut ResolveContext, item: &Item) -> 
         .transpose()?
         .unwrap_or(tys::infer);
 
+    let mut is_fn = false;
+
     match ast_item.kind {
         ast::ItemKind::Alias(ast_ty_id) => {
             let ty = resolve_ty(context, item.module_id, ast_file, ast_ty_id)?;
@@ -62,6 +76,7 @@ fn define_item(project: &Project, context: &mut ResolveContext, item: &Item) -> 
         ast::ItemKind::Expr(ast_expr_id) => {
             let ty_id = match &ast_file[ast_expr_id] {
                 ast::Expr::Fn(fn_expr) => {
+                    is_fn = true;
                     resolve_fn(context, item.module_id, item_ty_id, ast_file, fn_expr.proto)?
                 }
                 _ => todo!(),
@@ -96,5 +111,5 @@ fn define_item(project: &Project, context: &mut ResolveContext, item: &Item) -> 
         _ => todo!(),
     }
 
-    Ok(())
+    Ok(is_fn)
 }

@@ -1,4 +1,4 @@
-use crate::{Item, ItemId, ModuleId, ResolveContext, ResolveError, ResolveResult};
+use crate::{CrateId, Item, ItemId, ModuleId, ResolveContext, ResolveError, ResolveResult};
 use cool_lexer::{sym, Symbol};
 
 impl ResolveContext {
@@ -56,6 +56,12 @@ impl ResolveContext {
         }
 
         Ok(item_id)
+    }
+
+    #[must_use]
+    pub fn get_item_crate_and_path(&self, item_id: ItemId) -> (CrateId, &[Symbol]) {
+        let (crate_id, crate_item_id) = self.items[item_id];
+        (crate_id, &self.crates[crate_id].paths[crate_item_id])
     }
 
     #[must_use]
